@@ -1,0 +1,104 @@
+import { exec } from "child_process";
+import { assert } from "console";
+import { FACTORY_ROLE, ZERO } from "../cli/helper";
+import { executeTx, deployContract, ChainId, getAddress } from "./helper";
+const { EtherscanProvider } = require("@ethersproject/providers");
+const { expect } = require("chai");
+const { ethers } = require("hardhat");
+const {
+  now,
+  mine,
+  setTime,
+  setTimeAndMine,
+  Ganache,
+  impersonate,
+  skipBlocks,
+  stopMining,
+  startMining,
+  addToBlock,
+} = require("./helpers");
+const LPS = require("./LiquidityProtectionService.json");
+
+const expectArray = (actual, expected) => {
+  for (let i = 0; i < actual.length; i++) {
+    expect(actual[i].toString()).to.equal(expected[i].toString());
+  }
+};
+
+describe("Market Order", function () {
+  before(async function () {
+    // setup the whole contracts
+    const [deployer] = await ethers.getSigners();
+
+    // Get before state
+    console.log(
+      `Deployer balance: ${ethers.utils.formatEther(
+        await deployer.getBalance()
+      )} ETH`
+    );
+
+    // Deploy WETH
+    console.log(`Deploying Wrapped ETH with the account: ${deployer.address}`);
+    const WETH = await ethers.getContractFactory("WETH9_");
+    const weth = await WETH.deploy();
+    await deployContract(weth, "WETH9_");
+
+    // deposit WETH for test
+    const wethDeposit = await weth.deposit({
+      value: ethers.utils.parseEther("1"),
+    });
+    await executeTx(wethDeposit, "Execute deposit at");
+
+    // Deploy two tokens
+
+    // Deploy OrderFactory
+
+    // Deploy OrderbookFactory
+
+    // Deploy Matching Engine
+
+
+  });
+
+  it("A orderbook should be able to open a book between two tokens", async function () {
+    const vaultAddr = this.vault;
+    console.log(vaultAddr);
+    // Test vault
+    const Vault = await ethers.getContractFactory("Vault");
+
+    // Deposit Collateral
+    const depositCollateral = await Vault.attach(
+      vaultAddr
+    ).depositCollateralNative({ value: ethers.utils.parseEther("0.1") });
+
+    await executeTx(depositCollateral, "Execute depositCollateralNative at");
+  });
+
+  it("An orderbook should be able to store bid order", async function () {
+     });
+
+  it("An orderbook should be able to store ask order and match existing one", async function () {
+    
+  });
+
+  it("An orderbook should be able to store bid order and match existing one", async function () {
+    
+  });
+
+  it("An orderbook should be able to bid multiple price orders", async function () {
+    
+  });
+
+  it("An orderbook should be able to ask multiple price orders", async function () {
+    
+  });
+
+  it("An orderbook should match ask orders to bidOrders at lowestBid then lowest bid should be updated after depleting lowest bid orders", async function () {
+    
+  });
+
+  it("An orderbook should match bid orders to askOrders at highestAsk then highest ask should be updated after depleting highest ask orders", async function () {
+   
+  });
+});
+

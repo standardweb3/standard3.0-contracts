@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 
 import "../interfaces/IOrderbook.sol";
 import "../interfaces/IOrder.sol";
-import "../interfaces/IOrderFactory.sol";
 import "../interfaces/IEngine.sol";
 import "../libraries/Initializable.sol";
 
@@ -22,8 +21,18 @@ contract Orderbook is IOrderbook, Initializable {
     // address of the engine
     address public engine;
 
+    // Order struct
+    struct Order {
+        address owner;
+        bool isAsk;
+        uint256 price;
+        address deposit;
+        uint256 depositAmount;
+        uint256 filled;
+    }
+
     // Order book hashmap
-    address[] public orders;
+    Order[] public orders;
     // Order book storage (key: (Price, Index), value: orderId)
     mapping(bytes32 => uint256) internal askOrderQueue;
     // Order book queue's last index (key: Price, value: last index of orders by price)
@@ -89,13 +98,32 @@ contract Orderbook is IOrderbook, Initializable {
         }
     }
 
+    function _createOrder(
+        address owner_,
+        bool isAsk_,
+        uint256 price_,
+        address deposit_,
+        uint256 depositAmount_
+    ) internal       pure
+returns (Order memory order) {
+        Order memory order = Order({
+            owner: owner_,
+            isAsk: isAsk_,
+            price: price_,
+            deposit: deposit_,
+            depositAmount: depositAmount_,
+            filled: 0
+        });
+        return order;
+    }
+
     function placeBid(uint256 price, uint256 amount) external {
         /// Create order and save to order book
         if (!isInitialized(price, false)) {
             bidOrderFirst[price] = 1;
             bidOrderLast[price] = 0;
         }
-        (address order, uint256 orderId) = IOrderFactory(orderFactory)
+        (address order) = IOrderFactory(orderFactory)
             .createOrder(
                 id,
                 msg.sender,
@@ -107,7 +135,7 @@ contract Orderbook is IOrderbook, Initializable {
                 amount
             );
         _enqueue(price, false, orderId);
-        orders[orderId] = order;
+        orders.push(order);
         // event
     }
 
@@ -129,7 +157,9 @@ contract Orderbook is IOrderbook, Initializable {
                 amount
             );
         _enqueue(price, true, orderId);
-        orders[orderId] = order;
+        orders.push(order);
+        // send deposit to order
+
         // event
     }
 

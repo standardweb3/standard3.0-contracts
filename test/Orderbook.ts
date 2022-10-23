@@ -99,6 +99,7 @@ describe("Basic Operations", function () {
     this.orderbookFactory = orderbookFactory;
     this.token1 = token1;
     this.token2 = token2;
+    this.deployer = deployer;
   });
 
   it("A orderbook should be able to open a book between two tokens", async function () {
@@ -121,14 +122,20 @@ describe("Basic Operations", function () {
 
   
 
-  it("An orderbook should be able to store bid order", async function () {
-    const marketBuy = await this.matchingEngine.marketSell(this.token1.address, this.token2.address, ethers.utils.parseEther("1000"));
-    await executeTx(marketBuy, "Market sell at");
+  it("An orderbook should be able to store bid limit order", async function () {
+    const before = await this.token1.balanceOf(this.deployer.address);
+    // <base>/<quote>(<token1>/<token2>) = 1.00000000
+    const limitSell = await this.matchingEngine.limitSell(this.token1.address, this.token2.address, ethers.utils.parseEther("1000"), 100000000);
+    await executeTx(limitSell, "limit sell at");
+    const after =  await this.token1.balanceOf(this.deployer.address);
+    expect(before.sub(after).toString()).to.equal(ethers.utils.parseEther("997").toString());
   });
 
-  it("An orderbook should be able to store ask order and match existing one", async function () {
-    const marketSell = await this.matchingEngine.marketBuy(this.token1.address, this.token2.address, ethers.utils.parseEther("1000"));
-    await executeTx(marketSell, "Market buy at");
+  it("An orderbook should be able to store ask limit order and match existing one", async function () {
+    const before = await this.token1.balanceOf(this.deployer.address);
+    const limitBuy = await this.matchingEngine.limitBuy(this.token1.address, this.token2.address, ethers.utils.parseEther("1000"), 100000000);
+    await executeTx(limitBuy, "Limit buy at");
+    const after =  await this.token1.balanceOf(this.deployer.address);
   });
 
   it("An orderbook should be able to store bid order and match existing one", async function () {

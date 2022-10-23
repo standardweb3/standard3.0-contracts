@@ -88,6 +88,12 @@ describe("Basic Operations", function () {
 
     await executeTx(initOrderFactory, "Initialize Order Factory at");
 
+    // Approve Matching Engine to use tokens
+    const approveToken1 = await token1.approve(matchingEngine.address, ethers.utils.parseEther("1000000"));
+    await executeTx(approveToken1, "Approve Matching Engine to use Token1 at");
+    const approveToken2 = await token2.approve(matchingEngine.address, ethers.utils.parseEther("1000000"));
+    await executeTx(approveToken2, "Approve Matching Engine to use Token2 at");
+
     this.matchingEngine = matchingEngine;
     this.orderFactory = orderFactory;
     this.orderbookFactory = orderbookFactory;
@@ -109,13 +115,20 @@ describe("Basic Operations", function () {
     const token2 = await orderbook.ask();
     expect(token1).to.equal(this.token1.address);
     expect(token2).to.equal(this.token2.address);
+
+    // Once an orderbook is set between pair, you cannot add another vice versa
   });
 
+  
+
   it("An orderbook should be able to store bid order", async function () {
-     });
+    const marketBuy = await this.matchingEngine.marketSell(this.token1.address, this.token2.address, ethers.utils.parseEther("1000"));
+    await executeTx(marketBuy, "Market sell at");
+  });
 
   it("An orderbook should be able to store ask order and match existing one", async function () {
-    
+    const marketSell = await this.matchingEngine.marketBuy(this.token1.address, this.token2.address, ethers.utils.parseEther("1000"));
+    await executeTx(marketSell, "Market buy at");
   });
 
   it("An orderbook should be able to store bid order and match existing one", async function () {

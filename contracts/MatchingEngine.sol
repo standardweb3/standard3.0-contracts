@@ -41,10 +41,10 @@ contract MatchingEngine is AccessControl {
         feeNum = 3;
     }
 
-    function initialize(
-        address orderbookFactory_,
-        address orderFactory_
-    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function initialize(address orderbookFactory_, address orderFactory_)
+        public
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
         orderbookFactory = orderbookFactory_;
         orderFactory = orderFactory_;
     }
@@ -123,7 +123,7 @@ contract MatchingEngine is AccessControl {
 
     function _execute(
         address order,
-        address from,
+        address give,
         uint256 amount,
         uint256 priceAt,
         bool isAsk
@@ -133,24 +133,24 @@ contract MatchingEngine is AccessControl {
             require(
                 IOrder(order).verifyRatio(
                     IOrder(order).deposit(),
-                    from,
+                    give,
                     amount,
                     required
                 ),
                 "Invalid ratio"
             );
-            IERC20(from).transfer(order, required);
+            IERC20(give).transfer(order, required);
         } else {
             require(
                 IOrder(order).verifyRatio(
-                    from,
+                    give,
                     IOrder(order).deposit(),
                     required,
                     amount
                 ),
                 "Invalid ratio"
             );
-            IERC20(from).transfer(order, required);
+            IERC20(give).transfer(order, required);
         }
         // let the order escrow the order
         IOrder(order).execute(msg.sender, amount);
@@ -159,7 +159,7 @@ contract MatchingEngine is AccessControl {
     // match bid if isAsk == true, match ask if isAsk == false
     function _matchAt(
         address orderbook,
-        address from,
+        address give,
         bool isAsk,
         uint256 amount,
         uint256 priceAt
@@ -172,12 +172,18 @@ contract MatchingEngine is AccessControl {
             uint256 orderId = IOrderbook(orderbook).dequeue(priceAt, !isAsk);
             address order = IOrderbook(orderbook).getOrder(orderId);
             if (remaining < IOrder(order).depositAmount()) {
-                _execute(order, from, remaining, priceAt, isAsk);
+                _execute(order, give, remaining, priceAt, isAsk);
                 // emit event orderfilled, no need to edit price head
                 return 0;
             } else {
                 remaining -= IOrder(order).depositAmount();
-                _execute(order, from, IOrder(order).depositAmount(), priceAt, isAsk);
+                _execute(
+                    order,
+                    give,
+                    IOrder(order).depositAmount(),
+                    priceAt,
+                    isAsk
+                );
                 // event orderfullfilled
             }
         }
@@ -199,29 +205,23 @@ contract MatchingEngine is AccessControl {
         uint256 amount,
         address base,
         address quote,
-        address from,
+        address give,
         bool isAsk
     ) internal {
         uint256 remaining = amount;
         if (isAsk) {
-            require(quote == from, "Order is not ask");
+            require(quote == give, "Order is not ask");
             // check if there is any ask order in the price at the head
             while (remaining > 0 && askHead != 0) {
-                remaining = _matchAt(
-                    orderbook,
-                    from,
-                    true,
-                    remaining,
-                    askHead
-                );
+                remaining = _matchAt(orderbook, give, true, remaining, askHead);
             }
         } else {
-            require(base == from, "Order is not bid");
+            require(base == give, "Order is not bid");
             // check if there is any bid order in the price at the head
             while (remaining > 0 && bidHead != 0) {
                 remaining = _matchAt(
                     orderbook,
-                    from,
+                    give,
                     false,
                     remaining,
                     bidHead
@@ -235,30 +235,24 @@ contract MatchingEngine is AccessControl {
         uint256 amount,
         address base,
         address quote,
-        address from,
+        address give,
         bool isAsk,
         uint256 limitPrice
     ) internal returns (uint256 remaining) {
         remaining = amount;
         if (isAsk) {
-            require(quote == from, "Order is not ask");
+            require(quote == give, "Order is not ask");
             // check if there is any ask order in the price at the head
             while (remaining > 0 && askHead < limitPrice) {
-                remaining = _matchAt(
-                    orderbook,
-                    from,
-                    true,
-                    remaining,
-                    askHead
-                );
+                remaining = _matchAt(orderbook, give, true, remaining, askHead);
             }
         } else {
-            require(base == from, "Order is not ask");
+            require(base == give, "Order is not ask");
             // check if there is any bid order in the price at the head
             while (remaining > 0 && bidHead > limitPrice) {
                 remaining = _matchAt(
                     orderbook,
-                    from,
+                    give,
                     false,
                     remaining,
                     bidHead
@@ -270,68 +264,74 @@ contract MatchingEngine is AccessControl {
 
     // Market orders
     function marketBuy(
-        address token,
-        address from,
+        address take,
+        address give,
         uint256 amount
     ) external {
         address orderbook = IOrderbookFactory(orderbookFactory).getBookByPair(
-            token,
-            from
+            take,
+            give
         );
-        (address base, address quote) = IOrderbookFactory(orderbook)
+        (address base, address quote) = IOrderbookFactory(orderbookFactory)
             .getBaseQuote(orderbook);
-        // transfer input asset from user to this contract
-        IERC20(from).transferFrom(msg.sender, address(this), amount);
+        // transfer input asset give user to this contract
+        IERC20(give).transferFrom(msg.sender, address(this), amount);
         // send fee to fee receiver
-        uint fee = amount * feeNum/ feeDenom;
-        IERC20(from).transfer(feeTo, fee);
-        // negate on from if the asset is not the base
-        _marketOrder(orderbook, amount-fee, base, quote, from, token == base);
+        uint256 fee = (amount * feeNum) / feeDenom;
+        IERC20(give).transfer(feeTo, fee);
+        // negate on give if the asset is not the base
+        _marketOrder(orderbook, amount - fee, base, quote, give, take == base);
     }
 
     function marketSell(
-        address token,
-        address from,
+        address take,
+        address give,
         uint256 amount
     ) external {
         address orderbook = IOrderbookFactory(orderbookFactory).getBookByPair(
-            token,
-            from
+            take,
+            give
         );
-        (address base, address quote) = IOrderbookFactory(orderbook)
+        (address base, address quote) = IOrderbookFactory(orderbookFactory)
             .getBaseQuote(orderbook);
+        // transfer input asset give user to this contract
+        IERC20(give).transferFrom(msg.sender, address(this), amount);
+
         // send fee to fee receiver
-        uint fee = amount * feeNum/ feeDenom;
-        IERC20(from).transfer(feeTo, fee);
-        // negate on from if the asset is not the quote
-        _marketOrder(orderbook, amount-fee, base, quote, from, token != base);
+        uint256 fee = (amount * feeNum) / feeDenom;
+        IERC20(give).transfer(feeTo, fee);
+        // negate on give if the asset is not the quote
+        _marketOrder(orderbook, amount - fee, base, quote, give, take != base);
     }
 
     // Limit orders
     function limitBuy(
-        address token,
-        address from,
+        address take,
+        address give,
         uint256 amount,
         uint256 at
     ) external {
         // place order with remaining
         address orderbook = IOrderbookFactory(orderbookFactory).getBookByPair(
-            token,
-            from
+            take,
+            give
         );
-        (address base, address quote) = IOrderbookFactory(orderbook)
+        (address base, address quote) = IOrderbookFactory(orderbookFactory)
             .getBaseQuote(orderbook);
+        // transfer input asset give user to this contract
+        IERC20(give).transferFrom(msg.sender, address(this), amount);
+
         // send fee to fee receiver
-        uint fee = amount * feeNum/ feeDenom;
-        IERC20(from).transfer(feeTo, fee);
-        // negate on from if the asset is not the base
+        uint256 fee = (amount * feeNum) / feeDenom;
+        IERC20(give).transfer(feeTo, fee);
+        // negate on give if the asset is not the base
         uint256 remaining = _limitOrder(
             orderbook,
             amount,
             base,
             quote,
-            from,
-            token == base,
+            give,
+            take == base,
             at
         );
         if (remaining > 0) {
@@ -343,29 +343,32 @@ contract MatchingEngine is AccessControl {
     }
 
     function limitSell(
-        address token,
-        address from,
+        address take,
+        address give,
         uint256 amount,
         uint256 at
     ) external {
         // place order with remaining
         address orderbook = IOrderbookFactory(orderbookFactory).getBookByPair(
-            token,
-            from
+            take,
+            give
         );
-        (address base, address quote) = IOrderbookFactory(orderbook)
+        (address base, address quote) = IOrderbookFactory(orderbookFactory)
             .getBaseQuote(orderbook);
+        // transfer input asset give user to this contract
+        IERC20(give).transferFrom(msg.sender, address(this), amount);
+
         // send fee to fee receiver
-        uint fee = amount * feeNum/ feeDenom;
-        IERC20(from).transfer(feeTo, fee);
-        // negate on from if the asset is not the quote
+        uint256 fee = (amount * feeNum) / feeDenom;
+        IERC20(give).transfer(feeTo, fee);
+        // negate on give if the asset is not the quote
         uint256 remaining = _limitOrder(
             orderbook,
             amount,
             base,
             quote,
-            from,
-            token != base,
+            give,
+            take != base,
             at
         );
         if (remaining > 0) {
@@ -380,10 +383,10 @@ contract MatchingEngine is AccessControl {
         external
         returns (address book)
     {
-        // TODO: take fee from the sender (e.g. 100k value of network token)
+        // TODO: take fee give the sender (e.g. 100k value of network take)
 
         // create pair name (i.e. ETH/DAI, <Bid/Ask>, <Base/Quote>)
-        // get pair names from erc20
+        // get pair names give erc20
         string memory baseSymbol = IERC20(base).symbol();
         string memory quoteSymbol = IERC20(quote).symbol();
         string memory pairName = string(

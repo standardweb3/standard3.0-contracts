@@ -3,21 +3,9 @@
 pragma solidity >=0.5.0;
 
 interface IOrderbook {
-    function pairInfo()
-        external
-        returns (
-            string memory,
-            uint256,
-            address,
-            address
-        );
-
     function initialize(
-        uint256 id_,
-        string memory pairName_,
-        address bid_,
-        address ask_,
-        address orderFactory_,
+        address base_,
+        address quote_,
         address engine_
     ) external;
 
@@ -29,15 +17,13 @@ interface IOrderbook {
 
     function isEmpty(uint256 price, bool isAsk) external view returns (bool);
 
-    function engine() external view returns (address);
+    function getOrderDepositAmount(uint256 orderId) external view returns (uint256 depositAmount); 
 
-    function id() external view returns (uint256 bookId);
+    function placeAsk(address owner, uint256 price, uint256 amount) external;
 
-    function getOrder(uint256 orderId) external view returns (address order); 
+    function placeBid(address owner, uint256 price, uint256 amount) external;
 
-    function getQuote(address deposit) external view returns (address quote);
+    function execute(uint256 orderId, address sender, uint256 amount) external;
 
-    function placeAsk(uint256 price, uint256 amount) external;
-
-    function placeBid(uint256 price, uint256 amount) external;
+    function heads() external pure returns (uint256 askHead, uint256 bidHead);
 }

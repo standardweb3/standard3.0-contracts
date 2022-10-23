@@ -45,8 +45,7 @@ const config: HardhatUserConfig = {
     currency: "ETH",
     token: "ETH",
     enabled: process.env.REPORT_GAS === "true",
-    gasPrice: 100,
-    excludeContracts: ["ERC20Mock", "ERC20", "WETH9"],
+    excludeContracts: ["ERC20Mock", "WETH9"],
   },
   namedAccounts: {
     deployer: {

@@ -3,15 +3,14 @@
 pragma solidity >=0.5.0;
 
 interface IOrderbookFactory {
+    
     function createBook(
-        string memory pairName_,
         address bid_,
         address ask_,
-        address orderFactory_,
         address engine_
-    ) external returns (address orderbook, uint256 bookId);
+    ) external returns (address orderbook);
 
-    function getBook(uint256 bookId_) external view returns (address);
+    function getBook(uint256 bookId_) external view returns (address orderbook);
 
     function getBookByPair(address base, address quote) external view  returns (address book); 
 

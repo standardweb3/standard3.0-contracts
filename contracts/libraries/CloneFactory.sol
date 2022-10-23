@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
+pragma solidity ^0.8.10;
+
 library CloneFactory {
     function _createClone(address target) internal returns (address result) {
     // convert address to 20 bytes

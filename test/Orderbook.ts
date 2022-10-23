@@ -44,18 +44,21 @@ describe("Basic Operations", function () {
     await deployContract(token2, "Token2");
 
     // mint tokens for test
-    const token1Mint = await token1.mint(deployer.address, ethers.utils.parseEther("1000000"));
+    const token1Mint = await token1.mint(
+      deployer.address,
+      ethers.utils.parseEther("1000000")
+    );
     await executeTx(token1Mint, "Execute mint at");
-    const token2Mint = await token2.mint(deployer.address, ethers.utils.parseEther("1000000"));
+    const token2Mint = await token2.mint(
+      deployer.address,
+      ethers.utils.parseEther("1000000")
+    );
     await executeTx(token2Mint, "Execute mint at");
 
-    // Deploy OrderFactory
-    const OrderFactory = await ethers.getContractFactory("OrderFactory");
-    const orderFactory = await OrderFactory.deploy();
-    await deployContract(orderFactory, "OrderFactory");
-
     // Deploy OrderbookFactory
-    const OrderbookFactory = await ethers.getContractFactory("OrderbookFactory");
+    const OrderbookFactory = await ethers.getContractFactory(
+      "OrderbookFactory"
+    );
     const orderbookFactory = await OrderbookFactory.deploy();
     await deployContract(orderbookFactory, "OrderbookFactory");
 
@@ -66,12 +69,10 @@ describe("Basic Operations", function () {
 
     // initialize Matching Engine
     const initMatchingEngine = await matchingEngine.initialize(
-      orderbookFactory.address,
-      orderFactory.address
+      orderbookFactory.address
     );
 
     await executeTx(initMatchingEngine, "Initialize Matching Engine at");
-
 
     // initialize Orderbook Factory
     const initOrderbookFactory = await orderbookFactory.initialize(
@@ -81,21 +82,19 @@ describe("Basic Operations", function () {
 
     await executeTx(initOrderbookFactory, "Initialize Orderbook Factory at");
 
-    // initialize Order Factory
-    const initOrderFactory = await orderFactory.initialize(
-      "0x0000000000000000000000000000000000000000",
-    );
-
-    await executeTx(initOrderFactory, "Initialize Order Factory at");
-
     // Approve Matching Engine to use tokens
-    const approveToken1 = await token1.approve(matchingEngine.address, ethers.utils.parseEther("1000000"));
+    const approveToken1 = await token1.approve(
+      matchingEngine.address,
+      ethers.utils.parseEther("1000000")
+    );
     await executeTx(approveToken1, "Approve Matching Engine to use Token1 at");
-    const approveToken2 = await token2.approve(matchingEngine.address, ethers.utils.parseEther("1000000"));
+    const approveToken2 = await token2.approve(
+      matchingEngine.address,
+      ethers.utils.parseEther("1000000")
+    );
     await executeTx(approveToken2, "Approve Matching Engine to use Token2 at");
 
     this.matchingEngine = matchingEngine;
-    this.orderFactory = orderFactory;
     this.orderbookFactory = orderbookFactory;
     this.token1 = token1;
     this.token2 = token2;
@@ -109,53 +108,63 @@ describe("Basic Operations", function () {
       this.token2.address
     );
     await executeTx(addBook, "Create orderbook at");
-    
-    const orderbookAddress = await this.matchingEngine.orderbooks(0);
+
+    const orderbookAddress = await this.matchingEngine.getOrderbook("0");
     const orderbook = await ethers.getContractAt("Orderbook", orderbookAddress);
-    const token1 = await orderbook.bid();
-    const token2 = await orderbook.ask();
-    expect(token1).to.equal(this.token1.address);
-    expect(token2).to.equal(this.token2.address);
+    const baseQuote = await this.orderbookFactory.getBaseQuote(orderbook.address);
+    expect(baseQuote[0]).to.equal(this.token1.address);
+    expect(baseQuote[1]).to.equal(this.token2.address);
 
     // Once an orderbook is set between pair, you cannot add another vice versa
   });
 
-  
-
   it("An orderbook should be able to store bid limit order", async function () {
     const before = await this.token1.balanceOf(this.deployer.address);
     // <base>/<quote>(<token1>/<token2>) = 1.00000000
-    const limitSell = await this.matchingEngine.limitSell(this.token1.address, this.token2.address, ethers.utils.parseEther("1000"), 100000000);
-    await executeTx(limitSell, "limit sell at");
-    const after =  await this.token1.balanceOf(this.deployer.address);
-    expect(before.sub(after).toString()).to.equal(ethers.utils.parseEther("997").toString());
+    const limitSell1 = await this.matchingEngine.limitSell(
+      this.token1.address,
+      this.token2.address,
+      ethers.utils.parseEther("500"),
+      100000000
+    );
+    const limitSell2 = await this.matchingEngine.limitSell(
+      this.token1.address,
+      this.token2.address,
+      ethers.utils.parseEther("500"),
+      100000000
+    );
+    await executeTx(limitSell1, "limit sell at");
+    await executeTx(limitSell2, "limit sell at");
+    const after = await this.token1.balanceOf(this.deployer.address);
+    expect(before.sub(after).toString()).to.equal(
+      ethers.utils.parseEther("997").toString()
+    );
   });
 
   it("An orderbook should be able to store ask limit order and match existing one", async function () {
     const before = await this.token1.balanceOf(this.deployer.address);
-    const limitBuy = await this.matchingEngine.limitBuy(this.token1.address, this.token2.address, ethers.utils.parseEther("1000"), 100000000);
+    const limitBuy = await this.matchingEngine.limitBuy(
+      this.token1.address,
+      this.token2.address,
+      ethers.utils.parseEther("1000"),
+      100000000
+    );
     await executeTx(limitBuy, "Limit buy at");
-    const after =  await this.token1.balanceOf(this.deployer.address);
+    const after = await this.token1.balanceOf(this.deployer.address);
+    //const mktPrice = await this.matchingEngine.mktPrice();
+    expect(after.sub(before).toString()).to.equal(
+      ethers.utils.parseEther("0").toString()
+    );
+    //expect(mktPrice.toString()).to.equal("100000000");
   });
 
-  it("An orderbook should be able to store bid order and match existing one", async function () {
-    
-  });
+  it("An orderbook should be able to store bid order and match existing one", async function () {});
 
-  it("An orderbook should be able to bid multiple price orders", async function () {
-    
-  });
+  it("An orderbook should be able to bid multiple price orders", async function () {});
 
-  it("An orderbook should be able to ask multiple price orders", async function () {
-    
-  });
+  it("An orderbook should be able to ask multiple price orders", async function () {});
 
-  it("An orderbook should match ask orders to bidOrders at lowestBid then lowest bid should be updated after depleting lowest bid orders", async function () {
-    
-  });
+  it("An orderbook should match ask orders to bidOrders at lowestBid then lowest bid should be updated after depleting lowest bid orders", async function () {});
 
-  it("An orderbook should match bid orders to askOrders at highestAsk then highest ask should be updated after depleting highest ask orders", async function () {
-   
-  });
+  it("An orderbook should match bid orders to askOrders at highestAsk then highest ask should be updated after depleting highest ask orders", async function () {});
 });
-

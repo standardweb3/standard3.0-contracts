@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.10;
 
-contract Order {
-
+library NewOrderLibrary {
+    // Order struct
     struct Order {
         address owner;
         bool isAsk;
@@ -18,9 +19,8 @@ contract Order {
         uint256 price_,
         address deposit_,
         uint256 depositAmount_
-    ) internal       pure
-returns (Order memory order) {
-        Order memory order = Order({
+    ) internal pure returns (Order memory order) {
+        Order memory ord = Order({
             owner: owner_,
             isAsk: isAsk_,
             price: price_,
@@ -28,6 +28,6 @@ returns (Order memory order) {
             depositAmount: depositAmount_,
             filled: 0
         });
-        return order;
+        return ord;
     }
 }

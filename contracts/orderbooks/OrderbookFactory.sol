@@ -39,30 +39,23 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory {
     impl = impl_;
   }
 
-  /// Vault can issue stablecoin, it just manages the position
   function createBook(
-        string memory pairName_,
         address bid_,
         address ask_,
-        address orderFactory_,
         address engine_
-  ) external override returns (address vault, uint256 id) {
+  ) external override returns (address orderbook) {
     require(msg.sender == engine, "OrderbookFactory: IA");
-    uint256 gIndex = allOrderbooksLength();
     address proxy = CloneFactory._createClone(impl);
     IOrderbook(proxy).initialize(
-        gIndex,
-        pairName_,
         bid_,
         ask_,
-        orderFactory_,
         engine_
     );
     allOrderbooks.push(proxy);
     orderbookByBaseQuote[bid_][ask_] = proxy;
     orderbookByBaseQuote[ask_][bid_] = proxy;
     baseQuoteByOrderbook[proxy] = Pair(bid_, ask_);
-    return (proxy, gIndex);
+    return (proxy);
   }
 
   // Set immutable, consistent, one rule for vault implementation

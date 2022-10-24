@@ -9,7 +9,7 @@ import "../interfaces/IOrderbookFactory.sol";
 
 
 contract OrderbookFactory is AccessControl, IOrderbookFactory {
-  // Vaults
+  // Orderbooks
   address[] public allOrderbooks;
   /// Address of Wrapped Ether
   address public override WETH;

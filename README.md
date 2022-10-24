@@ -1,2 +1,2 @@
 # new-order-contracts
-Solidity contracts for new-order
+Solidity contracts for New Order

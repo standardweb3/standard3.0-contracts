@@ -106,44 +106,108 @@ contract MatchingEngine is AccessControl {
                 );
             }
         }
-        return remaining;
+        return (remaining);
+    }
+
+    function _deposit(
+        address base,
+        address quote,
+        uint256 amount,
+        bool isAsk
+    ) internal returns (uint256 withoutFee, address orderbook) {
+        orderbook = IOrderbookFactory(orderbookFactory).getBookByPair(
+            base,
+            quote
+        );
+        uint256 fee = (amount * feeNum) / feeDenom;
+        withoutFee = amount - fee;
+        if (isAsk) {
+            // transfer input asset give user to this contract
+            TransferHelper.safeTransferFrom(
+                quote,
+                msg.sender,
+                address(this),
+                amount
+            );
+            // send fee to fee receiver
+            TransferHelper.safeTransfer(quote, feeTo, fee);
+        } else {
+            // transfer input asset give user to this contract
+            TransferHelper.safeTransferFrom(
+                base,
+                msg.sender,
+                address(this),
+                amount
+            );
+            // send fee to fee receiver
+            TransferHelper.safeTransfer(base, feeTo, fee);
+        }
+
+        return (withoutFee, orderbook);
     }
 
     // Market orders
     function marketBuy(
         address base,
         address quote,
-        uint256 amount
+        uint256 amount,
+        bool isStop
     ) external {
-        address orderbook = IOrderbookFactory(orderbookFactory).getBookByPair(
+        (uint256 withoutFee, address orderbook) = _deposit(
             base,
-            quote
+            quote,
+            amount,
+            true
         );
-        // transfer input asset give user to this contract
-        TransferHelper.safeTransferFrom(quote, msg.sender, address(this), amount);        
-        // send fee to fee receiver
-        uint256 fee = (amount * feeNum) / feeDenom;
-        TransferHelper.safeTransfer(quote, feeTo, fee);
         // negate on give if the asset is not the base
-        _limitOrder(orderbook, amount - fee, quote, true, type(uint256).max);
+        uint256 remaining = _limitOrder(
+            orderbook,
+            withoutFee,
+            quote,
+            true,
+            type(uint256).max
+        );
+        // add stop order on market price
+        if (isStop) {
+            uint256 mktPrice = IOrderbook(orderbook).mktPrice();
+            _stopOrder(orderbook, remaining, mktPrice, true);
+        }
+        // Take profit
+        else {
+            TransferHelper.safeTransfer(quote, msg.sender, remaining);
+        }
     }
 
     function marketSell(
         address base,
         address quote,
-        uint256 amount
+        uint256 amount,
+        bool isStop
     ) external {
-        address orderbook = IOrderbookFactory(orderbookFactory).getBookByPair(
+        (uint256 withoutFee, address orderbook) = _deposit(
             base,
-            quote
+            quote,
+            amount,
+            false
         );
-        // transfer input asset give user to this contract
-        TransferHelper.safeTransferFrom(base, msg.sender, address(this), amount);        
-        // send fee to fee receiver
-        uint256 fee = (amount * feeNum) / feeDenom;
-        TransferHelper.safeTransfer(base, feeTo, fee);
-        // negate on give if the asset is not the quote
-        _limitOrder(orderbook, amount - fee, base, false, 0);
+        // negate on give if the asset is not the base
+        uint256 remaining = _limitOrder(
+            orderbook,
+            withoutFee,
+            quote,
+            true,
+            type(uint256).max
+        );
+
+        // add stop order on market price
+        if (isStop) {
+            uint256 mktPrice = IOrderbook(orderbook).mktPrice();
+            _stopOrder(orderbook, remaining, mktPrice, true);
+        }
+        // Take profit
+        else {
+            TransferHelper.safeTransfer(base, msg.sender, remaining);
+        }
     }
 
     // Limit orders
@@ -151,25 +215,24 @@ contract MatchingEngine is AccessControl {
         address base,
         address quote,
         uint256 amount,
-        uint256 at
+        uint256 at,
+        bool isStop
     ) external {
-        // place order with remaining
-        address orderbook = IOrderbookFactory(orderbookFactory).getBookByPair(
+        (uint256 withoutFee, address orderbook) = _deposit(
             base,
-            quote
+            quote,
+            amount,
+            true
         );
-        // transfer input asset give user to this contract
-        TransferHelper.safeTransferFrom(quote, msg.sender, address(this), amount);        
-        // send fee to fee receiver
-        uint256 fee = (amount * feeNum) / feeDenom;
-        TransferHelper.safeTransfer(quote, feeTo, fee);
         // negate on give if the asset is not the base
-        uint256 remaining = _limitOrder(orderbook, amount - fee, quote, true, at);
+        uint256 remaining = _limitOrder(orderbook, withoutFee, quote, true, at);
         if (remaining > 0) {
-            // send remaining to orderbook
-            TransferHelper.safeTransfer(quote, orderbook, remaining);
-            // create order
-            IOrderbook(orderbook).placeAsk(msg.sender, at, remaining);
+            if (isStop) {
+                _stopOrder(orderbook, remaining, at, true);
+            } else {
+                // take profit
+                TransferHelper.safeTransfer(quote, msg.sender, remaining);
+            }
         }
     }
 
@@ -177,26 +240,70 @@ contract MatchingEngine is AccessControl {
         address base,
         address quote,
         uint256 amount,
+        uint256 at,
+        bool isStop
+    ) external {
+        (uint256 withoutFee, address orderbook) = _deposit(
+            base,
+            quote,
+            amount,
+            false
+        );
+        // negate on give if the asset is not the quote
+        uint256 remaining = _limitOrder(orderbook, withoutFee, base, false, at);
+        if (remaining > 0) {
+            if (isStop) {
+                _stopOrder(orderbook, remaining, at, false);
+            } else {
+                // take profit
+                TransferHelper.safeTransfer(base, msg.sender, remaining);
+            }
+        }
+    }
+
+    function _stopOrder(
+        address orderbook,
+        uint256 withoutFee,
+        uint256 at,
+        bool isAsk
+    ) internal {
+        // create order
+        if (isAsk) {
+            IOrderbook(orderbook).placeAsk(msg.sender, at, withoutFee);
+        } else {
+            IOrderbook(orderbook).placeBid(msg.sender, at, withoutFee);
+        }
+    }
+
+    // Stop orders
+    function stopBuy(
+        address base,
+        address quote,
+        uint256 amount,
         uint256 at
     ) external {
-        // place order with remaining
-        address orderbook = IOrderbookFactory(orderbookFactory).getBookByPair(
+        (uint256 withoutFee, address orderbook) = _deposit(
             base,
-            quote
+            quote,
+            amount,
+            false
         );
-        // transfer input asset give user to this contract
-        TransferHelper.safeTransferFrom(base, msg.sender, address(this), amount);        
-        // send fee to fee receiver
-        uint256 fee = (amount * feeNum) / feeDenom;
-        TransferHelper.safeTransfer(base, feeTo, fee);
-        // negate on give if the asset is not the quote
-        uint256 remaining = _limitOrder(orderbook, amount - fee, base, false, at);
-        if (remaining > 0) {
-            // send remaining to orderbook
-            TransferHelper.safeTransfer(base, orderbook, remaining);
-            // create order
-            IOrderbook(orderbook).placeBid(msg.sender, at, remaining);         
-        }
+        _stopOrder(orderbook, withoutFee, at, true);
+    }
+
+    function stopSell(
+        address base,
+        address quote,
+        uint256 amount,
+        uint256 at
+    ) external {
+        (uint256 withoutFee, address orderbook) = _deposit(
+            base,
+            quote,
+            amount,
+            false
+        );
+        _stopOrder(orderbook, withoutFee, at, false);
     }
 
     function addBook(address base, address quote)

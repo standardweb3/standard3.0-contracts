@@ -13,6 +13,8 @@ interface IOrderbook {
         external
         returns (uint256 orderId);
 
+    function mktPrice() external view returns (uint256);
+
     function length(uint256 price, bool isAsk) external view returns (uint256);
 
     function isEmpty(uint256 price, bool isAsk) external view returns (bool);
@@ -25,5 +27,5 @@ interface IOrderbook {
 
     function execute(uint256 orderId, address sender, uint256 amount) external;
 
-    function heads() external pure returns (uint256 askHead, uint256 bidHead);
+    function heads() external view returns (uint256 askHead, uint256 bidHead);
 }

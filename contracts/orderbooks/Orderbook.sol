@@ -169,7 +169,7 @@ contract Orderbook is IOrderbook, Initializable {
     /// Price linked list methods ///
     /////////////////////////////////
 
-    function heads() external pure returns (uint256 askHead, uint256 bidHead) {
+    function heads() external view returns (uint256, uint256) {
         return (askHead, bidHead);
     }
 

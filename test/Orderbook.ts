@@ -94,6 +94,10 @@ describe("Basic Operations", function () {
     );
     await executeTx(approveToken2, "Approve Matching Engine to use Token2 at");
 
+    // set fee to random address other than deployer on Matching Engine fee
+    const setFee = await matchingEngine.setFeeTo("0x8db97C7cEcE249c2b98bDC0226Cc4C2A57BF52FC");
+    await executeTx(setFee, "Set feeTo to zero at");
+
     this.matchingEngine = matchingEngine;
     this.orderbookFactory = orderbookFactory;
     this.token1 = token1;
@@ -124,20 +128,46 @@ describe("Basic Operations", function () {
     const limitSell1 = await this.matchingEngine.limitSell(
       this.token1.address,
       this.token2.address,
-      ethers.utils.parseEther("500"),
-      100000000
+      ethers.utils.parseEther("200"),
+      100000000,
+      true
     );
     const limitSell2 = await this.matchingEngine.limitSell(
       this.token1.address,
       this.token2.address,
-      ethers.utils.parseEther("500"),
-      100000000
+      ethers.utils.parseEther("200"),
+      100000000,
+      true
+    );
+    const limitSell3 = await this.matchingEngine.limitSell(
+      this.token1.address,
+      this.token2.address,
+      ethers.utils.parseEther("200"),
+      100000000,
+      true
+    );
+    const limitSell4 = await this.matchingEngine.limitSell(
+      this.token1.address,
+      this.token2.address,
+      ethers.utils.parseEther("200"),
+      100000000,
+      true
+    );
+    const limitSell5 = await this.matchingEngine.limitSell(
+      this.token1.address,
+      this.token2.address,
+      ethers.utils.parseEther("200"),
+      100000000,
+      true
     );
     await executeTx(limitSell1, "limit sell at");
     await executeTx(limitSell2, "limit sell at");
+    await executeTx(limitSell3, "limit sell at");
+    await executeTx(limitSell4, "limit sell at");
+    await executeTx(limitSell5, "limit sell at");
     const after = await this.token1.balanceOf(this.deployer.address);
     expect(before.sub(after).toString()).to.equal(
-      ethers.utils.parseEther("997").toString()
+      ethers.utils.parseEther("1000").toString()
     );
   });
 
@@ -147,7 +177,8 @@ describe("Basic Operations", function () {
       this.token1.address,
       this.token2.address,
       ethers.utils.parseEther("1000"),
-      100000000
+      100000000,
+      true
     );
     await executeTx(limitBuy, "Limit buy at");
     const after = await this.token1.balanceOf(this.deployer.address);

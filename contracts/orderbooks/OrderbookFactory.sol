@@ -51,7 +51,6 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory {
     );
     allOrderbooks.push(proxy);
     orderbookByBaseQuote[bid_][ask_] = proxy;
-    orderbookByBaseQuote[ask_][bid_] = proxy;
     baseQuoteByOrderbook[proxy] = Pair(bid_, ask_);
     return (proxy);
   }

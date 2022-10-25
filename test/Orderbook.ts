@@ -55,9 +55,21 @@ describe("Basic Operations", function () {
     );
     await executeTx(token2Mint, "Execute mint at");
 
+    // Deploy libraries
+    const NewOrderLinkedList = await ethers.getContractFactory("NewOrderLinkedList");
+    const newOrderLinkedList = await NewOrderLinkedList.deploy();
+    await deployContract(newOrderLinkedList, "NewOrderLinkedList");
+
+    const NewOrderQueue = await ethers.getContractFactory("NewOrderQueue");
+    const newOrderQueue = await NewOrderQueue.deploy();
+    await deployContract(newOrderQueue, "NewOrderQueue");
+
     // Deploy OrderbookFactory
     const OrderbookFactory = await ethers.getContractFactory(
-      "OrderbookFactory"
+      "OrderbookFactory", //{libraries: {
+        //NewOrderLinkedList: newOrderLinkedList.address,
+        // NewOrderQueue: newOrderQueue.address,
+      //}}
     );
     const orderbookFactory = await OrderbookFactory.deploy();
     await deployContract(orderbookFactory, "OrderbookFactory");

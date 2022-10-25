@@ -3,13 +3,17 @@
 pragma solidity ^0.8.0;
 
 import "../interfaces/IOrderbook.sol";
-import "../libraries/Initializable.sol";
+import "../security/Initializable.sol";
 import "../libraries/TransferHelper.sol";
 import "../interfaces/IERC20Minimal.sol";
 import "../libraries/NewOrderLibrary.sol";
+import "../libraries/NewOrderLinkedList.sol";
+import "../libraries/NewOrderQueue.sol";
 
 contract Orderbook is IOrderbook, Initializable {
     using NewOrderLibrary for NewOrderLibrary.Order;
+    using NewOrderLinkedList for NewOrderLinkedList.PriceLinkedList;
+    using NewOrderQueue for NewOrderQueue.OrderQueue;
 
     // Pair Struct
     struct Pair {
@@ -20,36 +24,10 @@ contract Orderbook is IOrderbook, Initializable {
     }
 
     Pair private pair;
-    
-    // address of engine
-    address private engine;
 
-    struct QueueIndex {
-        uint first;
-        uint last;
-    }
-
-    /// Hashmap-style linked list of prices to route orders
-    // key: price, value: next_price (next_price > price)
-    mapping(uint256 => uint256) public bidPrices;
-    // key: price, value: next_price (next_price < price)
-    mapping(uint256 => uint256) public askPrices;
-
-    // Head of the bid price linked list(i.e. highest bid price)
-    uint256 public bidHead;
-    // Head of the ask price linked list(i.e. lowest ask price)
-    uint256 public askHead;
-
-    // Order book hashmap
+    NewOrderLinkedList.PriceLinkedList private priceLists;
+    NewOrderQueue.OrderQueue private orderQueue;
     NewOrderLibrary.Order[] public orders;
-    // Ask Order book storage (key: (Price, Index), value: orderId)
-    mapping(bytes32 => uint256) internal askOrderQueue;
-    // Ask Order book queue's indices (key: Price, value: first and last index of orders by price)
-    mapping(uint256 => QueueIndex) internal askOrderQueueIndex;
-    // Bid Order book storage (key: (Price, Index), value: orderId)
-    mapping(bytes32 => uint256) internal bidOrderQueue;
-    // Bid Order book queue's indices (key: Price, value: first and last index of orders by price)
-    mapping(uint256 => QueueIndex) internal bidOrderQueueIndex;
     
     function initialize(
         address base_,
@@ -57,7 +35,7 @@ contract Orderbook is IOrderbook, Initializable {
         address engine_
     ) public initializer {
         pair = Pair(base_, quote_, IERC20Minimal(base_).decimals(), IERC20Minimal(quote_).decimals());
-        engine = engine_;
+        orderQueue.engine = engine_;
     }
 
     function getOrderDepositAmount(uint256 orderId)
@@ -68,26 +46,16 @@ contract Orderbook is IOrderbook, Initializable {
         return orders[orderId].depositAmount;
     }
 
-    function _createOrder(
-        address owner_,
-        bool isAsk_,
-        uint256 price_,
-        address deposit_,
-        uint256 depositAmount_
-    ) internal pure returns (NewOrderLibrary.Order memory order) {
-        return NewOrderLibrary._createOrder(owner_, isAsk_, price_, deposit_, depositAmount_);
-    }
-
     function placeBid(
         address owner,
         uint256 price,
         uint256 amount
     ) external {
         /// Create order and save to order book
-        _initialize(price, false);
-        NewOrderLibrary.Order memory order = _createOrder(owner, false, price, pair.base, amount);
-        _insert(false, price);
-        _enqueue(price, false, orders.length);
+        orderQueue._initialize(price, false);
+        NewOrderLibrary.Order memory order = NewOrderLibrary._createOrder(owner, false, price, pair.base, amount);
+        priceLists._insert(false, price);
+        orderQueue._enqueue(price, false, orders.length);
         orders.push(order);
         // event
     }
@@ -98,10 +66,10 @@ contract Orderbook is IOrderbook, Initializable {
         uint256 amount
     ) external {
         /// Create order and save to order book
-        _initialize(price, false);
-        NewOrderLibrary.Order memory order = _createOrder(owner, true, price, pair.quote, amount);
-        _insert(true, price);
-        _enqueue(price, true, orders.length);
+        orderQueue._initialize(price, false);
+        NewOrderLibrary.Order memory order = NewOrderLibrary._createOrder(owner, true, price, pair.quote, amount);
+        priceLists._insert(true, price);
+        orderQueue._enqueue(price, true, orders.length);
         orders.push(order);
         // event
     }
@@ -160,189 +128,50 @@ contract Orderbook is IOrderbook, Initializable {
     /////////////////////////////////
 
     function heads() external view returns (uint256, uint256) {
-        return (askHead, bidHead);
+        return priceLists._heads();
     }
 
     function mktPrice() external view returns (uint256) {
-        require(bidHead > 0 && askHead > 0, "No orders matched yet");
-        return (bidHead + askHead) / 2;
+        return priceLists._mktPrice();
     }
-
-    function _next(bool isAsk, uint256 price) internal view returns (uint256) {
-        if (isAsk) {
-            return askPrices[price];
-        } else {
-            return bidPrices[price];
-        }
-    }
-
-    // for askPrices, lower ones are next, for bidPrices, higher ones are next
-    function _insert(bool isAsk, uint256 price) internal {
-        // insert ask price to the linked list
-        if (isAsk) {
-            if (askHead == 0) {
-                askHead = price;
-                return;
-            }
-            uint256 last = askHead;
-            // Traverse through list until we find the right spot
-            while (price < last) {
-                last = askPrices[last];
-            }
-            // what if price is the lowest?
-            // last is zero because it is null in solidity
-            if (last == 0) {
-                askPrices[price] = last;
-                askHead = price;
-            }
-            // what if price is in the middle of the list?
-            else if (askPrices[last] < price) {
-                askPrices[price] = askPrices[last];
-                askPrices[last] = price;
-            }
-            // what if price is already included?
-            else if (price == last) {
-                // do nothing
-            }
-            // what if price is the highest?
-            else {
-                askPrices[price] = last;
-            }
-        }
-        // insert bid price to the linked list
-        else {
-            if (bidHead == 0) {
-                bidHead = price;
-                return;
-            }
-            uint256 last = bidHead;
-            // Traverse through list until we find the right spot
-            while (price > last) {
-                last = bidPrices[last];
-            }
-            // what if price is the highest?
-            if (last == 0) {
-                bidPrices[price] = last;
-                bidHead = price;
-            }
-            // what if price is in the middle of the list?
-            else if (bidPrices[last] > price) {
-                bidPrices[price] = bidPrices[last];
-                bidPrices[last] = price;
-            }
-            // what if price is the lowest?
-            else {
-                bidPrices[price] = last;
-            }
-        }
-    }
+    
 
     /////////////////////////////////
     ///    Order queue methods    ///
     /////////////////////////////////
-    function _getOrderKey(uint256 price, uint256 index)
-        internal
-        pure
-        returns (bytes32)
-    {
-        return keccak256(abi.encodePacked(price, index));
-    }
-
-    function _initialize(uint256 price, bool isAsk) internal {
-        if(isInitialized(price, isAsk)) { return; }
-        if (isAsk) {
-            askOrderQueueIndex[price] = QueueIndex({
-                first: 1,
-                last: 0
-            }); 
-        } else {
-            bidOrderQueueIndex[price] = QueueIndex({
-                first: 1,
-                last: 0
-            }); 
-        }
-    }
-
     function isInitialized(uint256 price, bool isAsk)
         public
         view
         returns (bool)
     {
-        if (isAsk) {
-            return askOrderQueueIndex[price].first == 0 &&
-                askOrderQueueIndex[price].last == 0;
-        } else {
-            return bidOrderQueueIndex[price].first == 0 && 
-                bidOrderQueueIndex[price].last == 0;
-        }
-    }
-
-    function _initializeQueue(uint256 price, bool isAsk) internal {
-        if (isAsk) {
-            askOrderQueueIndex[price].first = 1;
-            askOrderQueueIndex[price].last = 0;
-        } else {
-            bidOrderQueueIndex[price].first = 1;
-            bidOrderQueueIndex[price].last = 0;
-        }
-    }
-
-    function _enqueue(
-        uint256 price,
-        bool isAsk,
-        uint256 orderId
-    ) internal {
-        if (isAsk) {
-            askOrderQueueIndex[price].last += 1;
-            askOrderQueue[_getOrderKey(price, askOrderQueueIndex[price].last)] = orderId;
-        } else {
-            bidOrderQueueIndex[price].last += 1;
-            bidOrderQueue[_getOrderKey(price, bidOrderQueueIndex[price].last)] = orderId;
-        }
+        return orderQueue._isInitialized(price, isAsk);
     }
 
     function dequeue(uint256 price, bool isAsk)
         external
         returns (uint256 orderId)
     {
-        require(msg.sender == engine, "Only engine can dequeue");
-        require(!isEmpty(price, isAsk), "Queue is empty");
+        require(msg.sender == orderQueue.engine, "Only engine can dequeue");
+        require(!orderQueue._isEmpty(price, isAsk), "Queue is empty");
+        orderId = orderQueue._dequeue(price, isAsk);
         if (isAsk) {
-            orderId = askOrderQueue[_getOrderKey(price, askOrderQueueIndex[price].first)];
-            delete askOrderQueue[_getOrderKey(price, askOrderQueueIndex[price].first)];
-            askOrderQueueIndex[price].first += 1;
-            if(askOrderQueueIndex[price].first > askOrderQueueIndex[price].last) {
-                askHead = _next(isAsk, price);
+            if(orderQueue.askOrderQueueIndex[price].first > orderQueue.askOrderQueueIndex[price].last) {
+                priceLists.askHead = priceLists._next(isAsk, price);
             }
             return orderId;
         } else {
-            orderId = bidOrderQueue[_getOrderKey(price, bidOrderQueueIndex[price].first)];
-            delete bidOrderQueue[_getOrderKey(price, bidOrderQueueIndex[price].first)];
-            bidOrderQueueIndex[price].first += 1;
-            if(bidOrderQueueIndex[price].first > bidOrderQueueIndex[price].last) {
-                bidHead = _next(isAsk, price);
+            if(orderQueue.bidOrderQueueIndex[price].first > orderQueue.bidOrderQueueIndex[price].last) {
+                priceLists.bidHead = priceLists._next(isAsk, price);
             }
             return orderId;
         }
     }
 
     function length(uint256 price, bool isAsk) public view returns (uint256) {
-        if (isAsk) {
-            if (askOrderQueueIndex[price].first > askOrderQueueIndex[price].last) {
-                return 0;
-            } else {
-                return askOrderQueueIndex[price].last - askOrderQueueIndex[price].first + 1;
-            }
-        } else {
-            if (bidOrderQueueIndex[price].first > bidOrderQueueIndex[price].last) {
-                return 0;
-            } else {
-                return bidOrderQueueIndex[price].last - bidOrderQueueIndex[price].first + 1;
-            }
-        }
+        return orderQueue._length(price, isAsk);
     }
 
     function isEmpty(uint256 price, bool isAsk) public view returns (bool) {
-        return length(price, isAsk) == 0 || !isInitialized(price, isAsk);
+        return orderQueue._isEmpty(price, isAsk);
     }
 }

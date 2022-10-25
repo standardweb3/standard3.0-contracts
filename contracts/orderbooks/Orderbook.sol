@@ -5,13 +5,20 @@ pragma solidity ^0.8.0;
 import "../interfaces/IOrderbook.sol";
 import "../libraries/Initializable.sol";
 import "../libraries/TransferHelper.sol";
+import "../interfaces/IERC20Minimal.sol";
 
 contract Orderbook is IOrderbook, Initializable {
 
-    // address of base asset
-    address private base;
-    // address of quote asset
-    address private quote;
+    // Pair Struct
+    struct Pair {
+        address base;
+        address quote;
+        uint256 baseDecimals;
+        uint256 quoteDecimals;
+    }
+
+    Pair private pair;
+    
     // address of engine
     address private engine;
 
@@ -57,8 +64,7 @@ contract Orderbook is IOrderbook, Initializable {
         address quote_,
         address engine_
     ) public initializer {
-        base = base_;
-        quote = quote_;
+        pair = Pair(base_, quote_, IERC20Minimal(base_).decimals(), IERC20Minimal(quote_).decimals());
         engine = engine_;
     }
 
@@ -95,7 +101,7 @@ contract Orderbook is IOrderbook, Initializable {
     ) external {
         /// Create order and save to order book
         _initialize(price, false);
-        Order memory order = _createOrder(owner, false, price, base, amount);
+        Order memory order = _createOrder(owner, false, price, pair.base, amount);
         _insert(false, price);
         _enqueue(price, false, orders.length);
         orders.push(order);
@@ -109,7 +115,7 @@ contract Orderbook is IOrderbook, Initializable {
     ) external {
         /// Create order and save to order book
         _initialize(price, false);
-        Order memory order = _createOrder(owner, true, price, quote, amount);
+        Order memory order = _createOrder(owner, true, price, pair.quote, amount);
         _insert(true, price);
         _enqueue(price, true, orders.length);
         orders.push(order);
@@ -123,7 +129,9 @@ contract Orderbook is IOrderbook, Initializable {
         returns (uint256)
     {
         Order memory order = orders[orderId];
-        return order.isAsk ? amount / order.price : amount * order.price;
+        // if order is ask, required amount is quoteAmount / price, converting the number converting decimal from quote to base, otherwise baseAmount * price, converting decimal from base to quote
+        uint256 pIn = order.isAsk ? (amount*pair.baseDecimals) / (order.price*pair.quoteDecimals)  : (amount*pair.quoteDecimals) * (order.price*pair.baseDecimals);
+        return pIn / 1e8;
     }
 
     function execute(
@@ -132,9 +140,7 @@ contract Orderbook is IOrderbook, Initializable {
         uint256 amount
     ) external {
         Order memory order = orders[orderId];
-        uint256 required = order.isAsk
-            ? amount / order.price
-            : amount * order.price;
+        uint256 required = getRequired(orderId, amount);
         // if the order is ask order on the base/quote pair
         if (order.isAsk) {
             // owner is buyer, and sender is seller. if buyer is asking for base asset with quote asset in deposit
@@ -142,7 +148,7 @@ contract Orderbook is IOrderbook, Initializable {
             // send deposit as quote asset to seller
             TransferHelper.safeTransfer(order.deposit, sender, amount);
             // send claimed amount of base asset to buyer
-            TransferHelper.safeTransfer(base, order.owner, required);
+            TransferHelper.safeTransfer(pair.base, order.owner, required);
         }
         // if the order is bid order on the base/quote pair
         else {
@@ -151,7 +157,7 @@ contract Orderbook is IOrderbook, Initializable {
             // send deposit as base asset to buyer
             TransferHelper.safeTransfer(order.deposit, order.owner, amount);
             // send claimed amount of quote asset to seller
-            TransferHelper.safeTransfer(quote, sender, amount);
+            TransferHelper.safeTransfer(pair.quote, sender, amount);
         }
         uint256 absDiff = (order.depositAmount > amount)
             ? (order.depositAmount - amount)

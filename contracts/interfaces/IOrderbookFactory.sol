@@ -16,9 +16,6 @@ interface IOrderbookFactory {
 
     function getBaseQuote(address orderbook) external view returns (address base, address quote);
 
-    /// Address of wrapped eth
-    function WETH() external view returns (address);
-
     /// Address of a manager
     function engine() external view returns (address);
 }

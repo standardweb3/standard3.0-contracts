@@ -76,7 +76,6 @@ describe("Basic Operations", function () {
 
     // initialize Orderbook Factory
     const initOrderbookFactory = await orderbookFactory.initialize(
-      "0x0000000000000000000000000000000000000000",
       matchingEngine.address
     );
 
@@ -173,14 +172,47 @@ describe("Basic Operations", function () {
 
   it("An orderbook should be able to store ask limit order and match existing one", async function () {
     const before = await this.token1.balanceOf(this.deployer.address);
-    const limitBuy = await this.matchingEngine.limitBuy(
+    const limitBuy1 = await this.matchingEngine.limitBuy(
       this.token1.address,
       this.token2.address,
-      ethers.utils.parseEther("1000"),
+      ethers.utils.parseEther("200"),
       100000000,
       true
     );
-    await executeTx(limitBuy, "Limit buy at");
+    const limitBuy2 = await this.matchingEngine.limitBuy(
+      this.token1.address,
+      this.token2.address,
+      ethers.utils.parseEther("200"),
+      100000000,
+      true
+    );
+    const limitBuy3 = await this.matchingEngine.limitBuy(
+      this.token1.address,
+      this.token2.address,
+      ethers.utils.parseEther("200"),
+      100000000,
+      true
+    );
+    const limitBuy4 = await this.matchingEngine.limitBuy(
+      this.token1.address,
+      this.token2.address,
+      ethers.utils.parseEther("200"),
+      100000000,
+      true
+    );
+    const limitBuy5 = await this.matchingEngine.limitBuy(
+      this.token1.address,
+      this.token2.address,
+      ethers.utils.parseEther("200"),
+      100000000,
+      true
+    );
+    
+    await executeTx(limitBuy1, "Limit buy at");
+    await executeTx(limitBuy2, "Limit buy at");
+    await executeTx(limitBuy3, "Limit buy at");
+    await executeTx(limitBuy4, "Limit buy at");
+    await executeTx(limitBuy5, "Limit buy at");
     const after = await this.token1.balanceOf(this.deployer.address);
     //const mktPrice = await this.matchingEngine.mktPrice();
     expect(after.sub(before).toString()).to.equal(

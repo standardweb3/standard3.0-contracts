@@ -13,7 +13,6 @@ interface IOrder {
         uint256 pairId_,
         address owner_,
         address orderbook_,
-        address WETH_,
         bool isAsk_,
         uint256 price_,
         address deposit_,

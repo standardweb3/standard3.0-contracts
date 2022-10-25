@@ -11,8 +11,6 @@ import "../interfaces/IOrderbookFactory.sol";
 contract OrderbookFactory is AccessControl, IOrderbookFactory {
   // Orderbooks
   address[] public allOrderbooks;
-  /// Address of Wrapped Ether
-  address public override WETH;
   /// Address of manager
   address public override engine;
   /// version number of impl
@@ -77,11 +75,9 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory {
   }
 
   function initialize(
-    address weth_,
     address engine_
   ) public {
     require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "IA"); // Invalid Access
-    WETH = weth_;
     engine = engine_;
   } 
 

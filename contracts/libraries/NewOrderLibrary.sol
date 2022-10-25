@@ -20,7 +20,7 @@ library NewOrderLibrary {
         address deposit_,
         uint256 depositAmount_
     ) internal pure returns (Order memory order) {
-        Order memory ord = Order({
+        order = Order({
             owner: owner_,
             isAsk: isAsk_,
             price: price_,
@@ -28,6 +28,6 @@ library NewOrderLibrary {
             depositAmount: depositAmount_,
             filled: 0
         });
-        return ord;
+        return order;
     }
 }

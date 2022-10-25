@@ -6,8 +6,10 @@ import "../interfaces/IOrderbook.sol";
 import "../libraries/Initializable.sol";
 import "../libraries/TransferHelper.sol";
 import "../interfaces/IERC20Minimal.sol";
+import "../libraries/NewOrderLibrary.sol";
 
 contract Orderbook is IOrderbook, Initializable {
+    using NewOrderLibrary for NewOrderLibrary.Order;
 
     // Pair Struct
     struct Pair {
@@ -21,16 +23,6 @@ contract Orderbook is IOrderbook, Initializable {
     
     // address of engine
     address private engine;
-
-    // Order struct
-    struct Order {
-        address owner;
-        bool isAsk;
-        uint256 price;
-        address deposit;
-        uint256 depositAmount;
-        uint256 filled;
-    }
 
     struct QueueIndex {
         uint first;
@@ -49,7 +41,7 @@ contract Orderbook is IOrderbook, Initializable {
     uint256 public askHead;
 
     // Order book hashmap
-    Order[] public orders;
+    NewOrderLibrary.Order[] public orders;
     // Ask Order book storage (key: (Price, Index), value: orderId)
     mapping(bytes32 => uint256) internal askOrderQueue;
     // Ask Order book queue's indices (key: Price, value: first and last index of orders by price)
@@ -82,16 +74,8 @@ contract Orderbook is IOrderbook, Initializable {
         uint256 price_,
         address deposit_,
         uint256 depositAmount_
-    ) internal pure returns (Order memory order) {
-        Order memory ord = Order({
-            owner: owner_,
-            isAsk: isAsk_,
-            price: price_,
-            deposit: deposit_,
-            depositAmount: depositAmount_,
-            filled: 0
-        });
-        return ord;
+    ) internal pure returns (NewOrderLibrary.Order memory order) {
+        return NewOrderLibrary._createOrder(owner_, isAsk_, price_, deposit_, depositAmount_);
     }
 
     function placeBid(
@@ -101,7 +85,7 @@ contract Orderbook is IOrderbook, Initializable {
     ) external {
         /// Create order and save to order book
         _initialize(price, false);
-        Order memory order = _createOrder(owner, false, price, pair.base, amount);
+        NewOrderLibrary.Order memory order = _createOrder(owner, false, price, pair.base, amount);
         _insert(false, price);
         _enqueue(price, false, orders.length);
         orders.push(order);
@@ -115,7 +99,7 @@ contract Orderbook is IOrderbook, Initializable {
     ) external {
         /// Create order and save to order book
         _initialize(price, false);
-        Order memory order = _createOrder(owner, true, price, pair.quote, amount);
+        NewOrderLibrary.Order memory order = _createOrder(owner, true, price, pair.quote, amount);
         _insert(true, price);
         _enqueue(price, true, orders.length);
         orders.push(order);
@@ -128,7 +112,7 @@ contract Orderbook is IOrderbook, Initializable {
         view
         returns (uint256)
     {
-        Order memory order = orders[orderId];
+        NewOrderLibrary.Order memory order = orders[orderId];
         // if order is ask, required amount is quoteAmount / price, converting the number converting decimal from quote to base, otherwise baseAmount * price, converting decimal from base to quote
         uint256 pIn = order.isAsk ? (amount*pair.baseDecimals) / (order.price*pair.quoteDecimals)  : (amount*pair.quoteDecimals) * (order.price*pair.baseDecimals);
         return pIn / 1e8;
@@ -139,7 +123,7 @@ contract Orderbook is IOrderbook, Initializable {
         address sender,
         uint256 amount
     ) external {
-        Order memory order = orders[orderId];
+        NewOrderLibrary.Order memory order = orders[orderId];
         uint256 required = getRequired(orderId, amount);
         // if the order is ask order on the base/quote pair
         if (order.isAsk) {

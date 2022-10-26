@@ -74,6 +74,15 @@ contract Orderbook is IOrderbook, Initializable {
         // event
     }
 
+    function cancelOrder(uint256 orderId, address owner) external {
+        require(msg.sender == orderQueue.engine, "Only engine can dequeue");
+        NewOrderLibrary.Order memory order = orders[orderId];
+        require(order.owner == owner, "Only owner can cancel order");
+        delete orders[orderId];
+        TransferHelper.safeTransfer(order.deposit, owner, order.depositAmount);
+        // event
+    }
+
     // get required amount for executing the order
     function getRequired(uint256 orderId, uint256 amount)
         public

@@ -67,7 +67,13 @@ contract MatchingEngine is AccessControl {
                 IOrderbook(orderbook).execute(orderId, msg.sender, remaining);
                 // emit event orderfilled, no need to edit price head
                 return 0;
-            } else {
+            } 
+            // order is null
+            else if(depositAmount == 0) {
+                continue;
+            } 
+            // remaining >= depositAmount
+            else {
                 remaining -= depositAmount;
                 TransferHelper.safeTransfer(give, orderbook, depositAmount);
                 IOrderbook(orderbook).execute(

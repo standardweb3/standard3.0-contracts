@@ -102,6 +102,7 @@ contract MatchingEngine is AccessControl {
             // check if there is any ask order in the price at the head
             while (remaining > 0 && askHead != 0 && askHead <= limitPrice) {
                 remaining = _matchAt(orderbook, give, true, remaining, askHead);
+                (askHead, bidHead) = IOrderbook(orderbook).heads();
             }
         } else {
             // check if there is any bid order in the price at the head
@@ -113,6 +114,7 @@ contract MatchingEngine is AccessControl {
                     remaining,
                     bidHead
                 );
+                (askHead, bidHead) = IOrderbook(orderbook).heads();
             }
         }
         return (remaining);

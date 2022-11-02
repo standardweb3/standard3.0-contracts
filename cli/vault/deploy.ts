@@ -133,7 +133,13 @@ import { WETH9_ADDRESS } from "@digitalnative/standard-protocol-sdk"
     );
     await executeTx( limitBuy1, "limit buy at");
  
+    await hre.run("verify:verify", {
+      address: matchingEngine.address
+    });
 
+    await hre.run("verify:verify", {
+      address: orderbook.address
+    });
 
   });
 

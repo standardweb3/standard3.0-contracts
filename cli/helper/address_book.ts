@@ -3,7 +3,7 @@ import fs from "fs/promises"
 const inquirer = require('inquirer');
 import "dotenv/config"
 
-export async function getAddress(contract, chain) {
+export async function getAddress(contract: any, chain: any) {
     const filename = 'address-book.json'
     const exists = await fileExists(filename)
     if (exists) {
@@ -14,7 +14,7 @@ export async function getAddress(contract, chain) {
     }
 }
 
-export async function recordAddress(name, chain, address) {
+export async function recordAddress(name: any, chain: any, address: any) {
     const filename = 'address-book.json'
     const exists = await fileExists(filename)
     if (exists) {
@@ -61,12 +61,12 @@ export async function loadAddresses() {
     return deployInfo
 }
 
-export function validateDeploymentInfo(deployInfo) {
+export function validateDeploymentInfo(deployInfo: any) {
     
     if (Object.keys(deployInfo).length == 0) {
         throw new Error('loaded address book has no contract info registered')
     }
-    const chainRequired = arg => {
+    const chainRequired = (arg: any) => {
         if (!deployInfo.name.hasOwnProperty(arg)) {
             throw new Error(`required field "contractName.${arg}" not found`)
         }
@@ -75,7 +75,7 @@ export function validateDeploymentInfo(deployInfo) {
     //chainRequired('chain')
 }
 
-export async function fileExists(path) {
+export async function fileExists(path: any) {
     try {
         await fs.access(path)
         return true
@@ -84,7 +84,7 @@ export async function fileExists(path) {
     }
 }
 
-export function contractExists(content, name, chain, address) {
+export function contractExists(content: any, name: any, chain: any, address: any) {
     try {
         return content[name] !== undefined && content[name][chain] !== undefined && content[name][chain] !== address
     } catch (e) {
@@ -92,7 +92,7 @@ export function contractExists(content, name, chain, address) {
     }
 }
 
-export async function confirmOverwrite(filename, name, chain, address) {
+export async function confirmOverwrite(filename: any, name: any, chain: any, address: any) {
     const answers = await inquirer.prompt([
         {
             type: 'confirm',

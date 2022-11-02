@@ -30,7 +30,7 @@ library NewOrderQueue {
     }
 
     function _initialize(OrderQueue storage self, uint256 price, bool isAsk) internal {
-        if(_isInitialized(self, price, isAsk)) { return; }
+        if(!_isRaw(self, price, isAsk)) { return; }
         if (isAsk) {
             self.askOrderQueueIndex[price] = QueueIndex({
                 first: 1,
@@ -44,7 +44,7 @@ library NewOrderQueue {
         }
     }
 
-    function _isInitialized(OrderQueue storage self, uint256 price, bool isAsk)
+    function _isRaw(OrderQueue storage self, uint256 price, bool isAsk)
         internal
         view
         returns (bool)
@@ -119,6 +119,6 @@ library NewOrderQueue {
     }
 
     function _isEmpty(OrderQueue storage self, uint256 price, bool isAsk) internal view returns (bool) {
-        return _length(self, price, isAsk) == 0 || !_isInitialized(self, price, isAsk);
+        return _length(self, price, isAsk) == 0 || _isRaw(self, price, isAsk);
     }
 }

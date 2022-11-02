@@ -19,6 +19,8 @@ contract MatchingEngine is AccessControl {
     // Factories
     address public orderbookFactory;
 
+    address public test;
+
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         feeTo = msg.sender;
@@ -26,11 +28,11 @@ contract MatchingEngine is AccessControl {
         feeNum = 3;
     }
 
-    function initialize(address orderbookFactory_)
+    function initialize(address orderbook_)
         public
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
-        orderbookFactory = orderbookFactory_;
+        test = orderbook_;
     }
 
     function setFee(uint256 feeNum_, uint256 feeDenom_)
@@ -55,7 +57,7 @@ contract MatchingEngine is AccessControl {
     ) internal returns (uint256 remaining) {
         remaining = amount;
         while (
-            remaining == 0 || IOrderbook(orderbook).isEmpty(priceAt, !isAsk)
+            remaining > 0 && !IOrderbook(orderbook).isEmpty(priceAt, !isAsk)
         ) {
             // Dequeue OrderQueue by price, if ask you get bid order, if bid you get ask order
             uint256 orderId = IOrderbook(orderbook).dequeue(priceAt, !isAsk);
@@ -67,11 +69,11 @@ contract MatchingEngine is AccessControl {
                 IOrderbook(orderbook).execute(orderId, msg.sender, remaining);
                 // emit event orderfilled, no need to edit price head
                 return 0;
-            } 
+            }
             // order is null
-            else if(depositAmount == 0) {
+            else if (depositAmount == 0) {
                 continue;
-            } 
+            }
             // remaining >= depositAmount
             else {
                 remaining -= depositAmount;
@@ -98,12 +100,12 @@ contract MatchingEngine is AccessControl {
         (uint256 askHead, uint256 bidHead) = IOrderbook(orderbook).heads();
         if (isAsk) {
             // check if there is any ask order in the price at the head
-            while (remaining > 0 && askHead != 0 && askHead < limitPrice) {
+            while (remaining > 0 && askHead != 0 && askHead <= limitPrice) {
                 remaining = _matchAt(orderbook, give, true, remaining, askHead);
             }
         } else {
             // check if there is any bid order in the price at the head
-            while (remaining > 0 && bidHead != 0 && bidHead > limitPrice) {
+            while (remaining > 0 && bidHead != 0 && bidHead >= limitPrice) {
                 remaining = _matchAt(
                     orderbook,
                     give,
@@ -122,10 +124,6 @@ contract MatchingEngine is AccessControl {
         uint256 amount,
         bool isAsk
     ) internal returns (uint256 withoutFee, address orderbook) {
-        orderbook = IOrderbookFactory(orderbookFactory).getBookByPair(
-            base,
-            quote
-        );
         uint256 fee = (amount * feeNum) / feeDenom;
         withoutFee = amount - fee;
         if (isAsk) {
@@ -175,14 +173,10 @@ contract MatchingEngine is AccessControl {
             type(uint256).max
         );
         // add stop order on market price
-        if (isStop) {
-            uint256 mktPrice = IOrderbook(orderbook).mktPrice();
-            _stopOrder(orderbook, remaining, mktPrice, true);
-        }
-        // Take profit
-        else {
-            TransferHelper.safeTransfer(quote, msg.sender, remaining);
-        }
+        address stopTo = isStop ? orderbook : msg.sender;
+        TransferHelper.safeTransfer(quote, stopTo, remaining);
+        uint256 mktPrice = IOrderbook(orderbook).mktPrice();
+        _stopOrder(orderbook, remaining, mktPrice, true);
     }
 
     function marketSell(
@@ -202,19 +196,14 @@ contract MatchingEngine is AccessControl {
             orderbook,
             withoutFee,
             quote,
-            true,
+            false,
             type(uint256).max
         );
 
-        // add stop order on market price
-        if (isStop) {
-            uint256 mktPrice = IOrderbook(orderbook).mktPrice();
-            _stopOrder(orderbook, remaining, mktPrice, true);
-        }
-        // Take profit
-        else {
-            TransferHelper.safeTransfer(base, msg.sender, remaining);
-        }
+        address stopTo = isStop ? orderbook : msg.sender;
+        TransferHelper.safeTransfer(base, stopTo, remaining);
+        uint256 mktPrice = IOrderbook(orderbook).mktPrice();
+        _stopOrder(orderbook, remaining, mktPrice, false);
     }
 
     // Limit orders
@@ -232,14 +221,12 @@ contract MatchingEngine is AccessControl {
             true
         );
         // negate on give if the asset is not the base
-        uint256 remaining = _limitOrder(orderbook, withoutFee, quote, true, at);
+        uint256 remaining = _limitOrder(test, withoutFee, quote, true, at);
         if (remaining > 0) {
-            if (isStop) {
-                _stopOrder(orderbook, remaining, at, true);
-            } else {
-                // take profit
-                TransferHelper.safeTransfer(quote, msg.sender, remaining);
-            }
+            address stopTo = isStop ? orderbook : msg.sender;
+            TransferHelper.safeTransfer(quote, stopTo, remaining);
+
+            _stopOrder(test, remaining, at, true);
         }
     }
 
@@ -257,14 +244,12 @@ contract MatchingEngine is AccessControl {
             false
         );
         // negate on give if the asset is not the quote
-        uint256 remaining = _limitOrder(orderbook, withoutFee, base, false, at);
+        uint256 remaining = _limitOrder(test, withoutFee, base, false, at);
         if (remaining > 0) {
-            if (isStop) {
-                _stopOrder(orderbook, remaining, at, false);
-            } else {
-                // take profit
-                TransferHelper.safeTransfer(base, msg.sender, remaining);
-            }
+            address stopTo = isStop ? test : msg.sender;
+            TransferHelper.safeTransfer(base, stopTo, remaining);
+
+            _stopOrder(test, remaining, at, false);
         }
     }
 

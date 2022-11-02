@@ -1,20 +1,29 @@
-import {
-  executeTx,
-  deployContract,
-  ChainId,
-  FACTORY_ROLE,
-  getAddress,
-  ZERO,
-} from "../helper";
-import { task } from "hardhat/config";
-import { WETH9_ADDRESS } from "@digitalnative/standard-protocol-sdk"
+import { exec } from "child_process";
+import { assert } from "console";
+import { FACTORY_ROLE, ZERO } from "../cli/helper";
+import { executeTx, deployContract, ChainId, getAddress } from "./helper";
+const { EtherscanProvider } = require("@ethersproject/providers");
+const { expect } = require("chai");
+const { ethers } = require("hardhat");
+const {
+  now,
+  mine,
+  setTime,
+  setTimeAndMine,
+  Ganache,
+  impersonate,
+  skipBlocks,
+  stopMining,
+  startMining,
+  addToBlock,
+} = require("./helpers");
 
-  task("orderbook-deploy", "Deploy orderbook")
-  .addOptionalParam("manager", "old manager contract address")
-  .addOptionalParam("factory", "old factory contract address")
-  .setAction(async ({ manager, factory }, { ethers }) => {
+
+describe("Basic Operations", function () {
+  before(async function () {
+    // setup the whole contracts
     const [deployer] = await ethers.getSigners();
-    const hre = require("hardhat")
+
     // Get before state
     console.log(
       `Deployer balance: ${ethers.utils.formatEther(
@@ -26,17 +35,10 @@ import { WETH9_ADDRESS } from "@digitalnative/standard-protocol-sdk"
     const Token = await ethers.getContractFactory("MockToken");
     const token1 = await Token.deploy("Token1", "TK1");
     await deployContract(token1, "Token1");
-    await hre.tenderly.persistArtifacts({
-      name: "MockToken",
-      address:token1.address
-    });
+
     const token2 = await Token.deploy("Token2", "TK2");
     await deployContract(token2, "Token2");
 
-    await hre.tenderly.persistArtifacts({
-      name: "MockToken",
-      address:token2.address
-    });
 
     // mint tokens for test
     const token1Mint = await token1.mint(
@@ -55,10 +57,6 @@ import { WETH9_ADDRESS } from "@digitalnative/standard-protocol-sdk"
     const matchingEngine = await MatchingEngine.deploy();
     await deployContract(matchingEngine, "MatchingEngine");
 
-    await hre.tenderly.persistArtifacts({
-      name: "MatchingEngine",
-      address:token1.address
-    });
 
 
     // Approve Matching Engine to use tokens
@@ -80,10 +78,7 @@ import { WETH9_ADDRESS } from "@digitalnative/standard-protocol-sdk"
     const Orderbook = await ethers.getContractFactory("Orderbook");
     const orderbook = await Orderbook.deploy();
     await deployContract(orderbook, "Orderbook");
-    await hre.tenderly.persistArtifacts({
-      name: "Orderbook",
-      address:token1.address
-    });
+
     const initOrderbook = await orderbook.initialize(
       token1.address,
       token2.address,
@@ -99,18 +94,9 @@ import { WETH9_ADDRESS } from "@digitalnative/standard-protocol-sdk"
 
     await executeTx(initMatchingEngine, "Initialize Matching Engine at");
 
+    const orderbookR = await matchingEngine.test();
+    console.log(orderbookR, "sdfsdfsdf")
 
-    for(var i =0 ; i < 1; i++) {
-      console.log(i);
-      const limitSell = await matchingEngine.limitSell(
-        token1.address,
-        token2.address,
-        ethers.utils.parseEther("2"),
-        100000000,
-        true
-      );
-      await executeTx( limitSell, "limit sell at");
-    }
 
     for(var i =0 ; i < 1; i++) {
       console.log(i);
@@ -133,7 +119,22 @@ import { WETH9_ADDRESS } from "@digitalnative/standard-protocol-sdk"
     );
     await executeTx( limitBuy1, "limit buy at");
  
-
-
+    this.matchingEngine = matchingEngine;
+    this.token1 = token1;
+    this.token2 = token2;
+    this.deployer = deployer;
   });
 
+  
+ 
+
+  it("An orderbook should be able to store bid order and match existing one", async function () {});
+
+  it("An orderbook should be able to bid multiple price orders", async function () {});
+
+  it("An orderbook should be able to ask multiple price orders", async function () {});
+
+  it("An orderbook should match ask orders to bidOrders at lowestBid then lowest bid should be updated after depleting lowest bid orders", async function () {});
+
+  it("An orderbook should match bid orders to askOrders at highestAsk then highest ask should be updated after depleting highest ask orders", async function () {});
+});

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.10;
 
 import "../interfaces/IOrderbook.sol";
 import "../security/Initializable.sol";
@@ -153,7 +153,7 @@ contract Orderbook is IOrderbook, Initializable {
         view
         returns (bool)
     {
-        return orderQueue._isInitialized(price, isAsk);
+        return !orderQueue._isRaw(price, isAsk);
     }
 
     function dequeue(uint256 price, bool isAsk)

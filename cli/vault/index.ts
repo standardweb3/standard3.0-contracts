@@ -1,9 +1,4 @@
-import "./vault"
-import "./vaultmanager"
 import "./deploy"
-import { ChainId } from "../helper/constants";
-import { executeTx, getAddress } from "../helper";
-import { task } from "hardhat/config";
 
 /*
 task("vltmgr-init-cdp-test", "initialize CDP as a collateral with test oracle")

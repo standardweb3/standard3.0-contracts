@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
+pragma solidity ^0.8.10;
+
 library NewOrderLinkedList {
 
     struct PriceLinkedList {
@@ -19,7 +21,7 @@ library NewOrderLinkedList {
     function _heads(
         PriceLinkedList storage self
     ) internal view returns (uint256, uint256) {
-        return (self.askHead, self.bidHead);
+        return (self.bidHead, self.askHead);
     }
 
     function _mktPrice(

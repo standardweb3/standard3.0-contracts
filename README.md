@@ -1,5 +1,19 @@
-# new-order-contracts
-Solidity contracts for New Order
+# Standard Monorepo
+Standard 2.0
+
+## Getting Started
+
+### Install
+
+`yarn`
+
+### Build
+
+`yarn build`
+
+### Test
+
+`yarn test`
 
 ## Licensing
 

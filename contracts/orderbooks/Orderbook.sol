@@ -1,137 +1,178 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: BUSL-1.1
 
 pragma solidity ^0.8.10;
 
 import "../interfaces/IOrderbook.sol";
 import "../security/Initializable.sol";
 import "../libraries/TransferHelper.sol";
-import "../interfaces/IERC20Minimal.sol";
-import "../libraries/NewOrderLibrary.sol";
 import "../libraries/NewOrderLinkedList.sol";
-import "../libraries/NewOrderQueue.sol";
+import "../libraries/NewOrderOrderbook.sol";
 
 contract Orderbook is IOrderbook, Initializable {
-    using NewOrderLibrary for NewOrderLibrary.Order;
     using NewOrderLinkedList for NewOrderLinkedList.PriceLinkedList;
-    using NewOrderQueue for NewOrderQueue.OrderQueue;
+    using NewOrderOrderbook for NewOrderOrderbook.OrderStorage;
 
     // Pair Struct
     struct Pair {
+        uint256 id;
         address base;
         address quote;
-        uint256 baseDecimals;
-        uint256 quoteDecimals;
+        address engine;
     }
 
     Pair private pair;
 
+
+    uint64 private decDiff;
+    bool private baseBquote;
+
+    //uint32 private constant PRICEONE = 1e8;
+
+    // Reuse order storage with NewOrderLinkedList with isAsk always true
     NewOrderLinkedList.PriceLinkedList private priceLists;
-    NewOrderQueue.OrderQueue private orderQueue;
-    NewOrderLibrary.Order[] public orders;
-    
+    NewOrderOrderbook.OrderStorage private _bidOrders;
+    NewOrderOrderbook.OrderStorage private _askOrders;
+
     function initialize(
+        uint256 id_,
         address base_,
         address quote_,
         address engine_
-    ) public initializer {
-        pair = Pair(base_, quote_, IERC20Minimal(base_).decimals(), IERC20Minimal(quote_).decimals());
-        orderQueue.engine = engine_;
+    ) external initializer {
+        uint8 baseD = TransferHelper.decimals(base_);
+        uint8 quoteD = TransferHelper.decimals(quote_);
+        require(baseD > 0 && quoteD > 0, "DECIMALS");
+        (uint8 diff, bool baseBquote_) = _absdiff(baseD, quoteD);
+        decDiff = uint64(10**diff);
+        baseBquote = baseBquote_;
+        pair = Pair(id_, base_, quote_, engine_);
     }
 
-    function getOrderDepositAmount(uint256 orderId)
-        external
-        view
-        returns (uint256 depositAmount)
-    {
-        return orders[orderId].depositAmount;
+    function setLmp(uint256 price) external {
+        require(msg.sender == pair.engine, "IA");
+        priceLists._setLmp(price);
     }
 
-    function placeBid(
-        address owner,
-        uint256 price,
-        uint256 amount
-    ) external {
-        /// Create order and save to order book
-        orderQueue._initialize(price, false);
-        NewOrderLibrary.Order memory order = NewOrderLibrary._createOrder(owner, false, price, pair.base, amount);
+    function placeBid(address owner, uint256 price, uint256 amount) external {
+        require(msg.sender == pair.engine, "IA");
+        uint256 id = _bidOrders._createOrder(owner, amount);
         priceLists._insert(false, price);
-        orderQueue._enqueue(price, false, orders.length);
-        orders.push(order);
-        // event
+        _bidOrders._insertId(price, id, amount);
     }
 
-    function placeAsk(
-        address owner,
-        uint256 price,
-        uint256 amount
-    ) external {
-        /// Create order and save to order book
-        orderQueue._initialize(price, false);
-        NewOrderLibrary.Order memory order = NewOrderLibrary._createOrder(owner, true, price, pair.quote, amount);
+    function placeAsk(address owner, uint256 price, uint256 amount) external {
+        require(msg.sender == pair.engine, "IA");
+        uint256 id = _askOrders._createOrder(owner, amount);
         priceLists._insert(true, price);
-        orderQueue._enqueue(price, true, orders.length);
-        orders.push(order);
-        // event
+        _askOrders._insertId(price, id, amount);
     }
 
-    function cancelOrder(uint256 orderId, address owner) external {
-        require(msg.sender == orderQueue.engine, "Only engine can dequeue");
-        NewOrderLibrary.Order memory order = orders[orderId];
-        require(order.owner == owner, "Only owner can cancel order");
-        delete orders[orderId];
-        TransferHelper.safeTransfer(order.deposit, owner, order.depositAmount);
-        // event
-    }
-
-    // get required amount for executing the order
-    function getRequired(uint256 orderId, uint256 amount)
-        public
-        view
-        returns (uint256)
-    {
-        NewOrderLibrary.Order memory order = orders[orderId];
-        // if order is ask, required amount is quoteAmount / price, converting the number converting decimal from quote to base, otherwise baseAmount * price, converting decimal from base to quote
-        uint256 pIn = order.isAsk ? (amount*pair.baseDecimals) / (order.price*pair.quoteDecimals)  : (amount*pair.quoteDecimals) * (order.price*pair.baseDecimals);
-        return pIn / 1e8;
+    function cancelOrder(
+        uint256 orderId,
+        bool isAsk,
+        address owner
+    ) external returns (uint256 remaining, address base, address quote) {
+        require(msg.sender == pair.engine, "IA");
+        NewOrderOrderbook.Order memory order = isAsk
+            ? _askOrders._getOrder(orderId)
+            : _bidOrders._getOrder(orderId);
+        require(order.owner == owner, "NOT_OWNER");
+        isAsk
+            ? _askOrders._deleteOrder(orderId)
+            : _bidOrders._deleteOrder(orderId);
+        isAsk
+            ? TransferHelper.safeTransfer(
+                pair.quote,
+                owner,
+                order.depositAmount
+            )
+            : TransferHelper.safeTransfer(
+                pair.base,
+                owner,
+                order.depositAmount
+            );
+        return (order.depositAmount, pair.base, pair.quote);
     }
 
     function execute(
         uint256 orderId,
+        bool isAsk,
+        uint256 price,
         address sender,
         uint256 amount
-    ) external {
-        NewOrderLibrary.Order memory order = orders[orderId];
-        uint256 required = getRequired(orderId, amount);
+    ) external returns (address owner) {
+        require(msg.sender == pair.engine, "IA");
+        NewOrderOrderbook.Order memory order = isAsk
+            ? _askOrders._getOrder(orderId)
+            : _bidOrders._getOrder(orderId);
+        /* if ask, converted quote amount is baseAmount * price,
+         * converting the number converting decimal from base to quote,
+         * otherwise quote amount is baseAmount / price, converting decimal from quote to base
+         */
+        uint256 converted = _convert(price, amount, !isAsk);
+        converted = converted > order.depositAmount
+            ? order.depositAmount
+            : converted;
         // if the order is ask order on the base/quote pair
-        if (order.isAsk) {
-            // owner is buyer, and sender is seller. if buyer is asking for base asset with quote asset in deposit
-            // then the converted amount is <base>/<quote> == (baseAmount * 10^qDecimal) / (quoteAmount * 10^bDecimal)
-            // send deposit as quote asset to seller
-            TransferHelper.safeTransfer(order.deposit, sender, amount);
-            // send claimed amount of base asset to buyer
-            TransferHelper.safeTransfer(pair.base, order.owner, required);
+        if (isAsk) {
+            // sender is matching ask order for base asset with quote asset
+            // send converted amount of base asset from order to buyer(sender)
+            TransferHelper.safeTransfer(pair.quote, sender, converted);
+            // send deposited amount of quote asset from buyer to seller(owner)
+            TransferHelper.safeTransfer(pair.base, order.owner, amount);
+            // decrease remaining amount of order
+            _askOrders._decreaseOrder(orderId, converted);
         }
         // if the order is bid order on the base/quote pair
         else {
-            // owner is seller, and sender is buyer. buyer is asking for quote asset with base asset in deposit
-            // then the converted amount is <base>/<quote> == depositAmount / claimAmount => claimAmount == depositAmount / price
-            // send deposit as base asset to buyer
-            TransferHelper.safeTransfer(order.deposit, order.owner, amount);
-            // send claimed amount of quote asset to seller
-            TransferHelper.safeTransfer(pair.quote, sender, amount);
+            // sender is matching bid order for quote asset with base asset
+            // send converted amount of quote asset from order to seller(owner)
+            TransferHelper.safeTransfer(pair.quote, order.owner, amount);
+            // send deposited amount of base asset from seller to buyer(sender)
+            TransferHelper.safeTransfer(pair.base, sender, converted);
+            // decrease remaining amount of order
+            _bidOrders._decreaseOrder(orderId, converted);
         }
-        uint256 absDiff = (order.depositAmount > amount)
-            ? (order.depositAmount - amount)
-            : (amount - order.depositAmount);
-        if (absDiff <= amount / 1e6) {
-            delete orders[orderId];
-        } else {
-            // update deposit amount
-            order.depositAmount -= amount;
-            // update filled amount
-            order.filled += amount;
-        }
+        return order.owner;
     }
+
+    function fpop(
+        bool isAsk,
+        uint256 price
+    ) external returns (uint256 orderId) {
+        require(msg.sender == pair.engine, "Only engine can dequeue");
+        orderId = isAsk ? _askOrders._fpop(price) : _bidOrders._fpop(price);
+        if (isEmpty(isAsk, price)) {
+            isAsk
+                ? priceLists.askHead = priceLists._next(isAsk, price)
+                : priceLists.bidHead = priceLists._next(isAsk, price);
+        }
+        return orderId;
+    }
+
+    function _absdiff(uint8 a, uint8 b) internal pure returns (uint8, bool) {
+        return (a > b ? a - b : b - a, a > b);
+    }
+
+    // get required amount for executing the order
+    function getRequired(
+        bool isAsk,
+        uint256 price,
+        uint256 orderId
+    ) external view returns (uint256 required) {
+        NewOrderOrderbook.Order memory order = isAsk
+            ? _askOrders._getOrder(orderId)
+            : _bidOrders._getOrder(orderId);
+        if (order.depositAmount == 0) {
+            return 0;
+        }
+        /* if ask, required base amount is quoteAmount / price,
+         * converting the number converting decimal from quote to base,
+         * otherwise quote amount is baseAmount * price, converting decimal from base to quote
+         */
+        return _convert(price, order.depositAmount, isAsk);
+    }
+
     /////////////////////////////////
     /// Price linked list methods ///
     /////////////////////////////////
@@ -140,47 +181,75 @@ contract Orderbook is IOrderbook, Initializable {
         return priceLists._heads();
     }
 
+    function bidHead() external view returns (uint256) {
+        return priceLists._bidHead();
+    }
+
+    function askHead() external view returns (uint256) {
+        return priceLists._askHead();
+    }
+
     function mktPrice() external view returns (uint256) {
         return priceLists._mktPrice();
     }
-    
 
-    /////////////////////////////////
-    ///    Order queue methods    ///
-    /////////////////////////////////
-    function isInitialized(uint256 price, bool isAsk)
-        public
-        view
-        returns (bool)
-    {
-        return !orderQueue._isRaw(price, isAsk);
+    function getPrices(
+        bool isAsk,
+        uint256 n
+    ) external view returns (uint256[] memory) {
+        return isAsk ? _askOrders._getPrices(n) : _bidOrders._getPrices(n);
     }
 
-    function dequeue(uint256 price, bool isAsk)
-        external
-        returns (uint256 orderId)
-    {
-        require(msg.sender == orderQueue.engine, "Only engine can dequeue");
-        require(!orderQueue._isEmpty(price, isAsk), "Queue is empty");
-        orderId = orderQueue._dequeue(price, isAsk);
+    function getOrderIds(
+        bool isAsk,
+        uint256 price,
+        uint256 n
+    ) external view returns (uint256[] memory) {
+        return
+            isAsk
+                ? _askOrders._getOrderIds(price, n)
+                : _bidOrders._getOrderIds(price, n);
+    }
+
+    function getOrders(
+        bool isAsk,
+        uint256 price,
+        uint256 n
+    ) external view returns (NewOrderOrderbook.Order[] memory) {
+        return
+            isAsk
+                ? _askOrders._getOrders(price, n)
+                : _bidOrders._getOrders(price, n);
+    }
+
+    /**
+     * @dev get asset value in quote asset if isAsk is true, otherwise get asset value in base asset
+     * @param amount amount of asset in base asset if isAsk is true, otherwise in quote asset
+     * @param isAsk if true, get asset value in quote asset, otherwise get asset value in base asset
+     * @return converted asset value in quote asset if isAsk is true, otherwise asset value in base asset
+     */
+    function assetValue(
+        uint256 amount,
+        bool isAsk
+    ) external view returns (uint256 converted) {
+        return _convert(priceLists._mktPrice(), amount, isAsk);
+    }
+
+    function isEmpty(bool isAsk, uint256 price) public view returns (bool) {
+        return isAsk ? _askOrders._isEmpty(price) : _bidOrders._isEmpty(price);
+    }
+
+    function _convert(
+        uint256 price,
+        uint256 amount,
+        bool isAsk
+    ) internal view returns (uint256 converted) {
         if (isAsk) {
-            if(orderQueue.askOrderQueueIndex[price].first > orderQueue.askOrderQueueIndex[price].last) {
-                priceLists.askHead = priceLists._next(isAsk, price);
-            }
-            return orderId;
+            // convert quote to base
+            return baseBquote ? amount * price / 1e8 * decDiff  : amount * price / 1e8 / decDiff;
         } else {
-            if(orderQueue.bidOrderQueueIndex[price].first > orderQueue.bidOrderQueueIndex[price].last) {
-                priceLists.bidHead = priceLists._next(isAsk, price);
-            }
-            return orderId;
+            // convert base to quote
+            return baseBquote ? amount * 1e8 / price / decDiff : amount * 1e8 * decDiff / price ;
         }
-    }
-
-    function length(uint256 price, bool isAsk) public view returns (uint256) {
-        return orderQueue._length(price, isAsk);
-    }
-
-    function isEmpty(uint256 price, bool isAsk) public view returns (bool) {
-        return orderQueue._isEmpty(price, isAsk);
     }
 }

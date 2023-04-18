@@ -1,26 +1,26 @@
 {
   "Token1": {
-    "undefined": "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+    "LOCALHOST": "0x5FbDB2315678afecb367f032d93F642f64180aa3"
   },
   "Token2": {
-    "undefined": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
+    "LOCALHOST": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
   },
   "OrderFactory": {
-    "undefined": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9"
+    "LOCALHOST": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9"
   },
   "OrderbookFactory": {
-    "undefined": "0x0165878A594ca255338adfa4d48449f69242Eb8F"
+    "LOCALHOST": "0x0165878A594ca255338adfa4d48449f69242Eb8F"
   },
   "MatchingEngine": {
-    "undefined": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9"
+    "LOCALHOST": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9"
   },
   "NewOrderLinkedList": {
-    "undefined": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9"
+    "LOCALHOST": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9"
   },
   "NewOrderQueue": {
-    "undefined": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
+    "LOCALHOST": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
   },
   "Orderbook": {
-    "undefined": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6"
+    "LOCALHOST": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6"
   }
 }

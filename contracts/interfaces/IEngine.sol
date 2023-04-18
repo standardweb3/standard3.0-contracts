@@ -1,41 +1,38 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: BUSL-1.1
 
 pragma solidity ^0.8.10;
 
 interface IEngine {
-    function mktPrice(address base, address quote) external view returns (uint256 mktPrice);
+    function mktPrice(
+        address base,
+        address quote
+    ) external view returns (uint256 mktPrice);
+
     function getOrderbook(uint256 bookId) external view returns (address);
-    function marketBuy(
-        address token,
-        address from,
-        uint256 amount
-    ) external;
-    function marketSell(
-        address token,
-        address from,
-        uint256 amount
-    ) external;
-    function marketBuyEth(
-        address from,
-        uint256 amount
-    ) external;
-    function marketSellEth(
-        address from,
-        uint256 amount
-    ) external;
+
+    function marketBuy(address base, address quote, uint256 amount) external;
+
+    function marketSell(address base, address quote, uint256 amount) external;
+
+    function marketBuyEth(address quote, uint256 amount) external;
+
+    function marketSellEth(address quote, uint256 amount) external;
+
     function limitBuy(
-        address token,
-        address from,
+        address base,
+        address quote,
         uint256 amount,
         uint256 price
     ) external;
+
     function limitSell(
-        address token,
-        address from,
+        address base,
+        address quote,
         uint256 amount,
         uint256 price
     ) external;
-    function addBook(
+
+    function addPair(
         address base,
         address quote
     ) external returns (address book);

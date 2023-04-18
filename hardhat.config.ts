@@ -14,11 +14,23 @@ import "solidity-coverage";
 import "@tenderly/hardhat-tenderly";
 import "@typechain/hardhat";
 import "hardhat-tracer";
-import "@primitivefi/hardhat-marmite";
 import "hardhat-abi-exporter";
 import "./cli";
 import * as tdly from "@tenderly/hardhat-tenderly";
 tdly.setup();
+import "@foundry-rs/hardhat-forge";
+import "hardhat-preprocessor";
+import "solidity-docgen";
+import "solidity-coverage";
+import fs from "fs";
+
+function getRemappings() {
+  return fs
+    .readFileSync("remappings.txt", "utf8")
+    .split("\n")
+    .filter(Boolean) // remove empty lines
+    .map((line) => line.trim().split("="));
+}
 
 import { HardhatUserConfig } from "hardhat/config";
 import { removeConsoleLog } from "hardhat-preprocessor";
@@ -29,11 +41,47 @@ import {
   HardhatNetworkMiningConfig,
 } from "hardhat/types";
 
-const accounts = [process.env.DEPLOYER_KEY || "0x00"];
+const accounts = [
+  process.env.TEST_DEPLOYER_PRIVATE_KEY,
+  process.env.TEST_TRADER1_PRIVATE_KEY,
+  process.env.TEST_TRADER2_PRIVATE_KEY,
+  process.env.TEST_BOOKER_PRIVATE_KEY,
+];
+
+const testnetAccounts = [
+  process.env.TESTNET_DEPLOYER_PRIVATE_KEY,
+  process.env.TESTNET_TRADER1_PRIVATE_KEY,
+  process.env.TESTNET_TRADER2_PRIVATE_KEY,
+  process.env.TESTNET_BOOKER_PRIVATE_KEY,
+]
 
 const config = {
   defaultNetwork: "hardhat",
-
+  preprocess: {
+    eachLine: (hre: any) => ({
+      transform: (line: string) => {
+        if (line.match(/^\s*import /i)) {
+          for (const [from, to] of getRemappings()) {
+            if (line.includes(from)) {
+              line = line.replace(from, to);
+              break;
+            }
+          }
+        }
+        return line;
+      },
+    }),
+  },
+  paths: {
+    sources: "./contracts",
+    cache: "./cache_hardhat",
+    subgraph: "./subgraph", // Defaults to './subgraph'
+    artifacts: "artifacts",
+    deploy: "deploy",
+    deployments: "deployments",
+    imports: "imports",
+    tests: "test",
+  },
   etherscan: {
     apiKey: {
       mainnet: process.env.ETHERSCAN_API_KEY!,
@@ -46,44 +94,35 @@ const config = {
   },
   gasReporter: {
     coinmarketcap: process.env.COINMARKETCAP_API_KEY,
-    currency: "ETH",
+    currency: "USD",
     token: "ETH",
+    gasPrice: 100,
     enabled: process.env.REPORT_GAS === "true",
     excludeContracts: ["ERC20Mock", "WETH9"],
   },
   namedAccounts: {
-    deployer: {
-      default: 0,
-    },
-    dev: {
-      default: 1,
-    },
-    alice: {
-      default: 2,
-    },
-    bob: {
-      default: 3,
-    },
-    carol: {
-      default: 4,
-    },
-    dave: {
-      default: 5,
-    },
-    eve: {
-      default: 6,
-    },
-    feeTo: {
-      default: 7,
-    },
+    deployer: 0,
+    trader1: 1,
+    trader2: 2,
+    booker: 3,
   },
   tenderly: {
     username: "hskang9",
     project: "standard-evm",
   },
   networks: {
-    local: {
-      url: "http://127.0.0.1:8545",
+    localhost: {
+      url: "http://0.0.0.0:8545",
+      accounts: {
+        mnemonic: "test test test test test test test test test test test junk",
+        path: "m/44'/60'/0'/0",
+        initialIndex: 0,
+        count: 20,
+        passphrase: "",
+      },
+      chainId: 31337,
+      live: true,
+      initialHardhatNetworkBalance: "10000000000000000000", // 10 ETH
     },
     mumbai: {
       url: "https://rpc-mumbai.maticvigil.com/",
@@ -94,6 +133,14 @@ const config = {
       tags: ["staging"],
       gasMultiplier: 2,
     },
+    baseGoerli : {
+      url: "https://goerli.base.org/",
+      accounts: testnetAccounts,
+      chainId: 84531,
+      live: true,
+      saveDeployments: true,
+      tags: ["staging"],
+    }
     /*
     mainnet: {
       url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
@@ -343,22 +390,14 @@ const config = {
       tags: ["staging"]
     }*/
   },
-  paths: {
-    artifacts: "artifacts",
-    cache: "cache",
-    deploy: "deploy",
-    deployments: "deployments",
-    imports: "imports",
-    sources: "contracts",
-    tests: "test",
+  subgraph: {
+    name: "new-order-contracts", // Defaults to the name of the root folder of the hardhat project
+    product: "hosted-service", //||'subgraph-studio', // Defaults to 'subgraph-studio'
+    indexEvents: true, // Defaults to false
+    allowSimpleName: false, // Defaults to `false` if product is `hosted-service` and `true` if product is `subgraph-studio`
   },
-  preprocess: {
-    eachLine: removeConsoleLog(
-      (bre) =>
-        bre.network.name !== "hardhat" && bre.network.name !== "localhost"
-    ),
-  },
-  compiler : {
+
+  compiler: {
     version: "0.8.10",
     settings: {
       optimizer: {
@@ -391,6 +430,7 @@ const config = {
       verbose: true,
     },
   },
+  docgen: { outputDir: 'docs',}, 
   mocha: {
     timeout: 300000,
     //bail: true,

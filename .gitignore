@@ -12,6 +12,7 @@ coverage.json
 node_modules
 artifacts
 cache
+cache_hardhat
 tenderly.yaml
 node_modules
 scripts
@@ -19,3 +20,10 @@ address-book.json
 types
 types/*
 .gas
+lib
+data
+out
+node_modules
+foundry.toml
+script/Constants.sol
+broadcast

@@ -21,11 +21,7 @@ interface IRevenue {
         uint32 uid
     ) external view returns (bool);
 
-    function refundFee(
-        address to,
-        address token,
-        uint256 amount
-    ) external;
+    function refundFee(address to, address token, uint256 amount) external;
 }
 
 // Onchain Matching engine for the orders
@@ -195,7 +191,14 @@ contract MatchingEngine is AccessControl, Initializable {
             n
         );
         // add stop order on market price
-        _detStop(orderbook, quote, remaining,  mktPrice(base, quote), true, isStop);
+        _detStop(
+            orderbook,
+            quote,
+            remaining,
+            mktPrice(base, quote),
+            true,
+            isStop
+        );
         return true;
     }
 
@@ -234,7 +237,14 @@ contract MatchingEngine is AccessControl, Initializable {
             type(uint256).max,
             n
         );
-        _detStop(orderbook, base, remaining, mktPrice(base, quote), false, isStop);
+        _detStop(
+            orderbook,
+            base,
+            remaining,
+            mktPrice(base, quote),
+            false,
+            isStop
+        );
         return true;
     }
 
@@ -459,19 +469,31 @@ contract MatchingEngine is AccessControl, Initializable {
         return IOrderbookFactory(orderbookFactory).getBaseQuote(orderbook);
     }
 
+    /**
+     * @dev Returns prices in the ask/bid orderbook for the given trading pair.
+     * @param base The address of the base asset for the trading pair.
+     * @param quote The address of the quote asset for the trading pair.
+     * @param isAsk Boolean indicating if the orderbook to retrieve prices from is an ask orderbook.
+     * @param n The number of prices to retrieve.
+     */
     function getPrices(
         address base,
         address quote,
         bool isAsk,
         uint256 n
     ) external view returns (uint256[] memory) {
-        address orderbook = getBookByPair(
-            base,
-            quote
-        );
+        address orderbook = getBookByPair(base, quote);
         return IOrderbook(orderbook).getPrices(isAsk, n);
     }
 
+    /**
+     * @dev Returns orders in the ask/bid orderbook for the given trading pair in a price.
+     * @param base The address of the base asset for the trading pair.
+     * @param quote The address of the quote asset for the trading pair.
+     * @param isAsk Boolean indicating if the orderbook to retrieve orders from is an ask orderbook.
+     * @param price The price to retrieve orders from.
+     * @param n The number of orders to retrieve.
+     */
     function getOrders(
         address base,
         address quote,
@@ -479,11 +501,44 @@ contract MatchingEngine is AccessControl, Initializable {
         uint256 price,
         uint256 n
     ) external view returns (NewOrderOrderbook.Order[] memory) {
-        address orderbook = getBookByPair(
-            base,
-            quote
-        );
+        address orderbook = getBookByPair(base, quote);
         return IOrderbook(orderbook).getOrders(isAsk, price, n);
+    }
+
+    /**
+     * @dev Returns an order in the ask/bid orderbook for the given trading pair with order id.
+     * @param base The address of the base asset for the trading pair.
+     * @param quote The address of the quote asset for the trading pair.
+     * @param isAsk Boolean indicating if the orderbook to retrieve orders from is an ask orderbook.
+     * @param orderId The order id to retrieve.
+     */
+    function getOrder(
+        address base,
+        address quote,
+        bool isAsk,
+        uint256 orderId
+    ) external view returns (NewOrderOrderbook.Order memory) {
+        address orderbook = getBookByPair(base, quote);
+        return IOrderbook(orderbook).getOrder(isAsk, orderId);
+    }
+
+    /**
+     * @dev Returns order ids in the ask/bid orderbook for the given trading pair in a price.
+     * @param base The address of the base asset for the trading pair.
+     * @param quote The address of the quote asset for the trading pair.
+     * @param isAsk Boolean indicating if the orderbook to retrieve orders from is an ask orderbook.
+     * @param price The price to retrieve orders from.
+     * @param n The number of order ids to retrieve.
+     */
+    function getOrderIds(
+        address base,
+        address quote,
+        bool isAsk,
+        uint256 price,
+        uint256 n
+    ) external view returns (uint256[] memory) {
+        address orderbook = getBookByPair(base, quote);
+        return IOrderbook(orderbook).getOrderIds(isAsk, price, n);
     }
 
     /**
@@ -503,10 +558,7 @@ contract MatchingEngine is AccessControl, Initializable {
         address base,
         address quote
     ) public view returns (uint256) {
-        address orderbook = getBookByPair(
-            base,
-            quote
-        );
+        address orderbook = getBookByPair(base, quote);
         return IOrderbook(orderbook).mktPrice();
     }
 

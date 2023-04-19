@@ -1,5 +1,6 @@
-# Standard Monorepo
-Standard 2.0
+# New Order contracts
+
+Contracts for New Order
 
 ## Getting Started
 
@@ -9,11 +10,11 @@ Standard 2.0
 
 ### Build
 
-`yarn build`
+`forge build`
 
 ### Test
 
-`yarn test`
+`forge test`
 
 ## Licensing
 

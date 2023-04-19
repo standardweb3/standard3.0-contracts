@@ -222,6 +222,13 @@ contract Orderbook is IOrderbook, Initializable {
                 : _bidOrders._getOrders(price, n);
     }
 
+    function getOrder(
+        bool isAsk,
+        uint256 orderId
+    ) external view returns (NewOrderOrderbook.Order memory) {
+        return isAsk ? _askOrders._getOrder(orderId) : _bidOrders._getOrder(orderId);
+    }
+
     /**
      * @dev get asset value in quote asset if isAsk is true, otherwise get asset value in base asset
      * @param amount amount of asset in base asset if isAsk is true, otherwise in quote asset

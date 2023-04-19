@@ -4,8 +4,6 @@ pragma solidity ^0.8.10;
 import "../libraries/NewOrderOrderbook.sol";
 
 interface IOrderbook {
-
-
     function initialize(
         uint256 id,
         address base_,
@@ -66,4 +64,15 @@ interface IOrderbook {
         uint256 price,
         uint256 n
     ) external view returns (NewOrderOrderbook.Order[] memory);
+
+    function getOrder(
+        bool isAsk,
+        uint256 orderId
+    ) external view returns (NewOrderOrderbook.Order memory);
+
+    function getOrderIds(
+        bool isAsk,
+        uint256 price,
+        uint256 n
+    ) external view returns (uint256[] memory);
 }

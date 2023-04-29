@@ -1,83 +1,168 @@
 pragma solidity >=0.8;
 
+import {BaseSetup} from "./Orderbook.t.sol";
+
 import {console} from "forge-std/console.sol";
 import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
-import {MockToken} from "../contracts/mock/MockToken.sol";
-import {MockBTC} from "../contracts/mock/MockBTC.sol";
-import {Utils} from "./utils/Utils.sol";
-import {MatchingEngine} from "../contracts/MatchingEngine.sol";
-import {OrderbookFactory} from "../contracts/orderbooks/OrderbookFactory.sol";
-import {Orderbook} from "../contracts/orderbooks/Orderbook.sol";
+import {SABT} from "../../contracts/sabt/SABT.sol";
+import {BlockAccountant} from "../../contracts/sabt/BlockAccountant.sol";
+import {Membership} from "../../contracts/sabt/Membership.sol";
+import {Treasury} from "../../contracts/sabt/Treasury.sol";
+import {MockToken} from "../../contracts/mock/MockToken.sol";
+import {Orderbook} from "../../contracts/safex/orderbooks/Orderbook.sol";
 
-contract BaseSetup is Test {
-    Utils public utils;
-    MatchingEngine public matchingEngine;
+contract MembershipBaseSetup is BaseSetup {
+    Membership public membership;
+    Treasury public treasury;
+    BlockAccountant public accountant;
+    SABT public sabt;
+    MockToken public stablecoin;
+    address public foundation;
+    address public reporter;
 
-    OrderbookFactory public orderbookFactory;
-    Orderbook public book;
-    MockToken public token1;
-    MockToken public token2;
-    MockBTC public btc;
-    MockToken public feeToken;
-    address payable[] public users;
-    address public trader1;
-    address public trader2;
-    address public booker;
-    address public attacker;
+    function setUp() public override {
+        super.setUp();
+        users = utils.addUsers(2, users);
+        foundation = users[4];
+        reporter = users[5];
 
-    function setUp() public virtual {
-        utils = new Utils();
-        users = utils.createUsers(4);
-        trader1 = users[0];
-        vm.label(trader1, "Trader 1");
-        trader2 = users[1];
-        vm.label(trader2, "Trader 2");
-        booker = users[2];
-        vm.label(booker, "Booker");
-        attacker = users[3];
-        vm.label(attacker, "Attacker");
-        token1 = new MockToken("Token 1", "TKN1");
-        token2 = new MockToken("Token 2", "TKN2");
-        btc = new MockBTC("Bitcoin", "BTC");
+        stablecoin = new MockToken("Stablecoin", "STBC");
+        membership = new Membership();
+        sabt = new SABT();
 
-        token1.mint(trader1, 100000e18);
-        token2.mint(trader1, 100000e18);
-        btc.mint(trader1, 100000e8);
-        token1.mint(trader2, 100000e18);
-        token2.mint(trader2, 100000e18);
-        btc.mint(trader2, 100000e8);
-        feeToken = new MockToken("Fee Token", "FEE");
-        feeToken.mint(booker, 40000e18);
-        matchingEngine = new MatchingEngine();
-        orderbookFactory = new OrderbookFactory();
-        orderbookFactory.initialize(address(matchingEngine));
-        matchingEngine.initialize(
-            address(orderbookFactory),
-            address(feeToken),
-            30000
+        accountant = new BlockAccountant(
+            address(membership),
+            address(matchingEngine),
+            address(stablecoin),
+            1
         );
-        matchingEngine.setFeeTo(booker);
-        matchingEngine.setFee(3, 1000);
+        treasury = new Treasury(address(accountant), address(sabt));
+        accountant.setTreasury(address(treasury));
+        matchingEngine.setMembership(address(membership));
+        matchingEngine.setAccountant(address(accountant));
+        matchingEngine.setFeeTo(address(treasury));
+        accountant.grantRole(accountant.REPORTER_ROLE(), address(matchingEngine));
+        treasury.grantRole(treasury.REPORTER_ROLE(), address(matchingEngine));
+
+
+        feeToken.mint(trader1, 10000e18);
+        feeToken.mint(trader2, 10000e18);
+        feeToken.mint(booker, 100000e18);
+        stablecoin.mint(trader1, 10000e18);
+        stablecoin.mint(trader2, 10000e18);
+        vm.prank(trader1);
+        feeToken.approve(address(membership), 10000e18);
+        vm.prank(trader1);
+        stablecoin.approve(address(membership), 10000e18);
+
+        // initialize  membership contract
+        membership.initialize(address(sabt), foundation);
+        // initialize SABT
+        sabt.initialize(address(membership), address(0));
+        // set Fee in membership contract
+        membership.setMembership(0, address(feeToken), 1000, 1000, 10000, 10);
+
+        // set stablecoin price
+        vm.prank(booker);
+        feeToken.approve(address(matchingEngine), 100000e18);
+        vm.prank(booker);
+        matchingEngine.addPair(address(feeToken), address(stablecoin));
+        // Approve the matching engine to spend the trader's tokens
+        vm.prank(trader1);
+        stablecoin.approve(address(matchingEngine), 10000e18);
+        // Approve the matching engine to spend the trader's tokens
+        vm.prank(trader2);
+        feeToken.approve(address(matchingEngine), 10000e18);
+
+        // register trader1 into membership
+        vm.prank(trader1);
+        membership.register(0);
+
+        // subscribe
+        vm.prank(trader1);
+        membership.subscribe(1, 10000);
+
+        // mine 1000 blocks
+        utils.mineBlocks(1000);
+        console.log(block.number);
+        console.log(accountant.fb());
+
+        // make a price in matching engine where 1 feeToken = 1000 stablecoin with buy and sell order
+        vm.prank(trader2);
+        matchingEngine.limitSell(
+            address(feeToken),
+            address(stablecoin),
+            10000e18,
+            1000e8,
+            true,
+            1,
+            1
+        );
+        vm.prank(trader1);
+        matchingEngine.limitBuy(
+            address(feeToken),
+            address(stablecoin),
+            10000e18,
+            1000e8,
+            true,
+            1,
+            1
+        );
+    }
+}
+
+contract MembershipTest is MembershipBaseSetup {
+    
+    function testSetup() public {
+        super.setUp();
+    }
+
+    function testRegistration() public {
+        super.setUp();
+        console.log(membership.getMeta(0).metaId);
+        // make a membership in membership contract
+        vm.prank(trader1);
+        membership.register(0);
+    }
+
+    function testMembershipTransfer() public {
+        super.setUp();
+        // make a membership in membership contract
+        vm.prank(trader1);
+        membership.register(0);
+        // transfer Membership
+        vm.prank(trader1);
+        sabt.transfer(trader2, 1);
+    }
+
+    function testAccountant() public {
+        super.setUp();
+        // make a membership in membership contract
+        vm.prank(trader1);
+        membership.register(0);
+    }
+
+    function testAccounting() public {
+        super.setUp();
+        // set price in accounting price
+        uint256 quoteAmount = matchingEngine.convert(
+            address(feeToken),
+            address(stablecoin),
+            1e18,
+            true
+        );
+        console.log(quoteAmount);
+        assert(quoteAmount == 1e18 * 1000);
+
+        console.log(accountant.pointOf(1, 0));
 
         vm.prank(trader1);
-        token1.approve(address(matchingEngine), 10000e18);
-        vm.prank(trader1);
-        token2.approve(address(matchingEngine), 10000e18);
-        vm.prank(trader1);
-        btc.approve(address(matchingEngine), 10000e8);
-        vm.prank(trader2);
-        token1.approve(address(matchingEngine), 10000e18);
-        vm.prank(trader2);
-        token2.approve(address(matchingEngine), 10000e18);
-        vm.prank(trader2);
-        btc.approve(address(matchingEngine), 10000e8);
-        vm.prank(booker);
-        feeToken.approve(address(matchingEngine), 40000e18);
+        treasury.exchange(address(stablecoin), 0, 1, 1);
     }
 }
 
 // test cases for orderbooks
-contract OrderbookTest is BaseSetup {
+contract OrderbookTest is MembershipBaseSetup {
     function testAddPair() public {
         // create orderbook
         super.setUp();

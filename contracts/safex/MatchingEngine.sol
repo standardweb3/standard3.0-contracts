@@ -469,6 +469,10 @@ contract MatchingEngine is AccessControl, Initializable {
         return IOrderbookFactory(orderbookFactory).getBaseQuote(orderbook);
     }
 
+    function getPairs(
+
+    )
+
     /**
      * @dev Returns prices in the ask/bid orderbook for the given trading pair.
      * @param base The address of the base asset for the trading pair.
@@ -552,6 +556,10 @@ contract MatchingEngine is AccessControl, Initializable {
         address quote
     ) public view returns (address book) {
         return IOrderbookFactory(orderbookFactory).getBookByPair(base, quote);
+    }
+
+    function getAllBooks() external view returns (Pair[] memory) {
+        return IOrderbookFactory(orderbookFactory).getAllBooks();
     }
 
     function mktPrice(

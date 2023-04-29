@@ -36,7 +36,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "BUSL-1.1",
+  "license": "BSL-1.1",
   "devDependencies": {
     "@graphprotocol/graph-cli": "^0.30.0",
     "@graphprotocol/graph-ts": "^0.27.0",

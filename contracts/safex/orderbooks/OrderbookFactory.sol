@@ -78,6 +78,15 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory {
         return orderbookByBaseQuote[base][quote];
     }
 
+    function getAllBooks() external view override returns (Pair[] memory) {
+        Pair[] memory pairs = new Pair[](allOrderbooks.length);
+       for(uint256 i = 0; i < allOrderbooks.length; i++) {
+           Pair memory pair = baseQuoteByOrderbook[allOrderbooks[i]];
+           pairs[i] = pair;
+       }
+       return pairs;
+    }
+
     function getBaseQuote(
         address orderbook
     ) external view override returns (address base, address quote) {

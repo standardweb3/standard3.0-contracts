@@ -3,6 +3,11 @@
 pragma solidity ^0.8.10;
 
 interface IOrderbookFactory {
+    struct Pair {
+        address base;
+        address quote;
+    }
+    
     function createBook(
         address bid_,
         address ask_,
@@ -22,4 +27,6 @@ interface IOrderbookFactory {
 
     /// Address of a manager
     function engine() external view returns (address);
+
+    function getAllBooks() external view returns (Pair[] memory);
 }

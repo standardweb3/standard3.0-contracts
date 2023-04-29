@@ -4,14 +4,14 @@ pragma solidity ^0.8.13;
 import "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 import {MockBTC} from "../contracts/mock/MockBTC.sol";
-import {SABT} from "../contracts/membership/SABT.sol";
-import {BlockAccountant} from "../contracts/membership/BlockAccountant.sol";
-import {Membership} from "../contracts/membership/Membership.sol";
-import {Treasury} from "../contracts/membership/Treasury.sol";
+import {SABT} from "../contracts/sabt/SABT.sol";
+import {BlockAccountant} from "../contracts/sabt/BlockAccountant.sol";
+import {Membership} from "../contracts/sabt/Membership.sol";
+import {Treasury} from "../contracts/sabt/Treasury.sol";
 import {MockToken} from "../contracts/mock/MockToken.sol";
 import {Constants} from "./Constants.sol";
-import {MatchingEngine} from "../contracts/MatchingEngine.sol";
-import {OrderbookFactory} from "../contracts/orderbooks/OrderbookFactory.sol";
+import {MatchingEngine} from "../contracts/safex/MatchingEngine.sol";
+import {OrderbookFactory} from "../contracts/safex/orderbooks/OrderbookFactory.sol";
 
 contract Testnet is Script, Constants {
     function run() external {

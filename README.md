@@ -1,6 +1,11 @@
-# New Order contracts
+# Standard Protocol 2.0 Contracts
 
-Contracts for New Order
+Monorepo for Standard Protocol 2.0 contracts
+
+- safex: Fully decentralized orderbook dex without any dark market [x]
+- sabt: Standard Account Bound Token: a non-fungible tokenized Self-sovereign Identity(SSI) [x]
+- somad: The most secure, advanced, distributed, and decentralized interoperability protocol with self-sovereign accounts [ ]
+- safu: Self-sovereign stablecoin with independant unit of an account [ ]
 
 ## Getting Started
 
@@ -14,7 +19,7 @@ Contracts for New Order
 
 ### Test
 
-`forge test`
+`forge test -vvvv`
 
 ## Licensing
 

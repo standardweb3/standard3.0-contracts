@@ -18,6 +18,8 @@ interface ITreasury {
     ) external view returns (uint256);
 
     function subtractMP(uint32 uid_, uint32 nthEra_, uint64 point_) external;
+
+    function getCurrentEra() external view returns (uint32);
 }
 
 library TreasuryLib {
@@ -50,15 +52,26 @@ library TreasuryLib {
         require(ITreasury(self.sabt).metaId(uid_) == metaId_, "IM");
     }
 
+    function _checkEraPassed(
+        Storage storage self,
+        uint32 nthEra_
+    ) internal view {
+        // get current Era
+        uint32 currentEra = ITreasury(self.accountant).getCurrentEra();
+        require(nthEra_ < currentEra, "NEP");
+    }
+
     function _exchange(
         Storage storage self,
         address token,
-        uint32  nthEra,
+        uint32 nthEra,
         uint32 uid,
         uint64 point
     ) internal {
         // check if the sender has UID with user meta id
         _checkMembership(self, uid, USER_META_ID);
+        // check if the era has already passed
+        _checkEraPassed(self, nthEra);
         // subtract membership point in accountant
         ITreasury(self.accountant).subtractMP(uid, nthEra, point);
         // exchange membership point with reward
@@ -70,11 +83,13 @@ library TreasuryLib {
     function _claim(
         Storage storage self,
         address token,
-        uint32  nthEra,
+        uint32 nthEra,
         uint32 uid
     ) internal {
         // check if the sender has UID with investor meta id
         _checkMembership(self, uid, INVESTOR_META_ID);
+        // check if the era has already passed
+        _checkEraPassed(self, nthEra);
         // get reward from accountant
         uint256 claim = _getClaim(self, token, uid, nthEra);
         // exchange reward with token
@@ -84,11 +99,13 @@ library TreasuryLib {
     function _settle(
         Storage storage self,
         address token,
-        uint32  nthEra,
+        uint32 nthEra,
         uint32 uid
     ) internal {
         // check if the sender has UID with foundation meta id
         _checkMembership(self, uid, FOUNDATION_META_ID);
+        // check if the era has already passed
+        _checkEraPassed(self, nthEra);
         uint256 settlement = _getSettlement(self, token, nthEra);
         TransferHelper.safeTransfer(token, msg.sender, settlement);
     }
@@ -99,17 +116,14 @@ library TreasuryLib {
         require(self.totalClaim <= 600000, "OVERFLOW");
     }
 
-    function _setSettlement(
-        Storage storage self,
-        uint32 uid
-    ) internal {
+    function _setSettlement(Storage storage self, uint32 uid) internal {
         self.settlementId = uid;
     }
 
     function _getReward(
         Storage storage self,
         address token,
-        uint32  nthEra,
+        uint32 nthEra,
         uint256 point
     ) internal view returns (uint256) {
         // get reward from Treasury ratio
@@ -147,7 +161,10 @@ library TreasuryLib {
         uint32 nthEra
     ) internal view returns (uint256) {
         // check if sender has UID
-        require(ITreasury(self.sabt).balanceOf(msg.sender, self.settlementId) != 0, "NO_UID");
+        require(
+            ITreasury(self.sabt).balanceOf(msg.sender, self.settlementId) != 0,
+            "NO_UID"
+        );
         // 1. get fee collected on nthEra
         uint256 totalTokens = ITreasury(self.accountant).getTotalTokens(
             nthEra,

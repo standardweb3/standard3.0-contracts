@@ -253,10 +253,10 @@ contract Orderbook is IOrderbook, Initializable {
     ) internal view returns (uint256 converted) {
         if (isAsk) {
             // convert quote to base
-            return baseBquote ? amount * price / 1e8 * decDiff  : amount * price / 1e8 / decDiff;
+            return baseBquote ? (amount * price) / 1e8 * decDiff  : (amount * price) / 1e8 / decDiff;
         } else {
             // convert base to quote
-            return baseBquote ? amount * 1e8 / price / decDiff : amount * 1e8 * decDiff / price ;
+            return baseBquote ? (amount * 1e8) / price / decDiff : amount * 1e8 * decDiff / price ;
         }
     }
 }

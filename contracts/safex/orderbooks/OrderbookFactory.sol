@@ -8,10 +8,6 @@ import "../libraries/CloneFactory.sol";
 import "../interfaces/IOrderbookFactory.sol";
 
 contract OrderbookFactory is AccessControl, IOrderbookFactory {
-    struct Pair {
-        address base;
-        address quote;
-    }
 
     // Orderbooks
     address[] public allOrderbooks;
@@ -25,7 +21,7 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory {
     /// mapping of orderbooks based on base and quote
     mapping(address => mapping(address => address)) public orderbookByBaseQuote;
     /// mapping of base and quote asset of the orderbook
-    mapping(address => Pair) public baseQuoteByOrderbook;
+    mapping(address => IOrderbookFactory.Pair) public baseQuoteByOrderbook;
 
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
@@ -78,10 +74,10 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory {
         return orderbookByBaseQuote[base][quote];
     }
 
-    function getAllBooks() external view override returns (Pair[] memory) {
-        Pair[] memory pairs = new Pair[](allOrderbooks.length);
-       for(uint256 i = 0; i < allOrderbooks.length; i++) {
-           Pair memory pair = baseQuoteByOrderbook[allOrderbooks[i]];
+    function getPairs(uint start, uint end) external view override returns (IOrderbookFactory.Pair[] memory) {
+        IOrderbookFactory.Pair[] memory pairs = new IOrderbookFactory.Pair[](end-start);
+       for(uint256 i = start; i < end; i++) {
+           IOrderbookFactory.Pair memory pair = baseQuoteByOrderbook[allOrderbooks[i]];
            pairs[i] = pair;
        }
        return pairs;
@@ -90,7 +86,7 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory {
     function getBaseQuote(
         address orderbook
     ) external view override returns (address base, address quote) {
-        Pair memory pair = baseQuoteByOrderbook[orderbook];
+        IOrderbookFactory.Pair memory pair = baseQuoteByOrderbook[orderbook];
         return (pair.base, pair.quote);
     }
 

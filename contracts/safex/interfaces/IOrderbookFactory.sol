@@ -7,7 +7,7 @@ interface IOrderbookFactory {
         address base;
         address quote;
     }
-    
+
     function createBook(
         address bid_,
         address ask_,
@@ -28,5 +28,5 @@ interface IOrderbookFactory {
     /// Address of a manager
     function engine() external view returns (address);
 
-    function getAllBooks() external view returns (Pair[] memory);
+    function getPairs(uint start, uint end) external view returns (Pair[] memory);
 }

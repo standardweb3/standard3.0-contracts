@@ -41,9 +41,11 @@ contract MembershipBaseSetup is BaseSetup {
         matchingEngine.setMembership(address(membership));
         matchingEngine.setAccountant(address(accountant));
         matchingEngine.setFeeTo(address(treasury));
-        accountant.grantRole(accountant.REPORTER_ROLE(), address(matchingEngine));
+        accountant.grantRole(
+            accountant.REPORTER_ROLE(),
+            address(matchingEngine)
+        );
         treasury.grantRole(treasury.REPORTER_ROLE(), address(matchingEngine));
-
 
         feeToken.mint(trader1, 10000e18);
         feeToken.mint(trader2, 10000e18);
@@ -77,6 +79,7 @@ contract MembershipBaseSetup is BaseSetup {
         // register trader1 into membership
         vm.prank(trader1);
         membership.register(0);
+        assert(sabt.balanceOf(trader1, 1) == 1);
 
         // subscribe
         vm.prank(trader1);
@@ -112,7 +115,6 @@ contract MembershipBaseSetup is BaseSetup {
 }
 
 contract MembershipTest is MembershipBaseSetup {
-    
     function testSetup() public {
         super.setUp();
     }
@@ -151,11 +153,10 @@ contract MembershipTest is MembershipBaseSetup {
             1e18,
             true
         );
-        console.log(quoteAmount);
         assert(quoteAmount == 1e18 * 1000);
 
         console.log(accountant.pointOf(1, 0));
-
+        utils.mineBlocks(100000000000);
         vm.prank(trader1);
         treasury.exchange(address(stablecoin), 0, 1, 1);
     }
@@ -228,7 +229,6 @@ contract OrderbookTest is MembershipBaseSetup {
         );
     }
 
-    
     function testOrderbookAccess() public {
         super.setUp();
         vm.prank(booker);
@@ -529,5 +529,4 @@ contract OrderbookTest is MembershipBaseSetup {
             0
         );
     }
-    
 }

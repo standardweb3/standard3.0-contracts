@@ -1,9 +1,24 @@
 pragma solidity ^0.8.10;
 
 interface IAccountant {
-    function isSubscribed(address account) external view returns (bool);
-    function subtractMP(address account, uint256 nthMonth, uint256 amount) external;
-    function getReward(address account, uint256 nthMonth) external view returns (uint256);
-    function getTotalPoints(uint256 nthMonth) external view returns (uint256);
-    function getTotalTokens(uint256 nthMonth, address token) external view returns (uint256);
+
+    function isSubscribed(uint32 uid_) external view returns (bool);
+
+    function decimals() external view returns (uint8);
+
+    function balanceOf(
+        address owner,
+        uint256 id
+    ) external view returns (uint256);
+
+    function subtractMP(
+        address account,
+        uint256 nthEra,
+        uint256 amount
+    ) external;
+
+    function pointOf(
+        address account,
+        uint256 nthEra
+    ) external view returns (uint256);
 }

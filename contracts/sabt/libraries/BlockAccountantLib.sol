@@ -64,6 +64,12 @@ library BlockAccountantLib {
         return self.totalTokensOn[key];
     }
 
+    function _getEra(
+        Storage storage self
+    ) internal view returns (uint32 nthEra) {
+        return (block.number - self.fb) > self.era ? uint32((block.number - self.fb) / self.era) : 0;
+    }
+
     /**  @dev reportAdd: Report the membership point of the member
      * @param uid The member UID
      * @param token The token address

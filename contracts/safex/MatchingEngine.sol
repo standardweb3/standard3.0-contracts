@@ -3,10 +3,11 @@
 pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "./security/Initializable.sol";
 import "./interfaces/IOrderbookFactory.sol";
 import "./interfaces/IOrderbook.sol";
 import "./libraries/TransferHelper.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 interface IRevenue {
     function report(
@@ -25,7 +26,10 @@ interface IRevenue {
 }
 
 // Onchain Matching engine for the orders
-contract MatchingEngine is AccessControl, Initializable {
+contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
+    // roles
+    bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+
     // fee recipient
     address private feeTo;
     // fee denominator
@@ -469,9 +473,16 @@ contract MatchingEngine is AccessControl, Initializable {
         return IOrderbookFactory(orderbookFactory).getBaseQuote(orderbook);
     }
 
+    /**
+     * @dev returns addresses of pairs in OrderbookFactory registry
+     * @return pairs list of pairs from start to end
+     */
     function getPairs(
-
-    )
+        uint start,
+        uint end
+    ) external view returns (IOrderbookFactory.Pair[] memory pairs) {
+        return IOrderbookFactory(orderbookFactory).getPairs(start, end);
+    }
 
     /**
      * @dev Returns prices in the ask/bid orderbook for the given trading pair.
@@ -556,10 +567,6 @@ contract MatchingEngine is AccessControl, Initializable {
         address quote
     ) public view returns (address book) {
         return IOrderbookFactory(orderbookFactory).getBookByPair(base, quote);
-    }
-
-    function getAllBooks() external view returns (Pair[] memory) {
-        return IOrderbookFactory(orderbookFactory).getAllBooks();
     }
 
     function mktPrice(
@@ -842,5 +849,17 @@ contract MatchingEngine is AccessControl, Initializable {
         // get orderbook address from the base and quote asset
         book = getBookByPair(base, quote);
         return (withoutFee, book);
+    }
+
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal virtual override {
+        // check if new implementation is the contract
+        uint256 size;
+        assembly {
+            size := extcodesize(newImplementation)
+        }
+        require(size > 0, "NCTRT");
+        require(hasRole(UPGRADER_ROLE, msg.sender) || hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "IA:UPGRADE");
     }
 }

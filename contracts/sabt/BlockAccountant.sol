@@ -69,7 +69,7 @@ contract BlockAccountant is AccessControl {
         _accountant._migrate(msg.sender, fromUid_, toUid_, nthEra_, amount_);
     }
 
-    /**  @dev report: Report the membership point of the member
+    /**  @dev report: Report the membership point of the member to update
      * @param uid The member uid
      * @param token The token address
      * @param amount The amount of the membership point
@@ -98,6 +98,10 @@ contract BlockAccountant is AccessControl {
 
     function fb() external view returns (uint256) {
         return _accountant.fb;
+    }
+
+    function getCurrentEra() external view returns (uint32) {
+        return _accountant._getEra();
     }
 
     function getTotalTokens(

@@ -445,4 +445,146 @@ contract OrderbookTest is BaseSetup {
         );
     }
     
+    function testConvertOnSameDecimal() public {
+        super.setUp();
+        vm.prank(booker);
+        matchingEngine.addPair(address(token1), address(token2));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token2))
+        );
+        vm.prank(trader1);
+        // placeBid or placeAsk two of them is using the _insertId function it will revert
+        // because the program will enter the "if (amount > self.orders[head].depositAmount)."
+        // statement, and eventually, it will cause an infinite loop.
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            10,
+            500000000,
+            true,
+            2,
+            0
+        );
+        vm.prank(trader1);
+        //vm.expectRevert("OutOfGas");
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            10,
+            100000000,
+            true,
+            2,
+            0
+        );
+        vm.prank(trader1);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            10,
+            500000000,
+            true,
+            2,
+            0
+        );
+        uint256 converted1 = matchingEngine.convert(address(token1), address(token2), 1e20, true); // 100 * 1e18 quote token to base token
+        uint256 converted2 = matchingEngine.convert(address(token1), address(token2), 1e20, false); // 100 * 1e18 in base token to quote token
+        console.log(converted1/1e18);
+        console.log(converted2/1e18);
+    }
+
+    function testConvertOnDifferentDecimalWhereBaseBQuote() public {
+        super.setUp();
+        vm.prank(booker);
+        matchingEngine.addPair(address(token1), address(btc));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(btc))
+        );
+        vm.prank(trader1);
+        // placeBid or placeAsk two of them is using the _insertId function it will revert
+        // because the program will enter the "if (amount > self.orders[head].depositAmount)."
+        // statement, and eventually, it will cause an infinite loop.
+        matchingEngine.limitSell(
+            address(token1),
+            address(btc),
+            10,
+            500000000,
+            true,
+            2,
+            0
+        );
+        vm.prank(trader1);
+        //vm.expectRevert("OutOfGas");
+        matchingEngine.limitSell(
+            address(token1),
+            address(btc),
+            10,
+            100000000,
+            true,
+            2,
+            0
+        );
+        vm.prank(trader1);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(btc),
+            10,
+            500000000,
+            true,
+            2,
+            0
+        );
+        uint256 converted1 = matchingEngine.convert(address(token1), address(btc), 1e10, true); // 100 * 1e8(decimal) quote token to base token
+        uint256 converted2 = matchingEngine.convert(address(token1), address(btc), 1e20, false); // 100 * 1e18(decimal) in base token to quote token
+        console.log(converted1 / 1e18);
+        console.log(converted2 / 1e8);
+    }
+
+    function testConvertOnDifferentDecimalWhereNotBaseBQuote() public {
+        super.setUp();
+        vm.prank(booker);
+        matchingEngine.addPair(address(btc), address(token1));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(btc), address(token1))
+        );
+        vm.prank(trader1);
+        // placeBid or placeAsk two of them is using the _insertId function it will revert
+        // because the program will enter the "if (amount > self.orders[head].depositAmount)."
+        // statement, and eventually, it will cause an infinite loop.
+        matchingEngine.limitSell(
+            address(btc),
+            address(token1),
+            10,
+            500000000,
+            true,
+            2,
+            0
+        );
+        vm.prank(trader1);
+        //vm.expectRevert("OutOfGas");
+        matchingEngine.limitSell(
+            address(btc),
+            address(token1),
+            10,
+            100000000,
+            true,
+            2,
+            0
+        );
+        vm.prank(trader1);
+        matchingEngine.limitBuy(
+            address(btc),
+            address(token1),
+            10,
+            500000000,
+            true,
+            2,
+            0
+        );
+        uint256 converted1 = matchingEngine.convert(
+            address(btc), address(token1), 1e20, true); // 100 * 1e18(decimal) quote token to base token
+        uint256 converted2 = matchingEngine.convert(
+            address(btc), address(token1), 1e10, false); // 100 * 1e8(decimal) in base token to quote token
+        console.log(converted1 / 1e8);
+        console.log(converted2 / 1e18);
+    }
 }

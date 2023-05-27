@@ -41,7 +41,7 @@ contract Orderbook is IOrderbook, Initializable {
     ) external initializer {
         uint8 baseD = TransferHelper.decimals(base_);
         uint8 quoteD = TransferHelper.decimals(quote_);
-        require(baseD > 0 && quoteD > 0, "DECIMALS");
+        require(baseD <= 18 && quoteD <= 18, "DECIMALS");
         (uint8 diff, bool baseBquote_) = _absdiff(baseD, quoteD);
         decDiff = uint64(10**diff);
         baseBquote = baseBquote_;

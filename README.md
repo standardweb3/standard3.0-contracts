@@ -21,6 +21,10 @@ Monorepo for Standard Protocol 2.0 contracts
 
 `forge test -vvvv`
 
+## Audits
+
+[Hacken in 2023](./audits/hacken-2023)
+
 ## Licensing
 
 The primary license for the codes in this repo are the Business Source License 1.1 (`BUSL-1.1`), see [`LICENSE`](./LICENSE). 

@@ -1,4 +1,4 @@
-import "../interfaces/IOrderbook.sol";
+import "../interfaces/IOrderbook2.sol";
 import "../../security/Initializable.sol";
 import "../libraries/TransferHelper.sol";
 
@@ -17,39 +17,39 @@ contract Prices {
         uint256 lmp;
     }
 
-    PriceLinkedList internal heads;
+    PriceLinkedList internal pHeads;
 
     function _setLmp(uint256 lmp_) internal {
-        heads.lmp = lmp_;
+        pHeads.lmp = lmp_;
     }
 
     function _heads(
     ) internal view returns (uint256, uint256) {
-        return (heads.bidHead, heads.askHead);
+        return (pHeads.bidHead, pHeads.askHead);
     }
 
     function _bidHead(
     ) internal view returns (uint256) {
-        return heads.bidHead;
+        return pHeads.bidHead;
     }
 
     function _askHead(
     ) internal view returns (uint256) {
-        return heads.askHead;
+        return pHeads.askHead;
     }
 
     function _mktPrice(
     ) internal view returns (uint256) {
         require(
-            (heads.bidHead > 0 && heads.askHead > 0) || heads.lmp > 0,
+            (pHeads.bidHead > 0 && pHeads.askHead > 0) || pHeads.lmp > 0,
             "NoOrders"
         );
         return
-            heads.bidHead > 0 && heads.askHead > 0
-                ? (heads.bidHead + heads.askHead) / 2
-                : heads.bidHead == 0 && heads.askHead == 0
-                ? heads.lmp
-                : (heads.bidHead + heads.askHead);
+            pHeads.bidHead > 0 && pHeads.askHead > 0
+                ? (pHeads.bidHead + pHeads.askHead) / 2
+                : pHeads.bidHead == 0 && pHeads.askHead == 0
+                ? pHeads.lmp
+                : (pHeads.bidHead + pHeads.askHead);
     }
 
     function _next(bool isAsk, uint256 price) internal view returns (uint256) {
@@ -61,11 +61,11 @@ contract Prices {
         // insert ask price to the linked list
         if (isAsk) {
             // what if price queue had not been initialized or price is the lowest?
-            if (heads.askHead == 0 || price < heads.askHead) {
-                heads.askHead = price;
+            if (pHeads.askHead == 0 || price < pHeads.askHead) {
+                pHeads.askHead = price;
                 return;
             }
-            uint256 last = heads.askHead;
+            uint256 last = pHeads.askHead;
             // Traverse through list until we find the right spot where inserting price is higher value than last
             while (price < last) {
                 last = prices[isAsk][last];
@@ -74,7 +74,7 @@ contract Prices {
             // last is zero because it is null in solidity
             if (last == 0) {
                 prices[isAsk][price] = last;
-                heads.askHead = price;
+                pHeads.askHead = price;
             }
             // what if price is already included in the queue?
             else if (last == price) {
@@ -94,11 +94,11 @@ contract Prices {
         // insert bid price to the linked list
         else {
             // what if price queue had not been initialized or price is the highest?
-            if (heads.bidHead == 0 || price > heads.bidHead) {
-                heads.bidHead = price;
+            if (pHeads.bidHead == 0 || price > pHeads.bidHead) {
+                pHeads.bidHead = price;
                 return;
             }
-            uint256 last = heads.bidHead;
+            uint256 last = pHeads.bidHead;
             // Traverse through list until we find the right spot where inserting price is lower value than last
             // Check for null value of last as well because it will always be null at the end of the list, returning true always
             while (price > last && last != 0) {
@@ -108,7 +108,7 @@ contract Prices {
             // last is zero because it is null in solidity
             if (last == 0) {
                 prices[isAsk][price] = last;
-                heads.bidHead = price;
+                pHeads.bidHead = price;
             }
             // what if price is in the middle of the list?
             else if (prices[isAsk][last] > price) {
@@ -129,16 +129,11 @@ contract Prices {
 }
 
 contract Orderbook {
-    // Order struct
-    struct Order {
-        address owner;
-        uint256 depositAmount;
-    }
 
     /// Hashmap-style linked list of prices to route orders
     // key: price, value: order indices linked hashmap
     mapping(bool => mapping(uint256 => mapping(uint256 => uint256))) list;
-    mapping(bool => mapping(uint256 => Order)) orders;
+    mapping(bool => mapping(uint256 => IOrderbook2.Order)) orders;
     // Heads of the order linked list(i.e. lowest ask price / highest bid price)
     mapping(bool => mapping(uint256 => uint256)) oHeads;
 
@@ -215,7 +210,7 @@ contract Orderbook {
         address owner,
         uint256 depositAmount
     ) internal returns (uint256 id) {
-        Order memory order = Order({
+        IOrderbook2.Order memory order = IOrderbook2.Order({
             owner: owner,
             depositAmount: depositAmount
         });
@@ -277,9 +272,9 @@ contract Orderbook {
         bool isAsk,
         uint256 price,
         uint n
-    ) internal view returns (Order[] memory ) {
+    ) internal view returns (IOrderbook2.Order[] memory ) {
         uint256 head = oHeads[isAsk][price];
-        Order[] memory submittedOrders = new Order[](n);
+        IOrderbook2.Order[] memory submittedOrders = new IOrderbook2.Order[](n);
         uint256 i = 0;
         while (head != 0 && i < n) {
             submittedOrders[i] = orders[isAsk][head];
@@ -305,12 +300,12 @@ contract Orderbook {
         return list[isAsk][price][curr];
     }
 
-    function _getOrder(bool isAsk, uint256 id) internal view returns (Order memory) {
+    function _getOrder(bool isAsk, uint256 id) internal view returns (IOrderbook2.Order memory) {
         return orders[isAsk][id];
     }
 }
 
-contract Orderbook2 is Initializable, Prices, Orderbook {
+contract Orderbook2 is Initializable, Prices, Orderbook, IOrderbook2 {
     // Pair Struct
     struct Pair {
         uint256 id;
@@ -339,7 +334,215 @@ contract Orderbook2 is Initializable, Prices, Orderbook {
         pair = Pair(id_, base_, quote_, engine_);
     }
 
+    function setLmp(uint256 price) external {
+        require(msg.sender == pair.engine, "IA");
+        _setLmp(price);
+    }
+
+    function placeBid(address owner, uint256 price, uint256 amount) external {
+        require(msg.sender == pair.engine, "IA");
+        uint256 id = _createOrder(false, owner, amount);
+        _insert(false, price);
+        _insertId(false, price, id, amount);
+    }
+
+    function placeAsk(address owner, uint256 price, uint256 amount) external {
+        require(msg.sender == pair.engine, "IA");
+        uint256 id = _createOrder(true, owner, amount);
+        _insert(true, price);
+        _insertId(true, price, id, amount);
+    }
+
+    function cancelOrder(
+        uint256 orderId,
+        bool isAsk,
+        address owner
+    ) external returns (uint256 remaining, address base, address quote) {
+        require(msg.sender == pair.engine, "IA");
+        IOrderbook2.Order memory order = isAsk
+            ? _getOrder(true, orderId)
+            : _getOrder(false, orderId);
+        require(order.owner == owner, "NOT_OWNER");
+        isAsk
+            ? _deleteOrder(true, orderId)
+            : _deleteOrder(false, orderId);
+        isAsk
+            ? TransferHelper.safeTransfer(
+                pair.quote,
+                owner,
+                order.depositAmount
+            )
+            : TransferHelper.safeTransfer(
+                pair.base,
+                owner,
+                order.depositAmount
+            );
+        return (order.depositAmount, pair.base, pair.quote);
+    }
+
+    function execute(
+        uint256 orderId,
+        bool isAsk,
+        uint256 price,
+        address sender,
+        uint256 amount
+    ) external returns (address owner) {
+        require(msg.sender == pair.engine, "IA");
+        IOrderbook2.Order memory order = isAsk
+            ? _getOrder(true, orderId)
+            : _getOrder(false, orderId);
+        /* if ask, converted quote amount is baseAmount * price,
+         * converting the number converting decimal from base to quote,
+         * otherwise quote amount is baseAmount / price, converting decimal from quote to base
+         */
+        uint256 converted = _convert(price, amount, !isAsk);
+        converted = converted > order.depositAmount
+            ? order.depositAmount
+            : converted;
+        // if the order is ask order on the base/quote pair
+        if (isAsk) {
+            // sender is matching ask order for base asset with quote asset
+            // send converted amount of base asset from order to buyer(sender)
+            TransferHelper.safeTransfer(pair.quote, sender, converted);
+            // send deposited amount of quote asset from buyer to seller(owner)
+            TransferHelper.safeTransfer(pair.base, order.owner, amount);
+            // decrease remaining amount of order
+            _decreaseOrder(isAsk, orderId, converted);
+        }
+        // if the order is bid order on the base/quote pair
+        else {
+            // sender is matching bid order for quote asset with base asset
+            // send converted amount of quote asset from order to seller(owner)
+            TransferHelper.safeTransfer(pair.quote, order.owner, amount);
+            // send deposited amount of base asset from seller to buyer(sender)
+            TransferHelper.safeTransfer(pair.base, sender, converted);
+            // decrease remaining amount of order
+            _decreaseOrder(isAsk, orderId, converted);
+        }
+        return order.owner;
+    }
+
+    function fpop(
+        bool isAsk,
+        uint256 price
+    ) external returns (uint256 orderId) {
+        require(msg.sender == pair.engine, "Only engine can dequeue");
+        orderId = isAsk ? _fpop(true, price) : _fpop(false, price);
+        if (isEmpty(isAsk, price)) {
+            isAsk
+                ? pHeads.askHead = _next(isAsk, price)
+                : pHeads.bidHead = _next(isAsk, price);
+        }
+        return orderId;
+    }
+
     function _absdiff(uint8 a, uint8 b) internal pure returns (uint8, bool) {
         return (a > b ? a - b : b - a, a > b);
+    }
+
+    // get required amount for executing the order
+    function getRequired(
+        bool isAsk,
+        uint256 price,
+        uint256 orderId
+    ) external view returns (uint256 required) {
+        IOrderbook2.Order memory order = isAsk
+            ? _getOrder(true, orderId)
+            : _getOrder(false, orderId);
+        if (order.depositAmount == 0) {
+            return 0;
+        }
+        /* if ask, required base amount is quoteAmount / price,
+         * converting the number converting decimal from quote to base,
+         * otherwise quote amount is baseAmount * price, converting decimal from base to quote
+         */
+        return _convert(price, order.depositAmount, isAsk);
+    }
+
+    /////////////////////////////////
+    /// Price linked list methods ///
+    /////////////////////////////////
+
+    function heads() external view returns (uint256, uint256) {
+        return _heads();
+    }
+
+    function bidHead() external view returns (uint256) {
+        return _bidHead();
+    }
+
+    function askHead() external view returns (uint256) {
+        return _askHead();
+    }
+
+    function mktPrice() external view returns (uint256) {
+        return _mktPrice();
+    }
+
+    function getPrices(
+        bool isAsk,
+        uint256 n
+    ) external view returns (uint256[] memory) {
+        return isAsk ? _getPrices(true, n) : _getPrices(false, n);
+    }
+
+    function getOrderIds(
+        bool isAsk,
+        uint256 price,
+        uint256 n
+    ) external view returns (uint256[] memory) {
+        return
+            isAsk
+                ? _getOrderIds(true, price, n)
+                : _getOrderIds(false, price, n);
+    }
+
+    function getOrders(
+        bool isAsk,
+        uint256 price,
+        uint256 n
+    ) external view returns (IOrderbook2.Order[] memory) {
+        return
+            isAsk
+                ? _getOrders(true, price, n)
+                : _getOrders(false, price, n);
+    }
+
+    function getOrder(
+        bool isAsk,
+        uint256 orderId
+    ) external view returns (IOrderbook2.Order memory) {
+        return isAsk ? _getOrder(true, orderId) : _getOrder(false, orderId);
+    }
+
+    /**
+     * @dev get asset value in quote asset if isAsk is true, otherwise get asset value in base asset
+     * @param amount amount of asset in base asset if isAsk is true, otherwise in quote asset
+     * @param isAsk if true, get asset value in quote asset, otherwise get asset value in base asset
+     * @return converted asset value in quote asset if isAsk is true, otherwise asset value in base asset
+     */
+    function assetValue(
+        uint256 amount,
+        bool isAsk
+    ) external view returns (uint256 converted) {
+        return _convert(_mktPrice(), amount, isAsk);
+    }
+
+    function isEmpty(bool isAsk, uint256 price) public view returns (bool) {
+        return isAsk ? _isEmpty(true, price) : _isEmpty(false, price);
+    }
+
+    function _convert(
+        uint256 price,
+        uint256 amount,
+        bool isAsk
+    ) internal view returns (uint256 converted) {
+        if (isAsk) {
+            // convert quote to base
+            return baseBquote ? (amount * price) / 1e8 * decDiff  : (amount * price) / 1e8 / decDiff;
+        } else {
+            // convert base to quote
+            return baseBquote ? (amount * 1e8) / price / decDiff : amount * 1e8 * decDiff / price ;
+        }
     }
 }

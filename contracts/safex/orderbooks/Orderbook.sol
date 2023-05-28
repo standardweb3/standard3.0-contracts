@@ -258,5 +258,5 @@ contract Orderbook is IOrderbook, Initializable {
             // convert base to quote
             return baseBquote ? (amount * 1e8) / price / decDiff : amount * 1e8 * decDiff / price ;
         }
-    }
+    }    
 }

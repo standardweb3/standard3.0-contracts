@@ -13,6 +13,12 @@ The treasury contract stores funds and is the venue where investors, developers,
 ## SABT
 The SABT contract mints and burns NFT which proves a user's identity from holding wallet.
 
+# Remediation
+
+## Hacken-2023-05-18-C02
+
+`TimeAccountant` contract was deprecated and the protocol now uses  `BlockAccountant` from the experience of Beacon chain halt by Ethereum2.0. It is best not to use time if transactions do not happen on a chain halt.
+
 ## Licensing
 
 The primary license for the codes in this repo are the Business Source License 1.1 (`BUSL-1.1`), see [`LICENSE`](./LICENSE). 

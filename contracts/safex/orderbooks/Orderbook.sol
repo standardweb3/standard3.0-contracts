@@ -33,6 +33,9 @@ contract Orderbook is IOrderbook, Initializable {
     NewOrderOrderbook.OrderStorage private _bidOrders;
     NewOrderOrderbook.OrderStorage private _askOrders;
 
+    error InvalidDecimals(uint8 base, uint8 quote);
+    error InvalidAccess(address sender, address allowed);
+
     function initialize(
         uint256 id_,
         address base_,
@@ -41,27 +44,33 @@ contract Orderbook is IOrderbook, Initializable {
     ) external initializer {
         uint8 baseD = TransferHelper.decimals(base_);
         uint8 quoteD = TransferHelper.decimals(quote_);
-        require(baseD <= 18 && quoteD <= 18, "DECIMALS");
+        if(baseD > 18 || quoteD > 18) {
+            revert InvalidDecimals(baseD, quoteD);
+        }
         (uint8 diff, bool baseBquote_) = _absdiff(baseD, quoteD);
         decDiff = uint64(10**diff);
         baseBquote = baseBquote_;
         pair = Pair(id_, base_, quote_, engine_);
     }
 
-    function setLmp(uint256 price) external {
-        require(msg.sender == pair.engine, "IA");
+    modifier onlyEngine {
+		if (msg.sender !=  pair.engine) {
+            revert InvalidAccess(msg.sender, pair.engine);
+        }
+        _;
+    }   
+
+    function setLmp(uint256 price) external onlyEngine {
         priceLists._setLmp(price);
     }
 
-    function placeBid(address owner, uint256 price, uint256 amount) external {
-        require(msg.sender == pair.engine, "IA");
+    function placeBid(address owner, uint256 price, uint256 amount) external onlyEngine {
         uint256 id = _bidOrders._createOrder(owner, amount);
         priceLists._insert(false, price);
         _bidOrders._insertId(price, id, amount);
     }
 
-    function placeAsk(address owner, uint256 price, uint256 amount) external {
-        require(msg.sender == pair.engine, "IA");
+    function placeAsk(address owner, uint256 price, uint256 amount) external onlyEngine {
         uint256 id = _askOrders._createOrder(owner, amount);
         priceLists._insert(true, price);
         _askOrders._insertId(price, id, amount);
@@ -71,12 +80,13 @@ contract Orderbook is IOrderbook, Initializable {
         uint256 orderId,
         bool isAsk,
         address owner
-    ) external returns (uint256 remaining, address base, address quote) {
-        require(msg.sender == pair.engine, "IA");
+    ) external onlyEngine returns (uint256 remaining, address base, address quote) {
         NewOrderOrderbook.Order memory order = isAsk
             ? _askOrders._getOrder(orderId)
             : _bidOrders._getOrder(orderId);
-        require(order.owner == owner, "NOT_OWNER");
+        if(order.owner != owner) {
+            revert InvalidAccess(owner, order.owner);
+        }
         isAsk
             ? _askOrders._deleteOrder(orderId)
             : _bidOrders._deleteOrder(orderId);
@@ -100,8 +110,7 @@ contract Orderbook is IOrderbook, Initializable {
         uint256 price,
         address sender,
         uint256 amount
-    ) external returns (address owner) {
-        require(msg.sender == pair.engine, "IA");
+    ) external onlyEngine returns (address owner) {
         NewOrderOrderbook.Order memory order = isAsk
             ? _askOrders._getOrder(orderId)
             : _bidOrders._getOrder(orderId);
@@ -139,8 +148,7 @@ contract Orderbook is IOrderbook, Initializable {
     function fpop(
         bool isAsk,
         uint256 price
-    ) external returns (uint256 orderId) {
-        require(msg.sender == pair.engine, "Only engine can dequeue");
+    ) external onlyEngine returns (uint256 orderId) {
         orderId = isAsk ? _askOrders._fpop(price) : _bidOrders._fpop(price);
         if (isEmpty(isAsk, price)) {
             isAsk

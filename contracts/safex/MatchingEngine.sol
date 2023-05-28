@@ -131,6 +131,8 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
         accountant = accountant_;
     }
 
+    error InvalidFeeRate(uint256 feeNum, uint256 feeDenom);
+
     /**
      * @dev Set the fee numerator and denominator of trading.
      *
@@ -144,7 +146,9 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
         uint256 feeDenom_
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         // check if fee numerator and denominator are valid
-        require(feeNum < 1e8 && feeDenom < 1e8 && feeNum_ < feeDenom_, "NF");
+        if (feeNum >= 1e8 || feeDenom >= 1e8 || feeNum_ >= feeDenom_) {
+            revert InvalidFeeRate(feeNum_, feeDenom_);
+        }
         feeNum = feeNum_;
         feeDenom = feeDenom_;
     }
@@ -624,6 +628,8 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
         }
     }
 
+    error TooManyMatches(uint256 n);
+
     /**
      * @dev Match bid if `isAsk` is true, match ask if `isAsk` is false.
      */
@@ -636,7 +642,9 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
         uint32 i,
         uint32 n
     ) internal returns (uint256 remaining, uint32 k) {
-        require(n < 100, "TMM");
+        if (n >= 10) {
+            revert TooManyMatches(n);
+        }
         remaining = amount;
         while (
             remaining > 0 &&
@@ -851,15 +859,20 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
         return (withoutFee, book);
     }
 
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal virtual override {
+    error NotContract(address newImpl);
+    error InvalidRole(bytes32 role, address sender);
+
+    function _authorizeUpgrade(address newImpl) internal virtual override {
         // check if new implementation is the contract
         uint256 size;
         assembly {
-            size := extcodesize(newImplementation)
+            size := extcodesize(newImpl)
         }
-        require(size > 0, "NCTRT");
-        require(hasRole(UPGRADER_ROLE, msg.sender) || hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "IA:UPGRADE");
+        if (size == 0) {
+            revert NotContract(newImpl);
+        }
+        if (!hasRole(UPGRADER_ROLE, _msgSender())) {
+            revert InvalidRole(UPGRADER_ROLE, _msgSender());
+        }
     }
 }

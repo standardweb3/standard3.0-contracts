@@ -36,16 +36,22 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory {
         impl = impl_;
     }
 
+    error InvalidAccess(address sender, address allowed);
+    error PairAlreadyExists(address base, address quote);
+
     function createBook(
         address bid_,
         address ask_,
         address engine_
     ) external override returns (address orderbook) {
-        require(msg.sender == engine, "OrderbookFactory: IA");
-        require(
-            orderbookByBaseQuote[bid_][ask_] == address(0),
-            "OrderbookFactory: OB"
-        );
+        if (msg.sender != engine) {
+            revert InvalidAccess(msg.sender, engine);
+        }
+        if (
+            orderbookByBaseQuote[bid_][ask_] != address(0)
+        ) {
+            revert PairAlreadyExists(bid_, ask_);
+        }
         address proxy = CloneFactory._createClone(impl);
         IOrderbook(proxy).initialize(
             allOrderbooksLength(),
@@ -90,8 +96,13 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory {
         return (pair.base, pair.quote);
     }
 
+    error InvalidRole(bytes32 role, address sender);
+
     function initialize(address engine_) public {
-        require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "IA"); // Invalid Access
+        if(!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
+            // Invalid Access
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        }
         engine = engine_;
     }
 

@@ -486,7 +486,7 @@ contract OrderbookTest is BaseSetup {
             10,
             500000000,
             true,
-            2,
+            5,
             0
         );
         console.log("Base token decimal: ", 18);

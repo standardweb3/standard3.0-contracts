@@ -22,7 +22,6 @@ contract Orderbook is IOrderbook, Initializable {
 
     Pair private pair;
 
-
     uint64 private decDiff;
     bool private baseBquote;
 
@@ -44,35 +43,49 @@ contract Orderbook is IOrderbook, Initializable {
     ) external initializer {
         uint8 baseD = TransferHelper.decimals(base_);
         uint8 quoteD = TransferHelper.decimals(quote_);
-        if(baseD > 18 || quoteD > 18) {
+        if (baseD > 18 || quoteD > 18) {
             revert InvalidDecimals(baseD, quoteD);
         }
         (uint8 diff, bool baseBquote_) = _absdiff(baseD, quoteD);
-        decDiff = uint64(10**diff);
+        decDiff = uint64(10 ** diff);
         baseBquote = baseBquote_;
         pair = Pair(id_, base_, quote_, engine_);
     }
 
-    modifier onlyEngine {
-		if (msg.sender !=  pair.engine) {
+    modifier onlyEngine() {
+        if (msg.sender != pair.engine) {
             revert InvalidAccess(msg.sender, pair.engine);
         }
         _;
-    }   
+    }
 
     function setLmp(uint256 price) external onlyEngine {
         priceLists._setLmp(price);
     }
 
-    function placeBid(address owner, uint256 price, uint256 amount) external onlyEngine {
+    function placeBid(
+        address owner,
+        uint256 price,
+        uint256 amount
+    ) external onlyEngine {
         uint256 id = _bidOrders._createOrder(owner, amount);
-        priceLists._insert(false, price);
+        // check if the price is new in the list. if not, insert id to the list
+        if (_bidOrders._isEmpty(price)) {
+            priceLists._insert(false, price);
+        }
         _bidOrders._insertId(price, id, amount);
     }
 
-    function placeAsk(address owner, uint256 price, uint256 amount) external onlyEngine {
+    function placeAsk(
+        address owner,
+        uint256 price,
+        uint256 amount
+    ) external onlyEngine {
         uint256 id = _askOrders._createOrder(owner, amount);
-        priceLists._insert(true, price);
+        // check if the price is new in the list. if not, insert id to the list
+        if (_askOrders._isEmpty(price)) {
+            priceLists._insert(true, price);
+        }
         _askOrders._insertId(price, id, amount);
     }
 
@@ -80,11 +93,15 @@ contract Orderbook is IOrderbook, Initializable {
         uint256 orderId,
         bool isAsk,
         address owner
-    ) external onlyEngine returns (uint256 remaining, address base, address quote) {
+    )
+        external
+        onlyEngine
+        returns (uint256 remaining, address base, address quote)
+    {
         NewOrderOrderbook.Order memory order = isAsk
             ? _askOrders._getOrder(orderId)
             : _bidOrders._getOrder(orderId);
-        if(order.owner != owner) {
+        if (order.owner != owner) {
             revert InvalidAccess(owner, order.owner);
         }
         isAsk
@@ -234,7 +251,10 @@ contract Orderbook is IOrderbook, Initializable {
         bool isAsk,
         uint256 orderId
     ) external view returns (NewOrderOrderbook.Order memory) {
-        return isAsk ? _askOrders._getOrder(orderId) : _bidOrders._getOrder(orderId);
+        return
+            isAsk
+                ? _askOrders._getOrder(orderId)
+                : _bidOrders._getOrder(orderId);
     }
 
     /**
@@ -261,10 +281,16 @@ contract Orderbook is IOrderbook, Initializable {
     ) internal view returns (uint256 converted) {
         if (isAsk) {
             // convert quote to base
-            return baseBquote ? (amount * price) / 1e8 * decDiff  : (amount * price) / 1e8 / decDiff;
+            return
+                baseBquote
+                    ? ((amount * price) / 1e8) * decDiff
+                    : (amount * price) / 1e8 / decDiff;
         } else {
             // convert base to quote
-            return baseBquote ? (amount * 1e8) / price / decDiff : amount * 1e8 * decDiff / price ;
+            return
+                baseBquote
+                    ? (amount * 1e8) / price / decDiff
+                    : (amount * 1e8 * decDiff) / price;
         }
-    }    
+    }
 }

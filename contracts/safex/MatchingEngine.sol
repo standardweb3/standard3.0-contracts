@@ -740,7 +740,7 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
             // check if there is any matching bid order until matching bid order price is higher than the limit Price
             uint256 bidHead = IOrderbook(orderbook).bidHead();
             while (
-                remaining > 0 && bidHead != 0 && bidHead >= limitPrice && i < n
+                remaining > 0 && bidHead != 0 && bidHead <= limitPrice && i < n
             ) {
                 lmp = bidHead;
                 (remaining, i) = _matchAt(
@@ -758,7 +758,7 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
             // check if there is any maching ask order until matching ask order price is lower than the limit price
             uint askHead = IOrderbook(orderbook).askHead();
             while (
-                remaining > 0 && askHead != 0 && askHead <= limitPrice && i < n
+                remaining > 0 && askHead != 0 && askHead >= limitPrice && i < n
             ) {
                 lmp = askHead;
                 (remaining, i) = _matchAt(

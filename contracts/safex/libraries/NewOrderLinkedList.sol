@@ -76,71 +76,67 @@ library NewOrderLinkedList {
         bool isAsk,
         uint256 price
     ) internal {
-        // insert ask price to the linked list
         if (isAsk) {
-            // what if price queue had not been initialized or price is the lowest?
-            if (self.askHead == 0 || price < self.askHead) {
+            uint256 last = 0;
+            uint256 head = self.askHead;
+            // insert order to the linked list
+            // if the list is empty
+            if (head == 0 || price >= self.askHead) {
                 self.askHead = price;
+                self.askPrices[price] = head;
                 return;
             }
-            uint256 last = self.askHead;
-            // Traverse through list until we find the right spot where inserting price is higher value than last
-            while (price < last) {
-                last = self.askPrices[last];
-            }
-            // what if price is the lowest as lowest ask has not even been initialized?
-            // last is zero because it is null in solidity
-            if (last == 0) {
-                self.askPrices[price] = last;
-                self.askHead = price;
-            }
-            // what if price is already included in the queue?
-            else if (last == price) {
-                // End traversal as there is no need to traverse further
-                return;
-            }
-            // what if price is in the middle of the list?
-            else if (self.askPrices[last] < price) {
-                self.askPrices[price] = self.askPrices[last];
-                self.askPrices[last] = price;
-            }
-            // what if price is the highest?
-            else {
-                self.askPrices[price] = last;
+            while (head != 0) {
+                uint256 next = self.askPrices[head];
+                if (price < next) {
+                    // Keep traversing
+                    last = head;
+                    head = self.askPrices[head];
+                } else if (price > next) {
+                    // Insert price in the middle of the list
+                    self.askPrices[price] = next;
+                    self.askPrices[last] = price;
+                    return;
+                } else {
+                    // price is already included in the queue as it is equal to next
+                    // End traversal as there is no need to traverse further
+                    return;
+                }
             }
         }
         // insert bid price to the linked list
         else {
-            // what if price queue had not been initialized or price is the highest?
-            if (self.bidHead == 0 || price > self.bidHead) {
+            uint256 last = 0;
+            uint256 head = self.bidHead;
+            // insert order to the linked list
+            // if the list is empty
+            if (head == 0 || price <= head) {
                 self.bidHead = price;
+                self.bidPrices[price] = head;
                 return;
             }
-            uint256 last = self.bidHead;
-            // Traverse through list until we find the right spot where inserting price is lower value than last
-            // Check for null value of last as well because it will always be null at the end of the list, returning true always
-            while (price > last && last != 0) {
-                last = self.bidPrices[last];
-            }
-            // what if price is the highest as highest bid has not even been initialized?
-            // last is zero because it is null in solidity
-            if (last == 0) {
-                self.bidPrices[price] = last;
-                self.bidHead = price;
-            }
-            // what if price is in the middle of the list?
-            else if (self.bidPrices[last] > price) {
-                self.bidPrices[price] = self.bidPrices[last];
-                self.bidPrices[last] = price;
-            }
-            // what if price is already included in the queue?
-            else if (last == price) {
-                // End traversal as there is no need to traverse further
-                return;
-            }
-            // what if price is the lowest?
-            else {
-                self.bidPrices[price] = last;
+            while (head != 0) {
+                uint256 next = self.bidPrices[head];
+                if (price > next) {
+                    if (next == 0) {
+                        // Insert price in the middle of the list
+                        self.bidPrices[price] = next;
+                        self.bidPrices[last] = price;
+                        return;
+                    }
+                    // Keep traversing
+                    last = head;
+                    head = self.bidPrices[head];
+                } else if (price < next) {
+                    // Insert price in the middle of the list
+                    self.bidPrices[price] = next;
+                    self.bidPrices[last] = price;
+                    return;
+                } else {
+                    // price is already included in the queue as it is equal to next
+                    // End traversal as there is no need to traverse further
+                    return;
+                }
             }
         }
     }

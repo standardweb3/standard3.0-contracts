@@ -87,8 +87,8 @@ contract MembershipBaseSetup is BaseSetup {
 
         // mine 1000 blocks
         utils.mineBlocks(1000);
-        console.log(block.number);
-        console.log(accountant.fb());
+        console.log("Block number after mining 1000 blocks: ", block.number);
+        console.log("Financial block where accountant started its accounting: ", accountant.fb());
 
         // make a price in matching engine where 1 feeToken = 1000 stablecoin with buy and sell order
         vm.prank(trader2);

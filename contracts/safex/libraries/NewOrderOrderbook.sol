@@ -40,7 +40,8 @@ library NewOrderOrderbook {
         // Traverse through list until we find the right spot where id's deposit amount is higher than next
         while (head != 0) {
             // what if order deposit amount is bigger than the next order's deposit amount?
-            if (amount > self.orders[head].depositAmount) {
+            uint256 next = self.orders[head].depositAmount;
+            if (amount > next) {
                 // set next order id after input id
                 self.list[price][id] = self.list[price][head];
                 // set last order id before input id
@@ -48,7 +49,7 @@ library NewOrderOrderbook {
                 return;
             }
             // what if order is canceled and order id still stays in the list?
-            else if (self.orders[head].depositAmount == 0) {
+            else if (next == 0) {
                 // set next of next order id to the next order id of last order
                 self.list[price][last] = self.list[price][head];
                 // delete canceled order id
@@ -58,7 +59,7 @@ library NewOrderOrderbook {
                 return;
             }
             // what if there is same order with same deposit amount?
-            else if (self.orders[head].depositAmount == amount) {
+            else if (next == amount) {
                 // set input order id after next order id
                 self.list[price][head] = self.list[price][id];
                 // set last order id before next order id

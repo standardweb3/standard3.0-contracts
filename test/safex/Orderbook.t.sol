@@ -90,6 +90,7 @@ contract OrderbookTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(btc));
         console.log(
+            "Base/Quote Pair: ",
             matchingEngine.getBookByPair(address(token1), address(btc))
         );
         vm.prank(trader1);
@@ -119,6 +120,7 @@ contract OrderbookTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         console.log(
+            "Base/Quote Pair: ",
             matchingEngine.getBookByPair(address(token1), address(token2))
         );
         vm.prank(trader1);
@@ -160,6 +162,7 @@ contract OrderbookTest is BaseSetup {
         matchingEngine.addPair(address(token1), address(token2));
         matchingEngine.setFee(0, 10);
         console.log(
+            "Base/Quote Pair: ",
             matchingEngine.getBookByPair(address(token1), address(token2))
         );
         console.log("Buy and sell with one price (Fee off)");
@@ -486,10 +489,12 @@ contract OrderbookTest is BaseSetup {
             2,
             0
         );
+        console.log("Base token decimal: ", 18);
+        console.log("Quote token decimal: ", 18);
         uint256 converted1 = matchingEngine.convert(address(token1), address(token2), 1e20, true); // 100 * 1e18 quote token to base token
         uint256 converted2 = matchingEngine.convert(address(token1), address(token2), 1e20, false); // 100 * 1e18 in base token to quote token
-        console.log(converted1/1e18);
-        console.log(converted2/1e18);
+        console.log("quote token to converted base token: ", converted1 / 1e18);
+        console.log("base token to converted quote token: ", converted2 / 1e18);
     }
 
     function testConvertOnDifferentDecimalWhereBaseBQuote() public {
@@ -533,10 +538,12 @@ contract OrderbookTest is BaseSetup {
             2,
             0
         );
+        console.log("Base token decimal: ", 18);
+        console.log("Quote token decimal: ", 8);
         uint256 converted1 = matchingEngine.convert(address(token1), address(btc), 1e10, true); // 100 * 1e8(decimal) quote token to base token
         uint256 converted2 = matchingEngine.convert(address(token1), address(btc), 1e20, false); // 100 * 1e18(decimal) in base token to quote token
-        console.log(converted1 / 1e18);
-        console.log(converted2 / 1e8);
+        console.log("quote token to converted base token: ", converted1 / 1e18);
+        console.log("base token to converted quote token: ", converted2 / 1e8);
     }
 
     function testConvertOnDifferentDecimalWhereNotBaseBQuote() public {
@@ -580,11 +587,18 @@ contract OrderbookTest is BaseSetup {
             2,
             0
         );
+        console.log("Base token decimal: ", 8);
+        console.log("Quote token decimal: ", 18);
         uint256 converted1 = matchingEngine.convert(
             address(btc), address(token1), 1e20, true); // 100 * 1e18(decimal) quote token to base token
         uint256 converted2 = matchingEngine.convert(
             address(btc), address(token1), 1e10, false); // 100 * 1e8(decimal) in base token to quote token
-        console.log(converted1 / 1e8);
-        console.log(converted2 / 1e18);
+        console.log("quote token to converted base token in decimal of 8: ", converted1 / 1e8);
+        console.log("base token to converted quote token in decimal of 18: ", converted2 / 1e18);
+    }
+
+    function getOrders() public {
+        super.setUp();
+        console.log();
     }
 }

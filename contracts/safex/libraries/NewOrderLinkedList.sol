@@ -81,7 +81,7 @@ library NewOrderLinkedList {
             uint256 head = self.askHead;
             // insert order to the linked list
             // if the list is empty
-            if (head == 0 || price >= self.askHead) {
+            if (head == 0 || price >= head) {
                 self.askHead = price;
                 self.askPrices[price] = head;
                 return;

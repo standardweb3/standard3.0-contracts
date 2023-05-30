@@ -222,7 +222,7 @@ contract Orderbook is IOrderbook, Initializable {
         bool isAsk,
         uint256 n
     ) external view returns (uint256[] memory) {
-        return isAsk ? _askOrders._getPrices(n) : _bidOrders._getPrices(n);
+        return priceLists._getPrices(isAsk, n);
     }
 
     function getOrderIds(

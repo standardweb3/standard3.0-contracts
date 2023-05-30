@@ -140,4 +140,23 @@ library NewOrderLinkedList {
             }
         }
     }
+
+       // show n prices shown in the orderbook
+    function _getPrices(
+        PriceLinkedList storage self,
+        bool isAsk,
+        uint n
+    ) internal view returns (uint256[] memory) {
+        uint256 i = 0;
+        uint256[] memory prices = new uint256[](n);
+        for (
+            uint256 price = isAsk ? self.askHead : self.bidHead;
+            price != 0 && i < n;
+            price = isAsk ? self.askPrices[price] : self.bidPrices[price]
+        ) {
+            prices[i] = price;
+            i++;
+        }
+        return prices;
+    }
 }

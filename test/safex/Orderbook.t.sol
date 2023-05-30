@@ -8,6 +8,7 @@ import {Utils} from "../utils/Utils.sol";
 import {MatchingEngine} from "../../contracts/safex/MatchingEngine.sol";
 import {OrderbookFactory} from "../../contracts/safex/orderbooks/OrderbookFactory.sol";
 import {Orderbook} from "../../contracts/safex/orderbooks/Orderbook.sol";
+import {NewOrderOrderbook} from "../../contracts/safex/libraries/NewOrderOrderbook.sol";
 
 contract BaseSetup is Test {
     Utils public utils;
@@ -145,7 +146,6 @@ contract OrderbookTest is BaseSetup {
         );
     }
 
-    
     function testOrderbookAccess() public {
         super.setUp();
         vm.prank(booker);
@@ -447,7 +447,7 @@ contract OrderbookTest is BaseSetup {
             0
         );
     }
-    
+
     function testConvertOnSameDecimal() public {
         super.setUp();
         vm.prank(booker);
@@ -491,8 +491,18 @@ contract OrderbookTest is BaseSetup {
         );
         console.log("Base token decimal: ", 18);
         console.log("Quote token decimal: ", 18);
-        uint256 converted1 = matchingEngine.convert(address(token1), address(token2), 1e20, true); // 100 * 1e18 quote token to base token
-        uint256 converted2 = matchingEngine.convert(address(token1), address(token2), 1e20, false); // 100 * 1e18 in base token to quote token
+        uint256 converted1 = matchingEngine.convert(
+            address(token1),
+            address(token2),
+            1e20,
+            true
+        ); // 100 * 1e18 quote token to base token
+        uint256 converted2 = matchingEngine.convert(
+            address(token1),
+            address(token2),
+            1e20,
+            false
+        ); // 100 * 1e18 in base token to quote token
         console.log("quote token to converted base token: ", converted1 / 1e18);
         console.log("base token to converted quote token: ", converted2 / 1e18);
     }
@@ -540,8 +550,18 @@ contract OrderbookTest is BaseSetup {
         );
         console.log("Base token decimal: ", 18);
         console.log("Quote token decimal: ", 8);
-        uint256 converted1 = matchingEngine.convert(address(token1), address(btc), 1e10, true); // 100 * 1e8(decimal) quote token to base token
-        uint256 converted2 = matchingEngine.convert(address(token1), address(btc), 1e20, false); // 100 * 1e18(decimal) in base token to quote token
+        uint256 converted1 = matchingEngine.convert(
+            address(token1),
+            address(btc),
+            1e10,
+            true
+        ); // 100 * 1e8(decimal) quote token to base token
+        uint256 converted2 = matchingEngine.convert(
+            address(token1),
+            address(btc),
+            1e20,
+            false
+        ); // 100 * 1e18(decimal) in base token to quote token
         console.log("quote token to converted base token: ", converted1 / 1e18);
         console.log("base token to converted quote token: ", converted2 / 1e8);
     }
@@ -590,15 +610,144 @@ contract OrderbookTest is BaseSetup {
         console.log("Base token decimal: ", 8);
         console.log("Quote token decimal: ", 18);
         uint256 converted1 = matchingEngine.convert(
-            address(btc), address(token1), 1e20, true); // 100 * 1e18(decimal) quote token to base token
+            address(btc),
+            address(token1),
+            1e20,
+            true
+        ); // 100 * 1e18(decimal) quote token to base token
         uint256 converted2 = matchingEngine.convert(
-            address(btc), address(token1), 1e10, false); // 100 * 1e8(decimal) in base token to quote token
-        console.log("quote token to converted base token in decimal of 8: ", converted1 / 1e8);
-        console.log("base token to converted quote token in decimal of 18: ", converted2 / 1e18);
+            address(btc),
+            address(token1),
+            1e10,
+            false
+        ); // 100 * 1e8(decimal) in base token to quote token
+        console.log(
+            "quote token to converted base token in decimal of 8: ",
+            converted1 / 1e8
+        );
+        console.log(
+            "base token to converted quote token in decimal of 18: ",
+            converted2 / 1e18
+        );
     }
 
-    function getOrders() public {
+    function testGetPrices() public {
         super.setUp();
-        console.log();
+        vm.prank(booker);
+        matchingEngine.addPair(address(token1), address(token2));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token2))
+        );
+        vm.prank(trader1);
+        // placeBid or placeAsk two of them is using the _insertId function it will revert
+        // because the program will enter the "if (amount > self.orders[head].depositAmount)."
+        // statement, and eventually, it will cause an infinite loop.
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            10,
+            500000000,
+            true,
+            2,
+            0
+        );
+        vm.prank(trader1);
+        //vm.expectRevert("OutOfGas");
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            10,
+            100000000,
+            true,
+            2,
+            0
+        );
+        vm.prank(trader1);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            10,
+            500000000,
+            true,
+            5,
+            0
+        );
+        uint256[] memory askPrices = matchingEngine.getPrices(
+            address(token1),
+            address(token2),
+            true,
+            20
+        );
+        console.log("Ask prices: ");
+        for (uint i = 0; i < 3; i++) {
+            console.log(askPrices[i]);
+        }
+        //matchingEngine.getOrders(address(token1), address(token2), true, 0, 0);
+        uint256[] memory bidPrices = matchingEngine.getPrices(
+            address(token1),
+            address(token2),
+            false,
+            20
+        );
+        console.log("Bid prices: ");
+        for (uint i = 0; i < 3; i++) {
+            console.log(bidPrices[i]);
+        }
+    }
+
+    function testGetOrders() public {
+        super.setUp();
+        vm.prank(booker);
+        matchingEngine.addPair(address(token1), address(token2));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token2))
+        );
+        vm.prank(trader1);
+        // placeBid or placeAsk two of them is using the _insertId function it will revert
+        // because the program will enter the "if (amount > self.orders[head].depositAmount)."
+        // statement, and eventually, it will cause an infinite loop.
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            10,
+            500000000,
+            true,
+            2,
+            0
+        );
+        vm.prank(trader1);
+        //vm.expectRevert("OutOfGas");
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            10,
+            100000000,
+            true,
+            2,
+            0
+        );
+        vm.prank(trader1);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            10,
+            500000000,
+            true,
+            5,
+            0
+        );
+
+        console.log("Bid orders: ");
+        NewOrderOrderbook.Order[] memory bidOrders = matchingEngine.getOrders(
+            address(token1),
+            address(token2),
+            false,
+            500000000,
+            3
+        );
+
+        for (uint i = 0; i < 3; i++) {
+            console.log(bidOrders[i].owner, bidOrders[i].depositAmount);
+        }
     }
 }

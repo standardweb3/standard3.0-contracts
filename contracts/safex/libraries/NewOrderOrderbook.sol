@@ -124,24 +124,6 @@ library NewOrderOrderbook {
         delete self.orders[id];
     }
 
-    // show n prices shown in the orderbook
-    function _getPrices(
-        OrderStorage storage self,
-        uint n
-    ) internal view returns (uint256[] memory) {
-        uint256 i = 0;
-        uint256[] memory prices = new uint256[](n);
-        for (
-            uint256 price = self.head[0];
-            price != 0 && i < n;
-            price = self.list[0][price]
-        ) {
-            prices[i] = price;
-            i++;
-        }
-        return prices;
-    }
-
     // show n order ids at the price in the orderbook
     function _getOrderIds(
         OrderStorage storage self,

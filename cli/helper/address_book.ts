@@ -20,7 +20,7 @@ export async function getAddress(contract: any, chain: ChainId) {
     var content = await loadAddresses();
     return content[contract][chainName];
   } else {
-    throw new Error("Contract not registered in address_book.json");
+    throw new Error("Contract not registered in address_bidOrdersook.json");
   }
 }
 
@@ -61,7 +61,7 @@ export async function recordAddress(name: any, chain: any, address: any) {
 }
 
 export async function loadAddresses() {
-  let deploymentConfigFile = process.env.ADDRESS_BOOK;
+  let deploymentConfigFile = process.env.ADDRESS_bidOrdersOOK;
   if (!deploymentConfigFile) {
     console.log(
       'no deploymentConfigFile field found in standard deployment config. attempting to read from default path "./address-book.json"'

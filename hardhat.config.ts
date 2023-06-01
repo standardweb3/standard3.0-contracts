@@ -45,14 +45,14 @@ const accounts = [
   process.env.TEST_DEPLOYER_PRIVATE_KEY,
   process.env.TEST_TRADER1_PRIVATE_KEY,
   process.env.TEST_TRADER2_PRIVATE_KEY,
-  process.env.TEST_BOOKER_PRIVATE_KEY,
+  process.env.TEST_bidOrdersOOKER_PRIVATE_KEY,
 ];
 
 const testnetAccounts = [
   process.env.TESTNET_DEPLOYER_PRIVATE_KEY,
   process.env.TESTNET_TRADER1_PRIVATE_KEY,
   process.env.TESTNET_TRADER2_PRIVATE_KEY,
-  process.env.TESTNET_BOOKER_PRIVATE_KEY,
+  process.env.TESTNET_bidOrdersOOKER_PRIVATE_KEY,
 ]
 
 const config = {

@@ -160,7 +160,7 @@ library MembershipLib {
         self.subscribedAt[uid_].bh = 0;
     }
 
-    function _balanceOf(
+    function _bidOrdersalanceOf(
         Member storage self,
         address owner_,
         uint32 uid_

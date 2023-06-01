@@ -7,7 +7,7 @@ interface IOrderFactory {
         uint256 pairId_,
         address owner_,
         address orderbook_,
-        bool isAsk_,
+        bool isBid_,
         uint256 price_,
         address deposit_,
         uint256 depositAmount_

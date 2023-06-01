@@ -51,14 +51,14 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
     event OrderCanceled(
         address orderbook,
         uint256 id,
-        bool isAsk,
+        bool isBid,
         address owner
     );
 
     event OrderMatched(
         address orderbook,
         uint256 id,
-        bool isAsk,
+        bool isBid,
         address sender,
         address owner,
         uint256 amount,
@@ -424,23 +424,23 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
      * @dev Cancels an order in an orderbook by the given order ID and order type.
      * @param orderbook The address of the orderbook to cancel the order in
      * @param orderId The ID of the order to cancel
-     * @param isAsk Boolean indicating if the order to cancel is an ask order
+     * @param isBid Boolean indicating if the order to cancel is an ask order
      * @return bool True if the order was successfully canceled, otherwise false.
      */
     function cancelOrder(
         address orderbook,
         uint256 orderId,
-        bool isAsk,
+        bool isBid,
         uint32 uid
     ) external returns (bool) {
         (uint256 remaining, address base, address quote) = IOrderbook(orderbook)
-            .cancelOrder(orderId, isAsk, msg.sender);
+            .cancelOrder(orderId, isBid, msg.sender);
         // decrease point from orderbook
         if (uid != 0 && IRevenue(membership).isReportable(msg.sender, uid)) {
             // report cancelation to accountant
             IRevenue(accountant).report(
                 uid,
-                isAsk ? quote : base,
+                isBid ? quote : base,
                 remaining,
                 false
             );
@@ -448,11 +448,11 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
         // refund fee from treasury to sender
         IRevenue(feeTo).refundFee(
             msg.sender,
-            isAsk ? quote : base,
+            isBid ? quote : base,
             (remaining * feeNum) / feeDenom
         );
 
-        emit OrderCanceled(orderbook, orderId, isAsk, msg.sender);
+        emit OrderCanceled(orderbook, orderId, isBid, msg.sender);
         return true;
     }
 
@@ -492,72 +492,72 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
      * @dev Returns prices in the ask/bid orderbook for the given trading pair.
      * @param base The address of the base asset for the trading pair.
      * @param quote The address of the quote asset for the trading pair.
-     * @param isAsk Boolean indicating if the orderbook to retrieve prices from is an ask orderbook.
+     * @param isBid Boolean indicating if the orderbook to retrieve prices from is an ask orderbook.
      * @param n The number of prices to retrieve.
      */
     function getPrices(
         address base,
         address quote,
-        bool isAsk,
+        bool isBid,
         uint256 n
     ) external view returns (uint256[] memory) {
         address orderbook = getBookByPair(base, quote);
-        return IOrderbook(orderbook).getPrices(isAsk, n);
+        return IOrderbook(orderbook).getPrices(isBid, n);
     }
 
     /**
      * @dev Returns orders in the ask/bid orderbook for the given trading pair in a price.
      * @param base The address of the base asset for the trading pair.
      * @param quote The address of the quote asset for the trading pair.
-     * @param isAsk Boolean indicating if the orderbook to retrieve orders from is an ask orderbook.
+     * @param isBid Boolean indicating if the orderbook to retrieve orders from is an ask orderbook.
      * @param price The price to retrieve orders from.
      * @param n The number of orders to retrieve.
      */
     function getOrders(
         address base,
         address quote,
-        bool isAsk,
+        bool isBid,
         uint256 price,
         uint256 n
     ) external view returns (NewOrderOrderbook.Order[] memory) {
         address orderbook = getBookByPair(base, quote);
-        return IOrderbook(orderbook).getOrders(isAsk, price, n);
+        return IOrderbook(orderbook).getOrders(isBid, price, n);
     }
 
     /**
      * @dev Returns an order in the ask/bid orderbook for the given trading pair with order id.
      * @param base The address of the base asset for the trading pair.
      * @param quote The address of the quote asset for the trading pair.
-     * @param isAsk Boolean indicating if the orderbook to retrieve orders from is an ask orderbook.
+     * @param isBid Boolean indicating if the orderbook to retrieve orders from is an ask orderbook.
      * @param orderId The order id to retrieve.
      */
     function getOrder(
         address base,
         address quote,
-        bool isAsk,
+        bool isBid,
         uint256 orderId
     ) external view returns (NewOrderOrderbook.Order memory) {
         address orderbook = getBookByPair(base, quote);
-        return IOrderbook(orderbook).getOrder(isAsk, orderId);
+        return IOrderbook(orderbook).getOrder(isBid, orderId);
     }
 
     /**
      * @dev Returns order ids in the ask/bid orderbook for the given trading pair in a price.
      * @param base The address of the base asset for the trading pair.
      * @param quote The address of the quote asset for the trading pair.
-     * @param isAsk Boolean indicating if the orderbook to retrieve orders from is an ask orderbook.
+     * @param isBid Boolean indicating if the orderbook to retrieve orders from is an ask orderbook.
      * @param price The price to retrieve orders from.
      * @param n The number of order ids to retrieve.
      */
     function getOrderIds(
         address base,
         address quote,
-        bool isAsk,
+        bool isBid,
         uint256 price,
         uint256 n
     ) external view returns (uint256[] memory) {
         address orderbook = getBookByPair(base, quote);
-        return IOrderbook(orderbook).getOrderIds(isAsk, price, n);
+        return IOrderbook(orderbook).getOrderIds(isBid, price, n);
     }
 
     /**
@@ -586,7 +586,7 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
      * @param base address of base asset
      * @param quote address of quote asset
      * @param amount amount of base or quote asset
-     * @param isAsk if true, amount is quote asset, otherwise base asset
+     * @param isBid if true, amount is quote asset, otherwise base asset
      * @return converted converted amount from base to quote or vice versa.
      * if true, amount is quote asset, otherwise base asset
      * if orderbook does not exist, return 0
@@ -595,7 +595,7 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
         address base,
         address quote,
         uint256 amount,
-        bool isAsk
+        bool isBid
     ) external view returns (uint256 converted) {
         address orderbook = getBookByPair(base, quote);
         if (base == quote) {
@@ -603,7 +603,7 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
         } else if (orderbook == address(0)) {
             return 0;
         } else {
-            return IOrderbook(orderbook).assetValue(amount, isAsk);
+            return IOrderbook(orderbook).assetValue(amount, isBid);
         }
     }
 
@@ -612,31 +612,31 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
      * @param orderbook The address of the orderbook contract for the trading pair
      * @param withoutFee The remaining amount of the asset after the market order has been executed
      * @param at The stop price of the order
-     * @param isAsk Boolean indicating if the order is a buy (false) or a sell (true)
+     * @param isBid Boolean indicating if the order is a buy (false) or a sell (true)
      */
     function _stopOrder(
         address orderbook,
         uint256 withoutFee,
         uint256 at,
-        bool isAsk
+        bool isBid
     ) internal {
         // create order
-        if (isAsk) {
-            IOrderbook(orderbook).placeAsk(msg.sender, at, withoutFee);
-        } else {
+        if (isBid) {
             IOrderbook(orderbook).placeBid(msg.sender, at, withoutFee);
+        } else {
+            IOrderbook(orderbook).placeAsk(msg.sender, at, withoutFee);
         }
     }
 
     error TooManyMatches(uint256 n);
 
     /**
-     * @dev Match bid if `isAsk` is true, match ask if `isAsk` is false.
+     * @dev Match bid if `isBid` is true, match ask if `isBid` is false.
      */
     function _matchAt(
         address orderbook,
         address give,
-        bool isAsk,
+        bool isBid,
         uint256 amount,
         uint256 priceAt,
         uint32 i,
@@ -648,14 +648,14 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
         remaining = amount;
         while (
             remaining > 0 &&
-            !IOrderbook(orderbook).isEmpty(!isAsk, priceAt) &&
+            !IOrderbook(orderbook).isEmpty(!isBid, priceAt) &&
             i < n
         ) {
             // fpop OrderLinkedList by price, if ask you get bid order, if bid you get ask order
-            uint256 orderId = IOrderbook(orderbook).fpop(!isAsk, priceAt);
+            uint256 orderId = IOrderbook(orderbook).fpop(!isBid, priceAt);
             // Get quote asset on bid order on buy, base asset on ask order on sell
             uint256 required = IOrderbook(orderbook).getRequired(
-                !isAsk,
+                !isBid,
                 priceAt,
                 orderId
             );
@@ -664,7 +664,7 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
                 TransferHelper.safeTransfer(give, orderbook, remaining);
                 address owner = IOrderbook(orderbook).execute(
                     orderId,
-                    !isAsk,
+                    !isBid,
                     priceAt,
                     msg.sender,
                     remaining
@@ -673,7 +673,7 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
                 emit OrderMatched(
                     orderbook,
                     orderId,
-                    isAsk,
+                    isBid,
                     msg.sender,
                     owner,
                     remaining,
@@ -693,7 +693,7 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
                 TransferHelper.safeTransfer(give, orderbook, required);
                 address owner = IOrderbook(orderbook).execute(
                     orderId,
-                    !isAsk,
+                    !isBid,
                     priceAt,
                     msg.sender,
                     required
@@ -702,7 +702,7 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
                 emit OrderMatched(
                     orderbook,
                     orderId,
-                    isAsk,
+                    isBid,
                     msg.sender,
                     owner,
                     required,
@@ -720,7 +720,7 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
      * @param orderbook The address of the orderbook to execute the limit order on.
      * @param amount The amount of asset to trade.
      * @param give The address of the asset to be traded.
-     * @param isAsk True if the order is an ask (sell) order, false if it is a bid (buy) order.
+     * @param isBid True if the order is an ask (sell) order, false if it is a bid (buy) order.
      * @param limitPrice The maximum price at which the order can be executed.
      * @param n The maximum number of matches to execute.
      * @return remaining The remaining amount of asset that was not traded.
@@ -729,48 +729,48 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
         address orderbook,
         uint256 amount,
         address give,
-        bool isAsk,
+        bool isBid,
         uint256 limitPrice,
         uint32 n
     ) internal returns (uint256 remaining) {
         remaining = amount;
         uint256 lmp = 0;
         uint32 i = 0;
-        if (isAsk) {
+        if (isBid) {
             // check if there is any matching bid order until matching bid order price is higher than the limit Price
-            uint256 bidHead = IOrderbook(orderbook).bidHead();
+            uint256 askHead = IOrderbook(orderbook).askHead();
             while (
-                remaining > 0 && bidHead != 0 && bidHead <= limitPrice && i < n
-            ) {
-                lmp = bidHead;
-                (remaining, i) = _matchAt(
-                    orderbook,
-                    give,
-                    isAsk,
-                    remaining,
-                    bidHead,
-                    i,
-                    n
-                );
-                bidHead = IOrderbook(orderbook).bidHead();
-            }
-        } else {
-            // check if there is any maching ask order until matching ask order price is lower than the limit price
-            uint askHead = IOrderbook(orderbook).askHead();
-            while (
-                remaining > 0 && askHead != 0 && askHead >= limitPrice && i < n
+                remaining > 0 && askHead != 0 && askHead <= limitPrice && i < n
             ) {
                 lmp = askHead;
                 (remaining, i) = _matchAt(
                     orderbook,
                     give,
-                    isAsk,
+                    isBid,
                     remaining,
                     askHead,
                     i,
                     n
                 );
                 askHead = IOrderbook(orderbook).askHead();
+            }
+        } else {
+            // check if there is any maching ask order until matching ask order price is lower than the limit price
+            uint bidHead = IOrderbook(orderbook).bidHead();
+            while (
+                remaining > 0 && bidHead != 0 && bidHead >= limitPrice && i < n
+            ) {
+                lmp = bidHead;
+                (remaining, i) = _matchAt(
+                    orderbook,
+                    give,
+                    isBid,
+                    remaining,
+                    bidHead,
+                    i,
+                    n
+                );
+                bidHead = IOrderbook(orderbook).bidHead();
             }
         }
         // set last match price
@@ -788,7 +788,7 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
      * @param asset The address of the asset to be transferred as the stop order
      * @param remaining The remaining amount of the asset after the market order has been executed
      * @param price The market price used to determine if a stop order should be placed
-     * @param isAsk Boolean indicating if the market order was a buy (true) or a sell (false)
+     * @param isBid Boolean indicating if the market order was a buy (true) or a sell (false)
      * @param isStop Boolean indicating if a stop order should be placed at the market price
      */
     function _detStop(
@@ -796,13 +796,13 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
         address asset,
         uint256 remaining,
         uint256 price,
-        bool isAsk,
+        bool isBid,
         bool isStop
     ) internal {
         if (remaining > 0) {
             address stopTo = isStop ? orderbook : msg.sender;
             TransferHelper.safeTransfer(asset, stopTo, remaining);
-            if (isStop) _stopOrder(orderbook, remaining, price, isAsk);
+            if (isStop) _stopOrder(orderbook, remaining, price, isBid);
         }
     }
 
@@ -811,7 +811,7 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
      * @param base The address of the base asset.
      * @param quote The address of the quote asset.
      * @param amount The amount of asset to deposit.
-     * @param isAsk Whether it is an ask order or not.
+     * @param isBid Whether it is an ask order or not.
      * If ask, the quote asset is transferred to the contract.
      * @return withoutFee The amount of asset without the fee.
      * @return book The address of the orderbook for the given asset pair.
@@ -820,7 +820,7 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
         address base,
         address quote,
         uint256 amount,
-        bool isAsk,
+        bool isBid,
         uint32 uid
     ) internal returns (uint256 withoutFee, address book) {
         uint256 fee = (amount * feeNum) / feeDenom;
@@ -829,13 +829,13 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
             // report fee to accountant
             IRevenue(accountant).report(
                 uid,
-                isAsk ? quote : base,
+                isBid ? quote : base,
                 amount,
                 true
             );
         }
         withoutFee = amount - fee;
-        if (isAsk) {
+        if (isBid) {
             // transfer input asset give user to this contract
             TransferHelper.safeTransferFrom(
                 quote,

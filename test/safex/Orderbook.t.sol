@@ -672,7 +672,7 @@ contract OrderbookTest is BaseSetup {
             5,
             0
         );
-        uint256[] memory askPrices = matchingEngine.getPrices(
+        uint256[] memory bidPrices = matchingEngine.getPrices(
             address(token1),
             address(token2),
             true,
@@ -680,10 +680,10 @@ contract OrderbookTest is BaseSetup {
         );
         console.log("Ask prices: ");
         for (uint i = 0; i < 3; i++) {
-            console.log(askPrices[i]);
+            console.log(bidPrices[i]);
         }
         //matchingEngine.getOrders(address(token1), address(token2), true, 0, 0);
-        uint256[] memory bidPrices = matchingEngine.getPrices(
+        uint256[] memory askPrices = matchingEngine.getPrices(
             address(token1),
             address(token2),
             false,
@@ -691,7 +691,7 @@ contract OrderbookTest is BaseSetup {
         );
         console.log("Bid prices: ");
         for (uint i = 0; i < 3; i++) {
-            console.log(bidPrices[i]);
+            console.log(askPrices[i]);
         }
     }
 

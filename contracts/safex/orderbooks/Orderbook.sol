@@ -27,10 +27,10 @@ contract Orderbook is IOrderbook, Initializable {
 
     //uint32 private constant PRICEONE = 1e8;
 
-    // Reuse order storage with NewOrderLinkedList with isAsk always true
+    // Reuse order storage with NewOrderLinkedList with isBid always true
     NewOrderLinkedList.PriceLinkedList private priceLists;
-    NewOrderOrderbook.OrderStorage private _bidOrders;
     NewOrderOrderbook.OrderStorage private _askOrders;
+    NewOrderOrderbook.OrderStorage private _bidOrders;
 
     error InvalidDecimals(uint8 base, uint8 quote);
     error InvalidAccess(address sender, address allowed);
@@ -63,19 +63,6 @@ contract Orderbook is IOrderbook, Initializable {
         priceLists._setLmp(price);
     }
 
-    function placeBid(
-        address owner,
-        uint256 price,
-        uint256 amount
-    ) external onlyEngine {
-        uint256 id = _bidOrders._createOrder(owner, amount);
-        // check if the price is new in the list. if not, insert id to the list
-        if (_bidOrders._isEmpty(price)) {
-            priceLists._insert(false, price);
-        }
-        _bidOrders._insertId(price, id, amount);
-    }
-
     function placeAsk(
         address owner,
         uint256 price,
@@ -84,30 +71,43 @@ contract Orderbook is IOrderbook, Initializable {
         uint256 id = _askOrders._createOrder(owner, amount);
         // check if the price is new in the list. if not, insert id to the list
         if (_askOrders._isEmpty(price)) {
-            priceLists._insert(true, price);
+            priceLists._insert(false, price);
         }
         _askOrders._insertId(price, id, amount);
     }
 
+    function placeBid(
+        address owner,
+        uint256 price,
+        uint256 amount
+    ) external onlyEngine {
+        uint256 id = _bidOrders._createOrder(owner, amount);
+        // check if the price is new in the list. if not, insert id to the list
+        if (_bidOrders._isEmpty(price)) {
+            priceLists._insert(true, price);
+        }
+        _bidOrders._insertId(price, id, amount);
+    }
+
     function cancelOrder(
         uint256 orderId,
-        bool isAsk,
+        bool isBid,
         address owner
     )
         external
         onlyEngine
         returns (uint256 remaining, address base, address quote)
     {
-        NewOrderOrderbook.Order memory order = isAsk
-            ? _askOrders._getOrder(orderId)
-            : _bidOrders._getOrder(orderId);
+        NewOrderOrderbook.Order memory order = isBid
+            ? _bidOrders._getOrder(orderId)
+            : _askOrders._getOrder(orderId);
         if (order.owner != owner) {
             revert InvalidAccess(owner, order.owner);
         }
-        isAsk
-            ? _askOrders._deleteOrder(orderId)
-            : _bidOrders._deleteOrder(orderId);
-        isAsk
+        isBid
+            ? _bidOrders._deleteOrder(orderId)
+            : _askOrders._deleteOrder(orderId);
+        isBid
             ? TransferHelper.safeTransfer(
                 pair.quote,
                 owner,
@@ -123,31 +123,31 @@ contract Orderbook is IOrderbook, Initializable {
 
     function execute(
         uint256 orderId,
-        bool isAsk,
+        bool isBid,
         uint256 price,
         address sender,
         uint256 amount
     ) external onlyEngine returns (address owner) {
-        NewOrderOrderbook.Order memory order = isAsk
-            ? _askOrders._getOrder(orderId)
-            : _bidOrders._getOrder(orderId);
+        NewOrderOrderbook.Order memory order = isBid
+            ? _bidOrders._getOrder(orderId)
+            : _askOrders._getOrder(orderId);
         /* if ask, converted quote amount is baseAmount * price,
          * converting the number converting decimal from base to quote,
          * otherwise quote amount is baseAmount / price, converting decimal from quote to base
          */
-        uint256 converted = _convert(price, amount, !isAsk);
+        uint256 converted = _convert(price, amount, !isBid);
         converted = converted > order.depositAmount
             ? order.depositAmount
             : converted;
         // if the order is ask order on the base/quote pair
-        if (isAsk) {
+        if (isBid) {
             // sender is matching ask order for base asset with quote asset
             // send converted amount of base asset from order to buyer(sender)
             TransferHelper.safeTransfer(pair.quote, sender, converted);
             // send deposited amount of quote asset from buyer to seller(owner)
             TransferHelper.safeTransfer(pair.base, order.owner, amount);
             // decrease remaining amount of order
-            _askOrders._decreaseOrder(orderId, converted);
+            _bidOrders._decreaseOrder(orderId, converted);
         }
         // if the order is bid order on the base/quote pair
         else {
@@ -157,20 +157,20 @@ contract Orderbook is IOrderbook, Initializable {
             // send deposited amount of base asset from seller to buyer(sender)
             TransferHelper.safeTransfer(pair.base, sender, converted);
             // decrease remaining amount of order
-            _bidOrders._decreaseOrder(orderId, converted);
+            _askOrders._decreaseOrder(orderId, converted);
         }
         return order.owner;
     }
 
     function fpop(
-        bool isAsk,
+        bool isBid,
         uint256 price
     ) external onlyEngine returns (uint256 orderId) {
-        orderId = isAsk ? _askOrders._fpop(price) : _bidOrders._fpop(price);
-        if (isEmpty(isAsk, price)) {
-            isAsk
-                ? priceLists.askHead = priceLists._next(isAsk, price)
-                : priceLists.bidHead = priceLists._next(isAsk, price);
+        orderId = isBid ? _bidOrders._fpop(price) : _askOrders._fpop(price);
+        if (isEmpty(isBid, price)) {
+            isBid
+                ? priceLists.bidHead = priceLists._next(isBid, price)
+                : priceLists.askHead = priceLists._next(isBid, price);
         }
         return orderId;
     }
@@ -181,13 +181,13 @@ contract Orderbook is IOrderbook, Initializable {
 
     // get required amount for executing the order
     function getRequired(
-        bool isAsk,
+        bool isBid,
         uint256 price,
         uint256 orderId
     ) external view returns (uint256 required) {
-        NewOrderOrderbook.Order memory order = isAsk
-            ? _askOrders._getOrder(orderId)
-            : _bidOrders._getOrder(orderId);
+        NewOrderOrderbook.Order memory order = isBid
+            ? _bidOrders._getOrder(orderId)
+            : _askOrders._getOrder(orderId);
         if (order.depositAmount == 0) {
             return 0;
         }
@@ -195,7 +195,7 @@ contract Orderbook is IOrderbook, Initializable {
          * converting the number converting decimal from quote to base,
          * otherwise quote amount is baseAmount * price, converting decimal from base to quote
          */
-        return _convert(price, order.depositAmount, isAsk);
+        return _convert(price, order.depositAmount, isBid);
     }
 
     /////////////////////////////////
@@ -206,12 +206,12 @@ contract Orderbook is IOrderbook, Initializable {
         return priceLists._heads();
     }
 
-    function bidHead() external view returns (uint256) {
-        return priceLists._bidHead();
-    }
-
     function askHead() external view returns (uint256) {
         return priceLists._askHead();
+    }
+
+    function bidHead() external view returns (uint256) {
+        return priceLists._bidHead();
     }
 
     function mktPrice() external view returns (uint256) {
@@ -219,67 +219,67 @@ contract Orderbook is IOrderbook, Initializable {
     }
 
     function getPrices(
-        bool isAsk,
+        bool isBid,
         uint256 n
     ) external view returns (uint256[] memory) {
-        return priceLists._getPrices(isAsk, n);
+        return priceLists._getPrices(isBid, n);
     }
 
     function getOrderIds(
-        bool isAsk,
+        bool isBid,
         uint256 price,
         uint256 n
     ) external view returns (uint256[] memory) {
         return
-            isAsk
-                ? _askOrders._getOrderIds(price, n)
-                : _bidOrders._getOrderIds(price, n);
+            isBid
+                ? _bidOrders._getOrderIds(price, n)
+                : _askOrders._getOrderIds(price, n);
     }
 
     function getOrders(
-        bool isAsk,
+        bool isBid,
         uint256 price,
         uint256 n
     ) external view returns (NewOrderOrderbook.Order[] memory) {
         return
-            isAsk
-                ? _askOrders._getOrders(price, n)
-                : _bidOrders._getOrders(price, n);
+            isBid
+                ? _bidOrders._getOrders(price, n)
+                : _askOrders._getOrders(price, n);
     }
 
     function getOrder(
-        bool isAsk,
+        bool isBid,
         uint256 orderId
     ) external view returns (NewOrderOrderbook.Order memory) {
         return
-            isAsk
-                ? _askOrders._getOrder(orderId)
-                : _bidOrders._getOrder(orderId);
+            isBid
+                ? _bidOrders._getOrder(orderId)
+                : _askOrders._getOrder(orderId);
     }
 
     /**
-     * @dev get asset value in quote asset if isAsk is true, otherwise get asset value in base asset
-     * @param amount amount of asset in base asset if isAsk is true, otherwise in quote asset
-     * @param isAsk if true, get asset value in quote asset, otherwise get asset value in base asset
-     * @return converted asset value in quote asset if isAsk is true, otherwise asset value in base asset
+     * @dev get asset value in quote asset if isBid is true, otherwise get asset value in base asset
+     * @param amount amount of asset in base asset if isBid is true, otherwise in quote asset
+     * @param isBid if true, get asset value in quote asset, otherwise get asset value in base asset
+     * @return converted asset value in quote asset if isBid is true, otherwise asset value in base asset
      */
     function assetValue(
         uint256 amount,
-        bool isAsk
+        bool isBid
     ) external view returns (uint256 converted) {
-        return _convert(priceLists._mktPrice(), amount, isAsk);
+        return _convert(priceLists._mktPrice(), amount, isBid);
     }
 
-    function isEmpty(bool isAsk, uint256 price) public view returns (bool) {
-        return isAsk ? _askOrders._isEmpty(price) : _bidOrders._isEmpty(price);
+    function isEmpty(bool isBid, uint256 price) public view returns (bool) {
+        return isBid ? _bidOrders._isEmpty(price) : _askOrders._isEmpty(price);
     }
 
     function _convert(
         uint256 price,
         uint256 amount,
-        bool isAsk
+        bool isBid
     ) internal view returns (uint256 converted) {
-        if (isAsk) {
+        if (isBid) {
             // convert quote to base
             return
                 baseBquote

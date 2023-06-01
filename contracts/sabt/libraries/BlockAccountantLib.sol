@@ -5,7 +5,7 @@ interface IAccountant {
         address base,
         address quote,
         uint256 amount,
-        bool isAsk
+        bool isBid
     ) external view returns (uint256 converted);
 
     function isSubscribed(uint32 uid_) external view returns (bool);

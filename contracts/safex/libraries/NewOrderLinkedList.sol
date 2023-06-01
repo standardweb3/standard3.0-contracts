@@ -6,13 +6,13 @@ library NewOrderLinkedList {
     struct PriceLinkedList {
         /// Hashmap-style linked list of prices to route orders
         // key: price, value: next_price (next_price > price)
-        mapping(uint256 => uint256) bidPrices;
-        // key: price, value: next_price (next_price < price)
         mapping(uint256 => uint256) askPrices;
+        // key: price, value: next_price (next_price < price)
+        mapping(uint256 => uint256) bidPrices;
         // Head of the bid price linked list(i.e. highest bid price)
-        uint256 bidHead;
-        // Head of the ask price linked list(i.e. lowest ask price)
         uint256 askHead;
+        // Head of the ask price linked list(i.e. lowest ask price)
+        uint256 bidHead;
         // Last matched price
         uint256 lmp;
     }
@@ -28,13 +28,7 @@ library NewOrderLinkedList {
     function _heads(
         PriceLinkedList storage self
     ) internal view returns (uint256, uint256) {
-        return (self.bidHead, self.askHead);
-    }
-
-    function _bidHead(
-        PriceLinkedList storage self
-    ) internal view returns (uint256) {
-        return self.bidHead;
+        return (self.askHead, self.bidHead);
     }
 
     function _askHead(
@@ -43,59 +37,65 @@ library NewOrderLinkedList {
         return self.askHead;
     }
 
+    function _bidHead(
+        PriceLinkedList storage self
+    ) internal view returns (uint256) {
+        return self.bidHead;
+    }
+
     function _mktPrice(
         PriceLinkedList storage self
     ) internal view returns (uint256) {
         require(
-            self.bidHead > 0 && self.askHead > 0 || self.lmp > 0,
+            self.askHead > 0 && self.bidHead > 0 || self.lmp > 0,
             "NoOrders"
         );
         return
-            self.bidHead > 0 && self.askHead > 0
-                ? (self.bidHead + self.askHead) / 2
-                : self.bidHead == 0 && self.askHead == 0
+            self.askHead > 0 && self.bidHead > 0
+                ? (self.askHead + self.bidHead) / 2
+                : self.askHead == 0 && self.bidHead == 0
                 ? self.lmp
-                : (self.bidHead + self.askHead);
+                : (self.askHead + self.bidHead);
     }
 
     function _next(
         PriceLinkedList storage self,
-        bool isAsk,
+        bool isBid,
         uint256 price
     ) internal view returns (uint256) {
-        if (isAsk) {
-            return self.askPrices[price];
-        } else {
+        if (isBid) {
             return self.bidPrices[price];
+        } else {
+            return self.askPrices[price];
         }
     }
 
-    // for askPrices, lower ones are next, for bidPrices, higher ones are next
+    // for bidPrices, lower ones are next, for askPrices, higher ones are next
     function _insert(
         PriceLinkedList storage self,
-        bool isAsk,
+        bool isBid,
         uint256 price
     ) internal {
-        if (isAsk) {
+        if (isBid) {
             uint256 last = 0;
-            uint256 head = self.askHead;
+            uint256 head = self.bidHead;
             // insert order to the linked list
             // if the list is empty
             if (head == 0 || price >= head) {
-                self.askHead = price;
-                self.askPrices[price] = head;
+                self.bidHead = price;
+                self.bidPrices[price] = head;
                 return;
             }
             while (head != 0) {
-                uint256 next = self.askPrices[head];
+                uint256 next = self.bidPrices[head];
                 if (price < next) {
                     // Keep traversing
                     last = head;
-                    head = self.askPrices[head];
+                    head = self.bidPrices[head];
                 } else if (price > next) {
                     // Insert price in the middle of the list
-                    self.askPrices[price] = next;
-                    self.askPrices[last] = price;
+                    self.bidPrices[price] = next;
+                    self.bidPrices[last] = price;
                     return;
                 } else {
                     // price is already included in the queue as it is equal to next
@@ -107,30 +107,30 @@ library NewOrderLinkedList {
         // insert bid price to the linked list
         else {
             uint256 last = 0;
-            uint256 head = self.bidHead;
+            uint256 head = self.askHead;
             // insert order to the linked list
             // if the list is empty
             if (head == 0 || price <= head) {
-                self.bidHead = price;
-                self.bidPrices[price] = head;
+                self.askHead = price;
+                self.askPrices[price] = head;
                 return;
             }
             while (head != 0) {
-                uint256 next = self.bidPrices[head];
+                uint256 next = self.askPrices[head];
                 if (price > next) {
                     if (next == 0) {
                         // Insert price in the middle of the list
-                        self.bidPrices[price] = next;
-                        self.bidPrices[last] = price;
+                        self.askPrices[price] = next;
+                        self.askPrices[last] = price;
                         return;
                     }
                     // Keep traversing
                     last = head;
-                    head = self.bidPrices[head];
+                    head = self.askPrices[head];
                 } else if (price < next) {
                     // Insert price in the middle of the list
-                    self.bidPrices[price] = next;
-                    self.bidPrices[last] = price;
+                    self.askPrices[price] = next;
+                    self.askPrices[last] = price;
                     return;
                 } else {
                     // price is already included in the queue as it is equal to next
@@ -144,15 +144,15 @@ library NewOrderLinkedList {
        // show n prices shown in the orderbook
     function _getPrices(
         PriceLinkedList storage self,
-        bool isAsk,
+        bool isBid,
         uint n
     ) internal view returns (uint256[] memory) {
         uint256 i = 0;
         uint256[] memory prices = new uint256[](n);
         for (
-            uint256 price = isAsk ? self.askHead : self.bidHead;
+            uint256 price = isBid ? self.bidHead : self.askHead;
             price != 0 && i < n;
-            price = isAsk ? self.askPrices[price] : self.bidPrices[price]
+            price = isBid ? self.bidPrices[price] : self.askPrices[price]
         ) {
             prices[i] = price;
             i++;

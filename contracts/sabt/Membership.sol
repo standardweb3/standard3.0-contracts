@@ -74,7 +74,7 @@ contract Membership is AccessControl {
     }
 
     function balanceOf(address who, uint32 uid_) external view returns (uint256) {
-        return _membership._balanceOf(who, uid_);
+        return _membership._bidOrdersalanceOf(who, uid_);
     }
 
     function getMeta(uint16 metaId_) external view returns (MembershipLib.Meta memory) {
@@ -86,6 +86,6 @@ contract Membership is AccessControl {
     }
 
     function isReportable(address sender, uint32 uid_) external view returns (bool) {
-        return _membership._balanceOf(sender, uid_) > 0 && _membership._isSubscribed(uid_);
+        return _membership._bidOrdersalanceOf(sender, uid_) > 0 && _membership._isSubscribed(uid_);
     }
 }

@@ -37,18 +37,26 @@ contract Treasury is AccessControl {
         _treasury._settle(token, nthEra, uid);
     }
 
+    error InvalidRole(bytes32 role, address sender);
+
     function setClaim(uint32 uid, uint32 num) external {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "IA");
+        if(!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        }
         _treasury._setClaim(uid, num);
     }
 
     function setSettlement(uint32 uid) external {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "IA");
+        if(!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        }
         _treasury._setSettlement(uid);
     }
 
     function refundFee(address to, address token, uint256 amount) external {
-        require(hasRole(REPORTER_ROLE, msg.sender), "IA:notRprtr");
+        if(!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+            revert InvalidRole(REPORTER_ROLE, msg.sender);
+        }
         TransferHelper.safeTransfer(token, to, amount);
     }
 

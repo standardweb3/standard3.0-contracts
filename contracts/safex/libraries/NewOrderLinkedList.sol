@@ -3,6 +3,8 @@
 pragma solidity ^0.8.10;
 
 library NewOrderLinkedList {
+    error NoMatchPrice(uint256 askHead, uint256 bidHead, uint256 lmp);
+
     struct PriceLinkedList {
         /// Hashmap-style linked list of prices to route orders
         // key: price, value: next_price (next_price > price)
@@ -17,11 +19,7 @@ library NewOrderLinkedList {
         uint256 lmp;
     }
 
-   
-    function _setLmp(
-        PriceLinkedList storage self,
-        uint256 lmp_
-    ) internal {
+    function _setLmp(PriceLinkedList storage self, uint256 lmp_) internal {
         self.lmp = lmp_;
     }
 
@@ -46,16 +44,10 @@ library NewOrderLinkedList {
     function _mktPrice(
         PriceLinkedList storage self
     ) internal view returns (uint256) {
-        require(
-            self.askHead > 0 && self.bidHead > 0 || self.lmp > 0,
-            "NoOrders"
-        );
-        return
-            self.askHead > 0 && self.bidHead > 0
-                ? (self.askHead + self.bidHead) / 2
-                : self.askHead == 0 && self.bidHead == 0
-                ? self.lmp
-                : (self.askHead + self.bidHead);
+        if (self.lmp == 0) {
+            revert NoMatchPrice(self.askHead, self.bidHead, self.lmp);
+        }
+        return self.lmp;
     }
 
     function _next(
@@ -141,7 +133,7 @@ library NewOrderLinkedList {
         }
     }
 
-       // show n prices shown in the orderbook
+    // show n prices shown in the orderbook
     function _getPrices(
         PriceLinkedList storage self,
         bool isBid,

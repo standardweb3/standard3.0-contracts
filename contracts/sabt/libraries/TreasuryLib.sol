@@ -42,15 +42,25 @@ library TreasuryLib {
         uint32 denom;
     }
 
+    error MembershipNotOwned(uint32 uid, address owner);
+    error InvalidMetaId(uint16 metaId, uint32 uid, uint16 real);
+
     function _checkMembership(
         Storage storage self,
         uint32 uid_,
-        uint8 metaId_
+        uint16 metaId_
     ) internal view {
         // the sender owns the membership with UID
-        require(ITreasury(self.sabt).balanceOf(msg.sender, uid_) > 0, "IA");
-        require(ITreasury(self.sabt).metaId(uid_) == metaId_, "IM");
+        if (ITreasury(self.sabt).balanceOf(msg.sender, uid_) == 0) {
+            revert MembershipNotOwned(uid_, msg.sender);
+        }
+        uint16 uMeta = ITreasury(self.sabt).metaId(uid_);
+        if (uMeta != metaId_) {
+            revert InvalidMetaId(metaId_, uid_, uMeta);
+        }
     }
+
+    error EraNotPassed(uint32 nthEra, uint32 currentEra);
 
     function _checkEraPassed(
         Storage storage self,
@@ -58,7 +68,9 @@ library TreasuryLib {
     ) internal view {
         // get current Era
         uint32 currentEra = ITreasury(self.accountant).getCurrentEra();
-        require(nthEra_ < currentEra, "NEP");
+        if (nthEra_ >= currentEra) {
+            revert EraNotPassed(nthEra_, currentEra);
+        }
     }
 
     function _exchange(
@@ -110,15 +122,23 @@ library TreasuryLib {
         TransferHelper.safeTransfer(token, msg.sender, settlement);
     }
 
+    error ShareLimitExceeded(uint32 totalClaim, uint32 limit);
+
     function _setClaim(Storage storage self, uint32 uid, uint32 num) internal {
         self.claims[uid] = num;
         self.totalClaim += num;
-        require(self.totalClaim <= 600000, "OVERFLOW");
+        // check if total claim is less than or equal to 60.0000%
+        if (self.totalClaim > 600000) {
+            revert ShareLimitExceeded(self.totalClaim, 600000);
+        }
     }
 
     function _setSettlement(Storage storage self, uint32 uid) internal {
         self.settlementId = uid;
     }
+
+    error NoTotalMP(uint32 nthEra, uint256 point);
+    error NoTotalTokens(uint32 nthEra, address token);
 
     function _getReward(
         Storage storage self,
@@ -129,11 +149,17 @@ library TreasuryLib {
         // get reward from Treasury ratio
         // 1. get total supply of mp
         uint256 totalMP = ITreasury(self.accountant).getTotalPoints(nthEra);
+        if (totalMP == 0) {
+            revert NoTotalMP(nthEra, totalMP);
+        }
         // 2. get fee collected on nthEra
         uint256 totalTokens = ITreasury(self.accountant).getTotalTokens(
             nthEra,
             token
         );
+        if (totalTokens == 0) {
+            revert NoTotalTokens(nthEra, token);
+        }
         // 3. get reward from community Treasury ratio
         return ((point * totalTokens * 4) / 10) / totalMP;
     }
@@ -145,12 +171,17 @@ library TreasuryLib {
         uint32 nthEra
     ) internal view returns (uint256) {
         // check if sender has UID
-        require(ITreasury(self.sabt).balanceOf(msg.sender, uid) != 0, "NO_UID");
+        if (ITreasury(self.sabt).balanceOf(msg.sender, uid) == 0) {
+            revert MembershipNotOwned(uid, msg.sender);
+        }
         // 1. get fee collected on nthEra
         uint256 totalTokens = ITreasury(self.accountant).getTotalTokens(
             nthEra,
             token
         );
+        if (totalTokens == 0) {
+            revert NoTotalTokens(nthEra, token);
+        }
         // 2. get reward from community Treasury ratio
         return ((totalTokens * (self.claims[uid])) / denom);
     }
@@ -161,15 +192,19 @@ library TreasuryLib {
         uint32 nthEra
     ) internal view returns (uint256) {
         // check if sender has UID
-        require(
-            ITreasury(self.sabt).balanceOf(msg.sender, self.settlementId) != 0,
-            "NO_UID"
-        );
+        if (
+            ITreasury(self.sabt).balanceOf(msg.sender, self.settlementId) == 0
+        ) {
+            revert MembershipNotOwned(self.settlementId, msg.sender);
+        }
         // 1. get fee collected on nthEra
         uint256 totalTokens = ITreasury(self.accountant).getTotalTokens(
             nthEra,
             token
         );
+        if (totalTokens == 0) {
+            revert NoTotalTokens(nthEra, token);
+        }
         // 2. get reward from community Treasury ratio
         return ((totalTokens * (600000 - self.totalClaim)) / denom);
     }

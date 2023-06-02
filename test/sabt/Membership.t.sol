@@ -99,7 +99,7 @@ contract MembershipTest is MembershipBaseSetup {
         super.setUp();
     }
 
-    function testClaim() public {
+    function testClaimFailsWithoutMatching() public {
         super.setUp();
         vm.startPrank(trader1);
         uint256 investorTypeNFTBalance = sabt.balanceOf(trader1, 1);
@@ -108,7 +108,7 @@ contract MembershipTest is MembershipBaseSetup {
         uint256 metaID = sabt.metaId(1);
         console.log("Meta ID: ", metaID);
         uint256 beforeBalance = stablecoin.balanceOf(trader1);
-        uint256 beforeReward = treasury.getReward(address(stablecoin), 0, 10);
+        //uint256 beforeReward = treasury.getReward(address(stablecoin), 0, 10);
         uint256 beforeClaim = treasury.getClaim(address(stablecoin), 1, 0);
         treasury.claim(address(stablecoin), 0, 1);
         treasury.claim(address(stablecoin), 0, 1);
@@ -122,7 +122,7 @@ contract MembershipTest is MembershipBaseSetup {
         vm.stopPrank();
         console.log("Before balance :", beforeBalance);
         console.log("After balance :", afterBalance);
-        console.log("Before getReward :", beforeReward);
+        //console.log("Before getReward :", beforeReward);
         console.log("After getReward :", afterReward);
         console.log("Before getClaim :", beforeClaim);
         console.log("After getClaim :", afterClaim);

@@ -26,30 +26,40 @@ contract BlockAccountant is AccessControl {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-
+    error InvalidRole(bytes32 role, address sender);
 
     function setEngine(address engine) external {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "IA");
+        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        }
         _accountant.engine = engine;
     }
 
     function setMembership(address membership) external {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "IA");
+        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        }
         _accountant.membership = membership;
     }
 
     function setTreasury(address treasury) external {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "IA");
+        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        }
         _accountant.treasury = treasury;
     }
 
     function setReferenceCurrency(address stablecoin) external {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "IA");
+        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        }
         _accountant.stablecoin = stablecoin;
     }
 
     function setBFS(uint32 bfs_) external {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "IA");
+        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        }
         _accountant.bfs = bfs_;
         _accountant.era = uint32(28 days / bfs_);
     }
@@ -81,14 +91,20 @@ contract BlockAccountant is AccessControl {
         uint256 amount,
         bool isAdd
     ) external {
-        require(hasRole(REPORTER_ROLE, msg.sender), "IA");
+        if (!hasRole(REPORTER_ROLE, _msgSender())) {
+            revert InvalidRole(REPORTER_ROLE, _msgSender());
+        }
         if (_accountant._isSubscribed(uid)) {
             _accountant._report(uid, token, amount, isAdd);
         }
     }
 
+    error NotTreasury(address sender, address treasury);
+
     function subtractMP(uint32 uid, uint32 nthEra, uint64 point) external {
-        require(msg.sender == _accountant.treasury, "IA");
+        if(msg.sender != _accountant.treasury) {
+            revert NotTreasury(msg.sender, _accountant.treasury);
+        }
         _accountant._subtractMP(uid, nthEra, point);
     }
 

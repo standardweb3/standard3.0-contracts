@@ -109,6 +109,9 @@ library BlockAccountantLib {
         }
     }
 
+    error NotTheSameOwner(uint32 fromUid, uint32 toUid, address owner);
+    error InsufficientPoint(uint32 nthEra, uint32 uid,  uint256 amount); 
+
     /// @dev migrate: Migrate the membership point from one era to other uid
     /// @param fromUid_ The uid to migrate from
     /// @param toUid_ The uid to migrate to
@@ -122,15 +125,17 @@ library BlockAccountantLib {
         uint32 nthEra_,
         uint256 amount_
     ) internal {
-        require(
-            IAccountant(self.membership).balanceOf(sender, fromUid_) > 0 &&
-                IAccountant(self.membership).balanceOf(sender, toUid_) > 0,
-            "IA"
-        );
-        require(
-            self.pointOf[nthEra_][fromUid_] >= amount_,
-            "BlockAccountantLib: insufficient point"
-        );
+        if(
+            IAccountant(self.membership).balanceOf(sender, fromUid_) == 0 ||
+                IAccountant(self.membership).balanceOf(sender, toUid_) == 0
+            
+        ) {
+            revert NotTheSameOwner(fromUid_, toUid_, sender);
+        }
+        if (
+            self.pointOf[nthEra_][fromUid_] < amount_) {
+            revert InsufficientPoint(nthEra_, fromUid_, amount_);
+        }
         self.pointOf[nthEra_][fromUid_] -= uint64(amount_);
         self.pointOf[nthEra_][toUid_] += uint64(amount_);
     }

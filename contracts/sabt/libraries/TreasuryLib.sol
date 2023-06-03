@@ -31,9 +31,9 @@ library TreasuryLib {
         uint32 settlementId;
     }
 
-    uint8 constant USER_META_ID = 0;
-    uint8 constant INVESTOR_META_ID = 1;
-    uint8 constant FOUNDATION_META_ID = 2;
+    uint8 constant USER_META_ID = 1;
+    uint8 constant INVESTOR_META_ID = 2;
+    uint8 constant FOUNDATION_META_ID = 3;
 
     uint32 constant denom = 100000;
 

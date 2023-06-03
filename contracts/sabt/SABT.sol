@@ -34,12 +34,19 @@ contract SABT is ERC1155, AccessControl {
         return IMetadata(metadata).meta(metaId_);
     }
 
+    error NotMembership(address membership_, address sender);
+    error MembershipFull(uint32 uid_);
+
     /// @dev mint: Mint a new SABT for customized membership
     /// @param to_ The address to mint the token to
     /// @param metaId_ The id of the token to mint
     function mint(address to_, uint16 metaId_) public returns (uint32) {
-        require(msg.sender == membership, "NM");
-        require(index < 2**32, "Membership: index overflow");
+        if(msg.sender != membership) {
+            revert NotMembership(membership, msg.sender);
+        }
+        if( index >= 4294967295 /* 2**32 -1 */) {
+            revert MembershipFull(index);
+        }
         metaIds[index] = metaId_;
         _mint(to_, index, 1, abi.encode(metaId_));
         index++;
@@ -53,7 +60,9 @@ contract SABT is ERC1155, AccessControl {
     }
 
     function setMetaId(uint32 uid_, uint16 metaId_) public {
-        require(msg.sender == membership, "NM");
+        if(msg.sender != membership) {
+            revert NotMembership(membership, msg.sender);
+        }
         metaIds[uid_] = metaId_;
     }
 

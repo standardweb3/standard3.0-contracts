@@ -18,13 +18,11 @@ interface ISABT {
 library MembershipLib {
     struct Member {
         /// @dev mapping of member id to subscription status
-        mapping(uint32 => SubStatus) subscribedUntil;
-        /// @dev mapping of member id to subscription status
-        mapping(uint32 => SubStatus) subscribedAt;
-        /// @dev subscription info
-        mapping(uint8 => Subscription) subscriptions;
+        mapping(uint32 => SubStatus) subscriptions;
         /// @dev mapping of meta id to register fee status
         mapping(uint16 => Meta) metas;
+        /// @dev mapping of meta id to register fee status
+        mapping(uint16 => mapping(address => Fees)) fees;
         /// @dev address of SABT
         address sabt;
         /// @dev address of foundation
@@ -32,21 +30,21 @@ library MembershipLib {
     }
 
     struct SubStatus {
-        uint64 bh;
-        uint8 subId;
-    }
-
-    struct Subscription {
-        address details;
+        uint256 at;
+        uint256 until;
+        uint256 bonus;
+        address with;
     }
 
     struct Meta {
         uint16 metaId;
+        uint32 quota;
+    }
+
+    struct Fees {
         address feeToken;
         uint256 regFee;
         uint256 subFee;
-        uint32 quota;
-        uint64 prSubDur;
     }
 
     function _setMembership(
@@ -55,16 +53,13 @@ library MembershipLib {
         address feeToken_,
         uint32 regFee_,
         uint32 subFee_,
-        uint32 quota_,
-        uint64 prSubDur_
+        uint32 quota_
     ) internal {
         self.metas[metaId_].metaId = metaId_;
-        self.metas[metaId_].feeToken = feeToken_;
         uint8 decimals = TransferHelper.decimals(feeToken_);
-        self.metas[metaId_].regFee = regFee_ * 10 ** decimals;
-        self.metas[metaId_].subFee = subFee_ * 10 ** decimals;
+        self.fees[metaId_][feeToken_].regFee = regFee_ * 10 ** decimals;
+        self.fees[metaId_][feeToken_].subFee = subFee_ * 10 ** decimals;
         self.metas[metaId_].quota = quota_;
-        self.metas[metaId_].prSubDur = prSubDur_;
     }
 
     function _setQuota(
@@ -75,17 +70,41 @@ library MembershipLib {
         self.metas[metaId_].quota = quota_;
     }
 
-    function _register(Member storage self, uint16 metaId_) internal {
+    function _setFees(
+        Member storage self,
+        uint16 metaId_,
+        address feeToken_,
+        uint256 regFee_,
+        uint256 subFee_
+    ) internal {
+        uint8 decimals = TransferHelper.decimals(feeToken_);
+        self.fees[metaId_][feeToken_].regFee = regFee_ * 10 ** decimals;
+        self.fees[metaId_][feeToken_].subFee = subFee_ * 10 ** decimals;
+    }
+
+    error InvalidFeeToken(address feeToken_, uint16 metaId_);
+
+    function _register(Member storage self, uint16 metaId_, address feeToken_) internal returns (uint32 uid) {
+        uint256 regFee = 
+            self.fees[metaId_][feeToken_].regFee;
+        // check if the fee token is supported
+        if(regFee == 0) {
+            revert InvalidFeeToken(feeToken_, metaId_);
+        }
         // Transfer required fund
         TransferHelper.safeTransferFrom(
             msg.sender,
             address(this),
-            self.metas[metaId_].feeToken,
-            self.metas[metaId_].regFee
+            feeToken_,
+            regFee
         );
+        TransferHelper.safeTransfer(feeToken_, self.foundation, regFee);
         // issue membership from SABT and get id
-        ISABT(self.sabt).mint(msg.sender, metaId_);
+        return ISABT(self.sabt).mint(msg.sender, metaId_);
     }
+
+    error MembershipNotOwned(uint32 uid, address owner);
+    error NoMultiTokenAccounting(address subscribedWith, address feeToken_);
 
     /// @dev subscribe: Subscribe to the membership until certain block height
     /// @param uid_ The uid of the ABT to subscribe with
@@ -93,74 +112,109 @@ library MembershipLib {
     function _subscribe(
         Member storage self,
         uint32 uid_,
-        uint64 untilBh_
+        uint64 untilBh_,
+        address feeToken_
     ) internal {
         // check if the member has the ABT with input id
-        require(ISABT(self.sabt).balanceOf(msg.sender, uid_) > 0, "not owned");
+        if(ISABT(self.sabt).balanceOf(msg.sender, uid_) == 0) {
+            revert MembershipNotOwned(uid_, msg.sender);
+        }
         uint16 metaId = ISABT(self.sabt).metaId(uid_);
+        SubStatus memory sub = self.subscriptions[uid_];
+        Fees memory fees = self.fees[metaId][feeToken_];
+        // check if previous subscription was done with the same token
+        if(self.subscriptions[uid_].with != feeToken_) {
+            // if not, Ask user to unsubscribed with the previous token subscription
+            revert NoMultiTokenAccounting(sub.with, feeToken_);
+        }
         // if the member already subscribed, refund the fee for the remaining block
-        if (self.subscribedUntil[uid_].bh > block.number) {
+        if (sub.until > block.number) {
             // Transfer what has been already paid
             TransferHelper.safeTransfer(
-                self.metas[metaId].feeToken,
+                feeToken_,
                 self.foundation,
-                self.metas[metaId].subFee * (block.number - self.subscribedAt[uid_].bh)
+                fees.subFee * (block.number - sub.at)
             );
             // Transfer the tokens for future subscription to this contract
             TransferHelper.safeTransferFrom(
                 msg.sender,
                 address(this),
-                self.metas[metaId].feeToken,
-                self.metas[metaId].subFee * (untilBh_ - self.subscribedUntil[uid_].bh)
+                feeToken_,
+                fees.subFee * (untilBh_ - sub.until)
             );
         } else {
             // Transfer what has been already paid
             TransferHelper.safeTransfer(
-                self.metas[metaId].feeToken,
+                feeToken_,
                 self.foundation,
-                self.metas[metaId].subFee *
-                    (self.subscribedUntil[uid_].bh -
-                        self.subscribedAt[uid_].bh)
+                fees.subFee *
+                    (sub.until -
+                        sub.at)
             );
             // Transfer the tokens to this contract
             TransferHelper.safeTransferFrom(
                 msg.sender,
                 address(this),
-                self.metas[metaId].feeToken,
-                self.metas[metaId].subFee * (untilBh_ - block.number)
+                feeToken_,
+                fees.subFee * (untilBh_ - block.number)
             );
         }
         // subscribe for certain block
-        self.subscribedAt[uid_].bh = uint64(block.number);
-        self.subscribedUntil[uid_].bh = uint64(block.number) + untilBh_;
+        self.subscriptions[uid_].at = uint64(block.number);
+        self.subscriptions[uid_].until = uint64(block.number) + untilBh_;
+        self.subscriptions[uid_].with = feeToken_;
     }
 
     /// @dev unsubscribe: Unsubscribe from the membership
     /// @param uid_ The id of the ABT to unsubscribe with
     function _unsubscribe(Member storage self, address sender, uint32 uid_) internal {
         // check if the member has the ABT with input id
-        require(ISABT(self.sabt).balanceOf(sender, uid_) == 1, "not owned");
+        if(ISABT(self.sabt).balanceOf(msg.sender, uid_) == 0) {
+            revert MembershipNotOwned(uid_, msg.sender);
+        }
         uint16 metaId = ISABT(self.sabt).metaId(uid_);
-        // refund the tokens to the member
-        if (self.subscribedUntil[uid_].bh > block.number) {
-            // Transfer what has been already paid
+        SubStatus memory sub = self.subscriptions[uid_];
+        Fees memory fees = self.fees[metaId][sub.with];
+        if (sub.until > block.number) {
+            // Transfer what has been already paid to foundation 
             TransferHelper.safeTransfer(
-                self.metas[metaId].feeToken,
-                sender,
-                self.metas[metaId].subFee * (block.number - self.subscribedAt[uid_].bh)
+                sub.with,
+                self.foundation,
+                fees.subFee * (block.number - sub.at)
             );
-            TransferHelper.safeTransfer(
-                self.metas[metaId].feeToken,
-                sender,
-                self.metas[metaId].subFee * (self.subscribedUntil[uid_].bh - block.number)
-            );
+            if(sub.until - block.number > sub.bonus) {
+                // Transfer the tokens for future subscription to this contract
+                TransferHelper.safeTransfer(
+                    sub.with,
+                    sender,
+                    fees.subFee * (sub.until - block.number - sub.bonus)
+                );
+            }
         }
         // unsubscribe
-        self.subscribedUntil[uid_].bh = 0;
-        self.subscribedAt[uid_].bh = 0;
+        self.subscriptions[uid_].until = 0;
+        self.subscriptions[uid_].at = 0;
+        self.subscriptions[uid_].bonus = 0;
+        self.subscriptions[uid_].with = address(0);
     }
 
-    function _bidOrdersalanceOf(
+    /// @dev offerBonus: Offer bonus blocks to the subscription by promoters
+    function _offerBonus(     
+        Member storage self,
+        uint32 uid_,
+        uint256 blocks_
+    ) internal {
+        // check if the member has the ABT with input id
+        if(ISABT(self.sabt).balanceOf(msg.sender, uid_) == 0) {
+            revert MembershipNotOwned(uid_, msg.sender);
+        }
+        // Add the bonus blocks to the subscription
+        self.subscriptions[uid_].until += uint64(blocks_);
+        // Mark added bonus blocks in the subscription
+        self.subscriptions[uid_].bonus += uint32(blocks_);
+    }
+
+    function _balanceOf(
         Member storage self,
         address owner_,
         uint32 uid_
@@ -169,6 +223,6 @@ library MembershipLib {
     }
 
     function _isSubscribed(Member storage self, uint32 uid_) internal view returns (bool) {
-        return self.subscribedUntil[uid_].bh > block.number;
+        return self.subscriptions[uid_].until > block.number;
     }
 }

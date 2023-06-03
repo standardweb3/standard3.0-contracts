@@ -28,7 +28,7 @@ contract Membership is AccessControl {
     /// @param subFee_ The subscription fee per block in one token
     /// @param metaId_ The meta id of the token to pay the fee
     /// @param quotas_ The number of tokens to be issued for registration
-    /// @param prSubDur_ The duration of the subscription in registration for promotion
+    /// @param prSubDur_ Promotion subscription block duration. The duration of the subscription in registration for promotion.
     function setMembership(
         uint16 metaId_,
         address feeToken_,
@@ -37,6 +37,9 @@ contract Membership is AccessControl {
         uint32 quotas_,
         uint64 prSubDur_
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if(metaId_ == 0) {
+            revert InvalidMeta(metaId_, msg.sender);
+        }
         _membership._setMembership(metaId_, feeToken_, regFee_, subFee_, quotas_, prSubDur_);
     }
 
@@ -48,16 +51,18 @@ contract Membership is AccessControl {
         _membership._setQuota(metaId_, quota_);
     }
 
+    error InvalidMeta(uint16 metaId_, address sender);
+
     /// @dev register: Register as a member
     function register(uint16 metaId_) external {
         // check if metaId is valid
-        require(_membership.metas[metaId_].metaId == metaId_, "IM");
-        _membership._register(metaId_);
-        /*
+        if(metaId_ == 0 || _membership.metas[metaId_].metaId != metaId_) {
+            revert InvalidMeta(metaId_, msg.sender);
+        }
+        uint32 uid = _membership._register(metaId_);
         if (_membership.metas[metaId_].prSubDur > 0) {
-            _membership._subscribe(msg.sender, metaId_, _membership.metas[metaId_].prSubDur);
+            _membership._subscribe(uid, _membership.metas[metaId_].prSubDur);
         } 
-        */
     }
     
     /// @dev subscribe: Subscribe to the membership until certain block height
@@ -74,7 +79,7 @@ contract Membership is AccessControl {
     }
 
     function balanceOf(address who, uint32 uid_) external view returns (uint256) {
-        return _membership._bidOrdersalanceOf(who, uid_);
+        return _membership._balanceOf(who, uid_);
     }
 
     function getMeta(uint16 metaId_) external view returns (MembershipLib.Meta memory) {
@@ -86,6 +91,6 @@ contract Membership is AccessControl {
     }
 
     function isReportable(address sender, uint32 uid_) external view returns (bool) {
-        return _membership._bidOrdersalanceOf(sender, uid_) > 0 && _membership._isSubscribed(uid_);
+        return _membership._balanceOf(sender, uid_) > 0 && _membership._isSubscribed(uid_);
     }
 }

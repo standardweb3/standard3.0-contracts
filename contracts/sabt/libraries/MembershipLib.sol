@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
-import "./TransferHelper.sol";
+import {TransferHelper} from "./TransferHelper.sol";
 
 interface ISABT {
     function mint(address to_, uint16 metaId_) external returns (uint32);
@@ -47,7 +48,11 @@ library MembershipLib {
         uint256 subFee;
     }
 
-    function _setMembership(
+    error InvalidFeeToken(address feeToken_, uint16 metaId_);
+    error MembershipNotOwned(uint32 uid, address owner);
+    error NoMultiTokenAccounting(address subscribedWith, address feeToken_);
+
+    function _newMembership(
         Member storage self,
         uint16 metaId_,
         address feeToken_,
@@ -82,13 +87,14 @@ library MembershipLib {
         self.fees[metaId_][feeToken_].subFee = subFee_ * 10 ** decimals;
     }
 
-    error InvalidFeeToken(address feeToken_, uint16 metaId_);
-
-    function _register(Member storage self, uint16 metaId_, address feeToken_) internal returns (uint32 uid) {
-        uint256 regFee = 
-            self.fees[metaId_][feeToken_].regFee;
+    function _register(
+        Member storage self,
+        uint16 metaId_,
+        address feeToken_
+    ) internal returns (uint32 uid) {
+        uint256 regFee = self.fees[metaId_][feeToken_].regFee;
         // check if the fee token is supported
-        if(regFee == 0) {
+        if (regFee == 0) {
             revert InvalidFeeToken(feeToken_, metaId_);
         }
         // Transfer required fund
@@ -103,9 +109,6 @@ library MembershipLib {
         return ISABT(self.sabt).mint(msg.sender, metaId_);
     }
 
-    error MembershipNotOwned(uint32 uid, address owner);
-    error NoMultiTokenAccounting(address subscribedWith, address feeToken_);
-
     /// @dev subscribe: Subscribe to the membership until certain block height
     /// @param uid_ The uid of the ABT to subscribe with
     /// @param untilBh_ The block height to subscribe until
@@ -116,14 +119,14 @@ library MembershipLib {
         address feeToken_
     ) internal {
         // check if the member has the ABT with input id
-        if(ISABT(self.sabt).balanceOf(msg.sender, uid_) == 0) {
+        if (ISABT(self.sabt).balanceOf(msg.sender, uid_) == 0) {
             revert MembershipNotOwned(uid_, msg.sender);
         }
         uint16 metaId = ISABT(self.sabt).metaId(uid_);
         SubStatus memory sub = self.subscriptions[uid_];
         Fees memory fees = self.fees[metaId][feeToken_];
         // check if previous subscription was done with the same token
-        if(self.subscriptions[uid_].with != feeToken_) {
+        if (sub.with != address(0) && sub.with != feeToken_) {
             // if not, Ask user to unsubscribed with the previous token subscription
             revert NoMultiTokenAccounting(sub.with, feeToken_);
         }
@@ -147,9 +150,7 @@ library MembershipLib {
             TransferHelper.safeTransfer(
                 feeToken_,
                 self.foundation,
-                fees.subFee *
-                    (sub.until -
-                        sub.at)
+                fees.subFee * (sub.until - sub.at)
             );
             // Transfer the tokens to this contract
             TransferHelper.safeTransferFrom(
@@ -167,26 +168,26 @@ library MembershipLib {
 
     /// @dev unsubscribe: Unsubscribe from the membership
     /// @param uid_ The id of the ABT to unsubscribe with
-    function _unsubscribe(Member storage self, address sender, uint32 uid_) internal {
+    function _unsubscribe(Member storage self, uint32 uid_) internal {
         // check if the member has the ABT with input id
-        if(ISABT(self.sabt).balanceOf(msg.sender, uid_) == 0) {
+        if (ISABT(self.sabt).balanceOf(msg.sender, uid_) == 0) {
             revert MembershipNotOwned(uid_, msg.sender);
         }
         uint16 metaId = ISABT(self.sabt).metaId(uid_);
         SubStatus memory sub = self.subscriptions[uid_];
         Fees memory fees = self.fees[metaId][sub.with];
         if (sub.until > block.number) {
-            // Transfer what has been already paid to foundation 
+            // Transfer what has been already paid to foundation
             TransferHelper.safeTransfer(
                 sub.with,
                 self.foundation,
                 fees.subFee * (block.number - sub.at)
             );
-            if(sub.until - block.number > sub.bonus) {
+            if (sub.until - block.number > sub.bonus) {
                 // Transfer the tokens for future subscription to this contract
                 TransferHelper.safeTransfer(
                     sub.with,
-                    sender,
+                    msg.sender,
                     fees.subFee * (sub.until - block.number - sub.bonus)
                 );
             }
@@ -199,19 +200,20 @@ library MembershipLib {
     }
 
     /// @dev offerBonus: Offer bonus blocks to the subscription by promoters
-    function _offerBonus(     
+    function _offerBonus(
         Member storage self,
         uint32 uid_,
+        address holder_,
         uint256 blocks_
     ) internal {
         // check if the member has the ABT with input id
-        if(ISABT(self.sabt).balanceOf(msg.sender, uid_) == 0) {
-            revert MembershipNotOwned(uid_, msg.sender);
+        if (ISABT(self.sabt).balanceOf(holder_, uid_) == 0) {
+            revert MembershipNotOwned(uid_, holder_);
         }
         // Add the bonus blocks to the subscription
-        self.subscriptions[uid_].until += uint64(blocks_);
+        self.subscriptions[uid_].until += blocks_;
         // Mark added bonus blocks in the subscription
-        self.subscriptions[uid_].bonus += uint32(blocks_);
+        self.subscriptions[uid_].bonus += blocks_;
     }
 
     function _balanceOf(
@@ -222,7 +224,10 @@ library MembershipLib {
         return ISABT(self.sabt).balanceOf(owner_, uid_);
     }
 
-    function _isSubscribed(Member storage self, uint32 uid_) internal view returns (bool) {
+    function _isSubscribed(
+        Member storage self,
+        uint32 uid_
+    ) internal view returns (bool) {
         return self.subscriptions[uid_].until > block.number;
     }
 }

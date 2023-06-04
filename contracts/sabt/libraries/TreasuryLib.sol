@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
-import "./TransferHelper.sol";
+import {TransferHelper} from "./TransferHelper.sol";
 
 interface ITreasury {
     function balanceOf(
@@ -31,11 +32,11 @@ library TreasuryLib {
         uint32 settlementId;
     }
 
-    uint8 constant USER_META_ID = 1;
-    uint8 constant INVESTOR_META_ID = 2;
-    uint8 constant FOUNDATION_META_ID = 3;
+    uint8 constant internal USER_META_ID = 1;
+    uint8 constant internal INVESTOR_META_ID = 2;
+    uint8 constant internal FOUNDATION_META_ID = 3;
 
-    uint32 constant denom = 100000;
+    uint32 constant internal DENOM = 100000;
 
     struct Claim {
         uint32 num;
@@ -44,6 +45,9 @@ library TreasuryLib {
 
     error MembershipNotOwned(uint32 uid, address owner);
     error InvalidMetaId(uint16 metaId, uint32 uid, uint16 real);
+    error EraNotPassed(uint32 nthEra, uint32 currentEra);
+    error NoTotalMP(uint32 nthEra, uint256 point);
+    error NoTotalTokens(uint32 nthEra, address token);
 
     function _checkMembership(
         Storage storage self,
@@ -59,8 +63,6 @@ library TreasuryLib {
             revert InvalidMetaId(metaId_, uid_, uMeta);
         }
     }
-
-    error EraNotPassed(uint32 nthEra, uint32 currentEra);
 
     function _checkEraPassed(
         Storage storage self,
@@ -137,9 +139,6 @@ library TreasuryLib {
         self.settlementId = uid;
     }
 
-    error NoTotalMP(uint32 nthEra, uint256 point);
-    error NoTotalTokens(uint32 nthEra, address token);
-
     function _getReward(
         Storage storage self,
         address token,
@@ -183,7 +182,7 @@ library TreasuryLib {
             revert NoTotalTokens(nthEra, token);
         }
         // 2. get reward from community Treasury ratio
-        return ((totalTokens * (self.claims[uid])) / denom);
+        return ((totalTokens * (self.claims[uid])) / DENOM);
     }
 
     function _getSettlement(
@@ -206,6 +205,6 @@ library TreasuryLib {
             revert NoTotalTokens(nthEra, token);
         }
         // 2. get reward from community Treasury ratio
-        return ((totalTokens * (600000 - self.totalClaim)) / denom);
+        return ((totalTokens * (600000 - self.totalClaim)) / DENOM);
     }
 }

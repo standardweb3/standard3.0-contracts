@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
-import "./libraries/BlockAccountantLib.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import {BlockAccountantLib} from "./libraries/BlockAccountantLib.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 /// @author Hyungsuk Kang <hskang9@gmail.com>
 /// @title Standard Membership Accountant to report membership points
@@ -10,6 +11,9 @@ contract BlockAccountant is AccessControl {
     bytes32 public constant REPORTER_ROLE = keccak256("REPORTER_ROLE");
 
     BlockAccountantLib.Storage private _accountant;
+
+    error InvalidRole(bytes32 role, address sender);
+    error NotTreasury(address sender, address treasury);
 
     constructor(
         address membership,
@@ -25,8 +29,6 @@ contract BlockAccountant is AccessControl {
         _accountant.era = uint32(28 days / bfs_);
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
-
-    error InvalidRole(bytes32 role, address sender);
 
     function setEngine(address engine) external {
         if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
@@ -75,7 +77,10 @@ contract BlockAccountant is AccessControl {
         uint32 toUid_,
         uint32 nthEra_,
         uint256 amount_
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    ) external {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        }
         _accountant._migrate(msg.sender, fromUid_, toUid_, nthEra_, amount_);
     }
 
@@ -99,10 +104,8 @@ contract BlockAccountant is AccessControl {
         }
     }
 
-    error NotTreasury(address sender, address treasury);
-
     function subtractMP(uint32 uid, uint32 nthEra, uint64 point) external {
-        if(msg.sender != _accountant.treasury) {
+        if (msg.sender != _accountant.treasury) {
             revert NotTreasury(msg.sender, _accountant.treasury);
         }
         _accountant._subtractMP(uid, nthEra, point);

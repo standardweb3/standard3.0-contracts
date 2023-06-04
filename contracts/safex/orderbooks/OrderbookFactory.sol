@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: BUSL-1.1
-
 pragma solidity ^0.8.10;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "./Orderbook.sol";
-import "../libraries/CloneFactory.sol";
-import "../interfaces/IOrderbookFactory.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {Orderbook, IOrderbook} from "./Orderbook.sol";
+import {CloneFactory} from "../libraries/CloneFactory.sol";
+import {IOrderbookFactory} from "../interfaces/IOrderbookFactory.sol";
 
 contract OrderbookFactory is AccessControl, IOrderbookFactory {
-
     // Orderbooks
     address[] public allOrderbooks;
     /// Address of manager
@@ -23,6 +21,11 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory {
     /// mapping of base and quote asset of the orderbook
     mapping(address => IOrderbookFactory.Pair) public baseQuoteByOrderbook;
 
+    error InvalidRole(bytes32 role, address sender);
+
+    error InvalidAccess(address sender, address allowed);
+    error PairAlreadyExists(address base, address quote);
+
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _createImpl();
@@ -36,9 +39,6 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory {
         impl = impl_;
     }
 
-    error InvalidAccess(address sender, address allowed);
-    error PairAlreadyExists(address base, address quote);
-
     function createBook(
         address bid_,
         address ask_,
@@ -47,9 +47,7 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory {
         if (msg.sender != engine) {
             revert InvalidAccess(msg.sender, engine);
         }
-        if (
-            orderbookByBaseQuote[bid_][ask_] != address(0)
-        ) {
+        if (orderbookByBaseQuote[bid_][ask_] != address(0)) {
             revert PairAlreadyExists(bid_, ask_);
         }
         address proxy = CloneFactory._createClone(impl);
@@ -80,13 +78,20 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory {
         return orderbookByBaseQuote[base][quote];
     }
 
-    function getPairs(uint start, uint end) external view override returns (IOrderbookFactory.Pair[] memory) {
-        IOrderbookFactory.Pair[] memory pairs = new IOrderbookFactory.Pair[](end-start);
-       for(uint256 i = start; i < end; i++) {
-           IOrderbookFactory.Pair memory pair = baseQuoteByOrderbook[allOrderbooks[i]];
-           pairs[i] = pair;
-       }
-       return pairs;
+    function getPairs(
+        uint start,
+        uint end
+    ) external view override returns (IOrderbookFactory.Pair[] memory) {
+        IOrderbookFactory.Pair[] memory pairs = new IOrderbookFactory.Pair[](
+            end - start
+        );
+        for (uint256 i = start; i < end; i++) {
+            IOrderbookFactory.Pair memory pair = baseQuoteByOrderbook[
+                allOrderbooks[i]
+            ];
+            pairs[i] = pair;
+        }
+        return pairs;
     }
 
     function getBaseQuote(
@@ -96,10 +101,8 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory {
         return (pair.base, pair.quote);
     }
 
-    error InvalidRole(bytes32 role, address sender);
-
     function initialize(address engine_) public {
-        if(!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
             // Invalid Access
             revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
         }

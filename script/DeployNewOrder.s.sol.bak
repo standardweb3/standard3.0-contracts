@@ -43,7 +43,7 @@ contract Testnet is Script, Constants {
         membership.initialize(address(sabt), ADDRESSES["deployer"]);
         sabt.initialize(address(membership), address(0));
         // set Fee in membership contract
-        membership.setMembership(0, address(feeToken), 1000, 1000, 10000, 10);
+        membership.newMembership(0, address(feeToken), 1000, 1000, 10000, 10);
 
         // Get membership
         membership.register(0);

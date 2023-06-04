@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
 interface IAccountant {
@@ -42,6 +43,9 @@ library BlockAccountantLib {
         uint32 era;
     }
 
+    error NotTheSameOwner(uint32 fromUid, uint32 toUid, address owner);
+    error InsufficientPoint(uint32 nthEra, uint32 uid, uint256 amount);
+
     function _setTotalTokens(
         Storage storage self,
         address token,
@@ -67,7 +71,10 @@ library BlockAccountantLib {
     function _getEra(
         Storage storage self
     ) internal view returns (uint32 nthEra) {
-        return (block.number - self.fb) > self.era ? uint32((block.number - self.fb) / self.era) : 0;
+        return
+            (block.number - self.fb) > self.era
+                ? uint32((block.number - self.fb) / self.era)
+                : 0;
     }
 
     /**  @dev reportAdd: Report the membership point of the member
@@ -95,10 +102,14 @@ library BlockAccountantLib {
             return;
         } else {
             // if it is, get USD value then calculate the point by 5 decimals
-            uint32 nthEra = (block.number - self.fb) > self.era ? uint32((block.number - self.fb) / self.era) : 0;
-            uint256 result = converted *1e5 /
-               10 ** IAccountant(self.stablecoin).decimals();
-            uint64 point = result > type(uint64).max ? type(uint64).max: uint64(result);
+            uint32 nthEra = (block.number - self.fb) > self.era
+                ? uint32((block.number - self.fb) / self.era)
+                : 0;
+            uint256 result = (converted * 1e5) /
+                10 ** IAccountant(self.stablecoin).decimals();
+            uint64 point = result > type(uint64).max
+                ? type(uint64).max
+                : uint64(result);
             isAdd
                 ? self.pointOf[nthEra][uid] += point
                 : self.pointOf[nthEra][uid] -= point;
@@ -108,9 +119,6 @@ library BlockAccountantLib {
             _setTotalTokens(self, token, nthEra, amount, isAdd);
         }
     }
-
-    error NotTheSameOwner(uint32 fromUid, uint32 toUid, address owner);
-    error InsufficientPoint(uint32 nthEra, uint32 uid,  uint256 amount); 
 
     /// @dev migrate: Migrate the membership point from one era to other uid
     /// @param fromUid_ The uid to migrate from
@@ -125,15 +133,13 @@ library BlockAccountantLib {
         uint32 nthEra_,
         uint256 amount_
     ) internal {
-        if(
+        if (
             IAccountant(self.membership).balanceOf(sender, fromUid_) == 0 ||
-                IAccountant(self.membership).balanceOf(sender, toUid_) == 0
-            
+            IAccountant(self.membership).balanceOf(sender, toUid_) == 0
         ) {
             revert NotTheSameOwner(fromUid_, toUid_, sender);
         }
-        if (
-            self.pointOf[nthEra_][fromUid_] < amount_) {
+        if (self.pointOf[nthEra_][fromUid_] < amount_) {
             revert InsufficientPoint(nthEra_, fromUid_, amount_);
         }
         self.pointOf[nthEra_][fromUid_] -= uint64(amount_);

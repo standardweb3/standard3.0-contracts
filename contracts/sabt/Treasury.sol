@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
-import "./libraries/TreasuryLib.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import {TreasuryLib, TransferHelper} from "./libraries/TreasuryLib.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 /// @author Hyungsuk Kang <hskang9@github.com>
 /// @title Standard Membership Treasury to exchange membership points with rewards
@@ -11,12 +12,14 @@ contract Treasury is AccessControl {
 
     TreasuryLib.Storage private _treasury;
 
+    error InvalidRole(bytes32 role, address sender);
+
     constructor(address accountant_, address sabt_) {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _treasury.accountant = accountant_;
         _treasury.sabt = sabt_;
     }
-    
+
     /// @dev For subscribers, exchange point to reward
     function exchange(
         address token,
@@ -24,7 +27,7 @@ contract Treasury is AccessControl {
         uint32 uid,
         uint64 point
     ) external {
-       _treasury._exchange(token, nthEra, uid, point);
+        _treasury._exchange(token, nthEra, uid, point);
     }
 
     /// @dev for investors, claim the reward with allocated revenue percentage
@@ -33,28 +36,26 @@ contract Treasury is AccessControl {
     }
 
     /// @dev for dev, settle the revenue with allocated revenue percentage
-    function settle(address token, uint32 nthEra, uint32  uid) external {
+    function settle(address token, uint32 nthEra, uint32 uid) external {
         _treasury._settle(token, nthEra, uid);
     }
 
-    error InvalidRole(bytes32 role, address sender);
-
     function setClaim(uint32 uid, uint32 num) external {
-        if(!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
         }
         _treasury._setClaim(uid, num);
     }
 
     function setSettlement(uint32 uid) external {
-        if(!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
         }
         _treasury._setSettlement(uid);
     }
 
     function refundFee(address to, address token, uint256 amount) external {
-        if(!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+        if (!hasRole(REPORTER_ROLE, msg.sender)) {
             revert InvalidRole(REPORTER_ROLE, msg.sender);
         }
         TransferHelper.safeTransfer(token, to, amount);
@@ -62,8 +63,9 @@ contract Treasury is AccessControl {
 
     function getReward(
         address token,
-        uint32  nthEra,
-        uint256 point) external view returns (uint256) {
+        uint32 nthEra,
+        uint256 point
+    ) external view returns (uint256) {
         return _treasury._getReward(token, nthEra, point);
     }
 
@@ -75,7 +77,7 @@ contract Treasury is AccessControl {
         return _treasury._getClaim(token, uid, nthEra);
     }
 
-     function getSettlement(
+    function getSettlement(
         address token,
         uint32 nthEra
     ) external view returns (uint256) {

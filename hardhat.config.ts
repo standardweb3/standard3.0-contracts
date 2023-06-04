@@ -45,15 +45,15 @@ const accounts = [
   process.env.TEST_DEPLOYER_PRIVATE_KEY,
   process.env.TEST_TRADER1_PRIVATE_KEY,
   process.env.TEST_TRADER2_PRIVATE_KEY,
-  process.env.TEST_bidOrdersOOKER_PRIVATE_KEY,
+  process.env.TEST_BOOKER_PRIVATE_KEY,
 ];
 
 const testnetAccounts = [
   process.env.TESTNET_DEPLOYER_PRIVATE_KEY,
   process.env.TESTNET_TRADER1_PRIVATE_KEY,
   process.env.TESTNET_TRADER2_PRIVATE_KEY,
-  process.env.TESTNET_bidOrdersOOKER_PRIVATE_KEY,
-]
+  process.env.TESTNET_BOOKER_PRIVATE_KEY,
+];
 
 const config = {
   defaultNetwork: "hardhat",
@@ -126,7 +126,13 @@ const config = {
     },
     mumbai: {
       url: "https://rpc-mumbai.maticvigil.com/",
-      accounts,
+      accounts: {
+        mnemonic: "test test test test test test test test test test test junk",
+        path: "m/44'/60'/0'/0",
+        initialIndex: 0,
+        count: 20,
+        passphrase: "",
+      },
       chainId: 80001,
       live: true,
       saveDeployments: true,
@@ -135,7 +141,13 @@ const config = {
     },
     baseGoerli : {
       url: "https://goerli.base.org/",
-      accounts: testnetAccounts,
+      accounts: {
+        mnemonic: "test test test test test test test test test test test junk",
+        path: "m/44'/60'/0'/0",
+        initialIndex: 0,
+        count: 20,
+        passphrase: "",
+      },
       chainId: 84531,
       live: true,
       saveDeployments: true,
@@ -398,7 +410,7 @@ const config = {
   },
 
   compiler: {
-    version: "0.8.10",
+    version: "0.8.17",
     settings: {
       optimizer: {
         enabled: true,
@@ -407,7 +419,7 @@ const config = {
     },
   },
   solidity: {
-    version: "0.8.10",
+    version: "0.8.17",
     settings: {
       optimizer: {
         enabled: true,

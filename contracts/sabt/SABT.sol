@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
-import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "./interfaces/IMetadata.sol";
+import {IERC1155, ERC1155, IERC1155MetadataURI} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import {AccessControl, IAccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {IMetadata} from "./interfaces/IMetadata.sol";
 
 /// @author Hyungsuk Kang <hskang9@github.com>
 /// @title Standard Account Bound Token
@@ -13,6 +14,10 @@ contract SABT is ERC1155, AccessControl {
     uint32 public index;
 
     mapping(uint32 => uint16) public metaIds;
+
+    error NotMembership(address membership_, address sender);
+    error MembershipFull(uint32 uid_);
+    error InvalidRole(bytes32 role, address sender);
 
     constructor() ERC1155("https://arts.standard.tech/") {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -33,9 +38,6 @@ contract SABT is ERC1155, AccessControl {
     ) external view returns (string memory) {
         return IMetadata(metadata).meta(metaId_);
     }
-
-    error NotMembership(address membership_, address sender);
-    error MembershipFull(uint32 uid_);
 
     /// @dev mint: Mint a new SABT for customized membership
     /// @param to_ The address to mint the token to

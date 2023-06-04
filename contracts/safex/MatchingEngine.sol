@@ -2,12 +2,12 @@
 
 pragma solidity ^0.8.10;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "./interfaces/IOrderbookFactory.sol";
-import "./interfaces/IOrderbook.sol";
-import "./libraries/TransferHelper.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {IOrderbookFactory} from "./interfaces/IOrderbookFactory.sol";
+import {IOrderbook, NewOrderOrderbook} from "./interfaces/IOrderbook.sol";
+import {TransferHelper} from "./libraries/TransferHelper.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 interface IRevenue {
     function report(
@@ -66,6 +66,11 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
     );
 
     event PairAdded(address orderbook, address base, address quote);
+
+    error TooManyMatches(uint256 n);
+    error InvalidFeeRate(uint256 feeNum, uint256 feeDenom);
+    error NotContract(address newImpl);
+    error InvalidRole(bytes32 role, address sender);
 
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -130,8 +135,6 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         accountant = accountant_;
     }
-
-    error InvalidFeeRate(uint256 feeNum, uint256 feeDenom);
 
     /**
      * @dev Set the fee numerator and denominator of trading.
@@ -628,8 +631,6 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
         }
     }
 
-    error TooManyMatches(uint256 n);
-
     /**
      * @dev Match bid if `isBid` is true, match ask if `isBid` is false.
      */
@@ -858,9 +859,6 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
         book = getBookByPair(base, quote);
         return (withoutFee, book);
     }
-
-    error NotContract(address newImpl);
-    error InvalidRole(bytes32 role, address sender);
 
     function _authorizeUpgrade(address newImpl) internal virtual override {
         // check if new implementation is the contract

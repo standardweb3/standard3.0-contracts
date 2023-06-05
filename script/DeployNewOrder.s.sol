@@ -43,11 +43,11 @@ contract Testnet is Script, Constants {
         membership.initialize(address(sabt), ADDRESSES["deployer"]);
         sabt.initialize(address(membership), address(0));
         // set Fee in membership contract
-        membership.newMembership(0, address(feeToken), 1000, 1000, 10000, 10);
+        membership.setMembership(0, address(feeToken), 1000, 1000, 10000);
 
         // Get membership
-        membership.register(0);
-        membership.subscribe(1, 10000000000000000);
+        membership.register(0, address(feeToken));
+        membership.subscribe(1, 10000000000000000, address(feeToken));
 
 
         // Deploy stablecoin for accounting

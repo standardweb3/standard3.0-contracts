@@ -52,7 +52,7 @@ library MembershipLib {
     error MembershipNotOwned(uint32 uid, address owner);
     error NoMultiTokenAccounting(address subscribedWith, address feeToken_);
 
-    function _newMembership(
+    function _setMembership(
         Member storage self,
         uint16 metaId_,
         address feeToken_,
@@ -99,9 +99,9 @@ library MembershipLib {
         }
         // Transfer required fund
         TransferHelper.safeTransferFrom(
+            feeToken_,
             msg.sender,
             address(this),
-            feeToken_,
             regFee
         );
         TransferHelper.safeTransfer(feeToken_, self.foundation, regFee);
@@ -111,17 +111,18 @@ library MembershipLib {
 
     /// @dev subscribe: Subscribe to the membership until certain block height
     /// @param uid_ The uid of the ABT to subscribe with
-    /// @param untilBh_ The block height to subscribe until
+    /// @param blocks_ The number of blocks to subscribe
     function _subscribe(
         Member storage self,
         uint32 uid_,
-        uint64 untilBh_,
+        uint64 blocks_,
         address feeToken_
     ) internal {
         // check if the member has the ABT with input id
         if (ISABT(self.sabt).balanceOf(msg.sender, uid_) == 0) {
             revert MembershipNotOwned(uid_, msg.sender);
         }
+        uint256 bh = block.number;
         uint16 metaId = ISABT(self.sabt).metaId(uid_);
         SubStatus memory sub = self.subscriptions[uid_];
         Fees memory fees = self.fees[metaId][feeToken_];
@@ -131,19 +132,19 @@ library MembershipLib {
             revert NoMultiTokenAccounting(sub.with, feeToken_);
         }
         // if the member already subscribed, refund the fee for the remaining block
-        if (sub.until > block.number) {
+        if (sub.until > bh) {
             // Transfer what has been already paid
             TransferHelper.safeTransfer(
                 feeToken_,
                 self.foundation,
-                fees.subFee * (block.number - sub.at)
+                fees.subFee * (bh - sub.at)
             );
             // Transfer the tokens for future subscription to this contract
             TransferHelper.safeTransferFrom(
                 msg.sender,
                 address(this),
                 feeToken_,
-                fees.subFee * (untilBh_ - sub.until)
+                fees.subFee * (blocks_ - sub.until)
             );
         } else {
             // Transfer what has been already paid
@@ -157,12 +158,12 @@ library MembershipLib {
                 msg.sender,
                 address(this),
                 feeToken_,
-                fees.subFee * (untilBh_ - block.number)
+                fees.subFee * (blocks_ - bh)
             );
         }
         // subscribe for certain block
-        self.subscriptions[uid_].at = uint64(block.number);
-        self.subscriptions[uid_].until = uint64(block.number) + untilBh_;
+        self.subscriptions[uid_].at = bh;
+        self.subscriptions[uid_].until = bh + blocks_;
         self.subscriptions[uid_].with = feeToken_;
     }
 
@@ -173,22 +174,23 @@ library MembershipLib {
         if (ISABT(self.sabt).balanceOf(msg.sender, uid_) == 0) {
             revert MembershipNotOwned(uid_, msg.sender);
         }
+        uint256 bh = block.number;
         uint16 metaId = ISABT(self.sabt).metaId(uid_);
         SubStatus memory sub = self.subscriptions[uid_];
         Fees memory fees = self.fees[metaId][sub.with];
-        if (sub.until > block.number) {
+        if (sub.until > bh) {
             // Transfer what has been already paid to foundation
             TransferHelper.safeTransfer(
                 sub.with,
                 self.foundation,
-                fees.subFee * (block.number - sub.at)
+                fees.subFee * (bh - sub.at)
             );
-            if (sub.until - block.number > sub.bonus) {
+            if (sub.until - bh > sub.bonus) {
                 // Transfer the tokens for future subscription to this contract
                 TransferHelper.safeTransfer(
                     sub.with,
                     msg.sender,
-                    fees.subFee * (sub.until - block.number - sub.bonus)
+                    fees.subFee * (sub.until - bh - sub.bonus)
                 );
             }
         }

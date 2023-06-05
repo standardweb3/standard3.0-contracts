@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
-import {BlockAccountantLib} from "./libraries/BlockAccountantLib.sol";
+import {BlockAccountantLib, IAccountant} from "./libraries/BlockAccountantLib.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 /// @author Hyungsuk Kang <hskang9@gmail.com>
@@ -19,15 +19,23 @@ contract BlockAccountant is AccessControl {
         address membership,
         address engine,
         address stablecoin,
-        uint32 bfs_
+        uint32 spb_
     ) {
         _accountant.membership = membership;
         _accountant.engine = engine;
         _accountant.stablecoin = stablecoin;
+        _accountant.stc1 = 10**IAccountant(stablecoin).decimals();
         _accountant.fb = block.number;
-        _accountant.bfs = bfs_;
-        _accountant.era = uint32(28 days / bfs_);
+        _accountant.spb = spb_;
+        _accountant.era = uint32(28 days / spb_);
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
+
+    function setStablecoin(address stablecoin) external {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        }
+        _accountant.stablecoin = stablecoin;
     }
 
     function setEngine(address engine) external {
@@ -58,12 +66,12 @@ contract BlockAccountant is AccessControl {
         _accountant.stablecoin = stablecoin;
     }
 
-    function setBFS(uint32 bfs_) external {
+    function setSPB(uint32 spb_) external {
         if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
         }
-        _accountant.bfs = bfs_;
-        _accountant.era = uint32(28 days / bfs_);
+        _accountant.spb = spb_;
+        _accountant.era = uint32(28 days / spb_);
     }
 
     // TODO: migrate point from one era to other uid for multiple membership holders
@@ -138,6 +146,6 @@ contract BlockAccountant is AccessControl {
     }
 
     function getBfs() external view returns (uint256) {
-        return _accountant.bfs;
+        return _accountant.spb;
     }
 }

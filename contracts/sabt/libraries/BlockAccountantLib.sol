@@ -20,7 +20,7 @@ interface IAccountant {
 
     function subtractMP(
         address account,
-        uint256 nthMonth,
+        uint256 nthEra,
         uint256 amount
     ) external;
 }
@@ -32,14 +32,25 @@ library BlockAccountantLib {
         uint256 fb;
         /// @dev pointOf: The mapping of the month to the mapping of the member UID to the point, each accountant can account 4,294,967,295 eras, each era is 28 days
         mapping(uint32 => mapping(uint32 => uint64)) pointOf;
+        /// @dev totalPointsOn: The mapping of the month to the total point of the month
         mapping(uint32 => uint64) totalPointsOn;
+        /// @dev totalTokensOn: The mapping of the token address to the mapping of the month to the total token amount of the month
         mapping(bytes32 => uint256) totalTokensOn;
+        /// @dev refundOf: The mapping of the member UID to the refund amount
         mapping(uint32 => uint256) refundOf;
+        /// @dev membership: The address of the membership contract
         address membership;
+        /// @dev engine: The address of the orderbook dex entry point
         address engine;
+        /// @dev treasury: The address of the treasury contract
         address treasury;
+        /// @dev stablecoin: The address of the stablecoin contract
         address stablecoin;
-        uint32 bfs;
+        /// @dev stc1: One stablecoin with decimals 
+        uint256 stc1;
+        /// @dev spb: The number of seconds per a block
+        uint32 spb;
+        /// @dev era: The number of blocks per an era
         uint32 era;
     }
 
@@ -106,7 +117,7 @@ library BlockAccountantLib {
                 ? uint32((block.number - self.fb) / self.era)
                 : 0;
             uint256 result = (converted * 1e5) /
-                10 ** IAccountant(self.stablecoin).decimals();
+                self.stc1;
             uint64 point = result > type(uint64).max
                 ? type(uint64).max
                 : uint64(result);
@@ -159,6 +170,9 @@ library BlockAccountantLib {
         uint32 nthEra,
         uint64 point
     ) internal {
+        if (self.pointOf[nthEra][uid] < point) {
+            revert InsufficientPoint(nthEra, uid, self.pointOf[nthEra][uid]);
+        }
         self.pointOf[nthEra][uid] -= point;
     }
 

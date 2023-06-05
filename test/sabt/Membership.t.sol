@@ -1,7 +1,5 @@
 pragma solidity >=0.8;
-
-import {BaseSetup} from "./Orderbook.t.sol";
-
+import {BaseSetup} from "../safex/Orderbook.t.sol";
 import {console} from "forge-std/console.sol";
 import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 import {SABT} from "../../contracts/sabt/SABT.sol";
@@ -25,11 +23,9 @@ contract MembershipBaseSetup is BaseSetup {
         users = utils.addUsers(2, users);
         foundation = users[4];
         reporter = users[5];
-
         stablecoin = new MockToken("Stablecoin", "STBC");
         membership = new Membership();
         sabt = new SABT();
-
         accountant = new BlockAccountant(
             address(membership),
             address(matchingEngine),
@@ -46,24 +42,25 @@ contract MembershipBaseSetup is BaseSetup {
             address(matchingEngine)
         );
         treasury.grantRole(treasury.REPORTER_ROLE(), address(matchingEngine));
-
         feeToken.mint(trader1, 10000e18);
         feeToken.mint(trader2, 10000e18);
         feeToken.mint(booker, 100000e18);
         stablecoin.mint(trader1, 10000e18);
         stablecoin.mint(trader2, 10000e18);
+        stablecoin.mint(address(treasury), 10000e18);
         vm.prank(trader1);
         feeToken.approve(address(membership), 10000e18);
         vm.prank(trader1);
         stablecoin.approve(address(membership), 10000e18);
-
-        // initialize  membership contract
+        // initialize membership contract
         membership.initialize(address(sabt), foundation);
+        treasury.setClaim(1, 100);
         // initialize SABT
         sabt.initialize(address(membership), address(0));
         // set Fee in membership contract
-        membership.setMembership(0, address(feeToken), 1000, 1000, 10000, 10);
-
+        membership.setMembership(1, address(feeToken), 1000, 1000, 10000);
+        membership.setMembership(2, address(feeToken), 1000, 1000, 10000);
+        // membership.setMembership(2, address(feeToken), 1000, 1000, 10000, 10);
         // set stablecoin price
         vm.prank(booker);
         feeToken.approve(address(matchingEngine), 100000e18);
@@ -75,34 +72,17 @@ contract MembershipBaseSetup is BaseSetup {
         // Approve the matching engine to spend the trader's tokens
         vm.prank(trader2);
         feeToken.approve(address(matchingEngine), 10000e18);
-
         // register trader1 into membership
         vm.prank(trader1);
-        membership.register(0);
-        assert(sabt.balanceOf(trader1, 1) == 1);
-
+        membership.register(1, address(feeToken));
         // subscribe
         vm.prank(trader1);
-        membership.subscribe(1, 10000);
-
+        membership.subscribe(1, 10000, address(feeToken));
         // mine 1000 blocks
         utils.mineBlocks(1000);
-        console.log("Block number after mining 1000 blocks: ", block.number);
-        console.log("Financial block where accountant started its accounting: ", accountant.fb());
-
         // make a price in matching engine where 1 feeToken = 1000 stablecoin with buy and sell order
         vm.prank(trader2);
         matchingEngine.limitSell(
-            address(feeToken),
-            address(stablecoin),
-            10000e18,
-            1000e8,
-            true,
-            1,
-            1
-        );
-        vm.prank(trader1);
-        matchingEngine.limitBuy(
             address(feeToken),
             address(stablecoin),
             10000e18,
@@ -119,45 +99,32 @@ contract MembershipTest is MembershipBaseSetup {
         super.setUp();
     }
 
-    function testRegistration() public {
+    function testClaimFailsWithoutMatching() public {
         super.setUp();
-        console.log(membership.getMeta(0).metaId);
-        // make a membership in membership contract
-        vm.prank(trader1);
-        membership.register(0);
-    }
-
-    function testMembershipTransfer() public {
-        super.setUp();
-        // make a membership in membership contract
-        vm.prank(trader1);
-        membership.register(0);
-        // transfer Membership
-        vm.prank(trader1);
-        sabt.transfer(trader2, 1);
-    }
-
-    function testAccountant() public {
-        super.setUp();
-        // make a membership in membership contract
-        vm.prank(trader1);
-        membership.register(0);
-    }
-
-    function testAccounting() public {
-        super.setUp();
-        // set price in accounting price
-        uint256 quoteAmount = matchingEngine.convert(
-            address(feeToken),
-            address(stablecoin),
-            1e18,
-            true
-        );
-        assert(quoteAmount == 1e18 * 1000);
-
-        console.log(accountant.pointOf(1, 0));
-        utils.mineBlocks(100000000000);
-        vm.prank(trader1);
-        treasury.exchange(address(stablecoin), 0, 1, 1);
+        vm.startPrank(trader1);
+        uint256 investorTypeNFTBalance = sabt.balanceOf(trader1, 1);
+        uint256 userTypeNFTBalance = sabt.balanceOf(trader1, 0);
+        uint256 foundationTypeNFTBalance = sabt.balanceOf(trader1, 2);
+        uint256 metaID = sabt.metaId(1);
+        console.log("Meta ID: ", metaID);
+        uint256 beforeBalance = stablecoin.balanceOf(trader1);
+        //uint256 beforeReward = treasury.getReward(address(stablecoin), 0, 10);
+        uint256 beforeClaim = treasury.getClaim(address(stablecoin), 1, 0);
+        treasury.claim(address(stablecoin), 0, 1);
+        treasury.claim(address(stablecoin), 0, 1);
+        treasury.claim(address(stablecoin), 0, 1);
+        treasury.claim(address(stablecoin), 0, 1);
+        treasury.claim(address(stablecoin), 0, 1);
+        treasury.claim(address(stablecoin), 0, 1);
+        uint256 afterBalance = stablecoin.balanceOf(trader1);
+        uint256 afterReward = treasury.getReward(address(stablecoin), 0, 10);
+        uint256 afterClaim = treasury.getClaim(address(stablecoin), 1, 0);
+        vm.stopPrank();
+        console.log("Before balance :", beforeBalance);
+        console.log("After balance :", afterBalance);
+        //console.log("Before getReward :", beforeReward);
+        console.log("After getReward :", afterReward);
+        console.log("Before getClaim :", beforeClaim);
+        console.log("After getClaim :", afterClaim);
     }
 }

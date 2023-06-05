@@ -34,7 +34,7 @@ contract Membership is AccessControl {
     /// @param subFee_ The subscription fee per block in one token
     /// @param metaId_ The meta id of the token to pay the fee
     /// @param quotas_ The number of tokens to be issued for registration
-    function newMembership(
+    function setMembership(
         uint16 metaId_,
         address feeToken_,
         uint32 regFee_,
@@ -47,7 +47,7 @@ contract Membership is AccessControl {
         if (metaId_ == 0) {
             revert InvalidMeta(metaId_, msg.sender);
         }
-        _membership._newMembership(
+        _membership._setMembership(
             metaId_,
             feeToken_,
             regFee_,
@@ -94,15 +94,17 @@ contract Membership is AccessControl {
         return _membership._register(metaId_, feeToken_);
     }
 
-    /// @dev subscribe: Subscribe to the membership until certain block height
-    /// @param uid_ The uid of the ABT to subscribe with
-    /// @param untilBh_ The block height to subscribe until
+    /**  @dev subscribe: Subscribe to the membership until certain block height
+    * @param uid_ The uid of the ABT to subscribe with
+    * @param blocks_ The number of blocks to remain subscribed
+    * @param feeToken_ The address of the token to pay the fee
+    */ 
     function subscribe(
         uint32 uid_,
-        uint64 untilBh_,
+        uint64 blocks_,
         address feeToken_
     ) external {
-        _membership._subscribe(uid_, untilBh_, feeToken_);
+        _membership._subscribe(uid_, blocks_, feeToken_);
     }
 
     function offerBonus(

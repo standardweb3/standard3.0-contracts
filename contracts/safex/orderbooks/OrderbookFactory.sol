@@ -101,6 +101,10 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory {
         return (pair.base, pair.quote);
     }
 
+    /**
+     * @dev Initialize orderbook factory contract with engine address, reinitialize if engine is reset. 
+     * @param engine_ The address of the engine contract
+    */
     function initialize(address engine_) public {
         if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
             // Invalid Access

@@ -349,7 +349,7 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
      * @param at The price at which the stop buy order will be executed
      * @return bool True if the order was successfully executed, otherwise false.
      */
-    function stopBuy(
+    function makeBuy(
         address base,
         address quote,
         uint256 amount,
@@ -364,7 +364,7 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
             uid
         );
         TransferHelper.safeTransfer(quote, orderbook, withoutFee);
-        _stopOrder(orderbook, withoutFee, at, true);
+        _makeOrder(orderbook, withoutFee, at, true);
         return true;
     }
 
@@ -377,7 +377,7 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
      * @param at The price at which the stop sell order will be executed
      * @return bool True if the order was successfully executed, otherwise false.
      */
-    function stopSell(
+    function makeSell(
         address base,
         address quote,
         uint256 amount,
@@ -392,7 +392,7 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
             uid
         );
         TransferHelper.safeTransfer(base, orderbook, withoutFee);
-        _stopOrder(orderbook, withoutFee, at, false);
+        _makeOrder(orderbook, withoutFee, at, false);
         return true;
     }
 
@@ -617,7 +617,7 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
      * @param at The stop price of the order
      * @param isBid Boolean indicating if the order is a buy (false) or a sell (true)
      */
-    function _stopOrder(
+    function _makeOrder(
         address orderbook,
         uint256 withoutFee,
         uint256 at,
@@ -803,7 +803,7 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
         if (remaining > 0) {
             address stopTo = isStop ? orderbook : msg.sender;
             TransferHelper.safeTransfer(asset, stopTo, remaining);
-            if (isStop) _stopOrder(orderbook, remaining, price, isBid);
+            if (isStop) _makeOrder(orderbook, remaining, price, isBid);
         }
     }
 

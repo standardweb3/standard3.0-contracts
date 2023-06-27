@@ -169,11 +169,11 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
     /**
      * @dev Executes a market buy order,
      * buys the base asset using the quote asset at the best available price in the orderbook up to `n` orders,
-     * and places a stop order at the market price.
+     * and make an order at the market price.
      * @param base The address of the base asset for the trading pair
      * @param quote The address of the quote asset for the trading pair
      * @param amount The amount of quote asset to be used for the market buy order
-     * @param isStop Boolean indicating if a stop order should be placed at the market price
+     * @param isMaker Boolean indicating if a order should be made at the market price in orderbook
      * @param n The maximum number of orders to match in the orderbook
      * @return bool True if the order was successfully executed, otherwise false.
      */
@@ -181,7 +181,7 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
         address base,
         address quote,
         uint256 amount,
-        bool isStop,
+        bool isMaker,
         uint32 n,
         uint32 uid
     ) external returns (bool) {
@@ -201,14 +201,14 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
             type(uint256).max,
             n
         );
-        // add stop order on market price
-        _detStop(
+        // add make order on market price
+        _detMake(
             orderbook,
             quote,
             remaining,
             mktPrice(base, quote),
             true,
-            isStop
+            isMaker
         );
         return true;
     }
@@ -216,11 +216,11 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
     /**
      * @dev Executes a market sell order,
      * sells the base asset for the quote asset at the best available price in the orderbook up to `n` orders,
-     * and places a stop order at the market price.
+     * and make an order at the market price.
      * @param base The address of the base asset for the trading pair
      * @param quote The address of the quote asset for the trading pair
      * @param amount The amount of base asset to be sold in the market sell order
-     * @param isStop Boolean indicating if a stop order should be placed at the market price
+     * @param isMaker Boolean indicating if an order should be made at the market price in orderbook
      * @param n The maximum number of orders to match in the orderbook
      * @return bool True if the order was successfully executed, otherwise false.
      */
@@ -228,7 +228,7 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
         address base,
         address quote,
         uint256 amount,
-        bool isStop,
+        bool isMaker,
         uint32 n,
         uint32 uid
     ) external returns (bool) {
@@ -248,13 +248,13 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
             type(uint256).max,
             n
         );
-        _detStop(
+        _detMake(
             orderbook,
             base,
             remaining,
             mktPrice(base, quote),
             false,
-            isStop
+            isMaker
         );
         return true;
     }
@@ -262,12 +262,12 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
     /**
      * @dev Executes a limit buy order,
      * places a limit order in the orderbook for buying the base asset using the quote asset at a specified price,
-     * and places a stop order at the limit price.
+     * and make an order at the limit price.
      * @param base The address of the base asset for the trading pair
      * @param quote The address of the quote asset for the trading pair
      * @param amount The amount of quote asset to be used for the limit buy order
      * @param at The price at which the limit buy order should be placed
-     * @param isStop Boolean indicating if a stop order should be placed at the limit price
+     * @param isMaker Boolean indicating if an order should be made at the limit price
      * @param n The maximum number of orders to match in the orderbook
      * @return bool True if the order was successfully executed, otherwise false.
      */
@@ -276,7 +276,7 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
         address quote,
         uint256 amount,
         uint256 at,
-        bool isStop,
+        bool isMaker,
         uint32 n,
         uint32 uid
     ) external returns (bool) {
@@ -296,19 +296,19 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
             n
         );
 
-        _detStop(orderbook, quote, remaining, at, true, isStop);
+        _detMake(orderbook, quote, remaining, at, true, isMaker);
         return true;
     }
 
     /**
      * @dev Executes a limit sell order,
      * places a limit order in the orderbook for selling the base asset for the quote asset at a specified price,
-     * and places a stop order at the limit price.
+     * and makes an order at the limit price.
      * @param base The address of the base asset for the trading pair
      * @param quote The address of the quote asset for the trading pair
      * @param amount The amount of base asset to be used for the limit sell order
      * @param at The price at which the limit sell order should be placed
-     * @param isStop Boolean indicating if a stop order should be placed at the limit price
+     * @param isMaker Boolean indicating if an order should be made at the limit price
      * @param n The maximum number of orders to match in the orderbook
      * @return bool True if the order was successfully executed, otherwise false.
      */
@@ -317,7 +317,7 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
         address quote,
         uint256 amount,
         uint256 at,
-        bool isStop,
+        bool isMaker,
         uint32 n,
         uint32 uid
     ) external returns (bool) {
@@ -336,17 +336,17 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
             at,
             n
         );
-        _detStop(orderbook, base, remaining, at, false, isStop);
+        _detMake(orderbook, base, remaining, at, false, isMaker);
         return true;
     }
 
     /**
-     * @dev Places a stop buy order in the orderbook for the base asset using the quote asset,
+     * @dev Stores a bid order in the orderbook for the base asset using the quote asset,
      * with a specified price `at`.
      * @param base The address of the base asset for the trading pair
      * @param quote The address of the quote asset for the trading pair
-     * @param amount The amount of quote asset to be used for the stop buy order
-     * @param at The price at which the stop buy order will be executed
+     * @param amount The amount of quote asset to be used for the bid order
+     * @param at The price at which the bid order will be stored in bid-ask spread
      * @return bool True if the order was successfully executed, otherwise false.
      */
     function makeBuy(
@@ -369,12 +369,12 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
     }
 
     /**
-     * @dev Places a stop sell order in the orderbook for the quote asset using the base asset,
+     * @dev Stores an ask order in the orderbook for the quote asset using the base asset,
      * with a specified price `at`.
      * @param base The address of the base asset for the trading pair
      * @param quote The address of the quote asset for the trading pair
-     * @param amount The amount of base asset to be used for the stop sell order
-     * @param at The price at which the stop sell order will be executed
+     * @param amount The amount of base asset to be used for making ask order
+     * @param at The price at which the ask order will be executed
      * @return bool True if the order was successfully executed, otherwise false.
      */
     function makeSell(
@@ -611,10 +611,10 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
     }
 
     /**
-     * @dev Internal function which places a stop order on the orderbook.
+     * @dev Internal function which makes an order on the orderbook.
      * @param orderbook The address of the orderbook contract for the trading pair
      * @param withoutFee The remaining amount of the asset after the market order has been executed
-     * @param at The stop price of the order
+     * @param at The price of the order to store in bid-ask spread
      * @param isBid Boolean indicating if the order is a buy (false) or a sell (true)
      */
     function _makeOrder(
@@ -782,28 +782,28 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
     }
 
     /**
-     * @dev Determines if a stop order should be placed at the market price,
-     * and if so, places the stop order on the orderbook.
-     * If no stop order should be placed, transfers the remaining asset to either the orderbook or the user.
+     * @dev Determines if an order can be made at the market price,
+     * and if so, makes the an order on the orderbook.
+     * If an order cannot be made, transfers the remaining asset to either the orderbook or the user.
      * @param orderbook The address of the orderbook contract for the trading pair
-     * @param asset The address of the asset to be transferred as the stop order
-     * @param remaining The remaining amount of the asset after the market order has been executed
-     * @param price The market price used to determine if a stop order should be placed
-     * @param isBid Boolean indicating if the market order was a buy (true) or a sell (false)
-     * @param isStop Boolean indicating if a stop order should be placed at the market price
+     * @param asset The address of the asset to be traded after making order
+     * @param remaining The remaining amount of the asset after the market order has been taken
+     * @param price The price used to determine if an order can be made
+     * @param isBid Boolean indicating if the order was a buy (true) or a sell (false)
+     * @param isMaker Boolean indicating if an order is for storing in orderbook
      */
-    function _detStop(
+    function _detMake(
         address orderbook,
         address asset,
         uint256 remaining,
         uint256 price,
         bool isBid,
-        bool isStop
+        bool isMaker
     ) internal {
         if (remaining > 0) {
-            address stopTo = isStop ? orderbook : msg.sender;
+            address stopTo = isMaker ? orderbook : msg.sender;
             TransferHelper.safeTransfer(asset, stopTo, remaining);
-            if (isStop) _makeOrder(orderbook, remaining, price, isBid);
+            if (isMaker) _makeOrder(orderbook, remaining, price, isBid);
         }
     }
 

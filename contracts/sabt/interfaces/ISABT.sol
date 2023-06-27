@@ -1,5 +1,5 @@
-
-pragma solidity ^0.8.10;
+// SPDX-License-Identifier: BUSL-1.1
+pragma solidity ^0.8.17;
 
 interface ISABT {
     function mint(address to_, uint32 id_) external;

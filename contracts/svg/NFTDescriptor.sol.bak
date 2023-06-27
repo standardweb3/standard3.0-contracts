@@ -1,5 +1,5 @@
 
-pragma solidity ^0.8.10;
+pragma solidity ^0.8.17;
 
 import "base64-sol/base64.sol";
 import "./libraries/NFTSVG.sol";

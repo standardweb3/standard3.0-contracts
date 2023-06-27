@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity ^0.8.10;
+pragma solidity ^0.8.17;
 
 library NewOrderLinkedList {
     error NoMatchPrice(uint256 askHead, uint256 bidHead, uint256 lmp);

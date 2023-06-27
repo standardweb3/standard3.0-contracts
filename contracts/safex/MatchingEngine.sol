@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity ^0.8.10;
+pragma solidity ^0.8.17;
 
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {IOrderbookFactory} from "./interfaces/IOrderbookFactory.sol";
 import {IOrderbook, NewOrderOrderbook} from "./interfaces/IOrderbook.sol";
 import {TransferHelper} from "./libraries/TransferHelper.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 interface IRevenue {
     function report(
@@ -26,10 +25,7 @@ interface IRevenue {
 }
 
 // Onchain Matching engine for the orders
-contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
-    // roles
-    bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
-
+contract MatchingEngine is AccessControl, Initializable {
     // fee recipient
     address private feeTo;
     // fee denominator
@@ -858,19 +854,5 @@ contract MatchingEngine is AccessControl, Initializable, UUPSUpgradeable {
         // get orderbook address from the base and quote asset
         book = getBookByPair(base, quote);
         return (withoutFee, book);
-    }
-
-    function _authorizeUpgrade(address newImpl) internal virtual override {
-        // check if new implementation is the contract
-        uint256 size;
-        assembly {
-            size := extcodesize(newImpl)
-        }
-        if (size == 0) {
-            revert NotContract(newImpl);
-        }
-        if (!hasRole(UPGRADER_ROLE, _msgSender())) {
-            revert InvalidRole(UPGRADER_ROLE, _msgSender());
-        }
     }
 }

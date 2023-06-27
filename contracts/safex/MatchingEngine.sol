@@ -29,9 +29,9 @@ contract MatchingEngine is AccessControl, Initializable {
     // fee recipient
     address private feeTo;
     // fee denominator
-    uint256 public feeDenom;
+    uint32 public immutable feeDenom = 1000000;
     // fee numerator
-    uint256 public feeNum;
+    uint32 public feeNum;
     // Factories
     address public orderbookFactory;
     // Fee token
@@ -71,7 +71,6 @@ contract MatchingEngine is AccessControl, Initializable {
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         feeTo = msg.sender;
-        feeDenom = 1000;
         feeNum = 3;
     }
 
@@ -141,15 +140,14 @@ contract MatchingEngine is AccessControl, Initializable {
      * - `msg.sender` must have the default admin role.
      */
     function setFee(
-        uint256 feeNum_,
-        uint256 feeDenom_
+        uint32 feeNum_,
+        uint32 feeDenom_
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         // check if fee numerator and denominator are valid
         if (feeNum >= 1e8 || feeDenom >= 1e8 || feeNum_ >= feeDenom_) {
             revert InvalidFeeRate(feeNum_, feeDenom_);
         }
         feeNum = feeNum_;
-        feeDenom = feeDenom_;
     }
 
     /**

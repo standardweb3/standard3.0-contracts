@@ -70,6 +70,13 @@ contract Membership is AccessControl {
         _membership._setQuota(metaId_, quota_);
     }
 
+    function setSTND(address stnd) external {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        }
+        _membership._setSTND(stnd);
+    }
+
     function setFees(
         uint16 metaId_,
         address feeToken_,
@@ -129,6 +136,12 @@ contract Membership is AccessControl {
         uint32 uid_
     ) external view returns (uint256) {
         return _membership._balanceOf(who, uid_);
+    }
+
+    function getSubSTND(
+        uint32 uid_
+    ) external view returns (uint64) {
+        return _membership._getSubSTND(uid_);
     }
 
     function getMeta(

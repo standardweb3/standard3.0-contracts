@@ -18,7 +18,7 @@ interface ITreasury {
         address token_
     ) external view returns (uint256);
 
-    function subtractMP(uint32 uid_, uint32 nthEra_, uint64 point_) external;
+    function subtractTP(uint32 uid_, uint32 nthEra_, uint64 point_) external;
 
     function getCurrentEra() external view returns (uint32);
 }
@@ -33,8 +33,8 @@ library TreasuryLib {
     }
 
     uint8 constant internal USER_META_ID = 1;
-    uint8 constant internal INVESTOR_META_ID = 2;
-    uint8 constant internal FOUNDATION_META_ID = 3;
+    uint8 constant internal EARLYADOPTER_META_ID = 9;
+    uint8 constant internal FOUNDATION_META_ID = 10;
 
     uint32 constant internal DENOM = 100000;
 
@@ -46,7 +46,7 @@ library TreasuryLib {
     error MembershipNotOwned(uint32 uid, address owner);
     error InvalidMetaId(uint16 metaId, uint32 uid, uint16 real);
     error EraNotPassed(uint32 nthEra, uint32 currentEra);
-    error NoTotalMP(uint32 nthEra, uint256 point);
+    error NoTotalTP(uint32 nthEra, uint256 point);
     error NoTotalTokens(uint32 nthEra, address token);
 
     function _checkMembership(
@@ -82,12 +82,14 @@ library TreasuryLib {
         uint32 uid,
         uint64 point
     ) internal {
-        // check if the sender has UID with user meta id
-        _checkMembership(self, uid, USER_META_ID);
+        // check if the sender owns the membership with UID
+        if (ITreasury(self.sabt).balanceOf(msg.sender, uid) == 0) {
+            revert MembershipNotOwned(uid, msg.sender);
+        }
         // check if the era has already passed
         _checkEraPassed(self, nthEra);
         // subtract membership point in accountant
-        ITreasury(self.accountant).subtractMP(uid, nthEra, point);
+        ITreasury(self.accountant).subtractTP(uid, nthEra, point);
         // exchange membership point with reward
         uint256 reward = _getReward(self, token, nthEra, point);
         // exchange reward with token
@@ -101,7 +103,7 @@ library TreasuryLib {
         uint32 uid
     ) internal {
         // check if the sender has UID with investor meta id
-        _checkMembership(self, uid, INVESTOR_META_ID);
+        _checkMembership(self, uid, EARLYADOPTER_META_ID);
         // check if the era has already passed
         _checkEraPassed(self, nthEra);
         // get reward from accountant
@@ -147,9 +149,9 @@ library TreasuryLib {
     ) internal view returns (uint256) {
         // get reward from Treasury ratio
         // 1. get total supply of mp
-        uint256 totalMP = ITreasury(self.accountant).getTotalPoints(nthEra);
-        if (totalMP == 0) {
-            revert NoTotalMP(nthEra, totalMP);
+        uint256 totalTP = ITreasury(self.accountant).getTotalPoints(nthEra);
+        if (totalTP == 0) {
+            revert NoTotalTP(nthEra, totalTP);
         }
         // 2. get fee collected on nthEra
         uint256 totalTokens = ITreasury(self.accountant).getTotalTokens(
@@ -160,7 +162,7 @@ library TreasuryLib {
             revert NoTotalTokens(nthEra, token);
         }
         // 3. get reward from community Treasury ratio
-        return ((point * totalTokens * 4) / 10) / totalMP;
+        return ((point * totalTokens * 4) / 10) / totalTP;
     }
 
     function _getClaim(

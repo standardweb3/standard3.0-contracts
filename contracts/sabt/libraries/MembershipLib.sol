@@ -20,12 +20,16 @@ library MembershipLib {
     struct Member {
         /// @dev mapping of member id to subscription status
         mapping(uint32 => SubStatus) subscriptions;
+        /// @dev mapping of subscribed STND of member id
+        mapping(uint32 => uint64) subSTND;
         /// @dev mapping of meta id to register fee status
         mapping(uint16 => Meta) metas;
         /// @dev mapping of meta id to register fee status
         mapping(uint16 => mapping(address => Fees)) fees;
         /// @dev address of SABT
         address sabt;
+        /// @dev address of STND
+        address stnd;
         /// @dev address of foundation
         address foundation;
     }
@@ -73,6 +77,10 @@ library MembershipLib {
         uint32 quota_
     ) internal {
         self.metas[metaId_].quota = quota_;
+    }
+
+    function _setSTND(Member storage self, address stnd) internal {
+        self.stnd = stnd;
     }
 
     function _setFees(
@@ -165,6 +173,12 @@ library MembershipLib {
         self.subscriptions[uid_].at = bh;
         self.subscriptions[uid_].until = bh + blocks_;
         self.subscriptions[uid_].with = feeToken_;
+        // if feeToken is STND, add it to the subSTND;
+        if (feeToken_ == self.stnd) {
+            self.subSTND[uid_] += uint64(
+                (fees.subFee * (blocks_ - bh)) / 1e18
+            );
+        }
     }
 
     /// @dev unsubscribe: Unsubscribe from the membership
@@ -186,7 +200,7 @@ library MembershipLib {
                 fees.subFee * (bh - sub.at)
             );
             if (sub.until - bh > sub.bonus) {
-                // Transfer the tokens for future subscription to this contract
+                // Refund the tokens for future subscription to this contract
                 TransferHelper.safeTransfer(
                     sub.with,
                     msg.sender,
@@ -199,6 +213,10 @@ library MembershipLib {
         self.subscriptions[uid_].at = 0;
         self.subscriptions[uid_].bonus = 0;
         self.subscriptions[uid_].with = address(0);
+        // subtract subSTND if STND was used to subscribe
+        if(sub.with == self.stnd) {
+            self.subSTND[uid_] -= uint64(fees.subFee * (sub.until - bh - sub.bonus) / 1e18);
+        }
     }
 
     /// @dev offerBonus: Offer bonus blocks to the subscription by promoters
@@ -231,5 +249,12 @@ library MembershipLib {
         uint32 uid_
     ) internal view returns (bool) {
         return self.subscriptions[uid_].until > block.number;
+    }
+
+    function _getSubSTND(
+        Member storage self,
+        uint32 uid_
+    ) internal view returns (uint64) {
+        return self.subSTND[uid_];
     }
 }

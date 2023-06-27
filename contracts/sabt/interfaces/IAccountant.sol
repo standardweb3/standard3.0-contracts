@@ -12,7 +12,7 @@ interface IAccountant {
         uint256 id
     ) external view returns (uint256);
 
-    function subtractMP(
+    function subtractTP(
         address account,
         uint256 nthEra,
         uint256 amount

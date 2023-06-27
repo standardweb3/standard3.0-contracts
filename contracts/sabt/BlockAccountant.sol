@@ -112,11 +112,11 @@ contract BlockAccountant is AccessControl {
         }
     }
 
-    function subtractMP(uint32 uid, uint32 nthEra, uint64 point) external {
+    function subtractTP(uint32 uid, uint32 nthEra, uint64 point) external {
         if (msg.sender != _accountant.treasury) {
             revert NotTreasury(msg.sender, _accountant.treasury);
         }
-        _accountant._subtractMP(uid, nthEra, point);
+        _accountant._subtractTP(uid, nthEra, point);
     }
 
     function getTotalPoints(uint32 nthEra) external view returns (uint256) {
@@ -142,7 +142,7 @@ contract BlockAccountant is AccessControl {
         uint32 uid,
         uint32 nthEra
     ) external view returns (uint256) {
-        return _accountant._getMP(uid, nthEra);
+        return _accountant._getTP(uid, nthEra);
     }
 
     function getBfs() external view returns (uint256) {

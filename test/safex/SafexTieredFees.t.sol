@@ -11,7 +11,7 @@ import {Treasury} from "../../contracts/sabt/Treasury.sol";
 import {MockToken} from "../../contracts/mock/MockToken.sol";
 import {Orderbook} from "../../contracts/safex/orderbooks/Orderbook.sol";
 
-contract MembershipBaseSetup is BaseSetup {
+contract SAFEXFeeTierSetup is BaseSetup {
     Membership public membership;
     Treasury public treasury;
     BlockAccountant public accountant;
@@ -61,7 +61,7 @@ contract MembershipBaseSetup is BaseSetup {
         membership.initialize(address(sabt), foundation);
         // initialize SABT
         sabt.initialize(address(membership), address(0));
-        // set Fee in membership contract
+        //  set membership of meta fee lv 1
         membership.setMembership(1, address(feeToken), 1000, 1000, 10000);
 
         // set stablecoin price
@@ -116,7 +116,7 @@ contract MembershipBaseSetup is BaseSetup {
     }
 }
 
-contract MembershipTest is MembershipBaseSetup {
+contract MembershipTest is SAFEXFeeTierSetup {
     function testSetup() public {
         super.setUp();
     }

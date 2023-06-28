@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 import {TransferHelper} from "./TransferHelper.sol";
 
 interface ISABT {
-    function mint(address to_, uint16 metaId_) external returns (uint32);
+    function mint(address to_, uint8 metaId_) external returns (uint32);
 
     function balanceOf(
         address owner_,
@@ -13,7 +13,11 @@ interface ISABT {
 
     function setRegistered(uint256 id_, bool yesOrNo) external;
 
-    function metaId(uint32 uid_) external view returns (uint16);
+    function metaId(uint32 uid_) external view returns (uint8);
+
+    function setMeta(uint32 uid_, uint8 meta_) external;
+
+    function getLvl(uint32 uid_) external view returns (uint8);
 }
 
 library MembershipLib {
@@ -23,9 +27,9 @@ library MembershipLib {
         /// @dev mapping of subscribed STND of member id
         mapping(uint32 => uint64) subSTND;
         /// @dev mapping of meta id to register fee status
-        mapping(uint16 => Meta) metas;
+        mapping(uint8 => Meta) metas;
         /// @dev mapping of meta id to register fee status
-        mapping(uint16 => mapping(address => Fees)) fees;
+        mapping(uint8 => mapping(address => Fees)) fees;
         /// @dev address of SABT
         address sabt;
         /// @dev address of STND
@@ -42,7 +46,7 @@ library MembershipLib {
     }
 
     struct Meta {
-        uint16 metaId;
+        uint8 metaId;
         uint32 quota;
     }
 
@@ -52,13 +56,13 @@ library MembershipLib {
         uint256 subFee;
     }
 
-    error InvalidFeeToken(address feeToken_, uint16 metaId_);
+    error InvalidFeeToken(address feeToken_, uint8 metaId_);
     error MembershipNotOwned(uint32 uid, address owner);
     error NoMultiTokenAccounting(address subscribedWith, address feeToken_);
 
     function _setMembership(
         Member storage self,
-        uint16 metaId_,
+        uint8 metaId_,
         address feeToken_,
         uint32 regFee_,
         uint32 subFee_,
@@ -73,10 +77,18 @@ library MembershipLib {
 
     function _setQuota(
         Member storage self,
-        uint16 metaId_,
+        uint8 metaId_,
         uint32 quota_
     ) internal {
         self.metas[metaId_].quota = quota_;
+    }
+
+    function _setMeta(
+        Member storage self,
+        uint32 uid_,
+        uint8 metaId_
+    ) internal {
+        ISABT(self.sabt).setMeta(uid_, metaId_);
     }
 
     function _setSTND(Member storage self, address stnd) internal {
@@ -85,7 +97,7 @@ library MembershipLib {
 
     function _setFees(
         Member storage self,
-        uint16 metaId_,
+        uint8 metaId_,
         address feeToken_,
         uint256 regFee_,
         uint256 subFee_
@@ -97,7 +109,7 @@ library MembershipLib {
 
     function _register(
         Member storage self,
-        uint16 metaId_,
+        uint8 metaId_,
         address feeToken_
     ) internal returns (uint32 uid) {
         uint256 regFee = self.fees[metaId_][feeToken_].regFee;
@@ -131,7 +143,7 @@ library MembershipLib {
             revert MembershipNotOwned(uid_, msg.sender);
         }
         uint256 bh = block.number;
-        uint16 metaId = ISABT(self.sabt).metaId(uid_);
+        uint8 metaId = ISABT(self.sabt).metaId(uid_);
         SubStatus memory sub = self.subscriptions[uid_];
         Fees memory fees = self.fees[metaId][feeToken_];
         // check if previous subscription was done with the same token
@@ -189,7 +201,7 @@ library MembershipLib {
             revert MembershipNotOwned(uid_, msg.sender);
         }
         uint256 bh = block.number;
-        uint16 metaId = ISABT(self.sabt).metaId(uid_);
+        uint8 metaId = ISABT(self.sabt).metaId(uid_);
         SubStatus memory sub = self.subscriptions[uid_];
         Fees memory fees = self.fees[metaId][sub.with];
         if (sub.until > bh) {
@@ -256,5 +268,12 @@ library MembershipLib {
         uint32 uid_
     ) internal view returns (uint64) {
         return self.subSTND[uid_];
+    }
+
+    function _getLvl(
+        Member storage self,
+        uint32 uid_
+    ) internal view returns (uint8) {
+        return ISABT(self.sabt).metaId(uid_);
     }
 }

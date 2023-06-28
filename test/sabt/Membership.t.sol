@@ -58,8 +58,8 @@ contract MembershipBaseSetup is BaseSetup {
         // initialize SABT
         sabt.initialize(address(membership), address(0));
         // set Fee in membership contract
-        membership.setMembership(1, address(feeToken), 1000, 1000, 10000);
-        membership.setMembership(2, address(feeToken), 1000, 1000, 10000);
+        membership.setMembership(9, address(feeToken), 1000, 1000, 10000);
+        membership.setMembership(10, address(feeToken), 1000, 1000, 10000);
         // membership.setMembership(2, address(feeToken), 1000, 1000, 10000, 10);
         // set stablecoin price
         vm.prank(booker);
@@ -72,9 +72,10 @@ contract MembershipBaseSetup is BaseSetup {
         // Approve the matching engine to spend the trader's tokens
         vm.prank(trader2);
         feeToken.approve(address(matchingEngine), 10000e18);
-        // register trader1 into membership
+        membership.grantRole(membership.DEFAULT_ADMIN_ROLE(), trader1);
+        // register trader1 to investor
         vm.prank(trader1);
-        membership.register(1, address(feeToken));
+        membership.register(9, address(feeToken));
         // subscribe
         vm.prank(trader1);
         membership.subscribe(1, 10000, address(feeToken));
@@ -99,32 +100,23 @@ contract MembershipTest is MembershipBaseSetup {
         super.setUp();
     }
 
-    function testClaimFailsWithoutMatching() public {
+    function testClaimFails() public {
         super.setUp();
         vm.startPrank(trader1);
-        uint256 investorTypeNFTBalance = sabt.balanceOf(trader1, 1);
-        uint256 userTypeNFTBalance = sabt.balanceOf(trader1, 0);
-        uint256 foundationTypeNFTBalance = sabt.balanceOf(trader1, 2);
+        uint256 investorTypeNFTBalance = sabt.balanceOf(trader1, 9);
+        uint256 userTypeNFTBalance = sabt.balanceOf(trader1,0);
+        uint256 foundationTypeNFTBalance = sabt.balanceOf(trader1, 10);
         uint256 metaID = sabt.metaId(1);
         console.log("Meta ID: ", metaID);
         uint256 beforeBalance = stablecoin.balanceOf(trader1);
         //uint256 beforeReward = treasury.getReward(address(stablecoin), 0, 10);
+        vm.expectRevert();
         uint256 beforeClaim = treasury.getClaim(address(stablecoin), 1, 0);
+        vm.expectRevert();
         treasury.claim(address(stablecoin), 0, 1);
-        treasury.claim(address(stablecoin), 0, 1);
-        treasury.claim(address(stablecoin), 0, 1);
-        treasury.claim(address(stablecoin), 0, 1);
-        treasury.claim(address(stablecoin), 0, 1);
-        treasury.claim(address(stablecoin), 0, 1);
-        uint256 afterBalance = stablecoin.balanceOf(trader1);
-        uint256 afterReward = treasury.getReward(address(stablecoin), 0, 10);
-        uint256 afterClaim = treasury.getClaim(address(stablecoin), 1, 0);
-        vm.stopPrank();
-        console.log("Before balance :", beforeBalance);
-        console.log("After balance :", afterBalance);
-        //console.log("Before getReward :", beforeReward);
-        console.log("After getReward :", afterReward);
-        console.log("Before getClaim :", beforeClaim);
-        console.log("After getClaim :", afterClaim);
+    }
+
+    function testExchange() public {
+
     }
 }

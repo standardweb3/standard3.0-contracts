@@ -13,7 +13,7 @@ contract Membership is AccessControl {
 
     MembershipLib.Member private _membership;
 
-    error InvalidMeta(uint16 metaId_, address sender);
+    error InvalidMeta(uint8 metaId_, address sender);
     error InvalidRole(bytes32 role, address sender);
 
     constructor() {
@@ -35,7 +35,7 @@ contract Membership is AccessControl {
     /// @param metaId_ The meta id of the token to pay the fee
     /// @param quotas_ The number of tokens to be issued for registration
     function setMembership(
-        uint16 metaId_,
+        uint8 metaId_,
         address feeToken_,
         uint32 regFee_,
         uint32 subFee_,
@@ -63,11 +63,18 @@ contract Membership is AccessControl {
         _membership.foundation = foundation_;
     }
 
-    function setQuota(uint16 metaId_, uint32 quota_) external {
+    function setQuota(uint8 metaId_, uint32 quota_) external {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
         }
         _membership._setQuota(metaId_, quota_);
+    }
+
+    function setMeta(uint32 uid_, uint8 metaId_) external {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        }
+        _membership._setMeta(uid_, metaId_);
     }
 
     function setSTND(address stnd) external {
@@ -78,7 +85,7 @@ contract Membership is AccessControl {
     }
 
     function setFees(
-        uint16 metaId_,
+        uint8 metaId_,
         address feeToken_,
         uint256 regFee_,
         uint256 subFee_
@@ -91,12 +98,15 @@ contract Membership is AccessControl {
 
     /// @dev register: Register as a member
     function register(
-        uint16 metaId_,
+        uint8 metaId_,
         address feeToken_
     ) external returns (uint32 uid) {
         // check if metaId is valid
         if (metaId_ == 0 || _membership.metas[metaId_].metaId != metaId_) {
             revert InvalidMeta(metaId_, msg.sender);
+        }
+        if ((metaId_ == 9 || metaId_ == 10) && !hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
         }
         return _membership._register(metaId_, feeToken_);
     }
@@ -145,9 +155,15 @@ contract Membership is AccessControl {
     }
 
     function getMeta(
-        uint16 metaId_
+        uint8 metaId_
     ) external view returns (MembershipLib.Meta memory) {
         return _membership.metas[metaId_];
+    }
+
+    function getLvl(
+        uint32 uid_
+    ) external view returns (uint8 lvl) {
+        return _membership._getLvl(uid_);
     }
 
     function isSubscribed(uint32 uid_) external view returns (bool) {

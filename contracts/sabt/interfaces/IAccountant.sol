@@ -2,6 +2,12 @@
 pragma solidity ^0.8.17;
 
 interface IAccountant {
+    function convert(
+        address base,
+        address quote,
+        uint256 amount,
+        bool isBid
+    ) external view returns (uint256 converted);
 
     function isSubscribed(uint32 uid_) external view returns (bool);
 
@@ -18,8 +24,7 @@ interface IAccountant {
         uint256 amount
     ) external;
 
-    function pointOf(
-        address account,
-        uint256 nthEra
-    ) external view returns (uint256);
+    function getSubSTND(uint32 uid_) external view returns (uint64 sub);
+
+    function getMeta(uint32 uid_) external view returns (uint8 meta);
 }

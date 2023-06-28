@@ -26,7 +26,7 @@ interface IAccountant {
 
     function getSubSTND(uint32 uid_) external view returns (uint64 sub);
 
-    function getMeta(uint32 uid_) external view returns (uint16 meta);
+    function getLvl(uint32 uid_) external view returns (uint8 lvl);
 }
 
 /// @author Hyungsuk Kang <hskang9@gmail.com>
@@ -201,16 +201,18 @@ library BlockAccountantLib {
         uint32 nthEra
     ) internal view returns (uint8) {
         // check if the uid is linked with premium
-
-        return uint8(self.pointOf[nthEra][uid] * 100 / self.totalPointsOn[nthEra]);
+        uint8 level = IAccountant(self.membership).getLvl(uid);
+        uint8 ti = self.totalPointsOn[nthEra] > 0 ? uint8(self.pointOf[nthEra][uid] * 100 / self.totalPointsOn[nthEra]) : 0;
+        return level >= ti ? level : ti;
     }
 
     function _getFeeRate(
         Storage storage self,
         uint32 uid,
-        uint8 level,
+        uint32 nthEra,
         bool isMaker
     ) internal view returns (uint32 feeNum) {
+        uint8 level = _getLevel(self, uid, nthEra);
         // get subscribed STND tokens
         uint64 subSTND = IAccountant(self.membership).getSubSTND(uid);
         // Perform different aclevelons based on the level
@@ -280,7 +282,7 @@ library BlockAccountantLib {
                 // 0.0300% / 0.0500%
                 return isMaker ? 300 : 500;
             }
-        } else if (level == 8) {
+        } else if (level >= 8) {
             if (subSTND >= 1500000) {
                 // 0.0150% / 0.0300%
                 return isMaker ? 150 : 300;

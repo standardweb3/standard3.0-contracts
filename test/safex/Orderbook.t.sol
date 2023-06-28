@@ -4,6 +4,7 @@ import {console} from "forge-std/console.sol";
 import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 import {MockToken} from "../../contracts/mock/MockToken.sol";
 import {MockBTC} from "../../contracts/mock/MockBTC.sol";
+import {ErrToken} from "../../contracts/mock/MockTokenOver18Decimals.sol";
 import {Utils} from "../utils/Utils.sol";
 import {MatchingEngine} from "../../contracts/safex/MatchingEngine.sol";
 import {OrderbookFactory} from "../../contracts/safex/orderbooks/OrderbookFactory.sol";
@@ -55,10 +56,10 @@ contract BaseSetup is Test {
         matchingEngine.initialize(
             address(orderbookFactory),
             address(feeToken),
-            30000
+            30000,
+            address(booker)
         );
         matchingEngine.setFeeTo(booker);
-        matchingEngine.setFee(3, 1000);
 
         vm.prank(trader1);
         token1.approve(address(matchingEngine), 10000e18);
@@ -77,14 +78,32 @@ contract BaseSetup is Test {
     }
 }
 
-// test cases for orderbooks
-contract OrderbookTest is BaseSetup {
+contract OrderbookAddPairTest is BaseSetup {
+    ErrToken public err;
+
     function testAddPair() public {
         // create orderbook
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
     }
+
+    function testAddPairWithOver18DecFails() public {
+        // create orderbook
+        super.setUp();
+        
+        err = new ErrToken("Error 1", "ERR1");
+        vm.prank(booker);
+        vm.expectRevert();
+        matchingEngine.addPair(address(token1), address(err));
+        vm.expectRevert();
+        matchingEngine.addPair(address(err), address(token2));
+    }
+}
+
+// test cases for orderbooks
+contract OrderbookTest is BaseSetup {
+    
 
     function testLimitTradeWithDiffDecimals() public {
         super.setUp();
@@ -150,7 +169,6 @@ contract OrderbookTest is BaseSetup {
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
-        matchingEngine.setFee(0, 10);
         vm.prank(trader1);
         vm.expectRevert();
         book.placeBid(trader1, 1e8, 2);
@@ -160,7 +178,6 @@ contract OrderbookTest is BaseSetup {
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
-        matchingEngine.setFee(0, 10);
         console.log(
             "Base/Quote Pair: ",
             matchingEngine.getBookByPair(address(token1), address(token2))

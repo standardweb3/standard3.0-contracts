@@ -20,6 +20,10 @@ contract Testnet is Script, Constants {
         // Deploy fee Token for the matching engine
         MockToken feeToken = new MockToken("Standard", "STND");
 
+        // Deploy membership and SABT
+        Membership membership = new Membership();
+        SABT sabt = new SABT();
+
         // Mint fee Token to the deployer, trader1, trader2
         feeToken.mint(ADDRESSES["deployer"], 1000000000000000000000000e18);
         feeToken.mint(ADDRESSES["trader1"], 100000e18);
@@ -29,15 +33,29 @@ contract Testnet is Script, Constants {
         MatchingEngine matchingEngine = new MatchingEngine();
         OrderbookFactory orderbookFactory = new OrderbookFactory();
         orderbookFactory.initialize(address(matchingEngine));
+
+        // Deploy stablecoin for accounting
+        MockToken stablecoin = new MockToken("Stablecoin", "STBC");
+
+
+        // Setup accountant and treasury
+        BlockAccountant accountant = new BlockAccountant(
+            address(membership),
+            address(matchingEngine),
+            address(stablecoin),
+            1
+        );
+        Treasury treasury = new Treasury(address(accountant), address(sabt));
+
+       
         matchingEngine.initialize(
             address(orderbookFactory),
             address(feeToken),
-            30000
+            30000,
+            address(treasury)
         );
 
-        // Deploy membership and SABT
-        Membership membership = new Membership();
-        SABT sabt = new SABT();
+       
 
         // wire membership and SABT all together
         membership.initialize(address(sabt), ADDRESSES["deployer"]);
@@ -50,22 +68,13 @@ contract Testnet is Script, Constants {
         membership.subscribe(1, 10000000000000000, address(feeToken));
 
 
-        // Deploy stablecoin for accounting
-        MockToken stablecoin = new MockToken("Stablecoin", "STBC");
-
+       
         // Mint stablecoin to the deployer, trader1, trader2
         stablecoin.mint(ADDRESSES["deployer"], 100000e18);
         stablecoin.mint(ADDRESSES["trader1"], 100000e18);
         stablecoin.mint(ADDRESSES["trader2"], 100000e18);
 
-        // Setup accountant and treasury
-        BlockAccountant accountant = new BlockAccountant(
-            address(membership),
-            address(matchingEngine),
-            address(stablecoin),
-            1
-        );
-        Treasury treasury = new Treasury(address(accountant), address(sabt));
+       
 
         // Wire up matching engine with them
         accountant.setTreasury(address(treasury));

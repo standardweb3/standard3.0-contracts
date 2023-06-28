@@ -148,4 +148,12 @@ contract BlockAccountant is AccessControl {
     function getBfs() external view returns (uint256) {
         return _accountant.spb;
     }
+
+    function levelOf(uint32 uid) external view returns (uint8) {
+        return _accountant._getLevel(uid, _accountant._getEra());
+    }
+
+    function feeOf(uint32 uid, bool isMaker) external view returns (uint32) {
+        return _accountant._getFeeRate(uid, _accountant._getEra(), isMaker);
+    }
 }

@@ -13,7 +13,7 @@ contract SABT is ERC1155, AccessControl {
 
     uint32 public index;
 
-    mapping(uint32 => uint16) public metaIds;
+    mapping(uint32 => uint8) public metaIds;
 
     error NotMembership(address membership_, address sender);
     error MembershipFull(uint32 uid_);
@@ -34,7 +34,7 @@ contract SABT is ERC1155, AccessControl {
 
     /// @dev meta: Return the metadata of the token meta id
     function meta(
-        uint16 metaId_
+        uint8 metaId_
     ) external view returns (string memory) {
         return IMetadata(metadata).meta(metaId_);
     }
@@ -42,7 +42,7 @@ contract SABT is ERC1155, AccessControl {
     /// @dev mint: Mint a new SABT for customized membership
     /// @param to_ The address to mint the token to
     /// @param metaId_ The id of the token to mint
-    function mint(address to_, uint16 metaId_) public returns (uint32) {
+    function mint(address to_, uint8 metaId_) public returns (uint32) {
         if(msg.sender != membership) {
             revert NotMembership(membership, msg.sender);
         }
@@ -57,11 +57,11 @@ contract SABT is ERC1155, AccessControl {
 
     /// @dev metaId: Return the metaId of the membership token
     /// @param uid_ The uid of the token to get the metaId of
-    function metaId(uint32 uid_) external view returns (uint16) {
+    function metaId(uint32 uid_) external view returns (uint8) {
         return metaIds[uid_];
     }
 
-    function setMetaId(uint32 uid_, uint16 metaId_) public {
+    function setMetaId(uint32 uid_, uint8 metaId_) public {
         if(msg.sender != membership) {
             revert NotMembership(membership, msg.sender);
         }

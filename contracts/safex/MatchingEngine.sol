@@ -22,6 +22,8 @@ interface IRevenue {
     ) external view returns (bool);
 
     function refundFee(address to, address token, uint256 amount) external;
+
+    function feeOf(uint32 uid, bool isMaker) external returns (uint32 feeNum);
 }
 
 // Onchain Matching engine for the orders
@@ -30,8 +32,6 @@ contract MatchingEngine is AccessControl, Initializable {
     address private feeTo;
     // fee denominator
     uint32 public immutable feeDenom = 1000000;
-    // fee numerator
-    uint32 public feeNum;
     // Factories
     address public orderbookFactory;
     // Fee token
@@ -70,8 +70,6 @@ contract MatchingEngine is AccessControl, Initializable {
 
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        feeTo = msg.sender;
-        feeNum = 3;
     }
 
     /**
@@ -80,6 +78,7 @@ contract MatchingEngine is AccessControl, Initializable {
      * @param orderbookFactory_ address of orderbook factory
      * @param feeToken_ address of listing fee token
      * @param feeAmountOne_ listing fee token amount in 1e18
+     * @param treasury_ treasury to collect fees
      *
      * Requirements:
      * - `msg.sender` must have the default admin role.
@@ -87,15 +86,17 @@ contract MatchingEngine is AccessControl, Initializable {
     function initialize(
         address orderbookFactory_,
         address feeToken_,
-        uint256 feeAmountOne_
+        uint256 feeAmountOne_,
+        address treasury_
     ) external onlyRole(DEFAULT_ADMIN_ROLE) initializer {
         orderbookFactory = orderbookFactory_;
         lFeeToken = feeToken_;
         lFeeAmount = feeAmountOne_ * 1e18;
+        feeTo = treasury_;
     }
 
     /**
-     * @dev Set listing requirements.
+     * @dev Set listing fee requirements.
      * @param feeToken_ address of listing fee token
      * @param feeAmountOne_ listing fee token amount in 1e18
      */
@@ -132,25 +133,6 @@ contract MatchingEngine is AccessControl, Initializable {
     }
 
     /**
-     * @dev Set the fee numerator and denominator of trading.
-     *
-     * Requirements:
-     * - `msg.sender` must have the default admin role.
-     * Requirements:
-     * - `msg.sender` must have the default admin role.
-     */
-    function setFee(
-        uint32 feeNum_,
-        uint32 feeDenom_
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        // check if fee numerator and denominator are valid
-        if (feeNum >= 1e8 || feeDenom >= 1e8 || feeNum_ >= feeDenom_) {
-            revert InvalidFeeRate(feeNum_, feeDenom_);
-        }
-        feeNum = feeNum_;
-    }
-
-    /**
      * @dev Set the fee recipient.
      *
      * Requirements:
@@ -184,7 +166,8 @@ contract MatchingEngine is AccessControl, Initializable {
             quote,
             amount,
             true,
-            uid
+            uid,
+            isMaker
         );
         // negate on give if the asset is not the base
         uint256 remaining = _limitOrder(
@@ -231,7 +214,8 @@ contract MatchingEngine is AccessControl, Initializable {
             quote,
             amount,
             false,
-            uid
+            uid,
+            isMaker
         );
         // negate on give if the asset is not the base
         uint256 remaining = _limitOrder(
@@ -279,7 +263,8 @@ contract MatchingEngine is AccessControl, Initializable {
             quote,
             amount,
             true,
-            uid
+            uid,
+            isMaker
         );
         uint256 remaining = _limitOrder(
             orderbook,
@@ -320,7 +305,8 @@ contract MatchingEngine is AccessControl, Initializable {
             quote,
             amount,
             false,
-            uid
+            uid,
+            isMaker
         );
         uint256 remaining = _limitOrder(
             orderbook,
@@ -355,7 +341,8 @@ contract MatchingEngine is AccessControl, Initializable {
             quote,
             amount,
             false,
-            uid
+            uid,
+            true
         );
         TransferHelper.safeTransfer(quote, orderbook, withoutFee);
         _makeOrder(orderbook, withoutFee, at, true);
@@ -383,7 +370,8 @@ contract MatchingEngine is AccessControl, Initializable {
             quote,
             amount,
             false,
-            uid
+            uid,
+            true
         );
         TransferHelper.safeTransfer(base, orderbook, withoutFee);
         _makeOrder(orderbook, withoutFee, at, false);
@@ -446,7 +434,7 @@ contract MatchingEngine is AccessControl, Initializable {
         IRevenue(feeTo).refundFee(
             msg.sender,
             isBid ? quote : base,
-            (remaining * feeNum) / feeDenom
+            (remaining * 100) / feeDenom
         );
 
         emit OrderCanceled(orderbook, orderId, isBid, msg.sender);
@@ -816,19 +804,11 @@ contract MatchingEngine is AccessControl, Initializable {
         address quote,
         uint256 amount,
         bool isBid,
-        uint32 uid
+        uint32 uid,
+        bool isMaker
     ) internal returns (uint256 withoutFee, address book) {
-        uint256 fee = (amount * feeNum) / feeDenom;
         // check if sender has uid
-        if (uid != 0 && IRevenue(membership).isReportable(msg.sender, uid)) {
-            // report fee to accountant
-            IRevenue(accountant).report(
-                uid,
-                isBid ? quote : base,
-                amount,
-                true
-            );
-        }
+        uint256 fee = _fee(base, quote, amount, isBid, uid, isMaker);
         withoutFee = amount - fee;
         if (isBid) {
             // transfer input asset give user to this contract
@@ -852,5 +832,28 @@ contract MatchingEngine is AccessControl, Initializable {
         // get orderbook address from the base and quote asset
         book = getBookByPair(base, quote);
         return (withoutFee, book);
+    }
+
+    function _fee(
+        address base,
+        address quote,
+        uint256 amount,
+        bool isBid,
+        uint32 uid,
+        bool isMaker
+    ) internal returns (uint256 fee) {
+        if (uid != 0 && IRevenue(membership).isReportable(msg.sender, uid)) {
+            uint32 feeNum = IRevenue(accountant).feeOf(uid, isMaker);
+            // report fee to accountant
+            IRevenue(accountant).report(
+                uid,
+                isBid ? quote : base,
+                amount,
+                true
+            );
+            return (amount * feeNum) / feeDenom;
+        } else {
+            return amount / 1000;
+        }
     }
 }

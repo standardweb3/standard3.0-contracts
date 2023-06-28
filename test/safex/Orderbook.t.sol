@@ -102,7 +102,7 @@ contract OrderbookAddPairTest is BaseSetup {
 }
 
 // test cases for orderbooks
-contract OrderbookTest is BaseSetup {
+contract OrderbookMatchTest is BaseSetup {
     
 
     function testLimitTradeWithDiffDecimals() public {

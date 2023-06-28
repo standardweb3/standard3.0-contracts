@@ -96,6 +96,38 @@ contract MembershipBaseSetup is BaseSetup {
 }
 
 contract MembershipTest is MembershipBaseSetup {
+    // register with fee token succeeds
+
+    // register with multiple fee token succeeds
+
+    // registration is only possible with assigned token
+
+    // membership can be transferred
+
+    // membership shows the right json file for uri
+}
+
+contract SubscriptionTest is MembershipBaseSetup {
+    // subscription can be canceled and sends closed payment to treasury
+
+    // subscription can be reinititated and sends closed payment to treasury
+
+    // subscription can be done on only one token
+
+    // trader point can be migrated into other ABT if one owns them all
+
+    // subscribing with stnd shows subscribed STND amount
+}
+
+contract MembershipTresuryTest is MembershipBaseSetup {
+    // members can exchange TP with token reward after an era passes
+
+    // foundation can claim share of revenue on treasury
+
+    // investors can claim share of revenue from foundation
+}
+
+contract MembershipTreasuryTest is MembershipBaseSetup {
     function testSetup() public {
         super.setUp();
     }

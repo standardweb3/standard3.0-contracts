@@ -195,6 +195,14 @@ library BlockAccountantLib {
         return self.pointOf[nthEra][uid];
     }
 
+    function _getTI(
+        Storage storage self,
+        uint32 uid,
+        uint32 nthEra
+    ) internal view returns (uint8) {
+        return self.totalPointsOn[nthEra] > 0 ? uint8(self.pointOf[nthEra][uid] * 100 / self.totalPointsOn[nthEra]) : 0;
+    }
+
     function _getLevel(
         Storage storage self,
         uint32 uid,

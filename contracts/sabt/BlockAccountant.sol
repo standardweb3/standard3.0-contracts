@@ -145,8 +145,14 @@ contract BlockAccountant is AccessControl {
         return _accountant._getTP(uid, nthEra);
     }
 
-    function getBfs() external view returns (uint256) {
+    function getSpb() external view returns (uint256) {
         return _accountant.spb;
+    }
+
+    function getTI(
+        uint32 uid
+    ) external view returns (uint256) {
+        return _accountant._getTI(uid, _accountant._getEra());
     }
 
     function levelOf(uint32 uid) external view returns (uint8) {

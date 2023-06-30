@@ -10,6 +10,7 @@ import {IMetadata} from "./interfaces/IMetadata.sol";
 contract SABT is ERC1155, AccessControl {
     address public membership;
     address public metadata;
+    string baseURI;
 
     uint32 public index;
 
@@ -30,13 +31,19 @@ contract SABT is ERC1155, AccessControl {
     ) public onlyRole(DEFAULT_ADMIN_ROLE) {
         membership = membership_;
         metadata = metadata_;
+        baseURI = "https://raw.githubusercontent.com/standardweb3/nft-arts/main/nfts/sabt";
     }
 
-    /// @dev meta: Return the metadata of the token meta id
-    function meta(
-        uint8 metaId_
-    ) external view returns (string memory) {
-        return IMetadata(metadata).meta(metaId_);
+    function setURI(string memory uri_) public {
+        if(!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        }
+        baseURI = uri_;
+    }
+    
+    function uri(uint256 tokenId) public view override returns (string memory) {
+        uint8 meta = metaIds[uint32(tokenId)];
+        return string(abi.encodePacked(baseURI, "/", meta));
     }
 
     /// @dev mint: Mint a new SABT for customized membership

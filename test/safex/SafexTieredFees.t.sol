@@ -118,9 +118,14 @@ contract SAFEXFeeTierSetup is BaseSetup {
 
 contract FeeTierTest is SAFEXFeeTierSetup {
     // After trading, TI and trader level can be shown
+    function TraderProfileShowsTIandLvl() public {
+
+    }
 
     // Traders with premium accounts shows assigned level regardless of trading performance
-
+    function TraderProfileShowsAssignedLvl() public {
+        
+    }
 }
 
 contract MembershipTest is SAFEXFeeTierSetup {

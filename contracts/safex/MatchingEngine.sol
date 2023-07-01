@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {IOrderbookFactory} from "./interfaces/IOrderbookFactory.sol";
-import {IOrderbook, NewOrderOrderbook} from "./interfaces/IOrderbook.sol";
+import {IOrderbook, SAFEXOrderbook} from "./interfaces/IOrderbook.sol";
 import {TransferHelper} from "./libraries/TransferHelper.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
@@ -504,7 +504,7 @@ contract MatchingEngine is AccessControl, Initializable {
         bool isBid,
         uint256 price,
         uint256 n
-    ) external view returns (NewOrderOrderbook.Order[] memory) {
+    ) external view returns (SAFEXOrderbook.Order[] memory) {
         address orderbook = getBookByPair(base, quote);
         return IOrderbook(orderbook).getOrders(isBid, price, n);
     }
@@ -521,7 +521,7 @@ contract MatchingEngine is AccessControl, Initializable {
         address quote,
         bool isBid,
         uint256 orderId
-    ) external view returns (NewOrderOrderbook.Order memory) {
+    ) external view returns (SAFEXOrderbook.Order memory) {
         address orderbook = getBookByPair(base, quote);
         return IOrderbook(orderbook).getOrder(isBid, orderId);
     }

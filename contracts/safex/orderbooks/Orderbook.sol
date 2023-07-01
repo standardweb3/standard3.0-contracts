@@ -5,12 +5,12 @@ pragma solidity ^0.8.17;
 import {IOrderbook} from "../interfaces/IOrderbook.sol";
 import {Initializable} from "../../security/Initializable.sol";
 import {TransferHelper} from "../libraries/TransferHelper.sol";
-import {NewOrderLinkedList} from "../libraries/NewOrderLinkedList.sol";
-import {NewOrderOrderbook} from "../libraries/NewOrderOrderbook.sol";
+import {SAFEXLinkedList} from "../libraries/SAFEXLinkedList.sol";
+import {SAFEXOrderbook} from "../libraries/SAFEXOrderbook.sol";
 
 contract Orderbook is IOrderbook, Initializable {
-    using NewOrderLinkedList for NewOrderLinkedList.PriceLinkedList;
-    using NewOrderOrderbook for NewOrderOrderbook.OrderStorage;
+    using SAFEXLinkedList for SAFEXLinkedList.PriceLinkedList;
+    using SAFEXOrderbook for SAFEXOrderbook.OrderStorage;
 
     // Pair Struct
     struct Pair {
@@ -27,10 +27,10 @@ contract Orderbook is IOrderbook, Initializable {
 
     //uint32 private constant PRICEONE = 1e8;
 
-    // Reuse order storage with NewOrderLinkedList with isBid always true
-    NewOrderLinkedList.PriceLinkedList private priceLists;
-    NewOrderOrderbook.OrderStorage private _askOrders;
-    NewOrderOrderbook.OrderStorage private _bidOrders;
+    // Reuse order storage with SAFEXLinkedList with isBid always true
+    SAFEXLinkedList.PriceLinkedList private priceLists;
+    SAFEXOrderbook.OrderStorage private _askOrders;
+    SAFEXOrderbook.OrderStorage private _bidOrders;
 
     error InvalidDecimals(uint8 base, uint8 quote);
     error InvalidAccess(address sender, address allowed);
@@ -98,7 +98,7 @@ contract Orderbook is IOrderbook, Initializable {
         onlyEngine
         returns (uint256 remaining, address base, address quote)
     {
-        NewOrderOrderbook.Order memory order = isBid
+        SAFEXOrderbook.Order memory order = isBid
             ? _bidOrders._getOrder(orderId)
             : _askOrders._getOrder(orderId);
         if (order.owner != owner) {
@@ -128,7 +128,7 @@ contract Orderbook is IOrderbook, Initializable {
         address sender,
         uint256 amount
     ) external onlyEngine returns (address owner) {
-        NewOrderOrderbook.Order memory order = isBid
+        SAFEXOrderbook.Order memory order = isBid
             ? _bidOrders._getOrder(orderId)
             : _askOrders._getOrder(orderId);
         /* if ask, converted quote amount is baseAmount * price,
@@ -185,7 +185,7 @@ contract Orderbook is IOrderbook, Initializable {
         uint256 price,
         uint256 orderId
     ) external view returns (uint256 required) {
-        NewOrderOrderbook.Order memory order = isBid
+        SAFEXOrderbook.Order memory order = isBid
             ? _bidOrders._getOrder(orderId)
             : _askOrders._getOrder(orderId);
         if (order.depositAmount == 0) {
@@ -240,7 +240,7 @@ contract Orderbook is IOrderbook, Initializable {
         bool isBid,
         uint256 price,
         uint256 n
-    ) external view returns (NewOrderOrderbook.Order[] memory) {
+    ) external view returns (SAFEXOrderbook.Order[] memory) {
         return
             isBid
                 ? _bidOrders._getOrders(price, n)
@@ -250,7 +250,7 @@ contract Orderbook is IOrderbook, Initializable {
     function getOrder(
         bool isBid,
         uint256 orderId
-    ) external view returns (NewOrderOrderbook.Order memory) {
+    ) external view returns (SAFEXOrderbook.Order memory) {
         return
             isBid
                 ? _bidOrders._getOrder(orderId)

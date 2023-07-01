@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 
 pragma solidity ^0.8.17;
-import "../libraries/NewOrderOrderbook.sol";
+import "../libraries/SAFEXOrderbook.sol";
 
 interface IOrderbook {
 
@@ -64,12 +64,12 @@ interface IOrderbook {
         bool isBid,
         uint256 price,
         uint256 n
-    ) external view returns (NewOrderOrderbook.Order[] memory);
+    ) external view returns (SAFEXOrderbook.Order[] memory);
 
     function getOrder(
         bool isBid,
         uint256 orderId
-    ) external view returns (NewOrderOrderbook.Order memory);
+    ) external view returns (SAFEXOrderbook.Order memory);
 
     function getOrderIds(
         bool isBid,

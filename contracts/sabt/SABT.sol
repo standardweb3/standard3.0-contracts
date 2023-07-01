@@ -4,10 +4,12 @@ pragma solidity ^0.8.17;
 import {IERC1155, ERC1155, IERC1155MetadataURI} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {AccessControl, IAccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {IMetadata} from "./interfaces/IMetadata.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 /// @author Hyungsuk Kang <hskang9@github.com>
 /// @title Standard Account Bound Token
 contract SABT is ERC1155, AccessControl {
+    using Strings for uint256;
     address public membership;
     address public metadata;
     string baseURI;
@@ -42,8 +44,8 @@ contract SABT is ERC1155, AccessControl {
     }
     
     function uri(uint256 tokenId) public view override returns (string memory) {
-        uint8 meta = metaIds[uint32(tokenId)];
-        return string(abi.encodePacked(baseURI, "/", meta));
+        uint meta = metaIds[uint32(tokenId)];
+        return string(abi.encodePacked(baseURI, "/", meta.toString()));
     }
 
     /// @dev mint: Mint a new SABT for customized membership

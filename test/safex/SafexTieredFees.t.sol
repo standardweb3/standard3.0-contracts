@@ -47,7 +47,7 @@ contract SAFEXFeeTierSetup is BaseSetup {
         );
         treasury.grantRole(treasury.REPORTER_ROLE(), address(matchingEngine));
 
-        feeToken.mint(trader1, 100000e18);
+        feeToken.mint(trader1, 10e41);
         feeToken.mint(trader2, 100000e18);
         feeToken.mint(booker, 100000e18);
         stablecoin.mint(trader1, 10000e18);
@@ -85,6 +85,8 @@ contract SAFEXFeeTierSetup is BaseSetup {
 
         // subscribe
         vm.prank(trader1);
+        feeToken.approve(address(membership), 1e40);
+        vm.prank(trader1);
         membership.subscribe(1, 10000, address(feeToken));
 
         // mine 1000 blocks
@@ -101,15 +103,18 @@ contract SAFEXFeeTierSetup is BaseSetup {
             1000e8,
             true,
             1,
-            1
+            0
         );
+        // match the order to make lmp so that accountant can report
+        vm.prank(trader1);
+        feeToken.approve(address(matchingEngine), 10000e18);
         vm.prank(trader1);
         matchingEngine.limitBuy(
             address(feeToken),
             address(stablecoin),
             10000e18,
             1000e8,
-            true,
+            false,
             1,
             1
         );
@@ -118,21 +123,26 @@ contract SAFEXFeeTierSetup is BaseSetup {
 
 contract FeeTierTest is SAFEXFeeTierSetup {
     // After trading, TI and trader level can be shown
-    function TraderProfileShowsTIandLvl() public {
-
+    function testTraderProfileShowsTIandLvl() public {
+        super.setUp();
+        uint256 point = accountant.pointOf(1, 0);
+        uint256 ti = accountant.getTI(1);
+        console.log("Trader 1 Trader Point:");
+        console.log(point);
+        console.log("Trader 1 TI(%):");
+        console.log(ti);
     }
 
     // Traders with premium accounts shows assigned level regardless of trading performance
-    function TraderProfileShowsAssignedLvl() public {
-        
+    function testTraderProfileShowsAssignedLvl() public {
+         super.setUp();
+        uint256 level = accountant.levelOf(1);
+        console.log("Trader 1 level:");
+        console.log(level);
     }
 }
 
-contract MembershipTest is SAFEXFeeTierSetup {
-    function testSetup() public {
-        super.setUp();
-    }
-
+contract SAFEXFeeTierTest is SAFEXFeeTierSetup {
     function testRegistration() public {
         super.setUp();
         console.log(membership.getMeta(0).metaId);

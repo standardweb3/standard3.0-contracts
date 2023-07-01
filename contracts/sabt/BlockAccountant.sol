@@ -86,10 +86,7 @@ contract BlockAccountant is AccessControl {
         uint32 nthEra_,
         uint256 amount_
     ) external {
-        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
-            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
-        }
-        _accountant._migrate(msg.sender, fromUid_, toUid_, nthEra_, amount_);
+        _accountant._migrate(fromUid_, toUid_, nthEra_, amount_);
     }
 
     /**  @dev report: Report the membership point of the member to update

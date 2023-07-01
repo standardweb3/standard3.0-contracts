@@ -151,45 +151,29 @@ library MembershipLib {
             // if not, Ask user to unsubscribed with the previous token subscription
             revert NoMultiTokenAccounting(sub.with, feeToken_);
         }
-        // if the member already subscribed, refund the fee for the remaining block
-        if (sub.until > bh) {
-            // Transfer what has been already paid
-            TransferHelper.safeTransfer(
-                feeToken_,
-                self.foundation,
-                fees.subFee * (bh - sub.at)
-            );
-            // Transfer the tokens for future subscription to this contract
-            TransferHelper.safeTransferFrom(
-                msg.sender,
-                address(this),
-                feeToken_,
-                fees.subFee * (blocks_ - sub.until)
-            );
-        } else {
-            // Transfer what has been already paid
-            TransferHelper.safeTransfer(
-                feeToken_,
-                self.foundation,
-                fees.subFee * (sub.until - sub.at)
-            );
-            // Transfer the tokens to this contract
-            TransferHelper.safeTransferFrom(
-                msg.sender,
-                address(this),
-                feeToken_,
-                fees.subFee * (blocks_ - bh)
-            );
-        }
+        // Transfer what has been already paid
+        TransferHelper.safeTransfer(
+            feeToken_,
+            self.foundation,
+            sub.until > bh
+                ? fees.subFee * uint256(bh - sub.at)
+                : fees.subFee * uint256(sub.until - sub.at)
+        );
+        // Transfer the tokens to this contract
+        TransferHelper.safeTransferFrom(
+            feeToken_,
+            msg.sender,
+            address(this),
+            fees.subFee * uint256(blocks_)
+        );
+
         // subscribe for certain block
         self.subscriptions[uid_].at = bh;
         self.subscriptions[uid_].until = bh + blocks_;
         self.subscriptions[uid_].with = feeToken_;
         // if feeToken is STND, add it to the subSTND;
         if (feeToken_ == self.stnd) {
-            self.subSTND[uid_] += uint64(
-                (fees.subFee * (blocks_ - bh)) / 1e18
-            );
+            self.subSTND[uid_] += uint64((fees.subFee * blocks_) / 1e18);
         }
     }
 
@@ -226,8 +210,10 @@ library MembershipLib {
         self.subscriptions[uid_].bonus = 0;
         self.subscriptions[uid_].with = address(0);
         // subtract subSTND if STND was used to subscribe
-        if(sub.with == self.stnd) {
-            self.subSTND[uid_] -= uint64(fees.subFee * (sub.until - bh - sub.bonus) / 1e18);
+        if (sub.with == self.stnd) {
+            self.subSTND[uid_] -= uint64(
+                (fees.subFee * (sub.until - bh - sub.bonus)) / 1e18
+            );
         }
     }
 

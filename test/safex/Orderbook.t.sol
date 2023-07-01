@@ -9,7 +9,7 @@ import {Utils} from "../utils/Utils.sol";
 import {MatchingEngine} from "../../contracts/safex/MatchingEngine.sol";
 import {OrderbookFactory} from "../../contracts/safex/orderbooks/OrderbookFactory.sol";
 import {Orderbook} from "../../contracts/safex/orderbooks/Orderbook.sol";
-import {NewOrderOrderbook} from "../../contracts/safex/libraries/NewOrderOrderbook.sol";
+import {SAFEXOrderbook} from "../../contracts/safex/libraries/SAFEXOrderbook.sol";
 
 contract BaseSetup is Test {
     Utils public utils;
@@ -325,7 +325,7 @@ contract OrderbookMatchTest is BaseSetup {
         console.log("Market price after manipulation:", book.mktPrice());
     }
 
-    function testNewOrderLinkedListOutOfGas() public {
+    function testSAFEXLinkedListOutOfGas() public {
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
@@ -379,7 +379,7 @@ contract OrderbookMatchTest is BaseSetup {
         );
     }
 
-    function testNewOrderLinkedListOutOfGasPlaceBid() public {
+    function testSAFEXLinkedListOutOfGasPlaceBid() public {
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
@@ -432,7 +432,7 @@ contract OrderbookMatchTest is BaseSetup {
         );
     }
 
-    function testNewOrderOrderbookOutOfGas() public {
+    function testSAFEXOrderbookOutOfGas() public {
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
@@ -755,7 +755,7 @@ contract OrderbookMatchTest is BaseSetup {
         );
 
         console.log("Bid orders: ");
-        NewOrderOrderbook.Order[] memory bidOrders = matchingEngine.getOrders(
+        SAFEXOrderbook.Order[] memory bidOrders = matchingEngine.getOrders(
             address(token1),
             address(token2),
             false,

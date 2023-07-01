@@ -6,6 +6,7 @@ import {SABT} from "../../contracts/sabt/SABT.sol";
 import {BlockAccountant} from "../../contracts/sabt/BlockAccountant.sol";
 import {Membership} from "../../contracts/sabt/Membership.sol";
 import {Treasury} from "../../contracts/sabt/Treasury.sol";
+import {TreasuryLib} from "../../contracts/sabt/libraries/TreasuryLib.sol";
 import {MockToken} from "../../contracts/mock/MockToken.sol";
 import {Orderbook} from "../../contracts/safex/orderbooks/Orderbook.sol";
 
@@ -42,7 +43,7 @@ contract MembershipBaseSetup is BaseSetup {
             address(matchingEngine)
         );
         treasury.grantRole(treasury.REPORTER_ROLE(), address(matchingEngine));
-        feeToken.mint(trader1, 10000e18);
+        feeToken.mint(trader1, 100000000e18);
         feeToken.mint(trader2, 10000e18);
         feeToken.mint(booker, 100000e18);
         stablecoin.mint(trader1, 10000e18);
@@ -78,6 +79,8 @@ contract MembershipBaseSetup is BaseSetup {
         membership.register(9, address(feeToken));
         // subscribe
         vm.prank(trader1);
+        feeToken.approve(address(membership), 1e25);
+        vm.prank(trader1);
         membership.subscribe(1, 10000, address(feeToken));
         // mine 1000 blocks
         utils.mineBlocks(1000);
@@ -92,161 +95,190 @@ contract MembershipBaseSetup is BaseSetup {
             1,
             1
         );
+        // match the order to make lmp so that accountant can report
+        vm.prank(trader1);
+        feeToken.approve(address(matchingEngine), 10000e18);
+        vm.prank(trader1);
+        matchingEngine.limitBuy(
+            address(feeToken),
+            address(stablecoin),
+            10000e18,
+            1000e8,
+            true,
+            1,
+            1
+        );
     }
 }
 
 contract MembershipTest is MembershipBaseSetup {
-    // register with fee token succeeds
-    function registerWithMembership() public {
+    function mSetUp() internal {
         super.setUp();
+        vm.prank(trader1);
+        feeToken.approve(address(membership), 1e40);
+    }
+
+    // register with fee token succeeds
+    function testRegisterWithMembership() public {
+        mSetUp();
         vm.prank(trader1);
         membership.register(9, address(feeToken));
     }
 
     // register with multiple fee token succeeds
-    function registerWithMultipleFeeTokenSucceeds() public {
-        super.setUp();
+    function testRegisterWithMultipleFeeTokenSucceeds() public {
+        mSetUp();
         membership.setMembership(9, address(token1), 1000, 1000, 10000);
-        vm.prank(trader1);
+        vm.startPrank(trader1);
+        token1.approve(address(membership), 1e40);
         membership.register(9, address(token1));
     }
 
     // registration is only possible with assigned token
-    function registerWithUnassignedTokenFails() public {
-        super.setUp();
+    function testRegisterWithUnassignedTokenFails() public {
+        mSetUp();
         vm.prank(trader1);
         vm.expectRevert();
         membership.register(9, address(token2));
     }
 
     // membership can be transferred
-    function membershipCanTransfer() public {
-        super.setUp();
+    function testMembershipCanTransfer() public {
+        mSetUp();
         vm.prank(trader1);
         membership.register(9, address(feeToken));
         vm.prank(trader1);
-        membership.transfer(trader2, 9);
+        sabt.transfer(trader2, 1);
     }
 
     // membership shows the right json file for uri
-    function membershipShowsRightJsonFileForUri() public {
-        super.setUp();
+    function testMembershipShowsRightJsonFileForUri() public {
+        mSetUp();
         vm.prank(trader1);
         membership.register(9, address(feeToken));
         vm.prank(trader1);
-        string uri = membership.uri(1);
-        assert(keccak256(abi.encodePacked(uri)) == keccak256(abi.encodePacked("https://raw.githubusercontent.com/standardweb3/nft-arts/main/nfts/sabt/1")));
+        string memory uri = sabt.uri(1);
+        assert(
+            keccak256(abi.encodePacked(uri)) ==
+                keccak256(
+                    abi.encodePacked(
+                        "https://raw.githubusercontent.com/standardweb3/nft-arts/main/nfts/sabt/9"
+                    )
+                )
+        );
     }
 }
 
 contract SubscriptionTest is MembershipBaseSetup {
-    // subscription can be canceled and sends closed payment to treasury
-    function cancellationWorks() public {
+    function subcSetUp() internal {
         super.setUp();
         vm.prank(trader1);
+        feeToken.approve(address(membership), 1e40);
+    }
+
+    // subscription can be canceled and sends closed payment to treasury
+    function testCancellationWorks() public {
+        subcSetUp();
+        vm.startPrank(trader1);
         membership.register(9, address(feeToken));
-        vm.prank(trader1);
-        membership.subscribe(1, 10000, address(feeToken));
-        vm.prank(trader1);
-        membership.cancel(1);
+        membership.subscribe(1, 100, address(feeToken));
+        membership.unsubscribe(1);
     }
 
     // subscription can be reinititated and sends closed payment to treasury
-    function reinitiateSubscriptionWorks() public {
-        super.setUp();
-        vm.prank(trader1);
+    function testReinitiateSubscriptionWorks() public {
+        subcSetUp();
+        vm.startPrank(trader1);
         membership.register(9, address(feeToken));
-        vm.prank(trader1);
         membership.subscribe(1, 10000, address(feeToken));
-        vm.prank(trader1);
-        membership.cancel(1);
-        vm.prank(trader1);
+        membership.unsubscribe(1);
         membership.subscribe(1, 10000, address(feeToken));
     }
 
     // subscription can be done on only one token
-    function subscriptionCanOnlyBeDoneOnOneToken() public {
-        super.setUp();
-        vm.prank(trader1);
+    function testSubscriptionCanOnlyBeDoneOnOneToken() public {
+        subcSetUp();
+        vm.startPrank(trader1);
         membership.register(9, address(feeToken));
-        vm.prank(trader1);
         membership.subscribe(1, 10000, address(feeToken));
-        vm.prank(trader1);
         vm.expectRevert();
         membership.subscribe(1, 10000, address(token1));
     }
 
     // trader point can be migrated into other ABT if one owns them all
-    function TPMigrationBetweenSameOwnerWorks() public {
-        super.setUp();
-        vm.prank(trader1);
+    function testTpMigrationBetweenSameOwnerWorks() public {
+        subcSetUp();
+        vm.startPrank(trader1);
+        membership.balanceOf(address(trader1), 1);
         membership.register(9, address(feeToken));
-        vm.prank(trader1);
         membership.subscribe(1, 10000, address(feeToken));
-        vm.prank(trader1);
-        membership.migrate(1, 2);
+        accountant.migrate(1, 2, 0, 100);
     }
 
     // subscribing with stnd shows subscribed STND amount
-    function subSTNDIsChangedOnSTNDSubscription() public {
-        super.setUp();
-        vm.prank(trader1);
+    function testSubSTNDIsChangedOnSTNDSubscription() public {
+        subcSetUp();
+        membership.setSTND(address(feeToken));
+        vm.startPrank(trader1);
         membership.register(9, address(feeToken));
-        vm.prank(trader1);
         membership.subscribe(1, 10000, address(feeToken));
-        uint256 subSTND = membership.subSTND(1);
-        assert(subSTND == 10000);
+        uint256 subSTND = membership.getSubSTND(1);
+        assert(subSTND == 10000000);
     }
 }
 
 contract MembershipTresuryTest is MembershipBaseSetup {
-    // members can exchange TP with token reward only after an era passes
-    function exchangeWorksOnlyIfEraPasses() public {
+    function tSetUp() internal {
         super.setUp();
         vm.prank(trader1);
-        membership.register(9, address(feeToken));
-        vm.prank(trader1);
-        membership.subscribe(1, 10000, address(feeToken));
-        vm.prank(trader1);
-        vm.expectRevert();
-        membership.exchange(1, 10000);
+        feeToken.approve(address(membership), 1e40);
+    }
+
+    // members can exchange TP with token reward only after an era passes
+    function testExchangeWorksOnlyIfEraPasses() public {
+        tSetUp();
+        vm.startPrank(trader1);
+        vm.expectRevert(
+            abi.encodeWithSelector(TreasuryLib.EraNotPassed.selector, 1, 0)
+        );
+        treasury.exchange(address(feeToken), 1, 1, 1000);
     }
 
     // early adoptors can settle share of revenue from foundation
-    function claimRevenueWorksWorksForOnlyEarlyAdoptors() public {
-        super.setUp();
-        vm.prank(trader1);
+    function testClaimRevenueWorksWorksForOnlyEarlyAdoptors() public {
+        tSetUp();
+        membership.setMembership(1, address(feeToken), 1000, 1000, 10000);
+        vm.startPrank(trader1);
         membership.register(1, address(feeToken));
-        vm.prank(trader1);
         membership.register(10, address(feeToken));
-        vm.prank(trader1);
         membership.subscribe(1, 10000, address(feeToken));
-        vm.prank(trader1);
-        membership.cancel(1);
-        vm.prank(trader1);
+        membership.unsubscribe(1);
         membership.subscribe(1, 10000, address(feeToken));
-        vm.prank(trader1);
-        vm.expectRevert();
-        treasury.claim(2, 10000);
-        vm.expectRevert();
-        treasury.claim(3, 10000);
+        vm.expectRevert(
+            abi.encodeWithSelector(TreasuryLib.InvalidMetaId.selector, 9, 2, 1)
+        );
+        treasury.claim(address(feeToken), 0, 2);
+        vm.expectRevert(
+            abi.encodeWithSelector(TreasuryLib.InvalidMetaId.selector, 9, 3, 10)
+        );
+        treasury.claim(address(feeToken), 0, 3);
     }
 
     // Only foundation can settle share of revenue on treasury
-    function settleRevenueWorksForOnlyFoundation() public {
-        super.setUp();
-        vm.prank(trader1);
+    function testSettleRevenueWorksForOnlyFoundation() public {
+        tSetUp();
+        vm.startPrank(trader1);
+        membership.setMembership(1, address(feeToken), 1000, 1000, 10000);
         membership.register(1, address(feeToken));
-        vm.prank(trader1);
         membership.register(9, address(feeToken));
-        vm.prank(trader1);
         membership.subscribe(1, 10000, address(feeToken));
-        vm.prank(trader1);
-        vm.expectRevert();
-        treasury.settle(2, 10000);
-        vm.prank(trader1);
-        vm.expectRevert();
-        treasury.settle(3, 10000);
+        vm.expectRevert(
+            abi.encodeWithSelector(TreasuryLib.InvalidMetaId.selector, 10, 2, 1)
+        );
+        treasury.settle(address(feeToken), 0, 2);
+        vm.expectRevert(
+            abi.encodeWithSelector(TreasuryLib.InvalidMetaId.selector, 10, 3, 9)
+        );
+        treasury.settle(address(feeToken), 0, 3);
     }
 }
-

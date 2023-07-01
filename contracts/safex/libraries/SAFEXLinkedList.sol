@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.17;
 
-library NewOrderLinkedList {
+library SAFEXLinkedList {
     error NoMatchPrice(uint256 askHead, uint256 bidHead, uint256 lmp);
 
     struct PriceLinkedList {

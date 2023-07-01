@@ -11,11 +11,13 @@ interface IAccountant {
 
     function isSubscribed(uint32 uid_) external view returns (bool);
 
+    function sabt() external view returns (address);
+
     function decimals() external view returns (uint8);
 
     function balanceOf(
         address owner,
-        uint256 id
+        uint32 id
     ) external view returns (uint256);
 
     function subtractTP(
@@ -50,7 +52,7 @@ library BlockAccountantLib {
         address treasury;
         /// @dev stablecoin: The address of the stablecoin contract
         address stablecoin;
-        /// @dev stc1: One stablecoin with decimals 
+        /// @dev stc1: One stablecoin with decimals
         uint256 stc1;
         /// @dev spb: The number of seconds per a block
         uint32 spb;
@@ -59,7 +61,12 @@ library BlockAccountantLib {
     }
 
     error NotTheSameOwner(uint32 fromUid, uint32 toUid, address owner);
-    error InsufficientPoint(uint32 nthEra, uint32 uid, uint256 amount);
+    error InsufficientPoint(
+        uint32 nthEra,
+        uint32 uid,
+        uint256 balance,
+        uint256 amount
+    );
 
     function _setTotalTokens(
         Storage storage self,
@@ -106,32 +113,36 @@ library BlockAccountantLib {
         bool isAdd
     ) internal {
         // check if the asset has pair in the orderbook dex between stablecoin
-        uint256 converted = IAccountant(self.engine).convert(
-            token,
-            self.stablecoin,
-            amount,
-            true
-        );
-        if (converted == 0) {
-            // if price is zero, return as the asset cannot be accounted
+        try
+            IAccountant(self.engine).convert(
+                token,
+                self.stablecoin,
+                amount,
+                true
+            )
+        returns (uint256 converted) {
+            if (converted == 0) {
+                // if price is zero, return as the asset cannot be accounted
+                return;
+            } else {
+                // if it is, get USD level then calculate the point by 5 decimals
+                uint32 nthEra = (block.number - self.fb) > self.era
+                    ? uint32((block.number - self.fb) / self.era)
+                    : 0;
+                uint256 result = (converted * 1e5) / self.stc1;
+                uint64 point = result > type(uint64).max
+                    ? type(uint64).max
+                    : uint64(result);
+                isAdd
+                    ? self.pointOf[nthEra][uid] += point
+                    : self.pointOf[nthEra][uid] -= point;
+                isAdd
+                    ? self.totalPointsOn[nthEra] += point
+                    : self.totalPointsOn[nthEra] -= point;
+                _setTotalTokens(self, token, nthEra, amount, isAdd);
+            }
+        } catch {
             return;
-        } else {
-            // if it is, get USD level then calculate the point by 5 decimals
-            uint32 nthEra = (block.number - self.fb) > self.era
-                ? uint32((block.number - self.fb) / self.era)
-                : 0;
-            uint256 result = (converted * 1e5) /
-                self.stc1;
-            uint64 point = result > type(uint64).max
-                ? type(uint64).max
-                : uint64(result);
-            isAdd
-                ? self.pointOf[nthEra][uid] += point
-                : self.pointOf[nthEra][uid] -= point;
-            isAdd
-                ? self.totalPointsOn[nthEra] += point
-                : self.totalPointsOn[nthEra] -= point;
-            _setTotalTokens(self, token, nthEra, amount, isAdd);
         }
     }
 
@@ -142,20 +153,24 @@ library BlockAccountantLib {
     /// @param amount_ The amount of the point to migrate
     function _migrate(
         Storage storage self,
-        address sender,
         uint32 fromUid_,
         uint32 toUid_,
         uint32 nthEra_,
         uint256 amount_
     ) internal {
         if (
-            IAccountant(self.membership).balanceOf(sender, fromUid_) == 0 ||
-            IAccountant(self.membership).balanceOf(sender, toUid_) == 0
+            IAccountant(self.membership).balanceOf(msg.sender, fromUid_) == 0 ||
+            IAccountant(self.membership).balanceOf(msg.sender, toUid_) == 0
         ) {
-            revert NotTheSameOwner(fromUid_, toUid_, sender);
+            revert NotTheSameOwner(fromUid_, toUid_, msg.sender);
         }
         if (self.pointOf[nthEra_][fromUid_] < amount_) {
-            revert InsufficientPoint(nthEra_, fromUid_, amount_);
+            revert InsufficientPoint(
+                nthEra_,
+                fromUid_,
+                self.pointOf[nthEra_][fromUid_],
+                amount_
+            );
         }
         self.pointOf[nthEra_][fromUid_] -= uint64(amount_);
         self.pointOf[nthEra_][toUid_] += uint64(amount_);
@@ -175,7 +190,12 @@ library BlockAccountantLib {
         uint64 point
     ) internal {
         if (self.pointOf[nthEra][uid] < point) {
-            revert InsufficientPoint(nthEra, uid, self.pointOf[nthEra][uid]);
+            revert InsufficientPoint(
+                nthEra,
+                uid,
+                self.pointOf[nthEra][uid],
+                self.pointOf[nthEra][uid]
+            );
         }
         self.pointOf[nthEra][uid] -= point;
     }
@@ -200,7 +220,13 @@ library BlockAccountantLib {
         uint32 uid,
         uint32 nthEra
     ) internal view returns (uint8) {
-        return self.totalPointsOn[nthEra] > 0 ? uint8(self.pointOf[nthEra][uid] * 100 / self.totalPointsOn[nthEra]) : 0;
+        return
+            self.totalPointsOn[nthEra] > 0
+                ? uint8(
+                    (self.pointOf[nthEra][uid] * 100) /
+                        self.totalPointsOn[nthEra]
+                )
+                : 0;
     }
 
     function _getLevel(
@@ -210,8 +236,21 @@ library BlockAccountantLib {
     ) internal view returns (uint8) {
         // check if the uid is linked with premium
         uint8 level = IAccountant(self.membership).getLvl(uid);
-        uint8 ti = self.totalPointsOn[nthEra] > 0 ? uint8(self.pointOf[nthEra][uid] * 100 / self.totalPointsOn[nthEra]) : 0;
-        return level >= ti ? level : ti;
+        if (level == 9 || level == 10) {
+            return 8;
+        } else {
+            uint8 ti = self.totalPointsOn[nthEra] > 0
+                ? uint8(
+                    (self.pointOf[nthEra][uid] * 100) /
+                        self.totalPointsOn[nthEra]
+                )
+                : 0;
+            if(ti >= 8) {
+                return 8;
+            } else {
+                return level >= ti ? level : ti;
+            }
+        }
     }
 
     function _getFeeRate(
@@ -224,7 +263,7 @@ library BlockAccountantLib {
         // get subscribed STND tokens
         uint64 subSTND = IAccountant(self.membership).getSubSTND(uid);
         // Perform different aclevelons based on the level
-        if(level == 0) {
+        if (level == 0) {
             if (subSTND >= 10000) {
                 // 0.0750% / 0.0750%
                 return 750;
@@ -260,8 +299,7 @@ library BlockAccountantLib {
             if (subSTND >= 500000) {
                 // 0.045% / 0.0600%
                 return isMaker ? 450 : 600;
-            }
-            else {
+            } else {
                 // 0.0600% / 0.0800%
                 return isMaker ? 600 : 800;
             }
@@ -269,8 +307,7 @@ library BlockAccountantLib {
             if (subSTND >= 750000) {
                 // 0.0375% / 0.0525%
                 return isMaker ? 375 : 525;
-            }
-            else {
+            } else {
                 // 0.0500% / 0.0700%
                 return isMaker ? 500 : 700;
             }
@@ -294,8 +331,7 @@ library BlockAccountantLib {
             if (subSTND >= 1500000) {
                 // 0.0150% / 0.0300%
                 return isMaker ? 150 : 300;
-            }
-            else {
+            } else {
                 // 0.0200% / 0.0400%
                 return isMaker ? 200 : 400;
             }

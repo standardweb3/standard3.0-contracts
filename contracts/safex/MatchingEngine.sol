@@ -75,62 +75,32 @@ contract MatchingEngine is AccessControl, Initializable {
     /**
      * @dev Initialize the matching engine with orderbook factory and listing requirements.
      * It can be called only once.
-     * @param orderbookFactory_ address of orderbook factory
      * @param feeToken_ address of listing fee token
      * @param feeAmountOne_ listing fee token amount in 1e18
+     * @param orderbookFactory_ address of orderbook factory
+     * @param membership_ membership contract address
+     * @param accountant_ accountant contract address
      * @param treasury_ treasury to collect fees
      *
      * Requirements:
      * - `msg.sender` must have the default admin role.
      */
     function initialize(
-        address orderbookFactory_,
         address feeToken_,
         uint256 feeAmountOne_,
+        address orderbookFactory_,
+        address membership_,
+        address accountant_,
         address treasury_
     ) external onlyRole(DEFAULT_ADMIN_ROLE) initializer {
-        orderbookFactory = orderbookFactory_;
         lFeeToken = feeToken_;
         lFeeAmount = feeAmountOne_ * 1e18;
+        orderbookFactory = orderbookFactory_;
+        membership = membership_;
+        accountant = accountant_;
         feeTo = treasury_;
     }
 
-    /**
-     * @dev Set listing fee requirements.
-     * @param feeToken_ address of listing fee token
-     * @param feeAmountOne_ listing fee token amount in 1e18
-     */
-    function setListingFee(
-        address feeToken_,
-        uint256 feeAmountOne_
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        lFeeToken = feeToken_;
-        lFeeAmount = feeAmountOne_ * 1e18;
-    }
-
-    /**
-     * @dev Set orderbook factory address.
-     * @param orderbookFactory_ address of orderbook factory
-     * Requirements:
-     * - `msg.sender` must have the default admin role.
-     */
-    function setOrderbookFactory(
-        address orderbookFactory_
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        orderbookFactory = orderbookFactory_;
-    }
-
-    function setMembership(
-        address membership_
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        membership = membership_;
-    }
-
-    function setAccountant(
-        address accountant_
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        accountant = accountant_;
-    }
 
     /**
      * @dev Set the fee recipient.

@@ -34,10 +34,6 @@ contract MatchingEngine is AccessControl, Initializable {
     uint32 public immutable feeDenom = 1000000;
     // Factories
     address public orderbookFactory;
-    // Fee token
-    address public lFeeToken;
-    // Fee amount
-    uint256 public lFeeAmount;
     // membership contract
     address public membership;
     // accountant contract
@@ -75,8 +71,6 @@ contract MatchingEngine is AccessControl, Initializable {
     /**
      * @dev Initialize the matching engine with orderbook factory and listing requirements.
      * It can be called only once.
-     * @param feeToken_ address of listing fee token
-     * @param feeAmountOne_ listing fee token amount in 1e18
      * @param orderbookFactory_ address of orderbook factory
      * @param membership_ membership contract address
      * @param accountant_ accountant contract address
@@ -86,30 +80,15 @@ contract MatchingEngine is AccessControl, Initializable {
      * - `msg.sender` must have the default admin role.
      */
     function initialize(
-        address feeToken_,
-        uint256 feeAmountOne_,
         address orderbookFactory_,
         address membership_,
         address accountant_,
         address treasury_
     ) external onlyRole(DEFAULT_ADMIN_ROLE) initializer {
-        lFeeToken = feeToken_;
-        lFeeAmount = feeAmountOne_ * 1e18;
         orderbookFactory = orderbookFactory_;
         membership = membership_;
         accountant = accountant_;
         feeTo = treasury_;
-    }
-
-
-    /**
-     * @dev Set the fee recipient.
-     *
-     * Requirements:
-     * - `msg.sender` must have the default admin role.
-     */
-    function setFeeTo(address feeTo_) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        feeTo = feeTo_;
     }
 
     /**
@@ -358,13 +337,6 @@ contract MatchingEngine is AccessControl, Initializable {
         address base,
         address quote
     ) external returns (address book) {
-        TransferHelper.safeTransferFrom(
-            lFeeToken,
-            msg.sender,
-            address(this),
-            lFeeAmount
-        );
-        TransferHelper.safeTransfer(lFeeToken, feeTo, lFeeAmount);
         // create orderbook for the pair
         address orderBook = IOrderbookFactory(orderbookFactory).createBook(
             base,
@@ -595,7 +567,7 @@ contract MatchingEngine is AccessControl, Initializable {
         uint32 i,
         uint32 n
     ) internal returns (uint256 remaining, uint32 k) {
-        if (n >= 10) {
+        if (n >= 20) {
             revert TooManyMatches(n);
         }
         remaining = amount;

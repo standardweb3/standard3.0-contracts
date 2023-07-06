@@ -3,10 +3,11 @@ pragma solidity ^0.8.17;
 
 import {BlockAccountantLib, IAccountant} from "./libraries/BlockAccountantLib.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 /// @author Hyungsuk Kang <hskang9@gmail.com>
 /// @title Standard Membership Accountant to report membership points
-contract BlockAccountant is AccessControl {
+contract BlockAccountant is AccessControl, Initializable {
     using BlockAccountantLib for BlockAccountantLib.Storage;
     bytes32 public constant REPORTER_ROLE = keccak256("REPORTER_ROLE");
 
@@ -14,21 +15,31 @@ contract BlockAccountant is AccessControl {
 
     error InvalidRole(bytes32 role, address sender);
     error NotTreasury(address sender, address treasury);
+    error SPBCannotBeZero(uint32 spb_);
 
-    constructor(
+    constructor() {
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
+
+    function initialize(
         address membership,
         address engine,
         address stablecoin,
         uint32 spb_
-    ) {
+    ) external initializer {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        }
+        if (spb_ == 0) {
+            revert SPBCannotBeZero(spb_);
+        }
         _accountant.membership = membership;
         _accountant.engine = engine;
         _accountant.stablecoin = stablecoin;
         _accountant.stc1 = 10**IAccountant(stablecoin).decimals();
         _accountant.fb = block.number;
         _accountant.spb = spb_;
-        _accountant.era = uint32(28 days / spb_);
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _accountant.era = uint32(30 days / spb_);
     }
 
     function setStablecoin(address stablecoin) external {
@@ -36,42 +47,6 @@ contract BlockAccountant is AccessControl {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
         }
         _accountant.stablecoin = stablecoin;
-    }
-
-    function setEngine(address engine) external {
-        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
-            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
-        }
-        _accountant.engine = engine;
-    }
-
-    function setMembership(address membership) external {
-        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
-            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
-        }
-        _accountant.membership = membership;
-    }
-
-    function setTreasury(address treasury) external {
-        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
-            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
-        }
-        _accountant.treasury = treasury;
-    }
-
-    function setReferenceCurrency(address stablecoin) external {
-        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
-            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
-        }
-        _accountant.stablecoin = stablecoin;
-    }
-
-    function setSPB(uint32 spb_) external {
-        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
-            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
-        }
-        _accountant.spb = spb_;
-        _accountant.era = uint32(28 days / spb_);
     }
 
     // TODO: migrate point from one era to other uid for multiple membership holders
@@ -118,6 +93,10 @@ contract BlockAccountant is AccessControl {
 
     function getTotalPoints(uint32 nthEra) external view returns (uint256) {
         return _accountant._totalPoints(nthEra);
+    }
+
+    function getStablecoin() external view returns (address) {
+        return _accountant.stablecoin;
     }
 
     function fb() external view returns (uint256) {

@@ -3,10 +3,11 @@ pragma solidity ^0.8.17;
 
 import {TreasuryLib, TransferHelper} from "./libraries/TreasuryLib.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 /// @author Hyungsuk Kang <hskang9@github.com>
 /// @title Standard Membership Treasury to exchange membership points with rewards
-contract Treasury is AccessControl {
+contract Treasury is AccessControl, Initializable {
     using TreasuryLib for TreasuryLib.Storage;
     bytes32 public constant REPORTER_ROLE = keccak256("REPORTER_ROLE");
 
@@ -14,8 +15,14 @@ contract Treasury is AccessControl {
 
     error InvalidRole(bytes32 role, address sender);
 
-    constructor(address accountant_, address sabt_) {
+    constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
+
+    function initialize(address accountant_, address sabt_) external initializer {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        }
         _treasury.accountant = accountant_;
         _treasury.sabt = sabt_;
     }

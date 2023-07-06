@@ -3,12 +3,12 @@ pragma solidity ^0.8.17;
 
 import {IERC1155, ERC1155, IERC1155MetadataURI} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {AccessControl, IAccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
-import {IMetadata} from "./interfaces/IMetadata.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 /// @author Hyungsuk Kang <hskang9@github.com>
 /// @title Standard Account Bound Token
-contract SABT is ERC1155, AccessControl {
+contract SABT is ERC1155, AccessControl, Initializable {
     using Strings for uint256;
     address public membership;
     address public metadata;
@@ -28,11 +28,12 @@ contract SABT is ERC1155, AccessControl {
     }
 
     function initialize(
-        address membership_,
-        address metadata_
-    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        address membership_
+    ) external initializer {
+        if(!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        }
         membership = membership_;
-        metadata = metadata_;
         baseURI = "https://raw.githubusercontent.com/standardweb3/nft-arts/main/nfts/sabt";
     }
 

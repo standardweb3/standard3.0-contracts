@@ -17,7 +17,7 @@ import {Multicall3} from "./Multicall3.sol";
 contract Deployer is Script {
     function _setDeployer() internal {
         uint256 deployerPrivateKey = vm.envUint(
-            "LINEA_TESTNET_DEPLOYER_PRIVATE_KEY"
+            "LINEA_TESTNET_DEPLOYER_KEY"
         );
         vm.startBroadcast(deployerPrivateKey);
     }
@@ -26,7 +26,7 @@ contract Deployer is Script {
 contract DeployMulticall3 is Deployer {
     function run() external {
         _setDeployer();
-        Multicall3 multicall3 = new Multicall3();
+        new Multicall3();
         vm.stopBroadcast();
     }
 }
@@ -39,6 +39,13 @@ contract DeployWETH is Deployer {
 }
 
 contract DeployTestnetAssetsAndContracts is Deployer {
+    // Change address constants on deploying to other networks from DeployAssets
+    /// Second per block to finalize
+    uint32 constant spb = 12;
+    address constant deployer_address = 0x34CCCa03631830cD8296c172bf3c31e126814ce9;
+    address constant foundation_address = 0x34CCCa03631830cD8296c172bf3c31e126814ce9;
+    address constant weth = 0x2C1b868d6596a18e32E61B901E4060C872647b6C;
+
     function run() external {
         _setDeployer();
         MockToken feeToken = new MockToken("Standard", "STND");
@@ -47,90 +54,43 @@ contract DeployTestnetAssetsAndContracts is Deployer {
         MatchingEngine matchingEngine = new MatchingEngine();
         Membership membership = new Membership();
         SABT sabt = new SABT();
+        membership.initialize(address(sabt), foundation_address);
+        sabt.initialize(address(membership));
         // Setup accountant and treasury
-        BlockAccountant accountant = new BlockAccountant(
+        BlockAccountant accountant = new BlockAccountant();
+        accountant.initialize(
             address(membership),
             address(matchingEngine),
             address(stablecoin),
-            1
+            spb);
+        Treasury treasury = new Treasury();
+        treasury.initialize(address(accountant), address(sabt));
+        matchingEngine.initialize(
+            address(orderbookFactory),
+            address(membership),
+            address(accountant),
+            address(treasury)
         );
-        Treasury treasury = new Treasury(address(accountant), address(sabt));
-        vm.stopBroadcast();
-    }
-}
-
-contract WireSABTModule is Deployer {
-    // Change address constants on deploying to other networks from DeployAssets
-    address constant matching_engine_address = 0x0;
-    address constant membership_address = 0x0;
-    address constant sabt_address = 0x0;
-    address constant stablecoin_address = 0x0;
-    address constant block_accountant_address = 0x0;
-    address constant treasury_address = 0x0;
-
-    Membership public membership = Membership(membership_address);
-    SABT public sabt = SABT(sabt_address);
-    MockToken public stablecoin = MockToken(stablecoin_address);
-    BlockAccountant public accountant =
-        BlockAccountant(block_accountant_address);
-    Treasury public treasury = Treasury(treasury_address);
-
-    function run() external {
-        _setDeployer();
-        // Deploy contracts
-        // wire membership and SABT all together
-        membership.initialize(sabt_address, ADDRESSES["deployer"]);
-        sabt.initialize(address(membership), address(0));
-        // set Fee in membership contract
-        membership.setMembership(0, address(feeToken), 1000, 1000, 10000);
-
-        // Get membership
-        membership.register(0, address(feeToken));
-        membership.subscribe(1, 10000000000000000, address(feeToken));
-
         // Wire up matching engine with them
-        accountant.setTreasury(address(treasury));
         accountant.grantRole(
             accountant.REPORTER_ROLE(),
             address(matchingEngine)
         );
         treasury.grantRole(treasury.REPORTER_ROLE(), address(matchingEngine));
-
-        vm.stopBroadcast();
-    }
-}
-
-contract WireSAFEXModule is Deployer {
-    // Change address constants on deploying to other networks from DeployAssets
-    address constant matching_engine_address = 0x0;
-    address constant orderbookFactory_address = 0x0;
-    address constant membership_address = 0x0;
-    address constant accountant_address = 0x0;
-    address constant treasury_address = 0x0;
-    MatchingEngine public matchingEngine =
-        MatchingEngine(matching_engine_address);
-
-    function run() external {
-        _setDeployer();
-        matchingEngine.initialize(
-            address(feeToken),
-            30000,
-            address(orderbookFactory),
-            membership_address,
-            accountant_address,
-            treasury_address
-        );
         vm.stopBroadcast();
     }
 }
 
 contract DistributeTestnetAssets is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
-    address constant matching_engine_address = 0x0;
-    address constant membership_address = 0x0;
-    address constant deployer_address = 0x0;
-    address constant trader1_address = 0x0;
-    address constant trader2_address = 0x0;
+    address constant deployer_address = address(0);
+    address constant trader1_address = address(0);
+    address constant trader2_address = address(0);
+    address constant feeToken_address = address(0);
+    address constant stablecoin_address = address(0);
+
+    MockToken public feeToken = MockToken(feeToken_address);
+    MockToken public stablecoin = MockToken(stablecoin_address);
 
     function run() external {
         _setDeployer();
@@ -148,11 +108,42 @@ contract DistributeTestnetAssets is Deployer {
     }
 }
 
+contract SetupSABTInitialParameters is Deployer {
+    // Change address constants on deploying to other networks from DeployAssets
+    address constant matching_engine_address = address(0);
+    address constant membership_address = address(0);
+    address constant sabt_address = address(0);
+    address constant stablecoin_address = address(0);
+    address constant feeToken_address = address(0);
+    address constant block_accountant_address = address(0);
+    address constant treasury_address = address(0);
+    address constant deployer_address = address(0);
+
+    Membership public membership = Membership(membership_address);
+    SABT public sabt = SABT(sabt_address);
+    MockToken public stablecoin = MockToken(stablecoin_address);
+    BlockAccountant public accountant =
+        BlockAccountant(block_accountant_address);
+    Treasury public treasury = Treasury(treasury_address);
+
+    function run() external {
+        _setDeployer();
+        // set Fee in membership contract
+        membership.setMembership(0, feeToken_address, 1000, 1000, 10000);
+
+        // Get membership
+        membership.register(0, feeToken_address);
+        membership.subscribe(1, 10000000000000000, feeToken_address);
+
+        vm.stopBroadcast();
+    }
+}
+
 contract SetupSAFEXInitialParameters is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
-    address constant matching_engine_address = 0x0;
-    address constant feeToken_address = 0x0;
-    address constant stablecoin_address = 0x0;
+    address constant matching_engine_address = address(0);
+    address constant feeToken_address = address(0);
+    address constant stablecoin_address = address(0);
     MatchingEngine public matchingEngine =
         MatchingEngine(matching_engine_address);
     MockToken public feeToken = MockToken(feeToken_address);

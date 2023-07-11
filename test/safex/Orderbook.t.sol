@@ -683,6 +683,16 @@ contract OrderbookMatchTest is BaseSetup {
             address(token1),
             address(token2),
             10,
+            90000000,
+            true,
+            5,
+            0
+        );
+        vm.prank(trader1);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            10,
             500000000,
             true,
             5,
@@ -766,4 +776,75 @@ contract OrderbookMatchTest is BaseSetup {
             console.log(bidOrders[i].owner, bidOrders[i].depositAmount);
         }
     }
+
+    function testGetAskHead() public {
+        super.setUp();
+        vm.prank(booker);
+        matchingEngine.addPair(address(token1), address(token2));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token2))
+        );
+        vm.prank(trader1);
+        // placeBid or placeAsk two of them is using the _insertId function it will revert
+        // because the program will enter the "if (amount > self.orders[head].depositAmount)."
+        // statement, and eventually, it will cause an infinite loop.
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            10,
+            500000000,
+            true,
+            2,
+            0
+        );
+        vm.prank(trader1);
+        //vm.expectRevert("OutOfGas");
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            10,
+            100000000,
+            true,
+            2,
+            0
+        );
+        console.log("Ask Head:");
+        console.log(book.askHead());
+    }
+    /*
+    function testGetPrices() public {
+        super.setUp();
+        vm.prank(booker);
+        matchingEngine.addPair(address(token1), address(token2));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token2))
+        );
+        vm.prank(trader1);
+        // placeBid or placeAsk two of them is using the _insertId function it will revert
+        // because the program will enter the "if (amount > self.orders[head].depositAmount)."
+        // statement, and eventually, it will cause an infinite loop.
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            10,
+            500000000,
+            true,
+            2,
+            0
+        );
+        vm.prank(trader1);
+        //vm.expectRevert("OutOfGas");
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            10,
+            100000000,
+            true,
+            2,
+            0
+        );
+        console.log("Ask Prices:");
+        console.log(book.getPrices(false , 1)[0]);
+    }
+    */
 }

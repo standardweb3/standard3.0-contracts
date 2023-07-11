@@ -3,15 +3,15 @@ pragma solidity ^0.8.17;
 
 import "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
-import {MockBTC} from "../contracts/mock/MockBTC.sol";
-import {SABT} from "../contracts/sabt/SABT.sol";
-import {BlockAccountant} from "../contracts/sabt/BlockAccountant.sol";
-import {Membership} from "../contracts/sabt/Membership.sol";
-import {Treasury} from "../contracts/sabt/Treasury.sol";
-import {MockToken} from "../contracts/mock/MockToken.sol";
-import {MatchingEngine} from "../contracts/safex/MatchingEngine.sol";
-import {OrderbookFactory} from "../contracts/safex/orderbooks/OrderbookFactory.sol";
-import {Multicall3} from "./Multicall3.sol";
+import {MockBTC} from "../../contracts/mock/MockBTC.sol";
+import {SABT} from "../../contracts/sabt/SABT.sol";
+import {BlockAccountant} from "../../contracts/sabt/BlockAccountant.sol";
+import {Membership} from "../../contracts/sabt/Membership.sol";
+import {Treasury} from "../../contracts/sabt/Treasury.sol";
+import {MockToken} from "../../contracts/mock/MockToken.sol";
+import {MatchingEngine} from "../../contracts/safex/MatchingEngine.sol";
+import {OrderbookFactory} from "../../contracts/safex/orderbooks/OrderbookFactory.sol";
+import {Multicall3} from "../Multicall3.sol";
 
 contract Deployer is Script {
     function _setDeployer() internal {

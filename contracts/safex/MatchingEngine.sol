@@ -340,8 +340,7 @@ contract MatchingEngine is AccessControl, Initializable {
         // create orderbook for the pair
         address orderBook = IOrderbookFactory(orderbookFactory).createBook(
             base,
-            quote,
-            address(this)
+            quote
         );
         emit PairAdded(orderBook, base, quote);
         return orderBook;

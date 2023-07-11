@@ -5,8 +5,9 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {Orderbook, IOrderbook} from "./Orderbook.sol";
 import {CloneFactory} from "../libraries/CloneFactory.sol";
 import {IOrderbookFactory} from "../interfaces/IOrderbookFactory.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-contract OrderbookFactory is AccessControl, IOrderbookFactory {
+contract OrderbookFactory is AccessControl, IOrderbookFactory, Initializable {
     // Orderbooks
     address[] public allOrderbooks;
     /// Address of manager
@@ -41,8 +42,7 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory {
 
     function createBook(
         address bid_,
-        address ask_,
-        address engine_
+        address ask_
     ) external override returns (address orderbook) {
         if (msg.sender != engine) {
             revert InvalidAccess(msg.sender, engine);
@@ -55,7 +55,7 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory {
             allOrderbooksLength(),
             bid_,
             ask_,
-            engine_
+            engine
         );
         allOrderbooks.push(proxy);
         orderbookByBaseQuote[bid_][ask_] = proxy;
@@ -105,7 +105,7 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory {
      * @dev Initialize orderbook factory contract with engine address, reinitialize if engine is reset. 
      * @param engine_ The address of the engine contract
     */
-    function initialize(address engine_) public {
+    function initialize(address engine_) public initializer {
         if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
             // Invalid Access
             revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());

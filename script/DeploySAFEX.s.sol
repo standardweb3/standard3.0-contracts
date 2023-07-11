@@ -9,7 +9,6 @@ import {BlockAccountant} from "../contracts/sabt/BlockAccountant.sol";
 import {Membership} from "../contracts/sabt/Membership.sol";
 import {Treasury} from "../contracts/sabt/Treasury.sol";
 import {MockToken} from "../contracts/mock/MockToken.sol";
-import {Constants} from "./Constants.sol";
 import {MatchingEngine} from "../contracts/safex/MatchingEngine.sol";
 import {OrderbookFactory} from "../contracts/safex/orderbooks/OrderbookFactory.sol";
 import {Multicall3} from "./Multicall3.sol";

@@ -7,11 +7,15 @@ import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 import {SABT} from "../../contracts/sabt/SABT.sol";
 import {BlockAccountant} from "../../contracts/sabt/BlockAccountant.sol";
 import {Membership} from "../../contracts/sabt/Membership.sol";
+import {MatchingEngine} from "../../contracts/safex/MatchingEngine.sol";
+import {OrderbookFactory} from "../../contracts/safex/orderbooks/OrderbookFactory.sol";
 import {Treasury} from "../../contracts/sabt/Treasury.sol";
 import {MockToken} from "../../contracts/mock/MockToken.sol";
 import {Orderbook} from "../../contracts/safex/orderbooks/Orderbook.sol";
 
 contract SAFEXFeeTierSetup is BaseSetup {
+    OrderbookFactory public orderbookFactoryFeeTier;
+    MatchingEngine public matchingEngineFeeTier;
     Membership public membership;
     Treasury public treasury;
     BlockAccountant public accountant;
@@ -20,8 +24,7 @@ contract SAFEXFeeTierSetup is BaseSetup {
     address public foundation;
     address public reporter;
 
-    function setUp() public override {
-        super.setUp();
+    function feeTierSetUp() public {
         users = utils.addUsers(2, users);
         foundation = users[4];
         reporter = users[5];
@@ -30,22 +33,30 @@ contract SAFEXFeeTierSetup is BaseSetup {
         membership = new Membership();
         sabt = new SABT();
 
-        accountant = new BlockAccountant(
+        orderbookFactoryFeeTier = new OrderbookFactory();
+        matchingEngineFeeTier = new MatchingEngine();
+
+        accountant = new BlockAccountant();
+        accountant.initialize(
             address(membership),
-            address(matchingEngine),
+            address(matchingEngineFeeTier),
             address(stablecoin),
             1
         );
-        treasury = new Treasury(address(accountant), address(sabt));
-        accountant.setTreasury(address(treasury));
-        matchingEngine.setMembership(address(membership));
-        matchingEngine.setAccountant(address(accountant));
-        matchingEngine.setFeeTo(address(treasury));
+        treasury = new Treasury();
+        treasury.initialize(address(accountant), address(sabt));
+        orderbookFactoryFeeTier.initialize(address(matchingEngineFeeTier));
+        matchingEngineFeeTier.initialize(
+            address(orderbookFactoryFeeTier),
+            address(membership),
+            address(accountant),
+            address(treasury)
+        );
         accountant.grantRole(
             accountant.REPORTER_ROLE(),
-            address(matchingEngine)
+            address(matchingEngineFeeTier)
         );
-        treasury.grantRole(treasury.REPORTER_ROLE(), address(matchingEngine));
+        treasury.grantRole(treasury.REPORTER_ROLE(), address(matchingEngineFeeTier));
 
         feeToken.mint(trader1, 10e41);
         feeToken.mint(trader2, 100000e18);
@@ -60,21 +71,20 @@ contract SAFEXFeeTierSetup is BaseSetup {
         // initialize  membership contract
         membership.initialize(address(sabt), foundation);
         // initialize SABT
-        sabt.initialize(address(membership), address(0));
-        //  set membership of meta fee lv 1
+        sabt.initialize(address(membership));
         membership.setMembership(1, address(feeToken), 1000, 1000, 10000);
 
         // set stablecoin price
         vm.prank(booker);
-        feeToken.approve(address(matchingEngine), 100000e18);
+        feeToken.approve(address(matchingEngineFeeTier), 100000e18);
         vm.prank(booker);
-        matchingEngine.addPair(address(feeToken), address(stablecoin));
+        matchingEngineFeeTier.addPair(address(feeToken), address(stablecoin));
         // Approve the matching engine to spend the trader's tokens
         vm.prank(trader1);
-        stablecoin.approve(address(matchingEngine), 10000e18);
+        stablecoin.approve(address(matchingEngineFeeTier), 10000e18);
         // Approve the matching engine to spend the trader's tokens
         vm.prank(trader2);
-        feeToken.approve(address(matchingEngine), 10000e18);
+        feeToken.approve(address(matchingEngineFeeTier), 10000e18);
 
         // register trader1 into membership
         vm.prank(trader1);
@@ -92,11 +102,14 @@ contract SAFEXFeeTierSetup is BaseSetup {
         // mine 1000 blocks
         utils.mineBlocks(1000);
         console.log("Block number after mining 1000 blocks: ", block.number);
-        console.log("Financial block where accountant started its accounting: ", accountant.fb());
+        console.log(
+            "Financial block where accountant started its accounting: ",
+            accountant.fb()
+        );
 
         // make a price in matching engine where 1 feeToken = 1000 stablecoin with buy and sell order
         vm.prank(trader2);
-        matchingEngine.limitSell(
+        matchingEngineFeeTier.limitSell(
             address(feeToken),
             address(stablecoin),
             10000e18,
@@ -107,9 +120,9 @@ contract SAFEXFeeTierSetup is BaseSetup {
         );
         // match the order to make lmp so that accountant can report
         vm.prank(trader1);
-        feeToken.approve(address(matchingEngine), 10000e18);
+        feeToken.approve(address(matchingEngineFeeTier), 10000e18);
         vm.prank(trader1);
-        matchingEngine.limitBuy(
+        matchingEngineFeeTier.limitBuy(
             address(feeToken),
             address(stablecoin),
             10000e18,
@@ -124,7 +137,7 @@ contract SAFEXFeeTierSetup is BaseSetup {
 contract FeeTierTest is SAFEXFeeTierSetup {
     // After trading, TI and trader level can be shown
     function testTraderProfileShowsTIandLvl() public {
-        super.setUp();
+        super.feeTierSetUp();
         uint256 point = accountant.pointOf(1, 0);
         uint256 ti = accountant.getTI(1);
         console.log("Trader 1 Trader Point:");
@@ -135,7 +148,7 @@ contract FeeTierTest is SAFEXFeeTierSetup {
 
     // Traders with premium accounts shows assigned level regardless of trading performance
     function testTraderProfileShowsAssignedLvl() public {
-         super.setUp();
+        super.feeTierSetUp();
         uint256 level = accountant.levelOf(1);
         console.log("Trader 1 level:");
         console.log(level);

@@ -56,10 +56,9 @@ contract BaseSetup is Test {
         matchingEngine.initialize(
             address(orderbookFactory),
             address(feeToken),
-            30000,
+            address(0),
             address(booker)
         );
-        matchingEngine.setFeeTo(booker);
 
         vm.prank(trader1);
         token1.approve(address(matchingEngine), 10000e18);

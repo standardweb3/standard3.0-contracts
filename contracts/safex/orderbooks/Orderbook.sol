@@ -63,6 +63,8 @@ contract Orderbook is IOrderbook, Initializable {
         priceLists._setLmp(price);
     }
 
+    uint256 public checkPrice;
+
     function placeAsk(
         address owner,
         uint256 price,
@@ -71,6 +73,7 @@ contract Orderbook is IOrderbook, Initializable {
         uint256 id = _askOrders._createOrder(owner, amount);
         // check if the price is new in the list. if not, insert id to the list
         if (_askOrders._isEmpty(price)) {
+            checkPrice = price;
             priceLists._insert(false, price);
         }
         _askOrders._insertId(price, id, amount);

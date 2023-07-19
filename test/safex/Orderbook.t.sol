@@ -721,6 +721,103 @@ contract OrderbookMatchTest is BaseSetup {
         }
     }
 
+    function testGetPrices2() public {
+        super.setUp();
+        vm.prank(booker);
+        matchingEngine.addPair(address(token1), address(token2));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token2))
+        );
+        vm.prank(trader1);
+        // placeBid or placeAsk two of them is using the _insertId function it will revert
+        // because the program will enter the "if (amount > self.orders[head].depositAmount)."
+        // statement, and eventually, it will cause an infinite loop.
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            10,
+            100000000000,
+            true,
+            2,
+            0
+        );
+        console.log(book.checkPrice());
+        vm.prank(trader1);
+        //vm.expectRevert("OutOfGas");
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            10,
+            100100000000,
+            true,
+            2,
+            0
+        );
+         console.log(book.checkPrice());
+        vm.prank(trader1);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            10,
+            100200000000,
+            true,
+            5,
+            0
+        );
+         console.log(book.checkPrice());
+        vm.prank(trader1);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            1,
+            99900000000,
+            true,
+            5,
+            0
+        );
+        vm.prank(trader1);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            1,
+            99800000000,
+            true,
+            5,
+            0
+        );
+        vm.prank(trader1);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            1,
+            99700000000,
+            true,
+            5,
+            0
+        );
+        uint256[] memory bidPrices = matchingEngine.getPrices(
+            address(token1),
+            address(token2),
+            true,
+            20
+        );
+        console.log("Ask prices: ");
+        for (uint i = 0; i < 3; i++) {
+            console.log(bidPrices[i]);
+        }
+        //matchingEngine.getOrders(address(token1), address(token2), true, 0, 0);
+        uint256[] memory askPrices = matchingEngine.getPrices(
+            address(token1),
+            address(token2),
+            false,
+            20
+        );
+        console.log("Bid prices: ");
+        for (uint i = 0; i < 3; i++) {
+            console.log(askPrices[i]);
+        }
+    }
+
     function testGetOrders() public {
         super.setUp();
         vm.prank(booker);

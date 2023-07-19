@@ -71,9 +71,9 @@ library SAFEXLinkedList {
         if (isBid) {
             uint256 last = 0;
             uint256 head = self.bidHead;
-            // insert order to the linked list
+            // insert bid price to the linked list
             // if the list is empty
-            if (head == 0 || price >= head) {
+            if (head == 0 || price > head) {
                 self.bidHead = price;
                 self.bidPrices[price] = head;
                 return;
@@ -82,12 +82,18 @@ library SAFEXLinkedList {
                 uint256 next = self.bidPrices[head];
                 if (price < next) {
                     // Keep traversing
-                    last = head;
                     head = self.bidPrices[head];
+                    last = next;
                 } else if (price > next) {
+                    if(next == 0) {
+                        // Insert price at the end of the list
+                        self.bidPrices[head] = price;
+                        self.bidPrices[price] = 0;
+                        return;
+                    }
                     // Insert price in the middle of the list
-                    self.bidPrices[price] = next;
-                    self.bidPrices[last] = price;
+                    head = self.bidPrices[head];
+                    last = next;
                     return;
                 } else {
                     // price is already included in the queue as it is equal to next
@@ -96,29 +102,30 @@ library SAFEXLinkedList {
                 }
             }
         }
-        // insert bid price to the linked list
+        // insert ask price to the linked list
         else {
             uint256 last = 0;
             uint256 head = self.askHead;
             // insert order to the linked list
-            // if the list is empty
-            if (head == 0 || price <= head) {
+            // if the list is empty and price is the lowest ask
+            if (head == 0 || price < head) {
                 self.askHead = price;
-                self.askPrices[price] = head;
+                self.askPrices[price] = 0;
                 return;
             }
+            // traverse the list
             while (head != 0) {
                 uint256 next = self.askPrices[head];
+                // Keep traversing
                 if (price > next) {
                     if (next == 0) {
                         // Insert price in the middle of the list
-                        self.askPrices[price] = next;
-                        self.askPrices[last] = price;
+                        self.askPrices[head] = price;
+                        self.askPrices[price] = 0;
                         return;
                     }
-                    // Keep traversing
-                    last = head;
                     head = self.askPrices[head];
+                    last = next;
                 } else if (price < next) {
                     // Insert price in the middle of the list
                     self.askPrices[price] = next;

@@ -661,7 +661,7 @@ contract MatchingEngine is AccessControl, Initializable {
         uint256 lmp = 0;
         uint32 i = 0;
         if (isBid) {
-            // check if there is any matching bid order until matching bid order price is higher than the limit Price
+            // check if there is any matching ask order until matching ask order price is lower than the limit bid Price
             uint256 askHead = IOrderbook(orderbook).askHead();
             while (
                 remaining > 0 && askHead != 0 && askHead <= limitPrice && i < n
@@ -679,7 +679,7 @@ contract MatchingEngine is AccessControl, Initializable {
                 askHead = IOrderbook(orderbook).askHead();
             }
         } else {
-            // check if there is any maching ask order until matching ask order price is lower than the limit price
+            // check if there is any maching bid order until matching bid order price is higher than the limit ask price
             uint bidHead = IOrderbook(orderbook).bidHead();
             while (
                 remaining > 0 && bidHead != 0 && bidHead >= limitPrice && i < n

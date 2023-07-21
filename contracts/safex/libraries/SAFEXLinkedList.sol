@@ -47,7 +47,13 @@ library SAFEXLinkedList {
         if (self.lmp == 0) {
             revert NoMatchPrice(self.askHead, self.bidHead, self.lmp);
         }
-        return self.lmp;
+        if(self.lmp < self.bidHead) {
+            return self.bidHead;
+        } else if(self.lmp > self.askHead) {
+            return self.askHead;
+        } else {
+            return self.lmp;
+        }
     }
 
     function _next(

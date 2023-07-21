@@ -166,8 +166,8 @@ contract SetupSAFEXInitialParameters is Deployer {
         matchingEngine.limitSell(
             address(feeToken),
             address(stablecoin),
-            10000e18,
             1000e8,
+            10000e18,
             true,
             1,
             0
@@ -175,8 +175,8 @@ contract SetupSAFEXInitialParameters is Deployer {
         matchingEngine.limitBuy(
             address(feeToken),
             address(stablecoin),
-            10000e18,
             1000e8,
+            10000e18,
             false,
             1,
             1
@@ -207,8 +207,8 @@ contract SetupSAFEXSampleOrders is Deployer {
         matchingEngine.limitSell(
             address(feeToken),
             address(stablecoin),
-            10000e18,
             1001e8,
+            10000e18,
             true,
             1,
             0
@@ -216,8 +216,8 @@ contract SetupSAFEXSampleOrders is Deployer {
         matchingEngine.limitBuy(
             address(feeToken),
             address(stablecoin),
-            10000e18,
             999e8,
+            10000e18,
             true,
             1,
             1

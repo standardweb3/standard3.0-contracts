@@ -192,8 +192,8 @@ contract MatchingEngine is AccessControl, Initializable {
      * and make an order at the limit price.
      * @param base The address of the base asset for the trading pair
      * @param quote The address of the quote asset for the trading pair
+     * @param price The price, base/quote regardless of decimals of the assets in the pair represented with 8 decimals (if 1000, base is 1000x quote)
      * @param amount The amount of quote asset to be used for the limit buy order
-     * @param at The price at which the limit buy order should be placed
      * @param isMaker Boolean indicating if an order should be made at the limit price
      * @param n The maximum number of orders to match in the orderbook
      * @return bool True if the order was successfully executed, otherwise false.
@@ -201,8 +201,8 @@ contract MatchingEngine is AccessControl, Initializable {
     function limitBuy(
         address base,
         address quote,
+        uint256 price,
         uint256 amount,
-        uint256 at,
         bool isMaker,
         uint32 n,
         uint32 uid
@@ -220,11 +220,11 @@ contract MatchingEngine is AccessControl, Initializable {
             withoutFee,
             quote,
             true,
-            at,
+            price,
             n
         );
 
-        _detMake(orderbook, quote, remaining, at, true, isMaker);
+        _detMake(orderbook, quote, remaining, price, true, isMaker);
         return true;
     }
 
@@ -234,8 +234,8 @@ contract MatchingEngine is AccessControl, Initializable {
      * and makes an order at the limit price.
      * @param base The address of the base asset for the trading pair
      * @param quote The address of the quote asset for the trading pair
+     * @param price The price, base/quote regardless of decimals of the assets in the pair represented with 8 decimals (if 1000, base is 1000x quote)
      * @param amount The amount of base asset to be used for the limit sell order
-     * @param at The price at which the limit sell order should be placed
      * @param isMaker Boolean indicating if an order should be made at the limit price
      * @param n The maximum number of orders to match in the orderbook
      * @return bool True if the order was successfully executed, otherwise false.
@@ -243,8 +243,8 @@ contract MatchingEngine is AccessControl, Initializable {
     function limitSell(
         address base,
         address quote,
+        uint256 price,
         uint256 amount,
-        uint256 at,
         bool isMaker,
         uint32 n,
         uint32 uid
@@ -262,10 +262,10 @@ contract MatchingEngine is AccessControl, Initializable {
             withoutFee,
             base,
             false,
-            at,
+            price,
             n
         );
-        _detMake(orderbook, base, remaining, at, false, isMaker);
+        _detMake(orderbook, base, remaining, price, false, isMaker);
         return true;
     }
 
@@ -274,15 +274,15 @@ contract MatchingEngine is AccessControl, Initializable {
      * with a specified price `at`.
      * @param base The address of the base asset for the trading pair
      * @param quote The address of the quote asset for the trading pair
+     * @param price The price, base/quote regardless of decimals of the assets in the pair represented with 8 decimals (if 1000, base is 1000x quote)
      * @param amount The amount of quote asset to be used for the bid order
-     * @param at The price at which the bid order will be stored in bid-ask spread
      * @return bool True if the order was successfully executed, otherwise false.
      */
     function makeBuy(
         address base,
         address quote,
+        uint256 price,
         uint256 amount,
-        uint256 at,
         uint32 uid
     ) external returns (bool) {
         (uint256 withoutFee, address orderbook) = _deposit(
@@ -294,7 +294,7 @@ contract MatchingEngine is AccessControl, Initializable {
             true
         );
         TransferHelper.safeTransfer(quote, orderbook, withoutFee);
-        _makeOrder(orderbook, withoutFee, at, true);
+        _makeOrder(orderbook, withoutFee, price, true);
         return true;
     }
 
@@ -303,15 +303,15 @@ contract MatchingEngine is AccessControl, Initializable {
      * with a specified price `at`.
      * @param base The address of the base asset for the trading pair
      * @param quote The address of the quote asset for the trading pair
+     * @param price The price, base/quote regardless of decimals of the assets in the pair represented with 8 decimals (if 1000, base is 1000x quote)
      * @param amount The amount of base asset to be used for making ask order
-     * @param at The price at which the ask order will be executed
      * @return bool True if the order was successfully executed, otherwise false.
      */
     function makeSell(
         address base,
         address quote,
+        uint256 price,
         uint256 amount,
-        uint256 at,
         uint32 uid
     ) external returns (bool) {
         (uint256 withoutFee, address orderbook) = _deposit(
@@ -323,7 +323,7 @@ contract MatchingEngine is AccessControl, Initializable {
             true
         );
         TransferHelper.safeTransfer(base, orderbook, withoutFee);
-        _makeOrder(orderbook, withoutFee, at, false);
+        _makeOrder(orderbook, withoutFee, price, false);
         return true;
     }
 
@@ -537,20 +537,20 @@ contract MatchingEngine is AccessControl, Initializable {
      * @dev Internal function which makes an order on the orderbook.
      * @param orderbook The address of the orderbook contract for the trading pair
      * @param withoutFee The remaining amount of the asset after the market order has been executed
-     * @param at The price of the order to store in bid-ask spread
+     * @param price The price, base/quote regardless of decimals of the assets in the pair represented with 8 decimals (if 1000, base is 1000x quote)
      * @param isBid Boolean indicating if the order is a buy (false) or a sell (true)
      */
     function _makeOrder(
         address orderbook,
         uint256 withoutFee,
-        uint256 at,
+        uint256 price,
         bool isBid
     ) internal {
         // create order
         if (isBid) {
-            IOrderbook(orderbook).placeBid(msg.sender, at, withoutFee);
+            IOrderbook(orderbook).placeBid(msg.sender, price, withoutFee);
         } else {
-            IOrderbook(orderbook).placeAsk(msg.sender, at, withoutFee);
+            IOrderbook(orderbook).placeAsk(msg.sender, price, withoutFee);
         }
     }
 
@@ -562,7 +562,7 @@ contract MatchingEngine is AccessControl, Initializable {
         address give,
         bool isBid,
         uint256 amount,
-        uint256 priceAt,
+        uint256 price,
         uint32 i,
         uint32 n
     ) internal returns (uint256 remaining, uint32 k) {
@@ -572,15 +572,15 @@ contract MatchingEngine is AccessControl, Initializable {
         remaining = amount;
         while (
             remaining > 0 &&
-            !IOrderbook(orderbook).isEmpty(!isBid, priceAt) &&
+            !IOrderbook(orderbook).isEmpty(!isBid, price) &&
             i < n
         ) {
             // fpop OrderLinkedList by price, if ask you get bid order, if bid you get ask order
-            uint256 orderId = IOrderbook(orderbook).fpop(!isBid, priceAt);
+            uint256 orderId = IOrderbook(orderbook).fpop(!isBid, price);
             // Get quote asset on bid order on buy, base asset on ask order on sell
             uint256 required = IOrderbook(orderbook).getRequired(
                 !isBid,
-                priceAt,
+                price,
                 orderId
             );
             // order exists, and amount is not 0
@@ -589,7 +589,7 @@ contract MatchingEngine is AccessControl, Initializable {
                 address owner = IOrderbook(orderbook).execute(
                     orderId,
                     !isBid,
-                    priceAt,
+                    price,
                     msg.sender,
                     remaining
                 );
@@ -601,7 +601,7 @@ contract MatchingEngine is AccessControl, Initializable {
                     msg.sender,
                     owner,
                     remaining,
-                    priceAt
+                    price
                 );
                 // set last match price
                 // end loop as remaining is 0
@@ -618,7 +618,7 @@ contract MatchingEngine is AccessControl, Initializable {
                 address owner = IOrderbook(orderbook).execute(
                     orderId,
                     !isBid,
-                    priceAt,
+                    price,
                     msg.sender,
                     required
                 );
@@ -630,7 +630,7 @@ contract MatchingEngine is AccessControl, Initializable {
                     msg.sender,
                     owner,
                     required,
-                    priceAt
+                    price
                 );
                 ++i;
             }

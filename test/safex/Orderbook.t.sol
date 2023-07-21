@@ -126,8 +126,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(btc),
-            1e18,
             1e8,
+            1e18,
             true,
             2,
             0
@@ -146,8 +146,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitBuy(
             address(token1),
             address(token2),
-            100e18,
             1e8,
+            100e18,
             true,
             2,
             0
@@ -156,8 +156,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(token2),
-            100e18,
             1e8,
+            100e18,
             true,
             2,
             0
@@ -199,8 +199,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitBuy(
             address(token1),
             address(token2),
-            100e18,
             1,
+            100e18,
             true,
             2,
             0
@@ -209,8 +209,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(token2),
-            100e18,
             1,
+            100e18,
             true,
             2,
             0
@@ -251,8 +251,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(token2),
-            100e18,
             1,
+            100e18,
             true,
             2,
             0
@@ -261,8 +261,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitBuy(
             address(token1),
             address(token2),
-            100e18,
             1,
+            100e18,
             true,
             2,
             0
@@ -297,8 +297,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(token2),
-            100e18,
             90e8,
+            100e18,
             true,
             2,
             0
@@ -307,8 +307,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitBuy(
             address(token1),
             address(token2),
-            100e18,
             110e8,
+            100e18,
             true,
             2,
             0
@@ -339,8 +339,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitBuy(
             address(token1),
             address(token2),
-            10,
             2,
+            10,
             true,
             2,
             0
@@ -349,8 +349,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitBuy(
             address(token1),
             address(token2),
-            10,
             5,
+            10,
             true,
             2,
             0
@@ -359,8 +359,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitBuy(
             address(token1),
             address(token2),
-            10,
             5,
+            10,
             true,
             2,
             0
@@ -370,8 +370,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitBuy(
             address(token1),
             address(token2),
-            10,
             1,
+            10,
             true,
             2,
             0
@@ -392,8 +392,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(token2),
-            10,
             2,
+            10,
             true,
             2,
             0
@@ -402,8 +402,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(token2),
-            10,
             5,
+            10,
             true,
             2,
             0
@@ -412,8 +412,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(token2),
-            10,
             5,
+            10,
             true,
             2,
             0
@@ -423,8 +423,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(token2),
-            10,
             6,
+            10,
             true,
             2,
             0
@@ -445,8 +445,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(token2),
-            10,
             5,
+            10,
             true,
             2,
             0
@@ -456,8 +456,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(token2),
-            10,
             1,
+            10,
             true,
             2,
             0
@@ -478,8 +478,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(token2),
-            10,
             500000000,
+            10,
             true,
             2,
             0
@@ -489,8 +489,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(token2),
-            10,
             100000000,
+            10,
             true,
             2,
             0
@@ -499,8 +499,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitBuy(
             address(token1),
             address(token2),
-            10,
             500000000,
+            10,
             true,
             5,
             0
@@ -537,8 +537,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(btc),
-            10,
             500000000,
+            10,
             true,
             2,
             0
@@ -548,8 +548,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(btc),
-            10,
             100000000,
+            10,
             true,
             2,
             0
@@ -558,8 +558,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitBuy(
             address(token1),
             address(btc),
-            10,
             500000000,
+            10,
             true,
             2,
             0
@@ -596,8 +596,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(btc),
             address(token1),
-            10,
             500000000,
+            10,
             true,
             2,
             0
@@ -607,8 +607,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(btc),
             address(token1),
-            10,
             100000000,
+            10,
             true,
             2,
             0
@@ -617,8 +617,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitBuy(
             address(btc),
             address(token1),
-            10,
             500000000,
+            10,
             true,
             2,
             0
@@ -661,8 +661,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(token2),
-            10,
             500000000,
+            10,
             true,
             2,
             0
@@ -672,8 +672,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(token2),
-            10,
             100000000,
+            10,
             true,
             2,
             0
@@ -682,8 +682,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitBuy(
             address(token1),
             address(token2),
-            10,
             90000000,
+            10,
             true,
             5,
             0
@@ -692,8 +692,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitBuy(
             address(token1),
             address(token2),
-            10,
             500000000,
+            10,
             true,
             5,
             0
@@ -735,8 +735,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(token2),
-            10,
             100000000000,
+            10,
             true,
             2,
             0
@@ -747,8 +747,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(token2),
-            10,
             100100000000,
+            10,
             true,
             2,
             0
@@ -758,8 +758,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(token2),
-            10,
             100200000000,
+            10,
             true,
             5,
             0
@@ -769,8 +769,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitBuy(
             address(token1),
             address(token2),
-            1,
             99900000000,
+            1,
             true,
             5,
             0
@@ -779,8 +779,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitBuy(
             address(token1),
             address(token2),
-            1,
             99800000000,
+            1,
             true,
             5,
             0
@@ -789,8 +789,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitBuy(
             address(token1),
             address(token2),
-            1,
             99700000000,
+            1,
             true,
             5,
             0
@@ -832,8 +832,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(token2),
-            10,
             500000000,
+            10,
             true,
             2,
             0
@@ -843,8 +843,9 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(token2),
-            10,
+
             100000000,
+            10,
             true,
             2,
             0
@@ -853,8 +854,9 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitBuy(
             address(token1),
             address(token2),
-            10,
+
             500000000,
+            10,
             true,
             5,
             0
@@ -888,8 +890,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(token2),
-            10,
             500000000,
+            10,
             true,
             2,
             0
@@ -899,8 +901,8 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(token2),
-            10,
             100000000,
+            10,
             true,
             2,
             0

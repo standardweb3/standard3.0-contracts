@@ -112,8 +112,8 @@ contract SAFEXFeeTierSetup is BaseSetup {
         matchingEngineFeeTier.limitSell(
             address(feeToken),
             address(stablecoin),
-            10000e18,
             1000e8,
+            10000e18,
             true,
             1,
             0
@@ -125,8 +125,8 @@ contract SAFEXFeeTierSetup is BaseSetup {
         matchingEngineFeeTier.limitBuy(
             address(feeToken),
             address(stablecoin),
-            10000e18,
             1000e8,
+            10000e18,
             false,
             1,
             1

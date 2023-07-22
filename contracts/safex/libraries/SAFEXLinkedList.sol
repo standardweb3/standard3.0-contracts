@@ -49,7 +49,7 @@ library SAFEXLinkedList {
         }
         if(self.lmp < self.bidHead) {
             return self.bidHead;
-        } else if(self.lmp > self.askHead) {
+        } else if(self.lmp > self.askHead && self.askHead != 0) {
             return self.askHead;
         } else {
             return self.lmp;

@@ -9,6 +9,7 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 /// @title Standard Membership Treasury to exchange membership points with rewards
 contract Treasury is AccessControl, Initializable {
     using TreasuryLib for TreasuryLib.Storage;
+
     bytes32 public constant REPORTER_ROLE = keccak256("REPORTER_ROLE");
 
     TreasuryLib.Storage private _treasury;
@@ -28,12 +29,7 @@ contract Treasury is AccessControl, Initializable {
     }
 
     /// @dev For subscribers, exchange point to reward
-    function exchange(
-        address token,
-        uint32 nthEra,
-        uint32 uid,
-        uint64 point
-    ) external {
+    function exchange(address token, uint32 nthEra, uint32 uid, uint64 point) external {
         _treasury._exchange(token, nthEra, uid, point);
     }
 
@@ -68,26 +64,15 @@ contract Treasury is AccessControl, Initializable {
         TransferHelper.safeTransfer(token, to, amount);
     }
 
-    function getReward(
-        address token,
-        uint32 nthEra,
-        uint256 point
-    ) external view returns (uint256) {
+    function getReward(address token, uint32 nthEra, uint256 point) external view returns (uint256) {
         return _treasury._getReward(token, nthEra, point);
     }
 
-    function getClaim(
-        address token,
-        uint32 uid,
-        uint32 nthEra
-    ) external view returns (uint256) {
+    function getClaim(address token, uint32 uid, uint32 nthEra) external view returns (uint256) {
         return _treasury._getClaim(token, uid, nthEra);
     }
 
-    function getSettlement(
-        address token,
-        uint32 nthEra
-    ) external view returns (uint256) {
+    function getSettlement(address token, uint32 nthEra) external view returns (uint256) {
         return _treasury._getSettlement(token, nthEra);
     }
 }

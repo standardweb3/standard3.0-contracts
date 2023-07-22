@@ -16,51 +16,31 @@ contract BulkSender is AccessControl {
     }
 
     function set(address _relayer, uint256 _fee) external {
-        require(
-            hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
-            "Caller is not an admin"
-        );
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Caller is not an admin");
         relayer = _relayer;
         fee = _fee;
     }
 
     // This function is called by the owner to send tokens to a list of addresses
-    function sendBulk(
-        address tokenAddress,
-        address[] calldata addresses,
-        uint256[] calldata amounts
-    ) external payable {
+    function sendBulk(address tokenAddress, address[] calldata addresses, uint256[] calldata amounts)
+        external
+        payable
+    {
         // require fee
         require(msg.value > fee, "FL");
-        require(
-            addresses.length == amounts.length,
-            "Arrays must have the same length"
-        );
+        require(addresses.length == amounts.length, "Arrays must have the same length");
         for (uint256 i = 0; i < addresses.length; i++) {
-            require(
-                IERC20(tokenAddress).transferFrom(
-                    msg.sender,
-                    addresses[i],
-                    amounts[i]
-                ),
-                "Transfer failed"
-            );
+            require(IERC20(tokenAddress).transferFrom(msg.sender, addresses[i], amounts[i]), "Transfer failed");
         }
     }
 
     // This function is called by the owner to send tokens to a list of addresses
-    function sendBulkEth(
-        address[] calldata addresses,
-        uint256[] calldata amounts
-    ) external payable {
+    function sendBulkEth(address[] calldata addresses, uint256[] calldata amounts) external payable {
         // require fee
         require(msg.value > fee, "FL");
         // send fee to the meta transaction relayer
         payable(relayer).transfer(fee);
-        require(
-            addresses.length == amounts.length,
-            "Arrays must have the same length"
-        );
+        require(addresses.length == amounts.length, "Arrays must have the same length");
         for (uint256 i = 0; i < addresses.length; i++) {
             payable(addresses[i]).transfer(amounts[i]);
         }

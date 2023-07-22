@@ -23,12 +23,7 @@ library SAFEXOrderbook {
     }
 
     // for orders, lower depositAmount are next, higher depositAmount comes first
-    function _insertId(
-        OrderStorage storage self,
-        uint256 price,
-        uint256 id,
-        uint256 amount
-    ) internal {
+    function _insertId(OrderStorage storage self, uint256 price, uint256 id, uint256 amount) internal {
         uint256 last = 0;
         uint256 head = self.head[price];
         mapping(uint256 => uint256) storage list = self.list[price];
@@ -71,10 +66,7 @@ library SAFEXOrderbook {
     }
 
     // pop front
-    function _fpop(
-        OrderStorage storage self,
-        uint256 price
-    ) internal returns (uint256) {
+    function _fpop(OrderStorage storage self, uint256 price) internal returns (uint256) {
         uint256 first = self.head[price];
         if (first == 0) {
             return 0;
@@ -85,29 +77,18 @@ library SAFEXOrderbook {
         return first;
     }
 
-    function _createOrder(
-        OrderStorage storage self,
-        address owner,
-        uint256 depositAmount
-    ) internal returns (uint256 id) {
-        Order memory order = Order({
-            owner: owner,
-            depositAmount: depositAmount
-        });
+    function _createOrder(OrderStorage storage self, address owner, uint256 depositAmount)
+        internal
+        returns (uint256 id)
+    {
+        Order memory order = Order({owner: owner, depositAmount: depositAmount});
         // prevent order overflow, order id must start from 1
-        self.count = self.count == 0 || self.count == type(uint256).max
-            ? 1
-            : self.count + 1;
+        self.count = self.count == 0 || self.count == type(uint256).max ? 1 : self.count + 1;
         self.orders[self.count] = order;
         return self.count;
     }
 
-    function _decreaseOrder(
-        OrderStorage storage self,
-        uint256 price,
-        uint256 id,
-        uint256 amount
-    ) internal {
+    function _decreaseOrder(OrderStorage storage self, uint256 price, uint256 id, uint256 amount) internal {
         uint256 decreased = self.orders[id].depositAmount - amount;
         if (decreased == 0) {
             _deleteOrder(self, price, id);
@@ -116,11 +97,7 @@ library SAFEXOrderbook {
         }
     }
 
-    function _deleteOrder(
-        OrderStorage storage self,
-        uint256 price,
-        uint256 id
-    ) internal {
+    function _deleteOrder(OrderStorage storage self, uint256 price, uint256 id) internal {
         uint256 last = 0;
         uint256 head = self.head[price];
         mapping(uint256 => uint256) storage list = self.list[price];
@@ -145,11 +122,11 @@ library SAFEXOrderbook {
     }
 
     // show n order ids at the price in the orderbook
-    function _getOrderIds(
-        OrderStorage storage self,
-        uint256 price,
-        uint n
-    ) internal view returns (uint256[] memory) {
+    function _getOrderIds(OrderStorage storage self, uint256 price, uint256 n)
+        internal
+        view
+        returns (uint256[] memory)
+    {
         uint256 head = self.head[price];
         uint256[] memory orders = new uint256[](n);
         uint256 i = 0;
@@ -161,11 +138,7 @@ library SAFEXOrderbook {
         return orders;
     }
 
-    function _getOrders(
-        OrderStorage storage self,
-        uint256 price,
-        uint n
-    ) internal view returns (Order[] memory) {
+    function _getOrders(OrderStorage storage self, uint256 price, uint256 n) internal view returns (Order[] memory) {
         uint256 head = self.head[price];
         Order[] memory orders = new Order[](n);
         uint256 i = 0;
@@ -177,32 +150,19 @@ library SAFEXOrderbook {
         return orders;
     }
 
-    function _head(
-        OrderStorage storage self,
-        uint256 price
-    ) internal view returns (uint256) {
+    function _head(OrderStorage storage self, uint256 price) internal view returns (uint256) {
         return self.head[price];
     }
 
-    function _isEmpty(
-        OrderStorage storage self,
-        uint256 price
-    ) internal view returns (bool) {
+    function _isEmpty(OrderStorage storage self, uint256 price) internal view returns (bool) {
         return self.head[price] == 0;
     }
 
-    function _next(
-        OrderStorage storage self,
-        uint256 price,
-        uint256 curr
-    ) internal view returns (uint256) {
+    function _next(OrderStorage storage self, uint256 price, uint256 curr) internal view returns (uint256) {
         return self.list[price][curr];
     }
 
-    function _getOrder(
-        OrderStorage storage self,
-        uint256 id
-    ) internal view returns (Order memory) {
+    function _getOrder(OrderStorage storage self, uint256 id) internal view returns (Order memory) {
         return self.orders[id];
     }
 }

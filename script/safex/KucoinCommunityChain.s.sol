@@ -15,9 +15,7 @@ import {Multicall3} from "../Multicall3.sol";
 
 contract Deployer is Script {
     function _setDeployer() internal {
-        uint256 deployerPrivateKey = vm.envUint(
-            "LINEA_TESTNET_DEPLOYER_KEY"
-        );
+        uint256 deployerPrivateKey = vm.envUint("LINEA_TESTNET_DEPLOYER_KEY");
         vm.startBroadcast(deployerPrivateKey);
     }
 }
@@ -57,27 +55,15 @@ contract DeployTestnetAssetsAndContracts is Deployer {
         sabt.initialize(address(membership));
         // Setup accountant and treasury
         BlockAccountant accountant = new BlockAccountant();
-        accountant.initialize(
-            address(membership),
-            address(matchingEngine),
-            address(stablecoin),
-            spb);
+        accountant.initialize(address(membership), address(matchingEngine), address(stablecoin), spb);
         Treasury treasury = new Treasury();
         treasury.initialize(address(accountant), address(sabt));
         matchingEngine.initialize(
-            address(orderbookFactory),
-            address(membership),
-            address(accountant),
-            address(treasury)
+            address(orderbookFactory), address(membership), address(accountant), address(treasury)
         );
-        orderbookFactory.initialize(
-            address(matchingEngine)
-        );
+        orderbookFactory.initialize(address(matchingEngine));
         // Wire up matching engine with them
-        accountant.grantRole(
-            accountant.REPORTER_ROLE(),
-            address(matchingEngine)
-        );
+        accountant.grantRole(accountant.REPORTER_ROLE(), address(matchingEngine));
         treasury.grantRole(treasury.REPORTER_ROLE(), address(matchingEngine));
         vm.stopBroadcast();
     }
@@ -125,8 +111,7 @@ contract SetupSABTInitialParameters is Deployer {
     SABT public sabt = SABT(sabt_address);
     MockToken public stablecoin = MockToken(stablecoin_address);
     MockToken public feeToken = MockToken(feeToken_address);
-    BlockAccountant public accountant =
-        BlockAccountant(block_accountant_address);
+    BlockAccountant public accountant = BlockAccountant(block_accountant_address);
     Treasury public treasury = Treasury(treasury_address);
 
     function run() external {
@@ -148,8 +133,7 @@ contract SetupSAFEXInitialParameters is Deployer {
     address constant matching_engine_address = 0xa02d713DEBba20c8f81b35576A78D66Ef4E2f868;
     address constant feeToken_address = 0xf3Db341c6001916121EB46eD669D08aDC7FF37e1;
     address constant stablecoin_address = 0x4c5ecfF8f637BE60F093808babcd03b78170b828;
-    MatchingEngine public matchingEngine =
-        MatchingEngine(matching_engine_address);
+    MatchingEngine public matchingEngine = MatchingEngine(matching_engine_address);
     MockToken public feeToken = MockToken(feeToken_address);
     MockToken public stablecoin = MockToken(stablecoin_address);
 
@@ -163,24 +147,8 @@ contract SetupSAFEXInitialParameters is Deployer {
         feeToken.approve(address(matchingEngine), 100000e18);
         stablecoin.approve(address(matchingEngine), 100000e18);
         // add limit orders
-        matchingEngine.limitSell(
-            address(feeToken),
-            address(stablecoin),
-            1000e8,
-            10000e18,
-            true,
-            1,
-            0
-        );
-        matchingEngine.limitBuy(
-            address(feeToken),
-            address(stablecoin),
-            1000e8,
-            10000e18,
-            false,
-            1,
-            1
-        );
+        matchingEngine.limitSell(address(feeToken), address(stablecoin), 1000e8, 10000e18, true, 1, 0);
+        matchingEngine.limitBuy(address(feeToken), address(stablecoin), 1000e8, 10000e18, false, 1, 1);
         vm.stopBroadcast();
     }
 }
@@ -190,8 +158,7 @@ contract SetupSAFEXSampleOrders is Deployer {
     address constant matching_engine_address = 0xa02d713DEBba20c8f81b35576A78D66Ef4E2f868;
     address constant feeToken_address = 0xf3Db341c6001916121EB46eD669D08aDC7FF37e1;
     address constant stablecoin_address = 0x4c5ecfF8f637BE60F093808babcd03b78170b828;
-    MatchingEngine public matchingEngine =
-        MatchingEngine(matching_engine_address);
+    MatchingEngine public matchingEngine = MatchingEngine(matching_engine_address);
     MockToken public feeToken = MockToken(feeToken_address);
     MockToken public stablecoin = MockToken(stablecoin_address);
 
@@ -199,29 +166,13 @@ contract SetupSAFEXSampleOrders is Deployer {
         _setDeployer();
         // Setup pair between stablecoin and feeToken with price
         feeToken.approve(address(matchingEngine), 100000e18);
-        
+
         // make a price in matching engine where 1 feeToken = 1000 stablecoin with buy and sell order
         feeToken.approve(address(matchingEngine), 100000e18);
         stablecoin.approve(address(matchingEngine), 100000e18);
         // add limit orders
-        matchingEngine.limitSell(
-            address(feeToken),
-            address(stablecoin),
-            1001e8,
-            10000e18,
-            true,
-            1,
-            0
-        );
-        matchingEngine.limitBuy(
-            address(feeToken),
-            address(stablecoin),
-            999e8,
-            10000e18,
-            true,
-            1,
-            1
-        );
+        matchingEngine.limitSell(address(feeToken), address(stablecoin), 1001e8, 10000e18, true, 1, 0);
+        matchingEngine.limitBuy(address(feeToken), address(stablecoin), 999e8, 10000e18, true, 1, 1);
         vm.stopBroadcast();
     }
 }
@@ -231,8 +182,7 @@ contract SetupSAFEXSampleOrders2 is Deployer {
     address constant matching_engine_address = 0xa02d713DEBba20c8f81b35576A78D66Ef4E2f868;
     address constant feeToken_address = 0xf3Db341c6001916121EB46eD669D08aDC7FF37e1;
     address constant stablecoin_address = 0x4c5ecfF8f637BE60F093808babcd03b78170b828;
-    MatchingEngine public matchingEngine =
-        MatchingEngine(matching_engine_address);
+    MatchingEngine public matchingEngine = MatchingEngine(matching_engine_address);
     MockToken public feeToken = MockToken(feeToken_address);
     MockToken public stablecoin = MockToken(stablecoin_address);
 
@@ -240,20 +190,11 @@ contract SetupSAFEXSampleOrders2 is Deployer {
         _setDeployer();
         // Setup pair between stablecoin and feeToken with price
         feeToken.approve(address(matchingEngine), 100000e18);
-        
+
         // make a price in matching engine where 1 feeToken = 1000 stablecoin with buy and sell order
         feeToken.approve(address(matchingEngine), 100000e18);
         stablecoin.approve(address(matchingEngine), 100000e18);
-        matchingEngine.limitBuy(
-            address(feeToken),
-            address(stablecoin),
-            10000e18,
-            1000e8,
-            true,
-            1,
-            1
-        );
+        matchingEngine.limitBuy(address(feeToken), address(stablecoin), 10000e18, 1000e8, true, 1, 1);
         vm.stopBroadcast();
     }
 }
-

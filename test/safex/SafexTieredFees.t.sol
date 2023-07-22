@@ -37,25 +37,14 @@ contract SAFEXFeeTierSetup is BaseSetup {
         matchingEngineFeeTier = new MatchingEngine();
 
         accountant = new BlockAccountant();
-        accountant.initialize(
-            address(membership),
-            address(matchingEngineFeeTier),
-            address(stablecoin),
-            1
-        );
+        accountant.initialize(address(membership), address(matchingEngineFeeTier), address(stablecoin), 1);
         treasury = new Treasury();
         treasury.initialize(address(accountant), address(sabt));
         orderbookFactoryFeeTier.initialize(address(matchingEngineFeeTier));
         matchingEngineFeeTier.initialize(
-            address(orderbookFactoryFeeTier),
-            address(membership),
-            address(accountant),
-            address(treasury)
+            address(orderbookFactoryFeeTier), address(membership), address(accountant), address(treasury)
         );
-        accountant.grantRole(
-            accountant.REPORTER_ROLE(),
-            address(matchingEngineFeeTier)
-        );
+        accountant.grantRole(accountant.REPORTER_ROLE(), address(matchingEngineFeeTier));
         treasury.grantRole(treasury.REPORTER_ROLE(), address(matchingEngineFeeTier));
 
         feeToken.mint(trader1, 10e41);
@@ -102,35 +91,16 @@ contract SAFEXFeeTierSetup is BaseSetup {
         // mine 1000 blocks
         utils.mineBlocks(1000);
         console.log("Block number after mining 1000 blocks: ", block.number);
-        console.log(
-            "Financial block where accountant started its accounting: ",
-            accountant.fb()
-        );
+        console.log("Financial block where accountant started its accounting: ", accountant.fb());
 
         // make a price in matching engine where 1 feeToken = 1000 stablecoin with buy and sell order
         vm.prank(trader2);
-        matchingEngineFeeTier.limitSell(
-            address(feeToken),
-            address(stablecoin),
-            1000e8,
-            10000e18,
-            true,
-            1,
-            0
-        );
+        matchingEngineFeeTier.limitSell(address(feeToken), address(stablecoin), 1000e8, 10000e18, true, 1, 0);
         // match the order to make lmp so that accountant can report
         vm.prank(trader1);
         feeToken.approve(address(matchingEngineFeeTier), 10000e18);
         vm.prank(trader1);
-        matchingEngineFeeTier.limitBuy(
-            address(feeToken),
-            address(stablecoin),
-            1000e8,
-            10000e18,
-            false,
-            1,
-            1
-        );
+        matchingEngineFeeTier.limitBuy(address(feeToken), address(stablecoin), 1000e8, 10000e18, false, 1, 1);
     }
 }
 

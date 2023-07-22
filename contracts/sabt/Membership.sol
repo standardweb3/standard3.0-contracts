@@ -34,26 +34,14 @@ contract Membership is AccessControl {
     /// @param subFee_ The subscription fee per block in one token
     /// @param metaId_ The meta id of the token to pay the fee
     /// @param quotas_ The number of tokens to be issued for registration
-    function setMembership(
-        uint8 metaId_,
-        address feeToken_,
-        uint32 regFee_,
-        uint32 subFee_,
-        uint32 quotas_
-    ) external {
+    function setMembership(uint8 metaId_, address feeToken_, uint32 regFee_, uint32 subFee_, uint32 quotas_) external {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
         }
         if (metaId_ == 0) {
             revert InvalidMeta(metaId_, msg.sender);
         }
-        _membership._setMembership(
-            metaId_,
-            feeToken_,
-            regFee_,
-            subFee_,
-            quotas_
-        );
+        _membership._setMembership(metaId_, feeToken_, regFee_, subFee_, quotas_);
     }
 
     function setFoundation(address foundation_) external {
@@ -84,12 +72,7 @@ contract Membership is AccessControl {
         _membership._setSTND(stnd);
     }
 
-    function setFees(
-        uint8 metaId_,
-        address feeToken_,
-        uint256 regFee_,
-        uint256 subFee_
-    ) external {
+    function setFees(uint8 metaId_, address feeToken_, uint256 regFee_, uint256 subFee_) external {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
         }
@@ -97,10 +80,7 @@ contract Membership is AccessControl {
     }
 
     /// @dev register: Register as a member
-    function register(
-        uint8 metaId_,
-        address feeToken_
-    ) external returns (uint32 uid) {
+    function register(uint8 metaId_, address feeToken_) external returns (uint32 uid) {
         // check if metaId is valid
         if (metaId_ == 0 || _membership.metas[metaId_].metaId != metaId_) {
             revert InvalidMeta(metaId_, msg.sender);
@@ -111,24 +91,17 @@ contract Membership is AccessControl {
         return _membership._register(metaId_, feeToken_);
     }
 
-    /**  @dev subscribe: Subscribe to the membership until certain block height
-    * @param uid_ The uid of the ABT to subscribe with
-    * @param blocks_ The number of blocks to remain subscribed
-    * @param feeToken_ The address of the token to pay the fee
-    */ 
-    function subscribe(
-        uint32 uid_,
-        uint64 blocks_,
-        address feeToken_
-    ) external {
+    /**
+     * @dev subscribe: Subscribe to the membership until certain block height
+     * @param uid_ The uid of the ABT to subscribe with
+     * @param blocks_ The number of blocks to remain subscribed
+     * @param feeToken_ The address of the token to pay the fee
+     */
+    function subscribe(uint32 uid_, uint64 blocks_, address feeToken_) external {
         _membership._subscribe(uid_, blocks_, feeToken_);
     }
 
-    function offerBonus(
-        uint32 uid_,
-        address holder_,
-        uint256 blocks_
-    ) external {
+    function offerBonus(uint32 uid_, address holder_, uint256 blocks_) external {
         if (!hasRole(PROMOTER_ROLE, msg.sender)) {
             revert InvalidRole(PROMOTER_ROLE, msg.sender);
         }
@@ -141,28 +114,19 @@ contract Membership is AccessControl {
         _membership._unsubscribe(uid_);
     }
 
-    function balanceOf(
-        address who,
-        uint32 uid_
-    ) external view returns (uint256) {
+    function balanceOf(address who, uint32 uid_) external view returns (uint256) {
         return _membership._balanceOf(who, uid_);
     }
 
-    function getSubSTND(
-        uint32 uid_
-    ) external view returns (uint64) {
+    function getSubSTND(uint32 uid_) external view returns (uint64) {
         return _membership._getSubSTND(uid_);
     }
 
-    function getMeta(
-        uint8 metaId_
-    ) external view returns (MembershipLib.Meta memory) {
+    function getMeta(uint8 metaId_) external view returns (MembershipLib.Meta memory) {
         return _membership.metas[metaId_];
     }
 
-    function getLvl(
-        uint32 uid_
-    ) external view returns (uint8 lvl) {
+    function getLvl(uint32 uid_) external view returns (uint8 lvl) {
         return _membership._getLvl(uid_);
     }
 
@@ -170,12 +134,7 @@ contract Membership is AccessControl {
         return _membership._isSubscribed(uid_);
     }
 
-    function isReportable(
-        address sender,
-        uint32 uid_
-    ) external view returns (bool) {
-        return
-            _membership._balanceOf(sender, uid_) > 0 &&
-            _membership._isSubscribed(uid_);
+    function isReportable(address sender, uint32 uid_) external view returns (bool) {
+        return _membership._balanceOf(sender, uid_) > 0 && _membership._isSubscribed(uid_);
     }
 }

@@ -12,9 +12,7 @@ contract Utils is Test {
     }
 
     // create users with 100 ETH balance each
-    function createUsers(
-        uint256 userNum
-    ) external returns (address payable[] memory) {
+    function createUsers(uint256 userNum) external returns (address payable[] memory) {
         address payable[] memory users = new address payable[](userNum);
         for (uint256 i = 0; i < userNum; i++) {
             address payable user = this.getNextUserAddress();
@@ -25,12 +23,9 @@ contract Utils is Test {
         return users;
     }
 
-    function addUsers(
-        uint256 userNum,
-        address payable[] memory users
-    ) external returns (address payable[] memory) {
-        uint len = users.length;
-        uint newLen = len + userNum;
+    function addUsers(uint256 userNum, address payable[] memory users) external returns (address payable[] memory) {
+        uint256 len = users.length;
+        uint256 newLen = len + userNum;
         address payable[] memory newUsers = new address payable[](newLen);
         for (uint256 i = 0; i < len; i++) {
             newUsers[i] = users[i];

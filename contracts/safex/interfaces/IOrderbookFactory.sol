@@ -8,24 +8,16 @@ interface IOrderbookFactory {
         address quote;
     }
 
-    function createBook(
-        address bid_,
-        address ask_
-    ) external returns (address orderbook);
+    function createBook(address bid_, address ask_) external returns (address orderbook);
 
     function getBook(uint256 bookId_) external view returns (address orderbook);
 
-    function getBookByPair(
-        address base,
-        address quote
-    ) external view returns (address book);
+    function getBookByPair(address base, address quote) external view returns (address book);
 
-    function getBaseQuote(
-        address orderbook
-    ) external view returns (address base, address quote);
+    function getBaseQuote(address orderbook) external view returns (address base, address quote);
 
     /// Address of a manager
     function engine() external view returns (address);
 
-    function getPairs(uint start, uint end) external view returns (Pair[] memory);
+    function getPairs(uint256 start, uint256 end) external view returns (Pair[] memory);
 }

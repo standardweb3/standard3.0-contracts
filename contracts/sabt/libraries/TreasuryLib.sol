@@ -4,19 +4,13 @@ pragma solidity ^0.8.17;
 import {TransferHelper} from "./TransferHelper.sol";
 
 interface ITreasury {
-    function balanceOf(
-        address owner_,
-        uint256 id_
-    ) external view returns (uint256);
+    function balanceOf(address owner_, uint256 id_) external view returns (uint256);
 
     function metaId(uint32 id_) external view returns (uint16);
 
     function getTotalPoints(uint32 nthEra_) external view returns (uint256);
 
-    function getTotalTokens(
-        uint32 nthEra_,
-        address token_
-    ) external view returns (uint256);
+    function getTotalTokens(uint32 nthEra_, address token_) external view returns (uint256);
 
     function subtractTP(uint32 uid_, uint32 nthEra_, uint64 point_) external;
 
@@ -32,11 +26,11 @@ library TreasuryLib {
         uint32 settlementId;
     }
 
-    uint8 constant internal USER_META_ID = 1;
-    uint8 constant internal EARLYADOPTER_META_ID = 9;
-    uint8 constant internal FOUNDATION_META_ID = 10;
+    uint8 internal constant USER_META_ID = 1;
+    uint8 internal constant EARLYADOPTER_META_ID = 9;
+    uint8 internal constant FOUNDATION_META_ID = 10;
 
-    uint32 constant internal DENOM = 100000;
+    uint32 internal constant DENOM = 100000;
 
     struct Claim {
         uint32 num;
@@ -49,11 +43,7 @@ library TreasuryLib {
     error NoTotalTP(uint32 nthEra, uint256 point);
     error NoTotalTokens(uint32 nthEra, address token);
 
-    function _checkMembership(
-        Storage storage self,
-        uint32 uid_,
-        uint16 metaId_
-    ) internal view {
+    function _checkMembership(Storage storage self, uint32 uid_, uint16 metaId_) internal view {
         // the sender owns the membership with UID
         if (ITreasury(self.sabt).balanceOf(msg.sender, uid_) == 0) {
             revert MembershipNotOwned(uid_, msg.sender);
@@ -64,10 +54,7 @@ library TreasuryLib {
         }
     }
 
-    function _checkEraPassed(
-        Storage storage self,
-        uint32 nthEra_
-    ) internal view {
+    function _checkEraPassed(Storage storage self, uint32 nthEra_) internal view {
         // get current Era
         uint32 currentEra = ITreasury(self.accountant).getCurrentEra();
         if (nthEra_ >= currentEra) {
@@ -75,13 +62,7 @@ library TreasuryLib {
         }
     }
 
-    function _exchange(
-        Storage storage self,
-        address token,
-        uint32 nthEra,
-        uint32 uid,
-        uint64 point
-    ) internal {
+    function _exchange(Storage storage self, address token, uint32 nthEra, uint32 uid, uint64 point) internal {
         // check if the sender owns the membership with UID
         if (ITreasury(self.sabt).balanceOf(msg.sender, uid) == 0) {
             revert MembershipNotOwned(uid, msg.sender);
@@ -96,12 +77,7 @@ library TreasuryLib {
         TransferHelper.safeTransfer(token, msg.sender, reward);
     }
 
-    function _claim(
-        Storage storage self,
-        address token,
-        uint32 nthEra,
-        uint32 uid
-    ) internal {
+    function _claim(Storage storage self, address token, uint32 nthEra, uint32 uid) internal {
         // check if the sender has UID with investor meta id
         _checkMembership(self, uid, EARLYADOPTER_META_ID);
         // check if the era has already passed
@@ -112,12 +88,7 @@ library TreasuryLib {
         TransferHelper.safeTransfer(token, msg.sender, claim);
     }
 
-    function _settle(
-        Storage storage self,
-        address token,
-        uint32 nthEra,
-        uint32 uid
-    ) internal {
+    function _settle(Storage storage self, address token, uint32 nthEra, uint32 uid) internal {
         // check if the sender has UID with foundation meta id
         _checkMembership(self, uid, FOUNDATION_META_ID);
         // check if the era has already passed
@@ -141,12 +112,11 @@ library TreasuryLib {
         self.settlementId = uid;
     }
 
-    function _getReward(
-        Storage storage self,
-        address token,
-        uint32 nthEra,
-        uint256 point
-    ) internal view returns (uint256) {
+    function _getReward(Storage storage self, address token, uint32 nthEra, uint256 point)
+        internal
+        view
+        returns (uint256)
+    {
         // get reward from Treasury ratio
         // 1. get total supply of mp
         uint256 totalTP = ITreasury(self.accountant).getTotalPoints(nthEra);
@@ -154,10 +124,7 @@ library TreasuryLib {
             revert NoTotalTP(nthEra, totalTP);
         }
         // 2. get fee collected on nthEra
-        uint256 totalTokens = ITreasury(self.accountant).getTotalTokens(
-            nthEra,
-            token
-        );
+        uint256 totalTokens = ITreasury(self.accountant).getTotalTokens(nthEra, token);
         if (totalTokens == 0) {
             revert NoTotalTokens(nthEra, token);
         }
@@ -165,21 +132,17 @@ library TreasuryLib {
         return ((point * totalTokens * 4) / 10) / totalTP;
     }
 
-    function _getClaim(
-        Storage storage self,
-        address token,
-        uint32 uid,
-        uint32 nthEra
-    ) internal view returns (uint256) {
+    function _getClaim(Storage storage self, address token, uint32 uid, uint32 nthEra)
+        internal
+        view
+        returns (uint256)
+    {
         // check if sender has UID
         if (ITreasury(self.sabt).balanceOf(msg.sender, uid) == 0) {
             revert MembershipNotOwned(uid, msg.sender);
         }
         // 1. get fee collected on nthEra
-        uint256 totalTokens = ITreasury(self.accountant).getTotalTokens(
-            nthEra,
-            token
-        );
+        uint256 totalTokens = ITreasury(self.accountant).getTotalTokens(nthEra, token);
         if (totalTokens == 0) {
             revert NoTotalTokens(nthEra, token);
         }
@@ -187,22 +150,13 @@ library TreasuryLib {
         return ((totalTokens * (self.claims[uid])) / DENOM);
     }
 
-    function _getSettlement(
-        Storage storage self,
-        address token,
-        uint32 nthEra
-    ) internal view returns (uint256) {
+    function _getSettlement(Storage storage self, address token, uint32 nthEra) internal view returns (uint256) {
         // check if sender has UID
-        if (
-            ITreasury(self.sabt).balanceOf(msg.sender, self.settlementId) == 0
-        ) {
+        if (ITreasury(self.sabt).balanceOf(msg.sender, self.settlementId) == 0) {
             revert MembershipNotOwned(self.settlementId, msg.sender);
         }
         // 1. get fee collected on nthEra
-        uint256 totalTokens = ITreasury(self.accountant).getTotalTokens(
-            nthEra,
-            token
-        );
+        uint256 totalTokens = ITreasury(self.accountant).getTotalTokens(nthEra, token);
         if (totalTokens == 0) {
             revert NoTotalTokens(nthEra, token);
         }

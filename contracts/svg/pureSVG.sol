@@ -42,8 +42,7 @@ contract PureSVG {
                 '<text y="110px" x="32px" fill="white" font-family="Poppins" font-weight="350" font-size="14px">IOU: ',
                 "1500",
                 " ",
-                "USM"
-                "</text>"
+                "USM" "</text>"
             )
         );
     }
@@ -101,22 +100,19 @@ contract PureSVG {
                 ' font-family="Poppins" font-size="8px" fill="white">',
                 '<tspan fill="rgba(255,255,255,0.6)">Min. Collateral Ratio: </tspan>',
                 "150",
-                "% </text>"
-                "</g>",
+                "% </text>" "</g>",
                 '<g style="transform:translate(30px, 195px)">',
                 '<rect width="110px" height="12px" rx="3px" ry="3px" fill="rgba(0,0,0,0.6)" /><text x="6px" y="9px"'
                 ' font-family="Poppins" font-size="8px" fill="white">',
                 '<tspan fill="rgba(255,255,255,0.6)">Liq. Penalty Ratio: </tspan>',
                 "150",
-                "% </text>"
-                "</g>",
+                "% </text>" "</g>",
                 '<g style="transform:translate(30px, 210px)">',
                 '<rect width="80px" height="12px" rx="3px" ry="3px" fill="rgba(0,0,0,0.6)" /><text x="6px" y="9px"'
                 ' font-family="Poppins" font-size="8px" fill="white">',
                 '<tspan fill="rgba(255,255,255,0.6)">Stability Fee: </tspan>',
                 "150",
-                "% </text>"
-                "</g>"
+                "% </text>" "</g>"
             )
         );
     }
@@ -130,10 +126,7 @@ contract PureSVG {
         );
     }
 
-    function generateText1(
-        string memory a,
-        string memory path
-    ) internal pure returns (string memory svg) {
+    function generateText1(string memory a, string memory path) internal pure returns (string memory svg) {
         svg = string(
             abi.encodePacked(
                 '<text text-rendering="optimizeSpeed">',
@@ -151,10 +144,7 @@ contract PureSVG {
         );
     }
 
-    function generateText2(
-        string memory b,
-        string memory path
-    ) internal pure returns (string memory svg) {
+    function generateText2(string memory b, string memory path) internal pure returns (string memory svg) {
         svg = string(
             abi.encodePacked(
                 '<textPath startOffset="50%" fill="white" font-family="Poppins" font-size="10px" xlink:href="#text-path-',
@@ -200,36 +190,24 @@ contract PureSVG {
                 '<image x="4" y="4" width="40" height="40" xlink:href="',
                 "https://raw.githubusercontent.com/digitalnativeinc/nft-arts/main/V1/tokens/",
                 "4",
-                "/"
-                "0xc778417E063141139Fce010982780140Aa0cD5Ab",
+                "/" "0xc778417E063141139Fce010982780140Aa0cD5Ab",
                 ".png",
-                '" />'
-                "</g>"
-                '<g style="transform:translate(325px, 180px)">'
+                '" />' "</g>" '<g style="transform:translate(325px, 180px)">'
                 '<rect width="48px" height="48px" rx="10px" ry="10px" fill="none" stroke="rgba(255,255,255,0.6)" />'
                 '<image x="4" y="4" width="40" height="40" xlink:href="',
                 "https://raw.githubusercontent.com/digitalnativeinc/nft-arts/main/V1/tokens/",
                 "4",
-                "/"
-                "0x6388e0cC745b3c5ED23c6D569A01A4D27eDa3E14",
+                "/" "0x6388e0cC745b3c5ED23c6D569A01A4D27eDa3E14",
                 ".png",
-                '" />'
-                "</g>"
+                '" />' "</g>"
             )
         );
     }
 
     function generateSVG() internal pure returns (string memory svg) {
-        string memory a = string(
-            abi.encodePacked(
-                "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
-                unicode" • ",
-                "Vault"
-            )
-        );
-        string memory b = string(
-            abi.encodePacked(unicode" • ", "Ethereum", unicode" • ")
-        );
+        string memory a =
+            string(abi.encodePacked("0x2260fac5e5542a773aa44fbcfedf7c193bc2c599", unicode" • ", "Vault"));
+        string memory b = string(abi.encodePacked(unicode" • ", "Ethereum", unicode" • "));
         string memory first = string(
             abi.encodePacked(
                 generateSVGDefs(),
@@ -262,38 +240,31 @@ contract PureSVG {
         // <svg width='500' height='500' viewBox='0 0 285 350' fill='none' xmlns='http://www.w3.org/2000/svg'><path fill='black' d='M150,0,L75,200,L225,200,Z'></path></svg>
         // data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nNTAwJyBoZWlnaHQ9JzUwMCcgdmlld0JveD0nMCAwIDI4NSAzNTAnIGZpbGw9J25vbmUnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zyc+PHBhdGggZmlsbD0nYmxhY2snIGQ9J00xNTAsMCxMNzUsMjAwLEwyMjUsMjAwLFonPjwvcGF0aD48L3N2Zz4=
         string memory baseURL = "data:image/svg+xml;base64,";
-        string memory svgBase64Encoded = Base64.encode(
-            bytes(string(abi.encodePacked(generateSVG())))
-        );
+        string memory svgBase64Encoded = Base64.encode(bytes(string(abi.encodePacked(generateSVG()))));
         return string(abi.encodePacked(baseURL, svgBase64Encoded));
     }
 
-    function formatTokenURI(
-        string memory imageURI
-    ) public pure returns (string memory) {
-        return
-            string(
-                abi.encodePacked(
-                    "data:application/json;base64,",
-                    Base64.encode(
-                        bytes(
-                            abi.encodePacked(
-                                '{"name":"',
-                                "VaultOne", // You can add whatever name here
-                                '", "description":"An NFT based on SVG!", "attributes":"", "image":"',
-                                imageURI,
-                                '"}'
-                            )
+    function formatTokenURI(string memory imageURI) public pure returns (string memory) {
+        return string(
+            abi.encodePacked(
+                "data:application/json;base64,",
+                Base64.encode(
+                    bytes(
+                        abi.encodePacked(
+                            '{"name":"',
+                            "VaultOne", // You can add whatever name here
+                            '", "description":"An NFT based on SVG!", "attributes":"", "image":"',
+                            imageURI,
+                            '"}'
                         )
                     )
                 )
-            );
+            )
+        );
     }
 
     // remove later:
-    function bytes32ToString(
-        bytes32 _bytes32
-    ) public pure returns (string memory) {
+    function bytes32ToString(bytes32 _bytes32) public pure returns (string memory) {
         uint8 i = 0;
         while (i < 32 && _bytes32[i] != 0) {
             i++;

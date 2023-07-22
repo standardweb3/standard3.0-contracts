@@ -10,6 +10,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 /// @title Standard Account Bound Token
 contract SABT is ERC1155, AccessControl, Initializable {
     using Strings for uint256;
+
     address public membership;
     address public metadata;
     string baseURI;
@@ -27,10 +28,8 @@ contract SABT is ERC1155, AccessControl, Initializable {
         index = 1;
     }
 
-    function initialize(
-        address membership_
-    ) external initializer {
-        if(!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+    function initialize(address membership_) external initializer {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
         }
         membership = membership_;
@@ -38,14 +37,14 @@ contract SABT is ERC1155, AccessControl, Initializable {
     }
 
     function setURI(string memory uri_) public {
-        if(!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
         }
         baseURI = uri_;
     }
-    
+
     function uri(uint256 tokenId) public view override returns (string memory) {
-        uint meta = metaIds[uint32(tokenId)];
+        uint256 meta = metaIds[uint32(tokenId)];
         return string(abi.encodePacked(baseURI, "/", meta.toString()));
     }
 
@@ -53,10 +52,10 @@ contract SABT is ERC1155, AccessControl, Initializable {
     /// @param to_ The address to mint the token to
     /// @param metaId_ The id of the token to mint
     function mint(address to_, uint8 metaId_) public returns (uint32) {
-        if(msg.sender != membership) {
+        if (msg.sender != membership) {
             revert NotMembership(membership, msg.sender);
         }
-        if( index >= 4294967295 /* 2**32 -1 */) {
+        if (index >= 4294967295 /* 2**32 -1 */ ) {
             revert MembershipFull(index);
         }
         metaIds[index] = metaId_;
@@ -72,26 +71,24 @@ contract SABT is ERC1155, AccessControl, Initializable {
     }
 
     function setMetaId(uint32 uid_, uint8 metaId_) public {
-        if(msg.sender != membership) {
+        if (msg.sender != membership) {
             revert NotMembership(membership, msg.sender);
         }
         metaIds[uid_] = metaId_;
     }
 
-   function transfer(
-        address _to,
-        uint256 _id
-    ) public {
+    function transfer(address _to, uint256 _id) public {
         super.safeTransferFrom(msg.sender, _to, _id, 1, "");
     }
 
-    function supportsInterface(
-        bytes4 interfaceId
-    ) public view virtual override(AccessControl, ERC1155) returns (bool) {
-        return
-            interfaceId == type(IERC1155).interfaceId ||
-            interfaceId == type(IERC1155MetadataURI).interfaceId ||
-            interfaceId == type(IAccessControl).interfaceId ||
-            super.supportsInterface(interfaceId);
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override (AccessControl, ERC1155)
+        returns (bool)
+    {
+        return interfaceId == type(IERC1155).interfaceId || interfaceId == type(IERC1155MetadataURI).interfaceId
+            || interfaceId == type(IAccessControl).interfaceId || super.supportsInterface(interfaceId);
     }
 }

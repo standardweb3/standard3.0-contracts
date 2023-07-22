@@ -6,10 +6,7 @@ import {TransferHelper} from "./TransferHelper.sol";
 interface ISABT {
     function mint(address to_, uint8 metaId_) external returns (uint32);
 
-    function balanceOf(
-        address owner_,
-        uint256 uid_
-    ) external view returns (uint256);
+    function balanceOf(address owner_, uint256 uid_) external view returns (uint256);
 
     function setRegistered(uint256 id_, bool yesOrNo) external;
 
@@ -75,19 +72,11 @@ library MembershipLib {
         self.metas[metaId_].quota = quota_;
     }
 
-    function _setQuota(
-        Member storage self,
-        uint8 metaId_,
-        uint32 quota_
-    ) internal {
+    function _setQuota(Member storage self, uint8 metaId_, uint32 quota_) internal {
         self.metas[metaId_].quota = quota_;
     }
 
-    function _setMeta(
-        Member storage self,
-        uint32 uid_,
-        uint8 metaId_
-    ) internal {
+    function _setMeta(Member storage self, uint32 uid_, uint8 metaId_) internal {
         ISABT(self.sabt).setMeta(uid_, metaId_);
     }
 
@@ -95,35 +84,22 @@ library MembershipLib {
         self.stnd = stnd;
     }
 
-    function _setFees(
-        Member storage self,
-        uint8 metaId_,
-        address feeToken_,
-        uint256 regFee_,
-        uint256 subFee_
-    ) internal {
+    function _setFees(Member storage self, uint8 metaId_, address feeToken_, uint256 regFee_, uint256 subFee_)
+        internal
+    {
         uint8 decimals = TransferHelper.decimals(feeToken_);
         self.fees[metaId_][feeToken_].regFee = regFee_ * 10 ** decimals;
         self.fees[metaId_][feeToken_].subFee = subFee_ * 10 ** decimals;
     }
 
-    function _register(
-        Member storage self,
-        uint8 metaId_,
-        address feeToken_
-    ) internal returns (uint32 uid) {
+    function _register(Member storage self, uint8 metaId_, address feeToken_) internal returns (uint32 uid) {
         uint256 regFee = self.fees[metaId_][feeToken_].regFee;
         // check if the fee token is supported
         if (regFee == 0) {
             revert InvalidFeeToken(feeToken_, metaId_);
         }
         // Transfer required fund
-        TransferHelper.safeTransferFrom(
-            feeToken_,
-            msg.sender,
-            address(this),
-            regFee
-        );
+        TransferHelper.safeTransferFrom(feeToken_, msg.sender, address(this), regFee);
         TransferHelper.safeTransfer(feeToken_, self.foundation, regFee);
         // issue membership from SABT and get id
         return ISABT(self.sabt).mint(msg.sender, metaId_);
@@ -132,12 +108,7 @@ library MembershipLib {
     /// @dev subscribe: Subscribe to the membership until certain block height
     /// @param uid_ The uid of the ABT to subscribe with
     /// @param blocks_ The number of blocks to subscribe
-    function _subscribe(
-        Member storage self,
-        uint32 uid_,
-        uint64 blocks_,
-        address feeToken_
-    ) internal {
+    function _subscribe(Member storage self, uint32 uid_, uint64 blocks_, address feeToken_) internal {
         // check if the member has the ABT with input id
         if (ISABT(self.sabt).balanceOf(msg.sender, uid_) == 0) {
             revert MembershipNotOwned(uid_, msg.sender);
@@ -155,17 +126,10 @@ library MembershipLib {
         TransferHelper.safeTransfer(
             feeToken_,
             self.foundation,
-            sub.until > bh
-                ? fees.subFee * uint256(bh - sub.at)
-                : fees.subFee * uint256(sub.until - sub.at)
+            sub.until > bh ? fees.subFee * uint256(bh - sub.at) : fees.subFee * uint256(sub.until - sub.at)
         );
         // Transfer the tokens to this contract
-        TransferHelper.safeTransferFrom(
-            feeToken_,
-            msg.sender,
-            address(this),
-            fees.subFee * uint256(blocks_)
-        );
+        TransferHelper.safeTransferFrom(feeToken_, msg.sender, address(this), fees.subFee * uint256(blocks_));
 
         // subscribe for certain block
         self.subscriptions[uid_].at = bh;
@@ -190,18 +154,10 @@ library MembershipLib {
         Fees memory fees = self.fees[metaId][sub.with];
         if (sub.until > bh) {
             // Transfer what has been already paid to foundation
-            TransferHelper.safeTransfer(
-                sub.with,
-                self.foundation,
-                fees.subFee * (bh - sub.at)
-            );
+            TransferHelper.safeTransfer(sub.with, self.foundation, fees.subFee * (bh - sub.at));
             if (sub.until - bh > sub.bonus) {
                 // Refund the tokens for future subscription to this contract
-                TransferHelper.safeTransfer(
-                    sub.with,
-                    msg.sender,
-                    fees.subFee * (sub.until - bh - sub.bonus)
-                );
+                TransferHelper.safeTransfer(sub.with, msg.sender, fees.subFee * (sub.until - bh - sub.bonus));
             }
         }
         // unsubscribe
@@ -211,19 +167,12 @@ library MembershipLib {
         self.subscriptions[uid_].with = address(0);
         // subtract subSTND if STND was used to subscribe
         if (sub.with == self.stnd) {
-            self.subSTND[uid_] -= uint64(
-                (fees.subFee * (sub.until - bh - sub.bonus)) / 1e18
-            );
+            self.subSTND[uid_] -= uint64((fees.subFee * (sub.until - bh - sub.bonus)) / 1e18);
         }
     }
 
     /// @dev offerBonus: Offer bonus blocks to the subscription by promoters
-    function _offerBonus(
-        Member storage self,
-        uint32 uid_,
-        address holder_,
-        uint256 blocks_
-    ) internal {
+    function _offerBonus(Member storage self, uint32 uid_, address holder_, uint256 blocks_) internal {
         // check if the member has the ABT with input id
         if (ISABT(self.sabt).balanceOf(holder_, uid_) == 0) {
             revert MembershipNotOwned(uid_, holder_);
@@ -234,32 +183,19 @@ library MembershipLib {
         self.subscriptions[uid_].bonus += blocks_;
     }
 
-    function _balanceOf(
-        Member storage self,
-        address owner_,
-        uint32 uid_
-    ) internal view returns (uint256) {
+    function _balanceOf(Member storage self, address owner_, uint32 uid_) internal view returns (uint256) {
         return ISABT(self.sabt).balanceOf(owner_, uid_);
     }
 
-    function _isSubscribed(
-        Member storage self,
-        uint32 uid_
-    ) internal view returns (bool) {
+    function _isSubscribed(Member storage self, uint32 uid_) internal view returns (bool) {
         return self.subscriptions[uid_].until > block.number;
     }
 
-    function _getSubSTND(
-        Member storage self,
-        uint32 uid_
-    ) internal view returns (uint64) {
+    function _getSubSTND(Member storage self, uint32 uid_) internal view returns (uint64) {
         return self.subSTND[uid_];
     }
 
-    function _getLvl(
-        Member storage self,
-        uint32 uid_
-    ) internal view returns (uint8) {
+    function _getLvl(Member storage self, uint32 uid_) internal view returns (uint8) {
         return ISABT(self.sabt).metaId(uid_);
     }
 }

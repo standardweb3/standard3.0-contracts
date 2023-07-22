@@ -7,7 +7,7 @@ import "../libraries/SAFEXOrderbook.sol";
 interface IOrderbook {
     function initialize(uint256 id, address base_, address quote_, address engine_) external;
 
-    function fpop(bool isBid, uint256 price) external returns (uint256 orderId);
+    function fpop(bool isBid, uint256 price, uint256 remaining) external returns (uint256 orderId, uint256 required);
 
     function setLmp(uint256 lmp) external;
 
@@ -44,6 +44,4 @@ interface IOrderbook {
     function getOrder(bool isBid, uint256 orderId) external view returns (SAFEXOrderbook.Order memory);
 
     function getOrderIds(bool isBid, uint256 price, uint256 n) external view returns (uint256[] memory);
-
-    function pushBack(uint256 orderId, uint256 price, bool isBid) external;
 }

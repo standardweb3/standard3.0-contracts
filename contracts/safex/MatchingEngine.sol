@@ -390,14 +390,10 @@ contract MatchingEngine is AccessControl, Initializable {
         }
         remaining = amount;
         while (remaining > 0 && !IOrderbook(orderbook).isEmpty(!isBid, price) && i < n) {
-            // fpop OrderLinkedList by price, if ask you get bid order, if bid you get ask order
-            uint256 orderId = IOrderbook(orderbook).fpop(!isBid, price);
-            // Get quote asset on bid order on buy, base asset on ask order on sell
-            uint256 required = IOrderbook(orderbook).getRequired(!isBid, price, orderId);
+            // fpop OrderLinkedList by price, if ask you get bid order, if bid you get ask order. Get quote asset on bid order on buy, base asset on ask order on sell
+            (uint256 orderId, uint256 required) = IOrderbook(orderbook).fpop(!isBid, price, remaining);
             // order exists, and amount is not 0
             if (remaining <= required) {
-                // put popped order back into orderbook
-                IOrderbook(orderbook).pushBack(price, orderId, !isBid);
                 // set last matching price
                 IOrderbook(orderbook).setLmp(price);
                 // execute order

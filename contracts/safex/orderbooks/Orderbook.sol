@@ -124,19 +124,6 @@ contract Orderbook is IOrderbook, Initializable {
         return (order.depositAmount, pair.base, pair.quote);
     }
 
-    function pushBack(
-        uint256 price,
-        uint256 orderId,
-        bool isBid
-    ) external onlyEngine {
-        uint256 depositAmount = isBid
-            ? _bidOrders._getOrder(orderId).depositAmount
-            : _askOrders._getOrder(orderId).depositAmount;
-        isBid
-            ? _bidOrders._insertId(price, orderId, depositAmount)
-            : _askOrders._insertId(price, orderId, depositAmount);
-    }
-
     function execute(
         uint256 orderId,
         bool isBid,
@@ -184,15 +171,23 @@ contract Orderbook is IOrderbook, Initializable {
 
     function fpop(
         bool isBid,
-        uint256 price
-    ) external onlyEngine returns (uint256 orderId) {
-        orderId = isBid ? _bidOrders._fpop(price) : _askOrders._fpop(price);
+        uint256 price,
+        uint256 remaining
+    ) external onlyEngine returns (uint256 orderId, uint256 required) {
+        orderId = isBid ? _bidOrders._head(price) : _askOrders._head(price);
+        SAFEXOrderbook.Order memory order = isBid
+            ? _bidOrders._getOrder(orderId)
+            : _askOrders._getOrder(orderId);
+        required =_convert(price, order.depositAmount, isBid);
+        if (required <= remaining) {
+            isBid ? _bidOrders._fpop(price) : _askOrders._fpop(price);
+        }
         if (isEmpty(isBid, price)) {
             isBid
                 ? priceLists.bidHead = priceLists._next(isBid, price)
                 : priceLists.askHead = priceLists._next(isBid, price);
         }
-        return orderId;
+        return (orderId, required);
     }
 
     function _absdiff(uint8 a, uint8 b) internal pure returns (uint8, bool) {

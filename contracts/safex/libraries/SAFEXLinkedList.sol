@@ -98,8 +98,8 @@ library SAFEXLinkedList {
                         return;
                     }
                     // Insert price in the middle of the list
-                    head = self.bidPrices[head];
-                    last = next;
+                    self.bidPrices[head] = price;
+                    self.bidPrices[price] = next;
                     return;
                 } else {
                     // price is already included in the queue as it is equal to next
@@ -134,8 +134,8 @@ library SAFEXLinkedList {
                     last = next;
                 } else if (price < next) {
                     // Insert price in the middle of the list
+                    self.askPrices[head] = price;
                     self.askPrices[price] = next;
-                    self.askPrices[last] = price;
                     return;
                 } else {
                     // price is already included in the queue as it is equal to next

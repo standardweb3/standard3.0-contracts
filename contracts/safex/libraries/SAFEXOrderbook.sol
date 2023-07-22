@@ -31,46 +31,41 @@ library SAFEXOrderbook {
     ) internal {
         uint256 last = 0;
         uint256 head = self.head[price];
+        mapping(uint256 => uint256) storage list = self.list[price];
+        mapping(uint256 => Order) storage orders = self.orders;
         // insert order to the linked list
         // if the list is empty
-        if (head == 0) {
+        if (head == 0 || amount > self.orders[head].depositAmount) {
             self.head[price] = id;
+            list[id] = head;
             return;
         }
         // Traverse through list until we find the right spot where id's deposit amount is higher than next
         while (head != 0) {
             // what if order deposit amount is bigger than the next order's deposit amount?
-            uint256 next = self.orders[head].depositAmount;
-            if (amount > next) {
-                // set next order id after input id
-                self.list[price][id] = self.list[price][head];
-                // set last order id before input id
-                self.list[price][last] = id;
-                return;
-            }
-            // what if order is canceled and order id still stays in the list?
-            else if (next == 0) {
-                // set next of next order id to the next order id of last order
-                self.list[price][last] = self.list[price][head];
-                // delete canceled order id
-                delete self.list[price][head];
-                // set head to the next order id of last order
-                head = self.list[price][last];
+            uint256 next = list[head];
+            if (amount < orders[next].depositAmount) {
+                // Keep traversing
+                head = list[head];
+                last = next;
+            } else if (amount > orders[next].depositAmount) {
+                // what if order is canceled and order id still stays in the list?
+                if (orders[next].depositAmount == 0) {
+                    // Insert order at the end of the list
+                    list[head] = id;
+                    list[id] = 0;
+                    return;
+                }
+                // Insert order in the middle of the list
+                list[head] = id;
+                list[id] = next;
                 return;
             }
             // what if there is same order with same deposit amount?
-            else if (next == amount) {
-                // set input order id after next order id
-                self.list[price][head] = self.list[price][id];
-                // set last order id before next order id
-                self.list[price][last] = self.list[price][head];
+            else if (amount == orders[next].depositAmount) {
+                list[id] = list[head];
+                list[head] = id;
                 return;
-            }
-            // if order deposit amount is lower than the next order's deposit amount
-            else {
-                // Keep traversing
-                last = head;
-                head = self.list[price][head];
             }
         }
     }
@@ -109,19 +104,44 @@ library SAFEXOrderbook {
 
     function _decreaseOrder(
         OrderStorage storage self,
+        uint256 price,
         uint256 id,
         uint256 amount
     ) internal {
         uint256 decreased = self.orders[id].depositAmount - amount;
         if (decreased == 0) {
-            _deleteOrder(self, id);
+            _deleteOrder(self, price, id);
         } else {
             self.orders[id].depositAmount = decreased;
         }
     }
 
-    function _deleteOrder(OrderStorage storage self, uint256 id) internal {
-        delete self.orders[id];
+    function _deleteOrder(
+        OrderStorage storage self,
+        uint256 price,
+        uint256 id
+    ) internal {
+        uint256 last = 0;
+        uint256 head = self.head[price];
+        mapping(uint256 => uint256) storage list = self.list[price];
+        if (head == id) {
+            self.head[price] = list[head];
+            delete list[id];
+            delete self.orders[id];
+            return;
+        }
+        // search for the order id in the linked list
+        while (head != 0) {
+            uint256 next = list[head];
+            if (head == id) {
+                list[last] = next;
+                delete list[id];
+                delete self.orders[id];
+                break;
+            }
+            last = head;
+            head = next;
+        }
     }
 
     // show n order ids at the price in the orderbook

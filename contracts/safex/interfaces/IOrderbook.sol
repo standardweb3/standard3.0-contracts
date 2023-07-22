@@ -36,8 +36,9 @@ interface IOrderbook {
     function placeBid(address owner, uint256 price, uint256 amount) external;
 
     function cancelOrder(
-        uint256 orderId,
         bool isBid,
+        uint256 price,
+        uint256 orderId,
         address owner
     ) external returns (uint256 remaining, address base, address quote);
 

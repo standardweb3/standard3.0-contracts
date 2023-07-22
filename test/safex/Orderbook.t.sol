@@ -647,6 +647,165 @@ contract OrderbookMatchTest is BaseSetup {
         );
     }
 
+    function testGetOrderInsertion() public {
+        super.setUp();
+        vm.prank(booker);
+        matchingEngine.addPair(address(token1), address(token2));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token2))
+        );
+        vm.prank(trader1);
+        // placeBid or placeAsk two of them is using the _insertId function it will revert
+        // because the program will enter the "if (amount > self.orders[head].depositAmount)."
+        // statement, and eventually, it will cause an infinite loop.
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            100000000,
+            10,
+            true,
+            2,
+            0
+        );
+        vm.prank(trader1);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            100000000,
+            10,
+            true,
+            2,
+            0
+        );
+        vm.prank(trader1);
+        //vm.expectRevert("OutOfGas");
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            100000000,
+            5,
+            true,
+            2,
+            0
+        );
+        vm.prank(trader1);
+        //vm.expectRevert("OutOfGas");
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            100000000,
+            8,
+            true,
+            2,
+            0
+        );
+        SAFEXOrderbook.Order[] memory orders = matchingEngine.getOrders(
+            address(token1),
+            address(token2),
+            false,
+            100000000,
+            4
+        );
+        console.log("Ask Orders: ");
+        for (uint i = 0; i < 4; i++) {
+            console.log(orders[i].owner, orders[i].depositAmount);
+        }
+    }
+
+    function testCancelOrderDeletion() public {
+        super.setUp();
+        vm.prank(booker);
+        matchingEngine.addPair(address(token1), address(token2));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token2))
+        );
+        vm.prank(trader1);
+        // placeBid or placeAsk two of them is using the _insertId function it will revert
+        // because the program will enter the "if (amount > self.orders[head].depositAmount)."
+        // statement, and eventually, it will cause an infinite loop.
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            100000000,
+            10,
+            true,
+            2,
+            0
+        );
+        
+        vm.prank(trader1);
+        //vm.expectRevert("OutOfGas");
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            100000000,
+            10,
+            true,
+            2,
+            0
+        );
+
+        vm.prank(trader1);
+        //vm.expectRevert("OutOfGas");
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            100000000,
+            10,
+            true,
+            2,
+            0
+        );
+        vm.prank(trader1);
+        //vm.expectRevert("OutOfGas");
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            100000000,
+            10,
+            true,
+            2,
+            0
+        );
+
+        SAFEXOrderbook.Order[] memory orders = matchingEngine.getOrders(
+            address(token1),
+            address(token2),
+            false,
+            100000000,
+            4
+        );
+        console.log("Ask Orders before cancel: ");
+        for (uint i = 0; i < 4; i++) {
+            console.log(orders[i].owner, orders[i].depositAmount);
+        }
+        
+        // cancel order
+        
+        vm.prank(trader1);
+        matchingEngine.cancelOrder(
+            address(token1),
+            address(token2),
+            100000000,
+            3,
+            false,
+            0
+        );
+        
+        SAFEXOrderbook.Order[] memory orders2 = matchingEngine.getOrders(
+            address(token1),
+            address(token2),
+            false,
+            100000000,
+            4
+        );
+        console.log("Ask Orders: ");
+        for (uint i = 0; i < 4; i++) {
+            console.log(orders2[i].owner, orders2[i].depositAmount);
+        }
+        
+    }
+
     function testGetPrices() public {
         super.setUp();
         vm.prank(booker);
@@ -667,6 +826,7 @@ contract OrderbookMatchTest is BaseSetup {
             2,
             0
         );
+        
         vm.prank(trader1);
         //vm.expectRevert("OutOfGas");
         matchingEngine.limitSell(
@@ -678,6 +838,7 @@ contract OrderbookMatchTest is BaseSetup {
             2,
             0
         );
+        
         vm.prank(trader1);
         matchingEngine.limitBuy(
             address(token1),
@@ -688,6 +849,7 @@ contract OrderbookMatchTest is BaseSetup {
             5,
             0
         );
+        
         vm.prank(trader1);
         matchingEngine.limitBuy(
             address(token1),
@@ -705,7 +867,7 @@ contract OrderbookMatchTest is BaseSetup {
             20
         );
         console.log("Ask prices: ");
-        for (uint i = 0; i < 3; i++) {
+        for (uint i = 0; i < 4; i++) {
             console.log(bidPrices[i]);
         }
         //matchingEngine.getOrders(address(token1), address(token2), true, 0, 0);
@@ -721,7 +883,7 @@ contract OrderbookMatchTest is BaseSetup {
         }
     }
 
-    function testGetPrices2() public {
+    function testGetPriceInsertion() public {
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
@@ -747,7 +909,7 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(token2),
-            100100000000,
+            100200000000,
             10,
             true,
             2,
@@ -758,7 +920,7 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(token2),
-            100200000000,
+            100100000000,
             10,
             true,
             5,
@@ -769,7 +931,7 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitBuy(
             address(token1),
             address(token2),
-            99900000000,
+            99800000000,
             1,
             true,
             5,
@@ -779,7 +941,7 @@ contract OrderbookMatchTest is BaseSetup {
         matchingEngine.limitBuy(
             address(token1),
             address(token2),
-            99800000000,
+            99900000000,
             1,
             true,
             5,
@@ -801,7 +963,7 @@ contract OrderbookMatchTest is BaseSetup {
             true,
             20
         );
-        console.log("Ask prices: ");
+        console.log("Bid prices: ");
         for (uint i = 0; i < 3; i++) {
             console.log(bidPrices[i]);
         }
@@ -812,7 +974,7 @@ contract OrderbookMatchTest is BaseSetup {
             false,
             20
         );
-        console.log("Bid prices: ");
+        console.log("Ask prices: ");
         for (uint i = 0; i < 3; i++) {
             console.log(askPrices[i]);
         }

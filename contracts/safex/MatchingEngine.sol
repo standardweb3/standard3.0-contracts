@@ -348,19 +348,27 @@ contract MatchingEngine is AccessControl, Initializable {
 
     /**
      * @dev Cancels an order in an orderbook by the given order ID and order type.
-     * @param orderbook The address of the orderbook to cancel the order in
+     * @param base The address of the base asset for the trading pair
+     * @param quote The address of the quote asset for the trading pair
      * @param orderId The ID of the order to cancel
      * @param isBid Boolean indicating if the order to cancel is an ask order
      * @return bool True if the order was successfully canceled, otherwise false.
      */
     function cancelOrder(
-        address orderbook,
+        address base,
+        address quote,
+        uint256 price,
         uint256 orderId,
         bool isBid,
         uint32 uid
     ) external returns (bool) {
-        (uint256 remaining, address base, address quote) = IOrderbook(orderbook)
-            .cancelOrder(orderId, isBid, msg.sender);
+        address orderbook = IOrderbookFactory(orderbookFactory).getBookByPair(
+            base,
+            quote
+        );
+        (uint256 remaining, address _base, address _quote) = IOrderbook(
+            orderbook
+        ).cancelOrder(isBid, price, orderId, msg.sender);
         // decrease point from orderbook
         if (uid != 0 && IRevenue(membership).isReportable(msg.sender, uid)) {
             // report cancelation to accountant
@@ -370,13 +378,14 @@ contract MatchingEngine is AccessControl, Initializable {
                 remaining,
                 false
             );
-        }
-        // refund fee from treasury to sender
+            // refund fee from treasury to sender
         IRevenue(feeTo).refundFee(
             msg.sender,
             isBid ? quote : base,
             (remaining * 100) / feeDenom
         );
+        }
+        
 
         emit OrderCanceled(orderbook, orderId, isBid, msg.sender);
         return true;

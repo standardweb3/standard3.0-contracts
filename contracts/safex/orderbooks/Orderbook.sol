@@ -93,8 +93,9 @@ contract Orderbook is IOrderbook, Initializable {
     }
 
     function cancelOrder(
-        uint256 orderId,
         bool isBid,
+        uint256 price,
+        uint256 orderId,
         address owner
     )
         external
@@ -108,8 +109,8 @@ contract Orderbook is IOrderbook, Initializable {
             revert InvalidAccess(owner, order.owner);
         }
         isBid
-            ? _bidOrders._deleteOrder(orderId)
-            : _askOrders._deleteOrder(orderId);
+            ? _bidOrders._deleteOrder(price, orderId)
+            : _askOrders._deleteOrder(price, orderId);
         isBid
             ? TransferHelper.safeTransfer(
                 pair.quote,
@@ -121,6 +122,7 @@ contract Orderbook is IOrderbook, Initializable {
                 owner,
                 order.depositAmount
             );
+
         return (order.depositAmount, pair.base, pair.quote);
     }
 
@@ -150,7 +152,7 @@ contract Orderbook is IOrderbook, Initializable {
             // send deposited amount of quote asset from buyer to seller(owner)
             TransferHelper.safeTransfer(pair.base, order.owner, amount);
             // decrease remaining amount of order
-            _bidOrders._decreaseOrder(orderId, converted);
+            _bidOrders._decreaseOrder(price, orderId, converted);
         }
         // if the order is bid order on the base/quote pair
         else {
@@ -160,7 +162,7 @@ contract Orderbook is IOrderbook, Initializable {
             // send deposited amount of base asset from seller to buyer(sender)
             TransferHelper.safeTransfer(pair.base, sender, converted);
             // decrease remaining amount of order
-            _askOrders._decreaseOrder(orderId, converted);
+            _askOrders._decreaseOrder(price, orderId, converted);
         }
         return order.owner;
     }

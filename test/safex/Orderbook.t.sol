@@ -386,7 +386,50 @@ contract OrderbookMatchTest is BaseSetup {
             console.log(orders2[i].owner, orders2[i].depositAmount);
         }
     }
+    
+    function testMatchOrders() public {
+         super.setUp();
+        vm.prank(booker);
+        matchingEngine.addPair(address(token1), address(token2));
+        book = Orderbook(orderbookFactory.getBookByPair(address(token1), address(token2)));
+        vm.prank(trader1);
+        // placeBid or placeAsk two of them is using the _insertId function it will revert
+        // because the program will enter the "if (amount > self.orders[head].depositAmount)."
+        // statement, and eventually, it will cause an infinite loop.
+        matchingEngine.limitSell(address(token1), address(token2), 1000e8, 3, true, 2, 0);
 
+        SAFEXOrderbook.Order[] memory bidOrders0 =
+            matchingEngine.getOrders(address(token1), address(token2), true, 1000e8, 4);
+        console.log("Bid Orders: ");
+        for (uint256 i = 0; i < 4; i++) {
+            console.log(bidOrders0[i].owner, bidOrders0[i].depositAmount);
+        }
+
+        SAFEXOrderbook.Order[] memory askOrders0 =
+            matchingEngine.getOrders(address(token1), address(token2), false, 1000e8, 4);
+        console.log("Ask Orders: ");
+        for (uint256 i = 0; i < 4; i++) {
+            console.log(askOrders0[i].owner, askOrders0[i].depositAmount);
+        }
+
+        vm.prank(trader1);
+        //vm.expectRevert("OutOfGas");
+        matchingEngine.limitBuy(address(token1), address(token2), 1000e8, 1001, true, 2, 0);
+        
+        SAFEXOrderbook.Order[] memory bidOrders =
+            matchingEngine.getOrders(address(token1), address(token2), true, 1000e8, 4);
+        console.log("Bid Orders: ");
+        for (uint256 i = 0; i < 4; i++) {
+            console.log(bidOrders[i].owner, bidOrders[i].depositAmount);
+        }
+
+        SAFEXOrderbook.Order[] memory askOrders =
+            matchingEngine.getOrders(address(token1), address(token2), false, 1000e8, 4);
+        console.log("Ask Orders: ");
+        for (uint256 i = 0; i < 4; i++) {
+            console.log(askOrders[i].owner, askOrders[i].depositAmount);
+        }
+    }
     function testGetPrices() public {
         super.setUp();
         vm.prank(booker);
@@ -430,14 +473,11 @@ contract OrderbookMatchTest is BaseSetup {
         // because the program will enter the "if (amount > self.orders[head].depositAmount)."
         // statement, and eventually, it will cause an infinite loop.
         matchingEngine.limitSell(address(token1), address(token2), 100000000000, 10, true, 2, 0);
-        console.log(book.checkPrice());
         vm.prank(trader1);
         //vm.expectRevert("OutOfGas");
         matchingEngine.limitSell(address(token1), address(token2), 100200000000, 10, true, 2, 0);
-        console.log(book.checkPrice());
         vm.prank(trader1);
         matchingEngine.limitSell(address(token1), address(token2), 100100000000, 10, true, 5, 0);
-        console.log(book.checkPrice());
         vm.prank(trader1);
         matchingEngine.limitBuy(address(token1), address(token2), 99800000000, 1, true, 5, 0);
         vm.prank(trader1);

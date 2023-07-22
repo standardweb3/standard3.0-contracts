@@ -44,4 +44,6 @@ interface IOrderbook {
     function getOrder(bool isBid, uint256 orderId) external view returns (SAFEXOrderbook.Order memory);
 
     function getOrderIds(bool isBid, uint256 price, uint256 n) external view returns (uint256[] memory);
+
+    function pushBack(uint256 orderId, uint256 price, bool isBid) external;
 }

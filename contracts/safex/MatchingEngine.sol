@@ -396,11 +396,15 @@ contract MatchingEngine is AccessControl, Initializable {
             uint256 required = IOrderbook(orderbook).getRequired(!isBid, price, orderId);
             // order exists, and amount is not 0
             if (remaining <= required) {
+                // put popped order back into orderbook
+                IOrderbook(orderbook).pushBack(price, orderId, !isBid);
+                // set last matching price
+                IOrderbook(orderbook).setLmp(price);
+                // execute order
                 TransferHelper.safeTransfer(give, orderbook, remaining);
                 address owner = IOrderbook(orderbook).execute(orderId, !isBid, price, msg.sender, remaining);
                 // emit event order matched
                 emit OrderMatched(orderbook, orderId, isBid, msg.sender, owner, remaining, price);
-                // set last match price
                 // end loop as remaining is 0
                 return (0, n);
             }

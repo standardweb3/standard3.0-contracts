@@ -11,6 +11,7 @@ import {Treasury} from "../../contracts/sabt/Treasury.sol";
 import {MockToken} from "../../contracts/mock/MockToken.sol";
 import {MatchingEngine} from "../../contracts/safex/MatchingEngine.sol";
 import {OrderbookFactory} from "../../contracts/safex/orderbooks/OrderbookFactory.sol";
+import {Orderbook} from "../../contracts/safex/orderbooks/Orderbook.sol";
 import {Multicall3} from "../Multicall3.sol";
 
 contract Deployer is Script {
@@ -107,13 +108,13 @@ contract DistributeTestnetAssets is Deployer {
 
 contract SetupSABTInitialParameters is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
-    address constant matching_engine_address = 0xFBd18C6d9cd8f064B532B60b02733a657cbCFEc3;
-    address constant membership_address = 0x27178899eD3C244b8cD72d7596a8A24A63413D3b;
-    address constant sabt_address = 0x3A233BaAE566DE6BFcfD75E14AB4dCca1B936C32;
+    address constant matching_engine_address = 0x5359193a7BFC8b56b501Cea026f8A12fbc462d26;
+    address constant membership_address = 0x95Bd90fB6B2CCE252b5605fB9D12c2D52335ea02;
+    address constant sabt_address = 0x43F0fb885f77AaA1e9b60AFFbFB025C78f8cC8dA;
     address constant feeToken_address = 0x0622C0b5F53FF7252A5F90b4031a9adaa67a2d02;
     address constant stablecoin_address = 0x11a681c574F8e1d72DDCEEe0855032A77dfF8355;
-    address constant block_accountant_address = 0x0B51D33E5A4C05E1d6c48EB90b50008CB6dfe763;
-    address constant treasury_address = 0x3999BcEB1c18BF1330F7dA799e02CD7700287410;
+    address constant block_accountant_address = 0xdbcBd7FD66DfE12CEea8268921679CCC98d40893;
+    address constant treasury_address = 0x69BDE47Aa18C53b8fae4d2CBdF2C25A96218D1a9;
     address constant deployer_address = 0x34CCCa03631830cD8296c172bf3c31e126814ce9;
 
     Membership public membership = Membership(membership_address);
@@ -139,7 +140,7 @@ contract SetupSABTInitialParameters is Deployer {
 
 contract SetupSAFEXInitialParameters is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
-    address constant matching_engine_address = 0xFBd18C6d9cd8f064B532B60b02733a657cbCFEc3;
+    address constant matching_engine_address = 0x5359193a7BFC8b56b501Cea026f8A12fbc462d26;
     address constant feeToken_address = 0xE57Cdf5796C2f5281EDF1B81129E1D4Ff9190815;
     address constant stablecoin_address = 0xfB4c8b2658AB2bf32ab5Fc1627f115974B52FeA7;
     MatchingEngine public matchingEngine = MatchingEngine(matching_engine_address);
@@ -157,7 +158,27 @@ contract SetupSAFEXInitialParameters is Deployer {
         stablecoin.approve(address(matchingEngine), 100000e18);
         // add limit orders
         matchingEngine.limitSell(address(feeToken), address(stablecoin), 1000e8, 10000e18, true, 1, 0);
-        matchingEngine.limitBuy(address(feeToken), address(stablecoin), 1000e8, 10000e18, false, 1, 1);
+        matchingEngine.limitBuy(address(feeToken), address(stablecoin), 1000e8, 10000000e18, false, 1, 1);
+        vm.stopBroadcast();
+    }
+}
+
+contract TestOrderbook is Deployer {
+    // Change address constants on deploying to other networks from DeployAssets
+    address constant matching_engine_address = 0x5359193a7BFC8b56b501Cea026f8A12fbc462d26;
+    address constant feeToken_address = 0xE57Cdf5796C2f5281EDF1B81129E1D4Ff9190815;
+    address constant stablecoin_address = 0xfB4c8b2658AB2bf32ab5Fc1627f115974B52FeA7;
+    MatchingEngine public matchingEngine = MatchingEngine(matching_engine_address);
+    MockToken public feeToken = MockToken(feeToken_address);
+    MockToken public stablecoin = MockToken(stablecoin_address);
+    
+    function run() external {
+        _setDeployer();
+        address bookAddr = matchingEngine.getBookByPair(address(feeToken), address(stablecoin));
+        Orderbook book = Orderbook(bookAddr);
+        (uint256 bidHead, uint256 askHead) = book.heads();
+       console.log(bidHead, askHead);
+        matchingEngine.limitSell(address(feeToken), address(stablecoin), 100003000000, 10000e18, true, 1, 0);
         vm.stopBroadcast();
     }
 }

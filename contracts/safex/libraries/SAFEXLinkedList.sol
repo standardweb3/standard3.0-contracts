@@ -24,7 +24,7 @@ library SAFEXLinkedList {
     }
 
     function _heads(PriceLinkedList storage self) internal view returns (uint256, uint256) {
-        return (self.askHead, self.bidHead);
+        return (self.bidHead, self.askHead);
     }
 
     function _askHead(PriceLinkedList storage self) internal view returns (uint256) {
@@ -100,7 +100,7 @@ library SAFEXLinkedList {
             // if the list is empty and price is the lowest ask
             if (head == 0 || price < head) {
                 self.askHead = price;
-                self.askPrices[price] = 0;
+                self.askPrices[price] = head;
                 return;
             }
             // traverse the list

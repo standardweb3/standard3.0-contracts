@@ -42,27 +42,32 @@ contract BaseSetup is Test {
         token2 = new MockToken("Token 2", "TKN2");
         btc = new MockBTC("Bitcoin", "BTC");
 
-        token1.mint(trader1, 100000e18);
-        token2.mint(trader1, 100000e18);
-        btc.mint(trader1, 100000e8);
-        token1.mint(trader2, 100000e18);
-        token2.mint(trader2, 100000e18);
-        btc.mint(trader2, 100000e8);
+        token1.mint(trader1, 10000000e18);
+        token2.mint(trader1, 10000000e18);
+        btc.mint(trader1, 10000000e18);
+        token1.mint(trader2, 10000000e18);
+        token2.mint(trader2, 10000000e18);
+        btc.mint(trader2, 10000000e18);
         feeToken = new MockToken("Fee Token", "FEE");
         feeToken.mint(booker, 40000e18);
         matchingEngine = new MatchingEngine();
         orderbookFactory = new OrderbookFactory();
         orderbookFactory.initialize(address(matchingEngine));
-        matchingEngine.initialize(address(orderbookFactory), address(feeToken), address(0), address(booker));
+        matchingEngine.initialize(
+            address(orderbookFactory),
+            address(feeToken),
+            address(0),
+            address(booker)
+        );
 
         vm.prank(trader1);
-        token1.approve(address(matchingEngine), 10000e18);
+        token1.approve(address(matchingEngine), 10000000e18);
         vm.prank(trader1);
-        token2.approve(address(matchingEngine), 10000e18);
+        token2.approve(address(matchingEngine), 10000000e18);
         vm.prank(trader1);
-        btc.approve(address(matchingEngine), 10000e8);
+        btc.approve(address(matchingEngine), 10000000e18);
         vm.prank(trader2);
-        token1.approve(address(matchingEngine), 10000e18);
+        token1.approve(address(matchingEngine), 10000000e18);
         vm.prank(trader2);
         token2.approve(address(matchingEngine), 10000e18);
         vm.prank(trader2);
@@ -101,22 +106,60 @@ contract OrderbookMatchTest is BaseSetup {
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(btc));
-        console.log("Base/Quote Pair: ", matchingEngine.getBookByPair(address(token1), address(btc)));
+        console.log(
+            "Base/Quote Pair: ",
+            matchingEngine.getBookByPair(address(token1), address(btc))
+        );
         vm.prank(trader1);
-        matchingEngine.limitBuy(address(token1), address(btc), 1e8, 1e8, true, 2, 0);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(btc),
+            1e8,
+            1e8,
+            true,
+            2,
+            0
+        );
         vm.prank(trader2);
-        matchingEngine.limitSell(address(token1), address(btc), 1e8, 1e18, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(btc),
+            1e8,
+            1e18,
+            true,
+            2,
+            0
+        );
     }
 
     function testLimitTrade() public {
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
-        console.log("Base/Quote Pair: ", matchingEngine.getBookByPair(address(token1), address(token2)));
+        console.log(
+            "Base/Quote Pair: ",
+            matchingEngine.getBookByPair(address(token1), address(token2))
+        );
         vm.prank(trader1);
-        matchingEngine.limitBuy(address(token1), address(token2), 1e8, 100e18, true, 2, 0);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            1e8,
+            100e18,
+            true,
+            2,
+            0
+        );
         vm.prank(trader2);
-        matchingEngine.limitSell(address(token1), address(token2), 1e8, 100e18, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            1e8,
+            100e18,
+            true,
+            2,
+            0
+        );
     }
 
     function testOrderbookAccess() public {
@@ -132,47 +175,112 @@ contract OrderbookMatchTest is BaseSetup {
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
-        console.log("Base/Quote Pair: ", matchingEngine.getBookByPair(address(token1), address(token2)));
+        console.log(
+            "Base/Quote Pair: ",
+            matchingEngine.getBookByPair(address(token1), address(token2))
+        );
         console.log("Buy and sell with one price (Fee off)");
         vm.prank(trader1);
-        uint256 trader1Token1BalanceBeforeTrade = token1.balanceOf(address(trader1));
-        uint256 trader1Token2BalanceBeforeTrade = token2.balanceOf(address(trader1));
-        uint256 trader2Token1BalanceBeforeTrade = token1.balanceOf(address(trader2));
-        uint256 trader2Token2BalanceBeforeTrade = token2.balanceOf(address(trader2));
+        uint256 trader1Token1BalanceBeforeTrade = token1.balanceOf(
+            address(trader1)
+        );
+        uint256 trader1Token2BalanceBeforeTrade = token2.balanceOf(
+            address(trader1)
+        );
+        uint256 trader2Token1BalanceBeforeTrade = token1.balanceOf(
+            address(trader2)
+        );
+        uint256 trader2Token2BalanceBeforeTrade = token2.balanceOf(
+            address(trader2)
+        );
         vm.prank(trader1);
-        matchingEngine.limitBuy(address(token1), address(token2), 1, 100e18, true, 2, 0);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            1,
+            100e18,
+            true,
+            2,
+            0
+        );
         vm.prank(trader2);
-        matchingEngine.limitSell(address(token1), address(token2), 1, 100e18, true, 2, 0);
-        uint256 trader1Token1BalanceAfterTrade = token1.balanceOf(address(trader1));
-        uint256 trader1Token2BalanceAfterTrade = token2.balanceOf(address(trader1));
-        uint256 trader2Token1BalanceAfterTrade = token1.balanceOf(address(trader2));
-        uint256 trader2Token2BalanceAfterTrade = token2.balanceOf(address(trader2));
-        uint256 diffToken1Trader1 = trader1Token1BalanceAfterTrade - trader1Token1BalanceBeforeTrade;
-        uint256 diffToken2Trader1 = trader1Token2BalanceBeforeTrade - trader1Token2BalanceAfterTrade;
-        uint256 diffToken1Trader2 = trader2Token1BalanceBeforeTrade - trader2Token1BalanceAfterTrade;
-        uint256 diffToken2Trader2 = trader2Token2BalanceAfterTrade - trader2Token2BalanceBeforeTrade;
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            1,
+            100e18,
+            true,
+            2,
+            0
+        );
+        uint256 trader1Token1BalanceAfterTrade = token1.balanceOf(
+            address(trader1)
+        );
+        uint256 trader1Token2BalanceAfterTrade = token2.balanceOf(
+            address(trader1)
+        );
+        uint256 trader2Token1BalanceAfterTrade = token1.balanceOf(
+            address(trader2)
+        );
+        uint256 trader2Token2BalanceAfterTrade = token2.balanceOf(
+            address(trader2)
+        );
+        uint256 diffToken1Trader1 = trader1Token1BalanceAfterTrade -
+            trader1Token1BalanceBeforeTrade;
+        uint256 diffToken2Trader1 = trader1Token2BalanceBeforeTrade -
+            trader1Token2BalanceAfterTrade;
+        uint256 diffToken1Trader2 = trader2Token1BalanceBeforeTrade -
+            trader2Token1BalanceAfterTrade;
+        uint256 diffToken2Trader2 = trader2Token2BalanceAfterTrade -
+            trader2Token2BalanceBeforeTrade;
         console.log("trader1 received Token1: ", diffToken1Trader1);
         console.log("trader1 spent Token2:    ", diffToken2Trader1);
         console.log("trader2 spent Token1:    ", diffToken1Trader2);
         console.log("trader1 received Token2: ", diffToken2Trader2);
-        console.log("------------------------------------------------------------------------");
+        console.log(
+            "------------------------------------------------------------------------"
+        );
         console.log("Sell and buy with one price (Fee off)");
         trader1Token1BalanceBeforeTrade = token1.balanceOf(address(trader1));
         trader1Token2BalanceBeforeTrade = token2.balanceOf(address(trader1));
         trader2Token1BalanceBeforeTrade = token1.balanceOf(address(trader2));
         trader2Token2BalanceBeforeTrade = token2.balanceOf(address(trader2));
         vm.prank(trader2);
-        matchingEngine.limitSell(address(token1), address(token2), 1, 100e18, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            1,
+            100e18,
+            true,
+            2,
+            0
+        );
         vm.prank(trader1);
-        matchingEngine.limitBuy(address(token1), address(token2), 1, 100e18, true, 2, 0);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            1,
+            100e18,
+            true,
+            2,
+            0
+        );
         trader1Token1BalanceAfterTrade = token1.balanceOf(address(trader1));
         trader1Token2BalanceAfterTrade = token2.balanceOf(address(trader1));
         trader2Token1BalanceAfterTrade = token1.balanceOf(address(trader2));
         trader2Token2BalanceAfterTrade = token2.balanceOf(address(trader2));
-        diffToken1Trader1 = trader1Token1BalanceAfterTrade - trader1Token1BalanceBeforeTrade;
-        diffToken2Trader1 = trader1Token2BalanceBeforeTrade - trader1Token2BalanceAfterTrade;
-        diffToken1Trader2 = trader2Token1BalanceBeforeTrade - trader2Token1BalanceAfterTrade;
-        diffToken2Trader2 = trader2Token2BalanceAfterTrade - trader2Token2BalanceBeforeTrade;
+        diffToken1Trader1 =
+            trader1Token1BalanceAfterTrade -
+            trader1Token1BalanceBeforeTrade;
+        diffToken2Trader1 =
+            trader1Token2BalanceBeforeTrade -
+            trader1Token2BalanceAfterTrade;
+        diffToken1Trader2 =
+            trader2Token1BalanceBeforeTrade -
+            trader2Token1BalanceAfterTrade;
+        diffToken2Trader2 =
+            trader2Token2BalanceAfterTrade -
+            trader2Token2BalanceBeforeTrade;
         console.log("trader1 received Token1: ", diffToken1Trader1);
         console.log("trader1 spent Token2:    ", diffToken2Trader1);
         console.log("trader2 spent Token1:    ", diffToken1Trader2);
@@ -184,10 +292,28 @@ contract OrderbookMatchTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         vm.prank(trader1);
-        matchingEngine.limitSell(address(token1), address(token2), 90e8, 100e18, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            90e8,
+            100e18,
+            true,
+            2,
+            0
+        );
         vm.prank(trader1);
-        matchingEngine.limitBuy(address(token1), address(token2), 110e8, 100e18, true, 2, 0);
-        book = Orderbook(orderbookFactory.getBookByPair(address(token1), address(token2)));
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            110e8,
+            100e18,
+            true,
+            2,
+            0
+        );
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token2))
+        );
         console.log("Market price before manipulation: ", book.mktPrice());
         vm.prank(attacker);
         //book.placeBid(address(trader1), 1e7, 100e18);
@@ -200,75 +326,197 @@ contract OrderbookMatchTest is BaseSetup {
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
-        book = Orderbook(orderbookFactory.getBookByPair(address(token1), address(token2)));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token2))
+        );
         vm.prank(trader1);
 
         // placeBid or placeAsk two of them is using the _insert function it will revert
         // because the program will enter the (price < last) statement
         // and eventually, it will cause an infinite loop.
-        matchingEngine.limitBuy(address(token1), address(token2), 2, 10, true, 2, 0);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            2,
+            10,
+            true,
+            2,
+            0
+        );
         vm.prank(trader1);
-        matchingEngine.limitBuy(address(token1), address(token2), 5, 10, true, 2, 0);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            5,
+            10,
+            true,
+            2,
+            0
+        );
         vm.prank(trader1);
-        matchingEngine.limitBuy(address(token1), address(token2), 5, 10, true, 2, 0);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            5,
+            10,
+            true,
+            2,
+            0
+        );
         vm.prank(trader1);
         //vm.expectRevert("OutOfGas");
-        matchingEngine.limitBuy(address(token1), address(token2), 1, 10, true, 2, 0);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            1,
+            10,
+            true,
+            2,
+            0
+        );
     }
 
     function testSAFEXLinkedListOutOfGasPlaceBid() public {
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
-        book = Orderbook(orderbookFactory.getBookByPair(address(token1), address(token2)));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token2))
+        );
         // We can create the same example with placeBid function
         // This time the program will enter the while (price > last && last != 0) statement
         // and it will cause an infinite loop.
         vm.prank(trader1);
-        matchingEngine.limitSell(address(token1), address(token2), 2, 10, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            2,
+            10,
+            true,
+            2,
+            0
+        );
         vm.prank(trader1);
-        matchingEngine.limitSell(address(token1), address(token2), 5, 10, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            5,
+            10,
+            true,
+            2,
+            0
+        );
         vm.prank(trader1);
-        matchingEngine.limitSell(address(token1), address(token2), 5, 10, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            5,
+            10,
+            true,
+            2,
+            0
+        );
         vm.prank(trader1);
         //vm.expectRevert("OutOfGas");
-        matchingEngine.limitSell(address(token1), address(token2), 6, 10, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            6,
+            10,
+            true,
+            2,
+            0
+        );
     }
 
     function testSAFEXOrderbookOutOfGas() public {
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
-        book = Orderbook(orderbookFactory.getBookByPair(address(token1), address(token2)));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token2))
+        );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
         // because the program will enter the "if (amount > self.orders[head].depositAmount)."
         // statement, and eventually, it will cause an infinite loop.
-        matchingEngine.limitSell(address(token1), address(token2), 5, 10, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            5,
+            10,
+            true,
+            2,
+            0
+        );
         vm.prank(trader1);
         //vm.expectRevert("OutOfGas");
-        matchingEngine.limitSell(address(token1), address(token2), 1, 10, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            1,
+            10,
+            true,
+            2,
+            0
+        );
     }
 
     function testConvertOnSameDecimal() public {
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
-        book = Orderbook(orderbookFactory.getBookByPair(address(token1), address(token2)));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token2))
+        );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
         // because the program will enter the "if (amount > self.orders[head].depositAmount)."
         // statement, and eventually, it will cause an infinite loop.
-        matchingEngine.limitSell(address(token1), address(token2), 500000000, 10, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            500000000,
+            10,
+            true,
+            2,
+            0
+        );
         vm.prank(trader1);
         //vm.expectRevert("OutOfGas");
-        matchingEngine.limitSell(address(token1), address(token2), 100000000, 10, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            100000000,
+            10,
+            true,
+            2,
+            0
+        );
         vm.prank(trader1);
-        matchingEngine.limitBuy(address(token1), address(token2), 500000000, 10, true, 5, 0);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            500000000,
+            10,
+            true,
+            5,
+            0
+        );
         console.log("Base token decimal: ", 18);
         console.log("Quote token decimal: ", 18);
-        uint256 converted1 = matchingEngine.convert(address(token1), address(token2), 1e20, true); // 100 * 1e18 quote token to base token
-        uint256 converted2 = matchingEngine.convert(address(token1), address(token2), 1e20, false); // 100 * 1e18 in base token to quote token
+        uint256 converted1 = matchingEngine.convert(
+            address(token1),
+            address(token2),
+            1e20,
+            true
+        ); // 100 * 1e18 quote token to base token
+        uint256 converted2 = matchingEngine.convert(
+            address(token1),
+            address(token2),
+            1e20,
+            false
+        ); // 100 * 1e18 in base token to quote token
         console.log("quote token to converted base token: ", converted1 / 1e18);
         console.log("base token to converted quote token: ", converted2 / 1e18);
     }
@@ -277,68 +525,196 @@ contract OrderbookMatchTest is BaseSetup {
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(btc));
-        book = Orderbook(orderbookFactory.getBookByPair(address(token1), address(btc)));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(btc))
+        );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
         // because the program will enter the "if (amount > self.orders[head].depositAmount)."
         // statement, and eventually, it will cause an infinite loop.
-        matchingEngine.limitSell(address(token1), address(btc), 500000000, 10, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(btc),
+            10e8,
+            10e18,
+            true,
+            2,
+            0
+        );
         vm.prank(trader1);
         //vm.expectRevert("OutOfGas");
-        matchingEngine.limitSell(address(token1), address(btc), 100000000, 10, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(btc),
+            10e8,
+            10e18,
+            true,
+            2,
+            0
+        );
         vm.prank(trader1);
-        matchingEngine.limitBuy(address(token1), address(btc), 500000000, 10, true, 2, 0);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(btc),
+            10e8,
+            10e18,
+            true,
+            2,
+            0
+        );
+
+        // base/quote = token1/btc = 10/1
         console.log("Base token decimal: ", 18);
         console.log("Quote token decimal: ", 8);
-        uint256 converted1 = matchingEngine.convert(address(token1), address(btc), 1e10, true); // 100 * 1e8(decimal) quote token to base token
-        uint256 converted2 = matchingEngine.convert(address(token1), address(btc), 1e20, false); // 100 * 1e18(decimal) in base token to quote token
-        console.log("quote token to converted base token: ", converted1 / 1e18);
-        console.log("base token to converted quote token: ", converted2 / 1e8);
+        // Buying base token1 with quote token btc would cost in quote decimal
+        uint256 converted1 = matchingEngine.convert(
+            address(token1),
+            address(btc),
+            1e18,
+            true
+        );
+        // Selling quote btc 1e8 for base token token1 would give base token1 in token1 decimal
+        uint256 converted2 = matchingEngine.convert(
+            address(token1),
+            address(btc),
+            1e8,
+            false
+        );
+        console.log("quote token to converted base token: ", converted1 / 1e7);
+        assert(converted1 / 1e7 == 1);
+        console.log("base token to converted quote token: ", converted2 / 1e18);
+        assert(converted2 / 1e18 == 10);
     }
 
     function testConvertOnDifferentDecimalWhereNotBaseBQuote() public {
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(btc), address(token1));
-        book = Orderbook(orderbookFactory.getBookByPair(address(btc), address(token1)));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(btc), address(token1))
+        );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
         // because the program will enter the "if (amount > self.orders[head].depositAmount)."
         // statement, and eventually, it will cause an infinite loop.
-        matchingEngine.limitSell(address(btc), address(token1), 500000000, 10, true, 2, 0);
+        matchingEngine.limitSell(
+            address(btc),
+            address(token1),
+            10e8,
+            10e18,
+            true,
+            2,
+            0
+        );
         vm.prank(trader1);
         //vm.expectRevert("OutOfGas");
-        matchingEngine.limitSell(address(btc), address(token1), 100000000, 10, true, 2, 0);
+        matchingEngine.limitSell(
+            address(btc),
+            address(token1),
+            10e8,
+            10e18,
+            true,
+            2,
+            0
+        );
         vm.prank(trader1);
-        matchingEngine.limitBuy(address(btc), address(token1), 500000000, 10, true, 2, 0);
+        matchingEngine.limitBuy(
+            address(btc),
+            address(token1),
+            10e8,
+            10e18,
+            true,
+            2,
+            0
+        );
+        // base/quote = btc/token1 = 10/1
         console.log("Base token decimal: ", 8);
         console.log("Quote token decimal: ", 18);
-        uint256 converted1 = matchingEngine.convert(address(btc), address(token1), 1e20, true); // 100 * 1e18(decimal) quote token to base token
-        uint256 converted2 = matchingEngine.convert(address(btc), address(token1), 1e10, false); // 100 * 1e8(decimal) in base token to quote token
-        console.log("quote token to converted base token in decimal of 8: ", converted1 / 1e8);
-        console.log("base token to converted quote token in decimal of 18: ", converted2 / 1e18);
+        // Buying base btc 1e8 with quote token1 would cost in quote amount in quote decimal
+        uint256 converted1 = matchingEngine.convert(
+            address(btc),
+            address(token1),
+            1e8,
+            true
+        );
+        // Selling quote token1 1e18 for base token btc would give btc in btc decimal
+        uint256 converted2 = matchingEngine.convert(
+            address(btc),
+            address(token1),
+            1e18,
+            false
+        ); // 10 * 1e18(decimal) in base token to quote token
+        console.log(
+            "quote token to converted base token in decimal of 8: ",
+            converted1 / 1e17
+        );
+        assert(converted1 / 1e17 == 1);
+        console.log(
+            "base token to converted quote token in decimal of 18: ",
+            converted2 / 1e8
+        );
+        assert(converted2 / 1e8 == 10);
     }
 
     function testGetOrderInsertion() public {
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
-        book = Orderbook(orderbookFactory.getBookByPair(address(token1), address(token2)));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token2))
+        );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
         // because the program will enter the "if (amount > self.orders[head].depositAmount)."
         // statement, and eventually, it will cause an infinite loop.
-        matchingEngine.limitSell(address(token1), address(token2), 100000000, 10, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            100000000,
+            10,
+            true,
+            2,
+            0
+        );
         vm.prank(trader1);
-        matchingEngine.limitSell(address(token1), address(token2), 100000000, 10, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            100000000,
+            10,
+            true,
+            2,
+            0
+        );
         vm.prank(trader1);
         //vm.expectRevert("OutOfGas");
-        matchingEngine.limitSell(address(token1), address(token2), 100000000, 5, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            100000000,
+            5,
+            true,
+            2,
+            0
+        );
         vm.prank(trader1);
         //vm.expectRevert("OutOfGas");
-        matchingEngine.limitSell(address(token1), address(token2), 100000000, 8, true, 2, 0);
-        SAFEXOrderbook.Order[] memory orders =
-            matchingEngine.getOrders(address(token1), address(token2), false, 100000000, 4);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            100000000,
+            8,
+            true,
+            2,
+            0
+        );
+        SAFEXOrderbook.Order[] memory orders = matchingEngine.getOrders(
+            address(token1),
+            address(token2),
+            false,
+            100000000,
+            4
+        );
         console.log("Ask Orders: ");
         for (uint256 i = 0; i < 4; i++) {
             console.log(orders[i].owner, orders[i].depositAmount);
@@ -349,26 +725,65 @@ contract OrderbookMatchTest is BaseSetup {
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
-        book = Orderbook(orderbookFactory.getBookByPair(address(token1), address(token2)));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token2))
+        );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
         // because the program will enter the "if (amount > self.orders[head].depositAmount)."
         // statement, and eventually, it will cause an infinite loop.
-        matchingEngine.limitSell(address(token1), address(token2), 100000000, 10, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            100000000,
+            10,
+            true,
+            2,
+            0
+        );
 
         vm.prank(trader1);
         //vm.expectRevert("OutOfGas");
-        matchingEngine.limitSell(address(token1), address(token2), 100000000, 10, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            100000000,
+            10,
+            true,
+            2,
+            0
+        );
 
         vm.prank(trader1);
         //vm.expectRevert("OutOfGas");
-        matchingEngine.limitSell(address(token1), address(token2), 100000000, 10, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            100000000,
+            10,
+            true,
+            2,
+            0
+        );
         vm.prank(trader1);
         //vm.expectRevert("OutOfGas");
-        matchingEngine.limitSell(address(token1), address(token2), 100000000, 10, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            100000000,
+            10,
+            true,
+            2,
+            0
+        );
 
-        SAFEXOrderbook.Order[] memory orders =
-            matchingEngine.getOrders(address(token1), address(token2), false, 100000000, 4);
+        SAFEXOrderbook.Order[] memory orders = matchingEngine.getOrders(
+            address(token1),
+            address(token2),
+            false,
+            100000000,
+            4
+        );
         console.log("Ask Orders before cancel: ");
         for (uint256 i = 0; i < 4; i++) {
             console.log(orders[i].owner, orders[i].depositAmount);
@@ -377,36 +792,135 @@ contract OrderbookMatchTest is BaseSetup {
         // cancel order
 
         vm.prank(trader1);
-        matchingEngine.cancelOrder(address(token1), address(token2), 100000000, 3, false, 0);
+        matchingEngine.cancelOrder(
+            address(token1),
+            address(token2),
+            100000000,
+            3,
+            false,
+            0
+        );
 
-        SAFEXOrderbook.Order[] memory orders2 =
-            matchingEngine.getOrders(address(token1), address(token2), false, 100000000, 4);
+        SAFEXOrderbook.Order[] memory orders2 = matchingEngine.getOrders(
+            address(token1),
+            address(token2),
+            false,
+            100000000,
+            4
+        );
         console.log("Ask Orders: ");
         for (uint256 i = 0; i < 4; i++) {
             console.log(orders2[i].owner, orders2[i].depositAmount);
         }
     }
-    
-    function testMatchOrders() public {
-         super.setUp();
+
+    function testRemoveHeadOnMatch() public {
+        super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
-        book = Orderbook(orderbookFactory.getBookByPair(address(token1), address(token2)));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token2))
+        );
         vm.prank(trader1);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            1000e8,
+            10000e18,
+            true,
+            2,
+            0
+        );
+        console.log("Ask Orders: ");
+        SAFEXOrderbook.Order[] memory askOrders0 = matchingEngine.getOrders(
+            address(token1),
+            address(token2),
+            false,
+            1000e8,
+            4
+        );
+        for (uint256 i = 0; i < 4; i++) {
+            console.log(askOrders0[i].owner, askOrders0[i].depositAmount);
+        }
+        vm.prank(trader1);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            1000e8,
+            10000e18,
+            false,
+            2,
+            0
+        );
+        (uint256 bidHead, uint256 askHead) = book.heads();
+        console.log(bidHead, askHead);
+        console.log("Ask Orders: ");
+        SAFEXOrderbook.Order[] memory askOrders = matchingEngine.getOrders(
+            address(token1),
+            address(token2),
+            false,
+            1000e8,
+            4
+        );
+        for (uint256 i = 0; i < 4; i++) {
+            console.log(askOrders[i].owner, askOrders[i].depositAmount);
+        }
+        console.log(book.isEmpty(false, 1000e8));
+        //console.log(book.checkRequired());
+        vm.prank(trader1);
+        
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            1000e8,
+            10000e18,
+            true,
+            2,
+            0
+        );
+        
+    }
+
+    function testMatchOrders() public {
+        super.setUp();
+        vm.prank(booker);
+        matchingEngine.addPair(address(token1), address(token2));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token2))
+        );
+        vm.prank(trader2);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
         // because the program will enter the "if (amount > self.orders[head].depositAmount)."
         // statement, and eventually, it will cause an infinite loop.
-        matchingEngine.limitSell(address(token1), address(token2), 1000e8, 3, true, 2, 0);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            1000e8,
+            3000e18,
+            true,
+            2,
+            0
+        );
 
-        SAFEXOrderbook.Order[] memory bidOrders0 =
-            matchingEngine.getOrders(address(token1), address(token2), true, 1000e8, 4);
+        SAFEXOrderbook.Order[] memory bidOrders0 = matchingEngine.getOrders(
+            address(token1),
+            address(token2),
+            true,
+            1000e8,
+            4
+        );
         console.log("Bid Orders: ");
         for (uint256 i = 0; i < 4; i++) {
             console.log(bidOrders0[i].owner, bidOrders0[i].depositAmount);
         }
 
-        SAFEXOrderbook.Order[] memory askOrders0 =
-            matchingEngine.getOrders(address(token1), address(token2), false, 1000e8, 4);
+        SAFEXOrderbook.Order[] memory askOrders0 = matchingEngine.getOrders(
+            address(token1),
+            address(token2),
+            false,
+            1000e8,
+            4
+        );
         console.log("Ask Orders: ");
         for (uint256 i = 0; i < 4; i++) {
             console.log(askOrders0[i].owner, askOrders0[i].depositAmount);
@@ -414,49 +928,126 @@ contract OrderbookMatchTest is BaseSetup {
 
         vm.prank(trader1);
         //vm.expectRevert("OutOfGas");
-        matchingEngine.limitBuy(address(token1), address(token2), 1000e8, 1001, true, 2, 0);
-        
-        SAFEXOrderbook.Order[] memory bidOrders =
-            matchingEngine.getOrders(address(token1), address(token2), true, 1000e8, 4);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            1000e8,
+            1e18,
+            true,
+            2,
+            0
+        );
+
+        SAFEXOrderbook.Order[] memory bidOrders = matchingEngine.getOrders(
+            address(token1),
+            address(token2),
+            true,
+            1000e8,
+            4
+        );
         console.log("Bid Orders: ");
         for (uint256 i = 0; i < 4; i++) {
             console.log(bidOrders[i].owner, bidOrders[i].depositAmount);
         }
 
-        SAFEXOrderbook.Order[] memory askOrders =
-            matchingEngine.getOrders(address(token1), address(token2), false, 1000e8, 4);
+        SAFEXOrderbook.Order[] memory askOrders = matchingEngine.getOrders(
+            address(token1),
+            address(token2),
+            false,
+            1000e8,
+            4
+        );
         console.log("Ask Orders: ");
         for (uint256 i = 0; i < 4; i++) {
             console.log(askOrders[i].owner, askOrders[i].depositAmount);
         }
+        (uint256 bidHead, uint256 askHead) = book.heads();
+        console.log(bidHead, askHead);
+
+        vm.prank(trader2);
+        //vm.expectRevert("OutOfGas");
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            1000e8,
+            1e18,
+            true,
+            2,
+            0
+        );
     }
+
     function testGetPrices() public {
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
-        book = Orderbook(orderbookFactory.getBookByPair(address(token1), address(token2)));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token2))
+        );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
         // because the program will enter the "if (amount > self.orders[head].depositAmount)."
         // statement, and eventually, it will cause an infinite loop.
-        matchingEngine.limitSell(address(token1), address(token2), 500000000, 10, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            500000000,
+            10,
+            true,
+            2,
+            0
+        );
 
         vm.prank(trader1);
         //vm.expectRevert("OutOfGas");
-        matchingEngine.limitSell(address(token1), address(token2), 100000000, 10, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            100000000,
+            10,
+            true,
+            2,
+            0
+        );
 
         vm.prank(trader1);
-        matchingEngine.limitBuy(address(token1), address(token2), 90000000, 10, true, 5, 0);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            90000000,
+            10,
+            true,
+            5,
+            0
+        );
 
         vm.prank(trader1);
-        matchingEngine.limitBuy(address(token1), address(token2), 500000000, 10, true, 5, 0);
-        uint256[] memory bidPrices = matchingEngine.getPrices(address(token1), address(token2), true, 20);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            500000000,
+            10,
+            true,
+            5,
+            0
+        );
+        uint256[] memory bidPrices = matchingEngine.getPrices(
+            address(token1),
+            address(token2),
+            true,
+            20
+        );
         console.log("Ask prices: ");
         for (uint256 i = 0; i < 4; i++) {
             console.log(bidPrices[i]);
         }
         //matchingEngine.getOrders(address(token1), address(token2), true, 0, 0);
-        uint256[] memory askPrices = matchingEngine.getPrices(address(token1), address(token2), false, 20);
+        uint256[] memory askPrices = matchingEngine.getPrices(
+            address(token1),
+            address(token2),
+            false,
+            20
+        );
         console.log("Bid prices: ");
         for (uint256 i = 0; i < 3; i++) {
             console.log(askPrices[i]);
@@ -467,30 +1058,90 @@ contract OrderbookMatchTest is BaseSetup {
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
-        book = Orderbook(orderbookFactory.getBookByPair(address(token1), address(token2)));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token2))
+        );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
         // because the program will enter the "if (amount > self.orders[head].depositAmount)."
         // statement, and eventually, it will cause an infinite loop.
-        matchingEngine.limitSell(address(token1), address(token2), 100000000000, 10, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            100000000000,
+            10,
+            true,
+            2,
+            0
+        );
         vm.prank(trader1);
         //vm.expectRevert("OutOfGas");
-        matchingEngine.limitSell(address(token1), address(token2), 100200000000, 10, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            100200000000,
+            10,
+            true,
+            2,
+            0
+        );
         vm.prank(trader1);
-        matchingEngine.limitSell(address(token1), address(token2), 100100000000, 10, true, 5, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            100100000000,
+            10,
+            true,
+            5,
+            0
+        );
         vm.prank(trader1);
-        matchingEngine.limitBuy(address(token1), address(token2), 99800000000, 1, true, 5, 0);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            99800000000,
+            1,
+            true,
+            5,
+            0
+        );
         vm.prank(trader1);
-        matchingEngine.limitBuy(address(token1), address(token2), 99900000000, 1, true, 5, 0);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            99900000000,
+            1,
+            true,
+            5,
+            0
+        );
         vm.prank(trader1);
-        matchingEngine.limitBuy(address(token1), address(token2), 99700000000, 1, true, 5, 0);
-        uint256[] memory bidPrices = matchingEngine.getPrices(address(token1), address(token2), true, 20);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            99700000000,
+            1,
+            true,
+            5,
+            0
+        );
+        uint256[] memory bidPrices = matchingEngine.getPrices(
+            address(token1),
+            address(token2),
+            true,
+            20
+        );
         console.log("Bid prices: ");
         for (uint256 i = 0; i < 3; i++) {
             console.log(bidPrices[i]);
         }
         //matchingEngine.getOrders(address(token1), address(token2), true, 0, 0);
-        uint256[] memory askPrices = matchingEngine.getPrices(address(token1), address(token2), false, 20);
+        uint256[] memory askPrices = matchingEngine.getPrices(
+            address(token1),
+            address(token2),
+            false,
+            20
+        );
         console.log("Ask prices: ");
         for (uint256 i = 0; i < 3; i++) {
             console.log(askPrices[i]);
@@ -501,21 +1152,52 @@ contract OrderbookMatchTest is BaseSetup {
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
-        book = Orderbook(orderbookFactory.getBookByPair(address(token1), address(token2)));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token2))
+        );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
         // because the program will enter the "if (amount > self.orders[head].depositAmount)."
         // statement, and eventually, it will cause an infinite loop.
-        matchingEngine.limitSell(address(token1), address(token2), 500000000, 10, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            500000000,
+            10,
+            true,
+            2,
+            0
+        );
         vm.prank(trader1);
         //vm.expectRevert("OutOfGas");
-        matchingEngine.limitSell(address(token1), address(token2), 100000000, 10, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            100000000,
+            10,
+            true,
+            2,
+            0
+        );
         vm.prank(trader1);
-        matchingEngine.limitBuy(address(token1), address(token2), 500000000, 10, true, 5, 0);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            500000000,
+            10,
+            true,
+            5,
+            0
+        );
 
         console.log("Bid orders: ");
-        SAFEXOrderbook.Order[] memory bidOrders =
-            matchingEngine.getOrders(address(token1), address(token2), false, 500000000, 3);
+        SAFEXOrderbook.Order[] memory bidOrders = matchingEngine.getOrders(
+            address(token1),
+            address(token2),
+            false,
+            500000000,
+            3
+        );
 
         for (uint256 i = 0; i < 3; i++) {
             console.log(bidOrders[i].owner, bidOrders[i].depositAmount);
@@ -526,15 +1208,33 @@ contract OrderbookMatchTest is BaseSetup {
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
-        book = Orderbook(orderbookFactory.getBookByPair(address(token1), address(token2)));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token2))
+        );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
         // because the program will enter the "if (amount > self.orders[head].depositAmount)."
         // statement, and eventually, it will cause an infinite loop.
-        matchingEngine.limitSell(address(token1), address(token2), 500000000, 10, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            500000000,
+            10,
+            true,
+            2,
+            0
+        );
         vm.prank(trader1);
         //vm.expectRevert("OutOfGas");
-        matchingEngine.limitSell(address(token1), address(token2), 100000000, 10, true, 2, 0);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            100000000,
+            10,
+            true,
+            2,
+            0
+        );
         console.log("Ask Head:");
         console.log(book.askHead());
     }

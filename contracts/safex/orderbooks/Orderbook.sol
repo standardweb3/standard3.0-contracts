@@ -140,12 +140,8 @@ contract Orderbook is IOrderbook, Initializable {
          */
         uint256 converted = _convert(price, amount, !isBid);
         if (converted == 0) {
-            revert OrderSizeTooSmall(converted, _convert(price, 1, isBid));
+            revert OrderSizeTooSmall(amount, _convert(price, 1, isBid));
         }
-
-        converted = converted > order.depositAmount
-            ? order.depositAmount
-            : converted;
         // if the order is ask order on the base/quote pair
         if (isBid) {
             // sender is matching ask order for base asset with quote asset
@@ -178,14 +174,14 @@ contract Orderbook is IOrderbook, Initializable {
         SAFEXOrderbook.Order memory order = isBid
             ? _bidOrders._getOrder(orderId)
             : _askOrders._getOrder(orderId);
-        required =_convert(price, order.depositAmount, isBid);
+        required = _convert(price, order.depositAmount, isBid);
         if (required <= remaining) {
             isBid ? _bidOrders._fpop(price) : _askOrders._fpop(price);
-        }
-        if (isEmpty(isBid, price)) {
-            isBid
-                ? priceLists.bidHead = priceLists._next(isBid, price)
-                : priceLists.askHead = priceLists._next(isBid, price);
+            if (isEmpty(isBid, price)) {
+                isBid
+                    ? priceLists.bidHead = priceLists._next(isBid, price)
+                    : priceLists.askHead = priceLists._next(isBid, price);
+            }
         }
         return (orderId, required);
     }

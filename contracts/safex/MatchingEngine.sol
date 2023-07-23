@@ -77,16 +77,16 @@ contract MatchingEngine is AccessControl, Initializable {
      * and make an order at the market price.
      * @param base The address of the base asset for the trading pair
      * @param quote The address of the quote asset for the trading pair
-     * @param amount The amount of quote asset to be used for the market buy order
+     * @param quoteAmount The amount of quote asset to be used for the market buy order
      * @param isMaker Boolean indicating if a order should be made at the market price in orderbook
      * @param n The maximum number of orders to match in the orderbook
      * @return bool True if the order was successfully executed, otherwise false.
      */
-    function marketBuy(address base, address quote, uint256 amount, bool isMaker, uint32 n, uint32 uid)
+    function marketBuy(address base, address quote, uint256 quoteAmount, bool isMaker, uint32 n, uint32 uid)
         external
         returns (bool)
     {
-        (uint256 withoutFee, address orderbook) = _deposit(base, quote, amount, true, uid, isMaker);
+        (uint256 withoutFee, address orderbook) = _deposit(base, quote, quoteAmount, true, uid, isMaker);
         // negate on give if the asset is not the base
         uint256 remaining = _limitOrder(orderbook, withoutFee, quote, true, type(uint256).max, n);
         // add make order on market price
@@ -100,16 +100,16 @@ contract MatchingEngine is AccessControl, Initializable {
      * and make an order at the market price.
      * @param base The address of the base asset for the trading pair
      * @param quote The address of the quote asset for the trading pair
-     * @param amount The amount of base asset to be sold in the market sell order
+     * @param baseAmount The amount of base asset to be sold in the market sell order
      * @param isMaker Boolean indicating if an order should be made at the market price in orderbook
      * @param n The maximum number of orders to match in the orderbook
      * @return bool True if the order was successfully executed, otherwise false.
      */
-    function marketSell(address base, address quote, uint256 amount, bool isMaker, uint32 n, uint32 uid)
+    function marketSell(address base, address quote, uint256 baseAmount, bool isMaker, uint32 n, uint32 uid)
         external
         returns (bool)
     {
-        (uint256 withoutFee, address orderbook) = _deposit(base, quote, amount, false, uid, isMaker);
+        (uint256 withoutFee, address orderbook) = _deposit(base, quote, baseAmount, false, uid, isMaker);
         // negate on give if the asset is not the base
         uint256 remaining = _limitOrder(orderbook, withoutFee, base, false, type(uint256).max, n);
         _detMake(orderbook, base, remaining, mktPrice(base, quote), false, isMaker);
@@ -123,16 +123,16 @@ contract MatchingEngine is AccessControl, Initializable {
      * @param base The address of the base asset for the trading pair
      * @param quote The address of the quote asset for the trading pair
      * @param price The price, base/quote regardless of decimals of the assets in the pair represented with 8 decimals (if 1000, base is 1000x quote)
-     * @param amount The amount of quote asset to be used for the limit buy order
+     * @param quoteAmount The amount of quote asset to be used for the limit buy order
      * @param isMaker Boolean indicating if an order should be made at the limit price
      * @param n The maximum number of orders to match in the orderbook
      * @return bool True if the order was successfully executed, otherwise false.
      */
-    function limitBuy(address base, address quote, uint256 price, uint256 amount, bool isMaker, uint32 n, uint32 uid)
+    function limitBuy(address base, address quote, uint256 price, uint256 quoteAmount, bool isMaker, uint32 n, uint32 uid)
         external
         returns (bool)
     {
-        (uint256 withoutFee, address orderbook) = _deposit(base, quote, amount, true, uid, isMaker);
+        (uint256 withoutFee, address orderbook) = _deposit(base, quote, quoteAmount, true, uid, isMaker);
         uint256 remaining = _limitOrder(orderbook, withoutFee, quote, true, price, n);
 
         _detMake(orderbook, quote, remaining, price, true, isMaker);
@@ -146,16 +146,16 @@ contract MatchingEngine is AccessControl, Initializable {
      * @param base The address of the base asset for the trading pair
      * @param quote The address of the quote asset for the trading pair
      * @param price The price, base/quote regardless of decimals of the assets in the pair represented with 8 decimals (if 1000, base is 1000x quote)
-     * @param amount The amount of base asset to be used for the limit sell order
+     * @param baseAmount The amount of base asset to be used for the limit sell order
      * @param isMaker Boolean indicating if an order should be made at the limit price
      * @param n The maximum number of orders to match in the orderbook
      * @return bool True if the order was successfully executed, otherwise false.
      */
-    function limitSell(address base, address quote, uint256 price, uint256 amount, bool isMaker, uint32 n, uint32 uid)
+    function limitSell(address base, address quote, uint256 price, uint256 baseAmount, bool isMaker, uint32 n, uint32 uid)
         external
         returns (bool)
     {
-        (uint256 withoutFee, address orderbook) = _deposit(base, quote, amount, false, uid, isMaker);
+        (uint256 withoutFee, address orderbook) = _deposit(base, quote, baseAmount, false, uid, isMaker);
         uint256 remaining = _limitOrder(orderbook, withoutFee, base, false, price, n);
         _detMake(orderbook, base, remaining, price, false, isMaker);
         return true;
@@ -167,11 +167,11 @@ contract MatchingEngine is AccessControl, Initializable {
      * @param base The address of the base asset for the trading pair
      * @param quote The address of the quote asset for the trading pair
      * @param price The price, base/quote regardless of decimals of the assets in the pair represented with 8 decimals (if 1000, base is 1000x quote)
-     * @param amount The amount of quote asset to be used for the bid order
+     * @param quoteAmount The amount of quote asset to be used for the bid order
      * @return bool True if the order was successfully executed, otherwise false.
      */
-    function makeBuy(address base, address quote, uint256 price, uint256 amount, uint32 uid) external returns (bool) {
-        (uint256 withoutFee, address orderbook) = _deposit(base, quote, amount, false, uid, true);
+    function makeBuy(address base, address quote, uint256 price, uint256 quoteAmount, uint32 uid) external returns (bool) {
+        (uint256 withoutFee, address orderbook) = _deposit(base, quote, quoteAmount, false, uid, true);
         TransferHelper.safeTransfer(quote, orderbook, withoutFee);
         _makeOrder(orderbook, withoutFee, price, true);
         return true;
@@ -183,11 +183,11 @@ contract MatchingEngine is AccessControl, Initializable {
      * @param base The address of the base asset for the trading pair
      * @param quote The address of the quote asset for the trading pair
      * @param price The price, base/quote regardless of decimals of the assets in the pair represented with 8 decimals (if 1000, base is 1000x quote)
-     * @param amount The amount of base asset to be used for making ask order
+     * @param baseAmount The amount of base asset to be used for making ask order
      * @return bool True if the order was successfully executed, otherwise false.
      */
-    function makeSell(address base, address quote, uint256 price, uint256 amount, uint32 uid) external returns (bool) {
-        (uint256 withoutFee, address orderbook) = _deposit(base, quote, amount, false, uid, true);
+    function makeSell(address base, address quote, uint256 price, uint256 baseAmount, uint32 uid) external returns (bool) {
+        (uint256 withoutFee, address orderbook) = _deposit(base, quote, baseAmount, false, uid, true);
         TransferHelper.safeTransfer(base, orderbook, withoutFee);
         _makeOrder(orderbook, withoutFee, price, false);
         return true;

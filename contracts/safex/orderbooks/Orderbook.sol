@@ -25,6 +25,8 @@ contract Orderbook is IOrderbook, Initializable {
     uint64 private decDiff;
     bool private baseBquote;
 
+    event OrderPlaced(address base, address quote, bool isBid, uint256 orderId);
+
     //uint32 private constant PRICEONE = 1e8;
 
     // Reuse order storage with SAFEXLinkedList with isBid always true
@@ -75,6 +77,7 @@ contract Orderbook is IOrderbook, Initializable {
             priceLists._insert(false, price);
         }
         _askOrders._insertId(price, id, amount);
+        emit OrderPlaced(pair.base, pair.quote, false, id);
     }
 
     function placeBid(
@@ -88,6 +91,7 @@ contract Orderbook is IOrderbook, Initializable {
             priceLists._insert(true, price);
         }
         _bidOrders._insertId(price, id, amount);
+        emit OrderPlaced(pair.base, pair.quote, true, id);
     }
 
     function cancelOrder(

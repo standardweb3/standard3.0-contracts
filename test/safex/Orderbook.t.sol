@@ -3,6 +3,8 @@ pragma solidity >=0.8;
 import {console} from "forge-std/console.sol";
 import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 import {MockToken} from "../../contracts/mock/MockToken.sol";
+import {MockBase} from "../../contracts/mock/MockBase.sol";
+import {MockQuote} from "../../contracts/mock/MockQuote.sol";
 import {MockBTC} from "../../contracts/mock/MockBTC.sol";
 import {ErrToken} from "../../contracts/mock/MockTokenOver18Decimals.sol";
 import {Utils} from "../utils/Utils.sol";
@@ -17,8 +19,8 @@ contract BaseSetup is Test {
 
     OrderbookFactory public orderbookFactory;
     Orderbook public book;
-    MockToken public token1;
-    MockToken public token2;
+    MockBase public token1;
+    MockQuote public token2;
     MockBTC public btc;
     MockToken public feeToken;
     address payable[] public users;
@@ -38,8 +40,8 @@ contract BaseSetup is Test {
         vm.label(booker, "Booker");
         attacker = users[3];
         vm.label(attacker, "Attacker");
-        token1 = new MockToken("Token 1", "TKN1");
-        token2 = new MockToken("Token 2", "TKN2");
+        token1 = new MockBase("Base", "BASE");
+        token2 = new MockQuote("Quote", "QUOTE");
         btc = new MockBTC("Bitcoin", "BTC");
 
         token1.mint(trader1, 10000000e18);

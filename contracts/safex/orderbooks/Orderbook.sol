@@ -138,30 +138,25 @@ contract Orderbook is IOrderbook, Initializable {
         SAFEXOrderbook.Order memory order = isBid
             ? _bidOrders._getOrder(orderId)
             : _askOrders._getOrder(orderId);
-        /* if ask, converted quote amount is baseAmount * price,
-         * converting the number converting decimal from base to quote,
-         * otherwise quote amount is baseAmount / price, converting decimal from quote to base
-         */
-        uint256 converted = _convert(price, amount, !isBid);
+        uint256 converted = _convert(price, amount, isBid);
         if (converted == 0) {
             revert OrderSizeTooSmall(amount, _convert(price, 1, isBid));
         }
-        // if the order is ask order on the base/quote pair
+        // if isBid == true, sender is matching ask order with bid order(i.e. selling base to receive quote), otherwise sender is matching bid order with ask order(i.e. buying base with quote)
         if (isBid) {
             // sender is matching ask order for base asset with quote asset
-            // send converted amount of base asset from order to buyer(sender)
-            TransferHelper.safeTransfer(pair.quote, sender, converted);
-            // send deposited amount of quote asset from buyer to seller(owner)
             TransferHelper.safeTransfer(pair.base, order.owner, amount);
+            // send converted amount of quote asset from owner to sender
+            TransferHelper.safeTransfer(pair.quote, sender, converted);
             // decrease remaining amount of order
             _bidOrders._decreaseOrder(price, orderId, converted);
         }
         // if the order is bid order on the base/quote pair
         else {
             // sender is matching bid order for quote asset with base asset
-            // send converted amount of quote asset from order to seller(owner)
+            // send deposited amount of quote asset from sender to owner
             TransferHelper.safeTransfer(pair.quote, order.owner, amount);
-            // send deposited amount of base asset from seller to buyer(sender)
+            // send converted amount of base asset from owner to sender
             TransferHelper.safeTransfer(pair.base, sender, converted);
             // decrease remaining amount of order
             _askOrders._decreaseOrder(price, orderId, converted);
@@ -178,7 +173,7 @@ contract Orderbook is IOrderbook, Initializable {
         SAFEXOrderbook.Order memory order = isBid
             ? _bidOrders._getOrder(orderId)
             : _askOrders._getOrder(orderId);
-        required = _convert(price, order.depositAmount, isBid);
+        required = _convert(price, order.depositAmount, !isBid);
         if (required <= remaining) {
             isBid ? _bidOrders._fpop(price) : _askOrders._fpop(price);
             if (isEmpty(isBid, price)) {

@@ -9,9 +9,17 @@ import {TransferHelper} from "./libraries/TransferHelper.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 interface IRevenue {
-    function report(uint32 uid, address token, uint256 amount, bool isAdd) external;
+    function report(
+        uint32 uid,
+        address token,
+        uint256 amount,
+        bool isAdd
+    ) external;
 
-    function isReportable(address token, uint32 uid) external view returns (bool);
+    function isReportable(
+        address token,
+        uint32 uid
+    ) external view returns (bool);
 
     function refundFee(address to, address token, uint256 amount) external;
 
@@ -32,10 +40,21 @@ contract MatchingEngine is AccessControl, Initializable {
     address public accountant;
 
     // events
-    event OrderCanceled(address orderbook, uint256 id, bool isBid, address owner);
+    event OrderCanceled(
+        address orderbook,
+        uint256 id,
+        bool isBid,
+        address owner
+    );
 
     event OrderMatched(
-        address orderbook, uint256 id, bool isBid, address sender, address owner, uint256 amount, uint256 price
+        address orderbook,
+        uint256 id,
+        bool isBid,
+        address sender,
+        address owner,
+        uint256 amount,
+        uint256 price
     );
 
     event PairAdded(address orderbook, address base, address quote);
@@ -60,11 +79,12 @@ contract MatchingEngine is AccessControl, Initializable {
      * Requirements:
      * - `msg.sender` must have the default admin role.
      */
-    function initialize(address orderbookFactory_, address membership_, address accountant_, address treasury_)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-        initializer
-    {
+    function initialize(
+        address orderbookFactory_,
+        address membership_,
+        address accountant_,
+        address treasury_
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) initializer {
         orderbookFactory = orderbookFactory_;
         membership = membership_;
         accountant = accountant_;
@@ -82,15 +102,40 @@ contract MatchingEngine is AccessControl, Initializable {
      * @param n The maximum number of orders to match in the orderbook
      * @return bool True if the order was successfully executed, otherwise false.
      */
-    function marketBuy(address base, address quote, uint256 quoteAmount, bool isMaker, uint32 n, uint32 uid)
-        external
-        returns (bool)
-    {
-        (uint256 withoutFee, address orderbook) = _deposit(base, quote, quoteAmount, true, uid, isMaker);
+    function marketBuy(
+        address base,
+        address quote,
+        uint256 quoteAmount,
+        bool isMaker,
+        uint32 n,
+        uint32 uid
+    ) external returns (bool) {
+        (uint256 withoutFee, address orderbook) = _deposit(
+            base,
+            quote,
+            quoteAmount,
+            true,
+            uid,
+            isMaker
+        );
         // negate on give if the asset is not the base
-        uint256 remaining = _limitOrder(orderbook, withoutFee, quote, true, type(uint256).max, n);
+        uint256 remaining = _limitOrder(
+            orderbook,
+            withoutFee,
+            quote,
+            true,
+            type(uint256).max,
+            n
+        );
         // add make order on market price
-        _detMake(orderbook, quote, remaining, mktPrice(base, quote), true, isMaker);
+        _detMake(
+            orderbook,
+            quote,
+            remaining,
+            mktPrice(base, quote),
+            true,
+            isMaker
+        );
         return true;
     }
 
@@ -105,14 +150,39 @@ contract MatchingEngine is AccessControl, Initializable {
      * @param n The maximum number of orders to match in the orderbook
      * @return bool True if the order was successfully executed, otherwise false.
      */
-    function marketSell(address base, address quote, uint256 baseAmount, bool isMaker, uint32 n, uint32 uid)
-        external
-        returns (bool)
-    {
-        (uint256 withoutFee, address orderbook) = _deposit(base, quote, baseAmount, false, uid, isMaker);
+    function marketSell(
+        address base,
+        address quote,
+        uint256 baseAmount,
+        bool isMaker,
+        uint32 n,
+        uint32 uid
+    ) external returns (bool) {
+        (uint256 withoutFee, address orderbook) = _deposit(
+            base,
+            quote,
+            baseAmount,
+            false,
+            uid,
+            isMaker
+        );
         // negate on give if the asset is not the base
-        uint256 remaining = _limitOrder(orderbook, withoutFee, base, false, type(uint256).max, n);
-        _detMake(orderbook, base, remaining, mktPrice(base, quote), false, isMaker);
+        uint256 remaining = _limitOrder(
+            orderbook,
+            withoutFee,
+            base,
+            false,
+            type(uint256).max,
+            n
+        );
+        _detMake(
+            orderbook,
+            base,
+            remaining,
+            mktPrice(base, quote),
+            false,
+            isMaker
+        );
         return true;
     }
 
@@ -128,12 +198,31 @@ contract MatchingEngine is AccessControl, Initializable {
      * @param n The maximum number of orders to match in the orderbook
      * @return bool True if the order was successfully executed, otherwise false.
      */
-    function limitBuy(address base, address quote, uint256 price, uint256 quoteAmount, bool isMaker, uint32 n, uint32 uid)
-        external
-        returns (bool)
-    {
-        (uint256 withoutFee, address orderbook) = _deposit(base, quote, quoteAmount, true, uid, isMaker);
-        uint256 remaining = _limitOrder(orderbook, withoutFee, quote, true, price, n);
+    function limitBuy(
+        address base,
+        address quote,
+        uint256 price,
+        uint256 quoteAmount,
+        bool isMaker,
+        uint32 n,
+        uint32 uid
+    ) external returns (bool) {
+        (uint256 withoutFee, address orderbook) = _deposit(
+            base,
+            quote,
+            quoteAmount,
+            true,
+            uid,
+            isMaker
+        );
+        uint256 remaining = _limitOrder(
+            orderbook,
+            withoutFee,
+            quote,
+            true,
+            price,
+            n
+        );
 
         _detMake(orderbook, quote, remaining, price, true, isMaker);
         return true;
@@ -151,12 +240,31 @@ contract MatchingEngine is AccessControl, Initializable {
      * @param n The maximum number of orders to match in the orderbook
      * @return bool True if the order was successfully executed, otherwise false.
      */
-    function limitSell(address base, address quote, uint256 price, uint256 baseAmount, bool isMaker, uint32 n, uint32 uid)
-        external
-        returns (bool)
-    {
-        (uint256 withoutFee, address orderbook) = _deposit(base, quote, baseAmount, false, uid, isMaker);
-        uint256 remaining = _limitOrder(orderbook, withoutFee, base, false, price, n);
+    function limitSell(
+        address base,
+        address quote,
+        uint256 price,
+        uint256 baseAmount,
+        bool isMaker,
+        uint32 n,
+        uint32 uid
+    ) external returns (bool) {
+        (uint256 withoutFee, address orderbook) = _deposit(
+            base,
+            quote,
+            baseAmount,
+            false,
+            uid,
+            isMaker
+        );
+        uint256 remaining = _limitOrder(
+            orderbook,
+            withoutFee,
+            base,
+            false,
+            price,
+            n
+        );
         _detMake(orderbook, base, remaining, price, false, isMaker);
         return true;
     }
@@ -170,8 +278,21 @@ contract MatchingEngine is AccessControl, Initializable {
      * @param quoteAmount The amount of quote asset to be used for the bid order
      * @return bool True if the order was successfully executed, otherwise false.
      */
-    function makeBuy(address base, address quote, uint256 price, uint256 quoteAmount, uint32 uid) external returns (bool) {
-        (uint256 withoutFee, address orderbook) = _deposit(base, quote, quoteAmount, false, uid, true);
+    function makeBuy(
+        address base,
+        address quote,
+        uint256 price,
+        uint256 quoteAmount,
+        uint32 uid
+    ) external returns (bool) {
+        (uint256 withoutFee, address orderbook) = _deposit(
+            base,
+            quote,
+            quoteAmount,
+            false,
+            uid,
+            true
+        );
         TransferHelper.safeTransfer(quote, orderbook, withoutFee);
         _makeOrder(orderbook, withoutFee, price, true);
         return true;
@@ -186,8 +307,21 @@ contract MatchingEngine is AccessControl, Initializable {
      * @param baseAmount The amount of base asset to be used for making ask order
      * @return bool True if the order was successfully executed, otherwise false.
      */
-    function makeSell(address base, address quote, uint256 price, uint256 baseAmount, uint32 uid) external returns (bool) {
-        (uint256 withoutFee, address orderbook) = _deposit(base, quote, baseAmount, false, uid, true);
+    function makeSell(
+        address base,
+        address quote,
+        uint256 price,
+        uint256 baseAmount,
+        uint32 uid
+    ) external returns (bool) {
+        (uint256 withoutFee, address orderbook) = _deposit(
+            base,
+            quote,
+            baseAmount,
+            false,
+            uid,
+            true
+        );
         TransferHelper.safeTransfer(base, orderbook, withoutFee);
         _makeOrder(orderbook, withoutFee, price, false);
         return true;
@@ -199,9 +333,15 @@ contract MatchingEngine is AccessControl, Initializable {
      * @param quote The address of the quote asset for the trading pair
      * @return book The address of the newly created orderbook
      */
-    function addPair(address base, address quote) external returns (address book) {
+    function addPair(
+        address base,
+        address quote
+    ) external returns (address book) {
         // create orderbook for the pair
-        address orderBook = IOrderbookFactory(orderbookFactory).createBook(base, quote);
+        address orderBook = IOrderbookFactory(orderbookFactory).createBook(
+            base,
+            quote
+        );
         emit PairAdded(orderBook, base, quote);
         return orderBook;
     }
@@ -214,19 +354,39 @@ contract MatchingEngine is AccessControl, Initializable {
      * @param isBid Boolean indicating if the order to cancel is an ask order
      * @return bool True if the order was successfully canceled, otherwise false.
      */
-    function cancelOrder(address base, address quote, uint256 price, uint256 orderId, bool isBid, uint32 uid)
-        external
-        returns (bool)
-    {
-        address orderbook = IOrderbookFactory(orderbookFactory).getBookByPair(base, quote);
-        (uint256 remaining, address _base, address _quote) =
-            IOrderbook(orderbook).cancelOrder(isBid, price, orderId, msg.sender);
+    function cancelOrder(
+        address base,
+        address quote,
+        uint256 price,
+        uint256 orderId,
+        bool isBid,
+        uint32 uid
+    ) external returns (bool) {
+        address orderbook = IOrderbookFactory(orderbookFactory).getBookByPair(
+            base,
+            quote
+        );
+        uint256 remaining = IOrderbook(orderbook).cancelOrder(
+            isBid,
+            price,
+            orderId,
+            msg.sender
+        );
         // decrease point from orderbook
         if (uid != 0 && IRevenue(membership).isReportable(msg.sender, uid)) {
             // report cancelation to accountant
-            IRevenue(accountant).report(uid, isBid ? quote : base, remaining, false);
+            IRevenue(accountant).report(
+                uid,
+                isBid ? quote : base,
+                remaining,
+                false
+            );
             // refund fee from treasury to sender
-            IRevenue(feeTo).refundFee(msg.sender, isBid ? quote : base, (remaining * 100) / feeDenom);
+            IRevenue(feeTo).refundFee(
+                msg.sender,
+                isBid ? quote : base,
+                (remaining * 100) / feeDenom
+            );
         }
 
         emit OrderCanceled(orderbook, orderId, isBid, msg.sender);
@@ -248,7 +408,9 @@ contract MatchingEngine is AccessControl, Initializable {
      * @return base The address of the base asset.
      * @return quote The address of the quote asset.
      */
-    function getBaseQuote(address orderbook) external view returns (address base, address quote) {
+    function getBaseQuote(
+        address orderbook
+    ) external view returns (address base, address quote) {
         return IOrderbookFactory(orderbookFactory).getBaseQuote(orderbook);
     }
 
@@ -256,7 +418,10 @@ contract MatchingEngine is AccessControl, Initializable {
      * @dev returns addresses of pairs in OrderbookFactory registry
      * @return pairs list of pairs from start to end
      */
-    function getPairs(uint256 start, uint256 end) external view returns (IOrderbookFactory.Pair[] memory pairs) {
+    function getPairs(
+        uint256 start,
+        uint256 end
+    ) external view returns (IOrderbookFactory.Pair[] memory pairs) {
         return IOrderbookFactory(orderbookFactory).getPairs(start, end);
     }
 
@@ -267,7 +432,12 @@ contract MatchingEngine is AccessControl, Initializable {
      * @param isBid Boolean indicating if the orderbook to retrieve prices from is an ask orderbook.
      * @param n The number of prices to retrieve.
      */
-    function getPrices(address base, address quote, bool isBid, uint256 n) external view returns (uint256[] memory) {
+    function getPrices(
+        address base,
+        address quote,
+        bool isBid,
+        uint256 n
+    ) external view returns (uint256[] memory) {
         address orderbook = getBookByPair(base, quote);
         return IOrderbook(orderbook).getPrices(isBid, n);
     }
@@ -280,11 +450,13 @@ contract MatchingEngine is AccessControl, Initializable {
      * @param price The price to retrieve orders from.
      * @param n The number of orders to retrieve.
      */
-    function getOrders(address base, address quote, bool isBid, uint256 price, uint256 n)
-        external
-        view
-        returns (SAFEXOrderbook.Order[] memory)
-    {
+    function getOrders(
+        address base,
+        address quote,
+        bool isBid,
+        uint256 price,
+        uint256 n
+    ) external view returns (SAFEXOrderbook.Order[] memory) {
         address orderbook = getBookByPair(base, quote);
         return IOrderbook(orderbook).getOrders(isBid, price, n);
     }
@@ -296,11 +468,12 @@ contract MatchingEngine is AccessControl, Initializable {
      * @param isBid Boolean indicating if the orderbook to retrieve orders from is an ask orderbook.
      * @param orderId The order id to retrieve.
      */
-    function getOrder(address base, address quote, bool isBid, uint256 orderId)
-        external
-        view
-        returns (SAFEXOrderbook.Order memory)
-    {
+    function getOrder(
+        address base,
+        address quote,
+        bool isBid,
+        uint256 orderId
+    ) external view returns (SAFEXOrderbook.Order memory) {
         address orderbook = getBookByPair(base, quote);
         return IOrderbook(orderbook).getOrder(isBid, orderId);
     }
@@ -313,11 +486,13 @@ contract MatchingEngine is AccessControl, Initializable {
      * @param price The price to retrieve orders from.
      * @param n The number of order ids to retrieve.
      */
-    function getOrderIds(address base, address quote, bool isBid, uint256 price, uint256 n)
-        external
-        view
-        returns (uint256[] memory)
-    {
+    function getOrderIds(
+        address base,
+        address quote,
+        bool isBid,
+        uint256 price,
+        uint256 n
+    ) external view returns (uint256[] memory) {
         address orderbook = getBookByPair(base, quote);
         return IOrderbook(orderbook).getOrderIds(isBid, price, n);
     }
@@ -328,11 +503,17 @@ contract MatchingEngine is AccessControl, Initializable {
      * @param quote The address of the quote asset for the trading pair.
      * @return book The address of the orderbook.
      */
-    function getBookByPair(address base, address quote) public view returns (address book) {
+    function getBookByPair(
+        address base,
+        address quote
+    ) public view returns (address book) {
         return IOrderbookFactory(orderbookFactory).getBookByPair(base, quote);
     }
 
-    function mktPrice(address base, address quote) public view returns (uint256) {
+    function mktPrice(
+        address base,
+        address quote
+    ) public view returns (uint256) {
         address orderbook = getBookByPair(base, quote);
         return IOrderbook(orderbook).mktPrice();
     }
@@ -347,11 +528,12 @@ contract MatchingEngine is AccessControl, Initializable {
      * if true, amount is quote asset, otherwise base asset
      * if orderbook does not exist, return 0
      */
-    function convert(address base, address quote, uint256 amount, bool isBid)
-        external
-        view
-        returns (uint256 converted)
-    {
+    function convert(
+        address base,
+        address quote,
+        uint256 amount,
+        bool isBid
+    ) external view returns (uint256 converted) {
         address orderbook = getBookByPair(base, quote);
         if (base == quote) {
             return amount;
@@ -369,7 +551,12 @@ contract MatchingEngine is AccessControl, Initializable {
      * @param price The price, base/quote regardless of decimals of the assets in the pair represented with 8 decimals (if 1000, base is 1000x quote)
      * @param isBid Boolean indicating if the order is a buy (false) or a sell (true)
      */
-    function _makeOrder(address orderbook, uint256 withoutFee, uint256 price, bool isBid) internal {
+    function _makeOrder(
+        address orderbook,
+        uint256 withoutFee,
+        uint256 price,
+        bool isBid
+    ) internal {
         // create order
         if (isBid) {
             IOrderbook(orderbook).placeBid(msg.sender, price, withoutFee);
@@ -381,26 +568,53 @@ contract MatchingEngine is AccessControl, Initializable {
     /**
      * @dev Match bid if `isBid` is true, match ask if `isBid` is false.
      */
-    function _matchAt(address orderbook, address give, bool isBid, uint256 amount, uint256 price, uint32 i, uint32 n)
-        internal
-        returns (uint256 remaining, uint32 k)
-    {
+    function _matchAt(
+        address orderbook,
+        address give,
+        bool isBid,
+        uint256 amount,
+        uint256 price,
+        uint32 i,
+        uint32 n
+    ) internal returns (uint256 remaining, uint32 k) {
         if (n >= 20) {
             revert TooManyMatches(n);
         }
         remaining = amount;
-        while (remaining > 0 && !IOrderbook(orderbook).isEmpty(!isBid, price) && i < n) {
+        while (
+            remaining > 0 &&
+            !IOrderbook(orderbook).isEmpty(!isBid, price) &&
+            i < n
+        ) {
             // fpop OrderLinkedList by price, if ask you get bid order, if bid you get ask order. Get quote asset on bid order on buy, base asset on ask order on sell
-            (uint256 orderId, uint256 required) = IOrderbook(orderbook).fpop(!isBid, price, remaining);
+            (uint256 orderId, uint256 required) = IOrderbook(orderbook).fpop(
+                !isBid,
+                price,
+                remaining
+            );
             // order exists, and amount is not 0
             if (remaining <= required) {
                 // set last matching price
                 IOrderbook(orderbook).setLmp(price);
                 // execute order
                 TransferHelper.safeTransfer(give, orderbook, remaining);
-                address owner = IOrderbook(orderbook).execute(orderId, !isBid, price, msg.sender, remaining);
+                address owner = IOrderbook(orderbook).execute(
+                    orderId,
+                    !isBid,
+                    price,
+                    msg.sender,
+                    remaining
+                );
                 // emit event order matched
-                emit OrderMatched(orderbook, orderId, isBid, msg.sender, owner, remaining, price);
+                emit OrderMatched(
+                    orderbook,
+                    orderId,
+                    isBid,
+                    msg.sender,
+                    owner,
+                    remaining,
+                    price
+                );
                 // end loop as remaining is 0
                 return (0, n);
             }
@@ -412,9 +626,23 @@ contract MatchingEngine is AccessControl, Initializable {
             else {
                 remaining -= required;
                 TransferHelper.safeTransfer(give, orderbook, required);
-                address owner = IOrderbook(orderbook).execute(orderId, !isBid, price, msg.sender, required);
+                address owner = IOrderbook(orderbook).execute(
+                    orderId,
+                    !isBid,
+                    price,
+                    msg.sender,
+                    required
+                );
                 // emit event order matched
-                emit OrderMatched(orderbook, orderId, isBid, msg.sender, owner, required, price);
+                emit OrderMatched(
+                    orderbook,
+                    orderId,
+                    isBid,
+                    msg.sender,
+                    owner,
+                    required,
+                    price
+                );
                 ++i;
             }
         }
@@ -432,27 +660,51 @@ contract MatchingEngine is AccessControl, Initializable {
      * @param n The maximum number of matches to execute.
      * @return remaining The remaining amount of asset that was not traded.
      */
-    function _limitOrder(address orderbook, uint256 amount, address give, bool isBid, uint256 limitPrice, uint32 n)
-        internal
-        returns (uint256 remaining)
-    {
+    function _limitOrder(
+        address orderbook,
+        uint256 amount,
+        address give,
+        bool isBid,
+        uint256 limitPrice,
+        uint32 n
+    ) internal returns (uint256 remaining) {
         remaining = amount;
         uint256 lmp = 0;
         uint32 i = 0;
         if (isBid) {
             // check if there is any matching ask order until matching ask order price is lower than the limit bid Price
             uint256 askHead = IOrderbook(orderbook).askHead();
-            while (remaining > 0 && askHead != 0 && askHead <= limitPrice && i < n) {
+            while (
+                remaining > 0 && askHead != 0 && askHead <= limitPrice && i < n
+            ) {
                 lmp = askHead;
-                (remaining, i) = _matchAt(orderbook, give, isBid, remaining, askHead, i, n);
+                (remaining, i) = _matchAt(
+                    orderbook,
+                    give,
+                    isBid,
+                    remaining,
+                    askHead,
+                    i,
+                    n
+                );
                 askHead = IOrderbook(orderbook).askHead();
             }
         } else {
             // check if there is any maching bid order until matching bid order price is higher than the limit ask price
             uint256 bidHead = IOrderbook(orderbook).bidHead();
-            while (remaining > 0 && bidHead != 0 && bidHead >= limitPrice && i < n) {
+            while (
+                remaining > 0 && bidHead != 0 && bidHead >= limitPrice && i < n
+            ) {
                 lmp = bidHead;
-                (remaining, i) = _matchAt(orderbook, give, isBid, remaining, bidHead, i, n);
+                (remaining, i) = _matchAt(
+                    orderbook,
+                    give,
+                    isBid,
+                    remaining,
+                    bidHead,
+                    i,
+                    n
+                );
                 bidHead = IOrderbook(orderbook).bidHead();
             }
         }
@@ -474,9 +726,14 @@ contract MatchingEngine is AccessControl, Initializable {
      * @param isBid Boolean indicating if the order was a buy (true) or a sell (false)
      * @param isMaker Boolean indicating if an order is for storing in orderbook
      */
-    function _detMake(address orderbook, address asset, uint256 remaining, uint256 price, bool isBid, bool isMaker)
-        internal
-    {
+    function _detMake(
+        address orderbook,
+        address asset,
+        uint256 remaining,
+        uint256 price,
+        bool isBid,
+        bool isMaker
+    ) internal {
         if (remaining > 0) {
             address stopTo = isMaker ? orderbook : msg.sender;
             TransferHelper.safeTransfer(asset, stopTo, remaining);
@@ -494,20 +751,34 @@ contract MatchingEngine is AccessControl, Initializable {
      * @return withoutFee The amount of asset without the fee.
      * @return book The address of the orderbook for the given asset pair.
      */
-    function _deposit(address base, address quote, uint256 amount, bool isBid, uint32 uid, bool isMaker)
-        internal
-        returns (uint256 withoutFee, address book)
-    {
+    function _deposit(
+        address base,
+        address quote,
+        uint256 amount,
+        bool isBid,
+        uint32 uid,
+        bool isMaker
+    ) internal returns (uint256 withoutFee, address book) {
         // check if sender has uid
         uint256 fee = _fee(base, quote, amount, isBid, uid, isMaker);
         withoutFee = amount - fee;
         if (isBid) {
             // transfer input asset give user to this contract
-            TransferHelper.safeTransferFrom(quote, msg.sender, address(this), amount);
+            TransferHelper.safeTransferFrom(
+                quote,
+                msg.sender,
+                address(this),
+                amount
+            );
             TransferHelper.safeTransfer(quote, feeTo, fee);
         } else {
             // transfer input asset give user to this contract
-            TransferHelper.safeTransferFrom(base, msg.sender, address(this), amount);
+            TransferHelper.safeTransferFrom(
+                base,
+                msg.sender,
+                address(this),
+                amount
+            );
             TransferHelper.safeTransfer(base, feeTo, fee);
         }
         // get orderbook address from the base and quote asset
@@ -515,14 +786,23 @@ contract MatchingEngine is AccessControl, Initializable {
         return (withoutFee, book);
     }
 
-    function _fee(address base, address quote, uint256 amount, bool isBid, uint32 uid, bool isMaker)
-        internal
-        returns (uint256 fee)
-    {
+    function _fee(
+        address base,
+        address quote,
+        uint256 amount,
+        bool isBid,
+        uint32 uid,
+        bool isMaker
+    ) internal returns (uint256 fee) {
         if (uid != 0 && IRevenue(membership).isReportable(msg.sender, uid)) {
             uint32 feeNum = IRevenue(accountant).feeOf(uid, isMaker);
             // report fee to accountant
-            IRevenue(accountant).report(uid, isBid ? quote : base, amount, true);
+            IRevenue(accountant).report(
+                uid,
+                isBid ? quote : base,
+                amount,
+                true
+            );
             return (amount * feeNum) / feeDenom;
         } else {
             return amount / 1000;

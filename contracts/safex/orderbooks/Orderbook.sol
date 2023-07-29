@@ -102,7 +102,7 @@ contract Orderbook is IOrderbook, Initializable {
     )
         external
         onlyEngine
-        returns (uint256 remaining, address base, address quote)
+        returns (uint256 remaining)
     {
         SAFEXOrderbook.Order memory order = isBid
             ? _bidOrders._getOrder(orderId)
@@ -125,7 +125,7 @@ contract Orderbook is IOrderbook, Initializable {
                 order.depositAmount
             );
 
-        return (order.depositAmount, pair.base, pair.quote);
+        return (order.depositAmount);
     }
 
     function execute(

@@ -12,6 +12,7 @@ import {MatchingEngine} from "../../contracts/safex/MatchingEngine.sol";
 import {OrderbookFactory} from "../../contracts/safex/orderbooks/OrderbookFactory.sol";
 import {Orderbook} from "../../contracts/safex/orderbooks/Orderbook.sol";
 import {SAFEXOrderbook} from "../../contracts/safex/libraries/SAFEXOrderbook.sol";
+import {IOrderbookFactory} from "../../contracts/safex/interfaces/IOrderbookFactory.sol";
 
 contract BaseSetup is Test {
     Utils public utils;
@@ -577,7 +578,6 @@ contract OrderbookMatchTest is BaseSetup {
             5,
             0
         );
-        
 
         // after trade balances
         uint256 afterTrader2T1Balance = token1.balanceOf(address(trader2));
@@ -1509,40 +1509,19 @@ contract OrderbookMatchTest is BaseSetup {
         console.log("Ask Head:");
         console.log(book.askHead());
     }
-    /*
-    function testGetPrices() public {
+
+
+    
+    function testGetPairs() public {
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
             orderbookFactory.getBookByPair(address(token1), address(token2))
         );
-        vm.prank(trader1);
-        // placeBid or placeAsk two of them is using the _insertId function it will revert
-        // because the program will enter the "if (amount > self.orders[head].depositAmount)."
-        // statement, and eventually, it will cause an infinite loop.
-        matchingEngine.limitSell(
-            address(token1),
-            address(token2),
-            10,
-            500000000,
-            true,
-            2,
-            0
-        );
-        vm.prank(trader1);
-        //vm.expectRevert("OutOfGas");
-        matchingEngine.limitSell(
-            address(token1),
-            address(token2),
-            10,
-            100000000,
-            true,
-            2,
-            0
-        );
-        console.log("Ask Prices:");
-        console.log(book.getPrices(false , 1)[0]);
+        IOrderbookFactory.Pair[] memory pairs = matchingEngine.getPairs(0,20);
+        console.log("Pairs:");
+        console.log(pairs[0].base, pairs[0].quote);
     }
-    */
+    
 }

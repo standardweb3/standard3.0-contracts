@@ -71,7 +71,8 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory, Initializable {
         IOrderbookFactory.Pair[] memory pairs = new IOrderbookFactory.Pair[](
             end - start
         );
-        for (uint256 i = start; i < end; i++) {
+        uint256 last = end > allOrderbooks.length ? allOrderbooks.length : end;
+        for (uint256 i = start; i < last; i++) {
             IOrderbookFactory.Pair memory pair = baseQuoteByOrderbook[allOrderbooks[i]];
             pairs[i] = pair;
         }

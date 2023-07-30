@@ -464,198 +464,468 @@ contract OrderbookMatchTest is BaseSetup {
         );
     }
 
-    function testConvertOnSameDecimal() public {
-        super.setUp();
-        vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
-        book = Orderbook(
-            orderbookFactory.getBookByPair(address(token1), address(token2))
-        );
-        vm.prank(trader1);
-        // placeBid or placeAsk two of them is using the _insertId function it will revert
-        // because the program will enter the "if (amount > self.orders[head].depositAmount)."
-        // statement, and eventually, it will cause an infinite loop.
-        matchingEngine.limitSell(
-            address(token1),
-            address(token2),
-            500000000,
-            10,
-            true,
-            2,
-            0
-        );
-        vm.prank(trader1);
-        //vm.expectRevert("OutOfGas");
-        matchingEngine.limitSell(
-            address(token1),
-            address(token2),
-            100000000,
-            10,
-            true,
-            2,
-            0
-        );
-        vm.prank(trader1);
-        matchingEngine.limitBuy(
-            address(token1),
-            address(token2),
-            500000000,
-            10,
-            true,
-            5,
-            0
-        );
-        console.log("Base token decimal: ", 18);
-        console.log("Quote token decimal: ", 18);
-        uint256 converted1 = matchingEngine.convert(
-            address(token1),
-            address(token2),
-            1e20,
-            true
-        ); // 100 * 1e18 quote token to base token
-        uint256 converted2 = matchingEngine.convert(
-            address(token1),
-            address(token2),
-            1e20,
-            false
-        ); // 100 * 1e18 in base token to quote token
-        console.log("quote token to converted base token: ", converted1 / 1e18);
-        console.log("base token to converted quote token: ", converted2 / 1e18);
-    }
-
-    function testConvertOnDifferentDecimalWhereBaseBQuote() public {
+    function testConvertBuySellOnDifferentDecimalWhereBaseBQuote() public {
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(btc));
         book = Orderbook(
             orderbookFactory.getBookByPair(address(token1), address(btc))
         );
-        vm.prank(trader1);
-        // placeBid or placeAsk two of them is using the _insertId function it will revert
-        // because the program will enter the "if (amount > self.orders[head].depositAmount)."
-        // statement, and eventually, it will cause an infinite loop.
-        matchingEngine.limitSell(
-            address(token1),
-            address(btc),
-            10e8,
-            10e18,
-            true,
-            2,
-            0
-        );
-        vm.prank(trader1);
-        //vm.expectRevert("OutOfGas");
-        matchingEngine.limitSell(
-            address(token1),
-            address(btc),
-            10e8,
-            10e18,
-            true,
-            2,
-            0
-        );
+        // before trade balances
+        uint256 beforeTrader2T1Balance = token1.balanceOf(address(trader2));
+        uint256 beforeTrader2BTCBalance = btc.balanceOf(address(trader2));
+        uint256 beforeTrader1T1Balance = token1.balanceOf(address(trader1));
+        uint256 beforeTrader1BTCBalance = btc.balanceOf(address(trader1));
+
+        // deposit 10000e8(9990e8 after fee) for buying 10e18 token1 for 1000 token2 * amount
         vm.prank(trader1);
         matchingEngine.limitBuy(
             address(token1),
             address(btc),
-            10e8,
+            1000e8,
+            10000e8,
+            true,
+            5,
+            0
+        );
+        // deposit 10e18(9.99e18 after fee) for selling token1 for 1000 token1 * amount
+        vm.prank(trader2);
+        matchingEngine.limitSell(
+            address(token1),
+            address(btc),
+            1000e8,
             10e18,
             true,
-            2,
+            5,
             0
         );
 
-        // base/quote = token1/btc = 10/1
-        console.log("Base token decimal: ", 18);
-        console.log("Quote token decimal: ", 8);
-        // Buying base token1 with quote token btc would cost in quote decimal
-        uint256 converted1 = matchingEngine.convert(
-            address(token1),
-            address(btc),
-            1e18,
-            true
+        // after trade balances
+        uint256 afterTrader2T1Balance = token1.balanceOf(address(trader2));
+        uint256 afterTrader2BTCBalance = btc.balanceOf(address(trader2));
+        uint256 afterTrader1T1Balance = token1.balanceOf(address(trader1));
+        uint256 afterTrader1BTCBalance = btc.balanceOf(address(trader1));
+
+        // differences
+        uint256 diffTrader2T1Balance = beforeTrader2T1Balance -
+            afterTrader2T1Balance;
+        uint256 diffTrader2BTCBalance = afterTrader2BTCBalance -
+            beforeTrader2BTCBalance;
+        uint256 diffTrader1T1Balance = afterTrader1T1Balance -
+            beforeTrader1T1Balance;
+        uint256 diffTrader1BTCBalance = beforeTrader1BTCBalance -
+            afterTrader1BTCBalance;
+
+        console.log(
+            "Trader2 diffs: ",
+            diffTrader2T1Balance,
+            diffTrader2BTCBalance
         );
-        // Selling quote btc 1e8 for base token token1 would give base token1 in token1 decimal
-        uint256 converted2 = matchingEngine.convert(
-            address(token1),
-            address(btc),
-            1e8,
-            false
+        console.log(
+            "Trader1 diffs: ",
+            diffTrader1T1Balance,
+            diffTrader1BTCBalance
         );
-        console.log("quote token to converted base token: ", converted1 / 1e7);
-        assert(converted1 / 1e7 == 1);
-        console.log("base token to converted quote token: ", converted2 / 1e18);
-        assert(converted2 / 1e18 == 10);
+
+        // Trader2's btc balance should be increased by 9.99e11
+        assert(diffTrader2BTCBalance == 9990e8);
+        // Trader2's token1 balance should be decreased by 10e18
+        assert(diffTrader2T1Balance == 10e18);
+        // Trader1's btc balance should be decreased by 10000e8
+        assert(diffTrader1BTCBalance == 10000e8);
+        // Trader1's token1 balance should be increased by 9.99e18
+        assert(diffTrader1T1Balance == 9990e15);
+
+        (uint256 bidHead, uint256 askHead) = book.heads();
+        console.log("bidHead: ", bidHead);
+        console.log("askHead: ", askHead);
     }
 
-    function testConvertOnDifferentDecimalWhereNotBaseBQuote() public {
+    function testConvertSellBuyOnDifferentDecimalWhereBaseBQuote() public {
         super.setUp();
         vm.prank(booker);
-        matchingEngine.addPair(address(btc), address(token1));
+        matchingEngine.addPair(address(token1), address(btc));
         book = Orderbook(
-            orderbookFactory.getBookByPair(address(btc), address(token1))
+            orderbookFactory.getBookByPair(address(token1), address(btc))
         );
-        vm.prank(trader1);
-        // placeBid or placeAsk two of them is using the _insertId function it will revert
-        // because the program will enter the "if (amount > self.orders[head].depositAmount)."
-        // statement, and eventually, it will cause an infinite loop.
+        // before trade balances
+        uint256 beforeTrader2T1Balance = token1.balanceOf(address(trader2));
+        uint256 beforeTrader2BTCBalance = btc.balanceOf(address(trader2));
+        uint256 beforeTrader1T1Balance = token1.balanceOf(address(trader1));
+        uint256 beforeTrader1BTCBalance = btc.balanceOf(address(trader1));
+
+        // deposit 10e18(9.99e18 after fee) for selling token1 for 1000 token1 * amount
+        vm.prank(trader2);
         matchingEngine.limitSell(
-            address(btc),
             address(token1),
-            10e8,
+            address(btc),
+            1000e8,
             10e18,
             true,
-            2,
+            5,
             0
         );
+
+        // deposit 10000e8(9990e8 after fee) for buying 10e18 token1 for 1000 token2 * amount
         vm.prank(trader1);
-        //vm.expectRevert("OutOfGas");
-        matchingEngine.limitSell(
-            address(btc),
+        matchingEngine.limitBuy(
             address(token1),
-            10e8,
-            10e18,
+            address(btc),
+            1000e8,
+            10000e8,
             true,
-            2,
+            5,
             0
         );
+        
+
+        // after trade balances
+        uint256 afterTrader2T1Balance = token1.balanceOf(address(trader2));
+        uint256 afterTrader2BTCBalance = btc.balanceOf(address(trader2));
+        uint256 afterTrader1T1Balance = token1.balanceOf(address(trader1));
+        uint256 afterTrader1BTCBalance = btc.balanceOf(address(trader1));
+
+        // differences
+        uint256 diffTrader2T1Balance = beforeTrader2T1Balance -
+            afterTrader2T1Balance;
+        uint256 diffTrader2BTCBalance = afterTrader2BTCBalance -
+            beforeTrader2BTCBalance;
+        uint256 diffTrader1T1Balance = afterTrader1T1Balance -
+            beforeTrader1T1Balance;
+        uint256 diffTrader1BTCBalance = beforeTrader1BTCBalance -
+            afterTrader1BTCBalance;
+
+        console.log(
+            "Trader2 diffs: ",
+            diffTrader2T1Balance,
+            diffTrader2BTCBalance
+        );
+        console.log(
+            "Trader1 diffs: ",
+            diffTrader1T1Balance,
+            diffTrader1BTCBalance
+        );
+
+        // Trader2's btc balance should be increased by 9.99e11
+        assert(diffTrader2BTCBalance == 9990e8);
+        // Trader2's token1 balance should be decreased by 10e18
+        assert(diffTrader2T1Balance == 10e18);
+        // Trader1's btc balance should be decreased by 10000e8
+        assert(diffTrader1BTCBalance == 10000e8);
+        // Trader1's token1 balance should be increased by 9.99e18
+        assert(diffTrader1T1Balance == 9990e15);
+
+        (uint256 bidHead, uint256 askHead) = book.heads();
+        console.log("bidHead: ", bidHead);
+        console.log("askHead: ", askHead);
+    }
+
+    function testConvertBuySellOnDifferentDecimalWhereNotBaseBQuote() public {
+        super.setUp();
+        vm.prank(booker);
+        matchingEngine.addPair(address(btc), address(token2));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(btc), address(token2))
+        );
+        // before trade balances
+        uint256 beforeTrader2T2Balance = token2.balanceOf(address(trader2));
+        uint256 beforeTrader2BTCBalance = btc.balanceOf(address(trader2));
+        uint256 beforeTrader1T2Balance = token2.balanceOf(address(trader1));
+        uint256 beforeTrader1BTCBalance = btc.balanceOf(address(trader1));
+
+        // deposit 10000e18(9990e18 after fee) for buying 10e8 token1 for 1000 token2 * amount
         vm.prank(trader1);
         matchingEngine.limitBuy(
             address(btc),
-            address(token1),
-            10e8,
-            10e18,
+            address(token2),
+            1000e8,
+            10000e18,
             true,
-            2,
+            5,
             0
         );
-        // base/quote = btc/token1 = 10/1
-        console.log("Base token decimal: ", 8);
-        console.log("Quote token decimal: ", 18);
-        // Buying base btc 1e8 with quote token1 would cost in quote amount in quote decimal
-        uint256 converted1 = matchingEngine.convert(
+        // deposit 10e8(9.99e8 after fee) for selling token1 for 1000 token1 * amount
+        vm.prank(trader2);
+        matchingEngine.limitSell(
             address(btc),
-            address(token1),
-            1e8,
-            true
+            address(token2),
+            1000e8,
+            10e8,
+            true,
+            5,
+            0
         );
-        // Selling quote token1 1e18 for base token btc would give btc in btc decimal
-        uint256 converted2 = matchingEngine.convert(
+
+        // after trade balances
+        uint256 afterTrader2T2Balance = token2.balanceOf(address(trader2));
+        uint256 afterTrader2BTCBalance = btc.balanceOf(address(trader2));
+        uint256 afterTrader1T2Balance = token2.balanceOf(address(trader1));
+        uint256 afterTrader1BTCBalance = btc.balanceOf(address(trader1));
+
+        // differences
+        uint256 diffTrader2T2Balance = afterTrader2T2Balance -
+            beforeTrader2T2Balance;
+        uint256 diffTrader2BTCBalance = beforeTrader2BTCBalance -
+            afterTrader2BTCBalance;
+        uint256 diffTrader1T2Balance = beforeTrader1T2Balance -
+            afterTrader1T2Balance;
+        uint256 diffTrader1BTCBalance = afterTrader1BTCBalance -
+            beforeTrader1BTCBalance;
+
+        console.log(
+            "Trader2 diffs: ",
+            diffTrader2T2Balance,
+            diffTrader2BTCBalance
+        );
+        console.log(
+            "Trader1 diffs: ",
+            diffTrader1T2Balance,
+            diffTrader1BTCBalance
+        );
+
+        // Trader2's token2 balance should be increased by 9.99e21
+        assert(diffTrader2T2Balance == 9990e18);
+
+        // Trader2's token1 balance should be decreased by 10e8
+        assert(diffTrader2BTCBalance == 10e8);
+        // Trader1's token2 balance should be decreased by 10000e18
+        assert(diffTrader1T2Balance == 10000e18);
+        // Trader1's token1 balance should be increased by 9.99e8
+        assert(diffTrader1BTCBalance == 9990e5);
+
+        (uint256 bidHead, uint256 askHead) = book.heads();
+        console.log("bidHead: ", bidHead);
+        console.log("askHead: ", askHead);
+    }
+
+    function testConvertSellBuyOnDifferentDecimalWhereNotBaseBQuote() public {
+        super.setUp();
+        vm.prank(booker);
+        matchingEngine.addPair(address(btc), address(token2));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(btc), address(token2))
+        );
+        // before trade balances
+        uint256 beforeTrader2T2Balance = token2.balanceOf(address(trader2));
+        uint256 beforeTrader2BTCBalance = btc.balanceOf(address(trader2));
+        uint256 beforeTrader1T2Balance = token2.balanceOf(address(trader1));
+        uint256 beforeTrader1BTCBalance = btc.balanceOf(address(trader1));
+
+        // deposit 10e8(9.99e8 after fee) for selling token1 for 1000 token1 * amount
+        vm.prank(trader2);
+        matchingEngine.limitSell(
             address(btc),
+            address(token2),
+            1000e8,
+            10e8,
+            true,
+            5,
+            0
+        );
+        // deposit 10000e18(9990e18 after fee) for buying 10e8 token1 for 1000 token2 * amount
+        vm.prank(trader1);
+        matchingEngine.limitBuy(
+            address(btc),
+            address(token2),
+            1000e8,
+            10000e18,
+            true,
+            5,
+            0
+        );
+
+        // after trade balances
+        uint256 afterTrader2T2Balance = token2.balanceOf(address(trader2));
+        uint256 afterTrader2BTCBalance = btc.balanceOf(address(trader2));
+        uint256 afterTrader1T2Balance = token2.balanceOf(address(trader1));
+        uint256 afterTrader1BTCBalance = btc.balanceOf(address(trader1));
+
+        // differences
+        uint256 diffTrader2T2Balance = afterTrader2T2Balance -
+            beforeTrader2T2Balance;
+        uint256 diffTrader2BTCBalance = beforeTrader2BTCBalance -
+            afterTrader2BTCBalance;
+        uint256 diffTrader1T2Balance = beforeTrader1T2Balance -
+            afterTrader1T2Balance;
+        uint256 diffTrader1BTCBalance = afterTrader1BTCBalance -
+            beforeTrader1BTCBalance;
+
+        console.log(
+            "Trader2 diffs: ",
+            diffTrader2T2Balance,
+            diffTrader2BTCBalance
+        );
+        console.log(
+            "Trader1 diffs: ",
+            diffTrader1T2Balance,
+            diffTrader1BTCBalance
+        );
+
+        // Trader2's token2 balance should be increased by 9.99e21
+        assert(diffTrader2T2Balance == 9990e18);
+
+        // Trader2's token1 balance should be decreased by 10e8
+        assert(diffTrader2BTCBalance == 10e8);
+        // Trader1's token2 balance should be decreased by 10000e18
+        assert(diffTrader1T2Balance == 10000e18);
+        // Trader1's token1 balance should be increased by 9.99e8
+        assert(diffTrader1BTCBalance == 9990e5);
+
+        (uint256 bidHead, uint256 askHead) = book.heads();
+        console.log("bidHead: ", bidHead);
+        console.log("askHead: ", askHead);
+    }
+
+    function testConvertBuySellOnSameDecimal() public {
+        super.setUp();
+        vm.prank(booker);
+        matchingEngine.addPair(address(token1), address(token2));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token2))
+        );
+        // before trade balances
+        uint256 beforeTrader2T2Balance = token2.balanceOf(address(trader2));
+        uint256 beforeTrader2T1Balance = token1.balanceOf(address(trader2));
+        uint256 beforeTrader1T2Balance = token2.balanceOf(address(trader1));
+        uint256 beforeTrader1T1Balance = token1.balanceOf(address(trader1));
+
+        // deposit 10000e18(9990e18 after fee) for buying token1 for 1000 token2 * amount
+        vm.prank(trader1);
+        matchingEngine.limitBuy(
             address(token1),
-            1e18,
-            false
-        ); // 10 * 1e18(decimal) in base token to quote token
-        console.log(
-            "quote token to converted base token in decimal of 8: ",
-            converted1 / 1e17
+            address(token2),
+            1000e8,
+            10000e18,
+            true,
+            5,
+            0
         );
-        assert(converted1 / 1e17 == 1);
-        console.log(
-            "base token to converted quote token in decimal of 18: ",
-            converted2 / 1e8
+        // deposit 10e18(9.99e18 after fee) for selling token1 for 1000 token2 * amount
+        vm.prank(trader2);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            1000e8,
+            10e18,
+            true,
+            5,
+            0
         );
-        assert(converted2 / 1e8 == 10);
+
+        // after trade balances
+        uint256 afterTrader2T2Balance = token2.balanceOf(address(trader2));
+        uint256 afterTrader2T1Balance = token1.balanceOf(address(trader2));
+        uint256 afterTrader1T2Balance = token2.balanceOf(address(trader1));
+        uint256 afterTrader1T1Balance = token1.balanceOf(address(trader1));
+
+        // differences
+        uint256 diffTrader2T2Balance = afterTrader2T2Balance -
+            beforeTrader2T2Balance;
+        uint256 diffTrader2T1Balance = beforeTrader2T1Balance -
+            afterTrader2T1Balance;
+        uint256 diffTrader1T2Balance = beforeTrader1T2Balance -
+            afterTrader1T2Balance;
+        uint256 diffTrader1T1Balance = afterTrader1T1Balance -
+            beforeTrader1T1Balance;
+
+        console.log(
+            "Trader2 diffs: ",
+            diffTrader2T2Balance,
+            diffTrader2T1Balance
+        );
+        console.log(
+            "Trader1 diffs: ",
+            diffTrader1T2Balance,
+            diffTrader1T1Balance
+        );
+
+        // Trader2's token2 balance should be increased by 9.99e21
+        assert(diffTrader2T2Balance == 9990e18);
+
+        // Trader2's token1 balance should be decreased by 10e18
+        assert(diffTrader2T1Balance == 10e18);
+        // Trader1's token2 balance should be decreased by 10000e18
+        assert(diffTrader1T2Balance == 10000e18);
+        // Trader1's token1 balance should be increased by 9.99e18
+        assert(diffTrader1T1Balance == 9990e15);
+
+        (uint256 bidHead, uint256 askHead) = book.heads();
+        console.log("bidHead: ", bidHead);
+        console.log("askHead: ", askHead);
+    }
+
+    function testConvertSellBuyOnSameDecimal() public {
+        super.setUp();
+        vm.prank(booker);
+        matchingEngine.addPair(address(token1), address(token2));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token2))
+        );
+        // before trade balances
+        uint256 beforeTrader2T2Balance = token2.balanceOf(address(trader2));
+        uint256 beforeTrader2T1Balance = token1.balanceOf(address(trader2));
+        uint256 beforeTrader1T2Balance = token2.balanceOf(address(trader1));
+        uint256 beforeTrader1T1Balance = token1.balanceOf(address(trader1));
+
+        // deposit 10e18(9.99e18 after fee) for selling token1 for 1000 token2 * amount
+        vm.prank(trader2);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            1000e8,
+            10e18,
+            true,
+            5,
+            0
+        );
+        // deposit 10000e18(9990e18 after fee) for buying token1 for 1000 token2 * amount
+        vm.prank(trader1);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            1000e8,
+            10000e18,
+            true,
+            5,
+            0
+        );
+
+        // after trade balances
+        uint256 afterTrader2T2Balance = token2.balanceOf(address(trader2));
+        uint256 afterTrader2T1Balance = token1.balanceOf(address(trader2));
+        uint256 afterTrader1T2Balance = token2.balanceOf(address(trader1));
+        uint256 afterTrader1T1Balance = token1.balanceOf(address(trader1));
+
+        // differences
+        uint256 diffTrader2T2Balance = afterTrader2T2Balance -
+            beforeTrader2T2Balance;
+        uint256 diffTrader2T1Balance = beforeTrader2T1Balance -
+            afterTrader2T1Balance;
+        uint256 diffTrader1T2Balance = beforeTrader1T2Balance -
+            afterTrader1T2Balance;
+        uint256 diffTrader1T1Balance = afterTrader1T1Balance -
+            beforeTrader1T1Balance;
+
+        console.log(
+            "Trader2 diffs: ",
+            diffTrader2T2Balance,
+            diffTrader2T1Balance
+        );
+        console.log(
+            "Trader1 diffs: ",
+            diffTrader1T2Balance,
+            diffTrader1T1Balance
+        );
+
+        // Trader2's token2 balance should be increased by 9.99e21
+        assert(diffTrader2T2Balance == 9990e18);
+
+        // Trader2's token1 balance should be decreased by 10e18
+        assert(diffTrader2T1Balance == 10e18);
+        // Trader1's token2 balance should be decreased by 10000e18
+        assert(diffTrader1T2Balance == 10000e18);
+        // Trader1's token1 balance should be increased by 9.99e18
+        assert(diffTrader1T1Balance == 9990e15);
     }
 
     function testGetOrderInsertion() public {
@@ -870,7 +1140,7 @@ contract OrderbookMatchTest is BaseSetup {
         console.log(book.isEmpty(false, 1000e8));
         //console.log(book.checkRequired());
         vm.prank(trader1);
-        
+
         matchingEngine.limitBuy(
             address(token1),
             address(token2),
@@ -880,7 +1150,6 @@ contract OrderbookMatchTest is BaseSetup {
             2,
             0
         );
-        
     }
 
     function testMatchOrders() public {

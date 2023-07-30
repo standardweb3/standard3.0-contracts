@@ -99,11 +99,7 @@ contract Orderbook is IOrderbook, Initializable {
         uint256 price,
         uint256 orderId,
         address owner
-    )
-        external
-        onlyEngine
-        returns (uint256 remaining)
-    {
+    ) external onlyEngine returns (uint256 remaining) {
         SAFEXOrderbook.Order memory order = isBid
             ? _bidOrders._getOrder(orderId)
             : _askOrders._getOrder(orderId);
@@ -289,18 +285,18 @@ contract Orderbook is IOrderbook, Initializable {
         uint256 amount,
         bool isBid
     ) internal view returns (uint256 converted) {
-        if (!isBid) {
+        if (isBid) {
             // convert quote to base
             return
                 baseBquote
-                    ? ((amount * price) / 1e8) * decDiff
-                    : (amount * price) / 1e8 / decDiff;
+                    ?  ((amount * price) / 1e8) / decDiff 
+                    : ((amount * price) / 1e8) * decDiff;
         } else {
             // convert base to quote
             return
                 baseBquote
-                    ? (amount * 1e8) / price / decDiff
-                    : (amount * 1e8 * decDiff) / price;
+                    ? (amount * 1e8 / price) * decDiff
+                    : (amount * 1e8 / price) / decDiff;
         }
     }
 }

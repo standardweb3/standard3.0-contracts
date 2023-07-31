@@ -426,6 +426,32 @@ contract MatchingEngine is AccessControl, Initializable {
     }
 
     /**
+     * @dev returns addresses of pairs in OrderbookFactory registry
+     * @return mktPrices list of mktPrices from start to end
+     */
+    function getMktPrices(
+        uint256 start,
+        uint256 end
+    ) external view returns (uint256[] memory mktPrices) {
+        IOrderbookFactory.Pair[] memory pairs = IOrderbookFactory(
+            orderbookFactory
+        ).getPairs(start, end);
+        mktPrices = new uint256[](pairs.length);
+        for (uint256 i = start; i < pairs.length; i++) {
+            try this.mktPrice(pairs[i].base, pairs[i].quote) returns (
+                uint256 price
+            ) {
+                uint256 p = price;
+                mktPrices[i] = p;
+            } catch {
+                uint256 p = 0;
+                mktPrices[i] = p;
+            }
+        }
+        return mktPrices;
+    }
+
+    /**
      * @dev Returns prices in the ask/bid orderbook for the given trading pair.
      * @param base The address of the base asset for the trading pair.
      * @param quote The address of the quote asset for the trading pair.

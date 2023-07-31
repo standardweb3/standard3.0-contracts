@@ -109,7 +109,7 @@ contract MatchingEngine is AccessControl, Initializable {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) external returns (bool) {
+    ) public returns (bool) {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
@@ -157,7 +157,7 @@ contract MatchingEngine is AccessControl, Initializable {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) external returns (bool) {
+    ) public returns (bool) {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
@@ -206,7 +206,7 @@ contract MatchingEngine is AccessControl, Initializable {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) external returns (bool) {
+    ) public returns (bool) {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
@@ -248,7 +248,7 @@ contract MatchingEngine is AccessControl, Initializable {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) external returns (bool) {
+    ) public returns (bool) {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
@@ -284,7 +284,7 @@ contract MatchingEngine is AccessControl, Initializable {
         uint256 price,
         uint256 quoteAmount,
         uint32 uid
-    ) external returns (bool) {
+    ) public returns (bool) {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
@@ -313,7 +313,7 @@ contract MatchingEngine is AccessControl, Initializable {
         uint256 price,
         uint256 baseAmount,
         uint32 uid
-    ) external returns (bool) {
+    ) public returns (bool) {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
@@ -391,6 +391,52 @@ contract MatchingEngine is AccessControl, Initializable {
 
         emit OrderCanceled(orderbook, orderId, isBid, msg.sender);
         return true;
+    }
+
+    /**
+     * @dev Cancels an order in an orderbook by the given order ID and order type.
+     * @param base The address of the base asset for the trading pair
+     * @param quote The address of the quote asset for the trading pair
+     * @param price The price of the order to rematch
+     * @param orderId The ID of the order to cancel
+     * @param isBid Boolean indicating if the order to cancel is an ask order
+     * @param uid The ID of the user
+     * @return bool True if the order was successfully rematched, otherwise false.
+     */
+    function rematchOrder(
+        address base,
+        address quote,
+        uint256 price,
+        uint256 orderId,
+        bool isBid,
+        bool isMarket,
+        bool isMaker,
+        uint32 n,
+        uint32 uid
+    ) external returns (bool) {
+        address orderbook = IOrderbookFactory(orderbookFactory).getBookByPair(
+            base,
+            quote
+        );
+        uint256 remaining = IOrderbook(orderbook).cancelOrder(
+            isBid,
+            price,
+            orderId,
+            msg.sender
+        );
+        if(isBid) {
+            if(isMarket) {
+                return marketBuy(base, quote, remaining, isMaker, n, uid);
+            } else {
+                return limitBuy(base, quote, price, remaining, isMaker, n, uid);
+            }
+        } else {
+            if(isMarket) {
+                return marketSell(base, quote, remaining, isMaker, n, uid);
+            } else {
+                return limitSell(base, quote, price, remaining, isMaker, n, uid);
+            }
+        }
     }
 
     /**

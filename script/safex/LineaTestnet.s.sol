@@ -108,13 +108,13 @@ contract DistributeTestnetAssets is Deployer {
 
 contract SetupSABTInitialParameters is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
-    address constant matching_engine_address = 0x570281D2E260124874420Db3f163080bf490C989;
-    address constant membership_address = 0x2fa9690e4E16D71d34E418f54fd43Fa53e5cd947;
-    address constant sabt_address = 0xd16AAe9E49432E7b8376fA1966526B6542f46bD5;
+    address constant matching_engine_address = 0x357a3097801df2BD1D8C0dC0b108Eda87d70C095;
+    address constant membership_address = 0x66Ae9b088697Be16B0a752C8d1F56260C210E979;
+    address constant sabt_address = 0x816f12bCC240CfB91C696201F5b4B7b9eab25ade;
     address constant feeToken_address = 0x0622C0b5F53FF7252A5F90b4031a9adaa67a2d02;
     address constant stablecoin_address = 0x11a681c574F8e1d72DDCEEe0855032A77dfF8355;
-    address constant block_accountant_address = 0xb5a58135C2aE0cC05DD546bd35651CC57E236EF7;
-    address constant treasury_address = 0x60A78bFfc92976a5852894e17db7decf374Ce6D7;
+    address constant block_accountant_address = 0x669ac7e6220710a05944F7Ac0934c965aC42d0a1;
+    address constant treasury_address = 0xA2DDE4EEA79951156e898EB63477DE49e959b970;
     address constant deployer_address = 0x34CCCa03631830cD8296c172bf3c31e126814ce9;
 
     Membership public membership = Membership(membership_address);
@@ -140,7 +140,7 @@ contract SetupSABTInitialParameters is Deployer {
 
 contract SetupSAFEXInitialParameters is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
-    address constant matching_engine_address = 0x570281D2E260124874420Db3f163080bf490C989;
+    address constant matching_engine_address = 0x357a3097801df2BD1D8C0dC0b108Eda87d70C095;
     address constant feeToken_address = 0xE57Cdf5796C2f5281EDF1B81129E1D4Ff9190815;
     address constant stablecoin_address = 0xfB4c8b2658AB2bf32ab5Fc1627f115974B52FeA7;
     MatchingEngine public matchingEngine = MatchingEngine(matching_engine_address);

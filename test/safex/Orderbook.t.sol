@@ -1523,5 +1523,18 @@ contract OrderbookMatchTest is BaseSetup {
         console.log("Pairs:");
         console.log(pairs[0].base, pairs[0].quote);
     }
+
+    function testGetPairNames() public {
+         super.setUp();
+        vm.prank(booker);
+        matchingEngine.addPair(address(token1), address(token2));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token2))
+        );
+        IOrderbookFactory.Pair[] memory pairs = matchingEngine.getPairs(0,20);
+        console.log("Pairs:");
+        console.log(pairs[0].base, pairs[0].quote);
+        matchingEngine.getPairNames(0,20);
+    }
     
 }

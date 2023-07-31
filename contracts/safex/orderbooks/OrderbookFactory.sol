@@ -44,7 +44,10 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory, Initializable {
         impl = impl_;
     }
 
-    function createBook(address bid_, address ask_) external override returns (address orderbook) {
+    function createBook(
+        address bid_,
+        address ask_
+    ) external override returns (address orderbook) {
         if (msg.sender != engine) {
             revert InvalidAccess(msg.sender, engine);
         }
@@ -67,34 +70,49 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory, Initializable {
         return allOrderbooks[bookId_];
     }
 
-    function getBookByPair(address base, address quote) external view override returns (address book) {
+    function getBookByPair(
+        address base,
+        address quote
+    ) external view override returns (address book) {
         return orderbookByBaseQuote[base][quote];
     }
 
-    function getPairs(uint256 start, uint256 end) public view override returns (IOrderbookFactory.Pair[] memory) {
+    function getPairs(
+        uint256 start,
+        uint256 end
+    ) public view override returns (IOrderbookFactory.Pair[] memory) {
         uint256 last = end > allOrderbooks.length ? allOrderbooks.length : end;
         IOrderbookFactory.Pair[] memory pairs = new IOrderbookFactory.Pair[](
             last - start
         );
-       
         for (uint256 i = start; i < last; i++) {
-            IOrderbookFactory.Pair memory pair = baseQuoteByOrderbook[allOrderbooks[i]];
+            IOrderbookFactory.Pair memory pair = baseQuoteByOrderbook[
+                allOrderbooks[i]
+            ];
             pairs[i] = pair;
         }
         return pairs;
     }
 
-    function getPairsWithIds(uint256[] memory ids) public view override returns (IOrderbookFactory.Pair[] memory pairs) {
+    function getPairsWithIds(
+        uint256[] memory ids
+    ) public view override returns (IOrderbookFactory.Pair[] memory pairs) {
+        pairs = new IOrderbookFactory.Pair[](ids.length);
         for (uint256 i = 0; i < ids.length; i++) {
-            IOrderbookFactory.Pair memory pair = baseQuoteByOrderbook[allOrderbooks[ids[i]]];
+            IOrderbookFactory.Pair memory pair = baseQuoteByOrderbook[
+                allOrderbooks[ids[i]]
+            ];
             pairs[i] = pair;
         }
         return pairs;
     }
 
-    function getPairNames(uint256 start, uint256 end) external view override returns (string[] memory names) {
+    function getPairNames(
+        uint256 start,
+        uint256 end
+    ) external view override returns (string[] memory names) {
         IOrderbookFactory.Pair[] memory pairs = getPairs(start, end);
-        
+        names = new string[](pairs.length);
         for (uint256 i = 0; i < pairs.length; i++) {
             string memory baseName = IERC20(pairs[i].base).name();
             string memory quoteName = IERC20(pairs[i].quote).name();
@@ -103,9 +121,14 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory, Initializable {
         return names;
     }
 
-    function getPairNamesWithIds(uint256[] memory ids) external view override returns (string[] memory names) {
+    function getPairNamesWithIds(
+        uint256[] memory ids
+    ) external view override returns (string[] memory names) {
+        names = new string[](ids.length);
         for (uint256 i = 0; i < ids.length; i++) {
-            IOrderbookFactory.Pair memory pair = baseQuoteByOrderbook[allOrderbooks[ids[i]]];
+            IOrderbookFactory.Pair memory pair = baseQuoteByOrderbook[
+                allOrderbooks[ids[i]]
+            ];
             string memory baseName = IERC20(pair.base).name();
             string memory quoteName = IERC20(pair.quote).name();
             names[i] = string(abi.encodePacked(baseName, "/", quoteName));
@@ -113,7 +136,9 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory, Initializable {
         return names;
     }
 
-    function getBaseQuote(address orderbook) external view override returns (address base, address quote) {
+    function getBaseQuote(
+        address orderbook
+    ) external view override returns (address base, address quote) {
         IOrderbookFactory.Pair memory pair = baseQuoteByOrderbook[orderbook];
         return (pair.base, pair.quote);
     }
@@ -141,7 +166,9 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory, Initializable {
         bytes32 salt = keccak256(abi.encodePacked("orderbook", version));
         assembly {
             addr := create2(0, add(bytecode, 0x20), mload(bytecode), salt)
-            if iszero(extcodesize(addr)) { revert(0, 0) }
+            if iszero(extcodesize(addr)) {
+                revert(0, 0)
+            }
         }
         impl = addr;
     }

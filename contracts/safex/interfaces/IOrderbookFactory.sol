@@ -22,4 +22,10 @@ interface IOrderbookFactory {
     function engine() external view returns (address);
 
     function getPairs(uint256 start, uint256 end) external view returns (Pair[] memory);
+
+    function getPairsWithIds(uint256[] memory ids) external view returns (Pair[] memory);
+
+    function getPairNames(uint256 start, uint256 end) external view returns (string[] memory names);
+
+    function getPairNamesWithIds(uint256[] memory ids) external view returns (string[] memory names);
 }

@@ -7,6 +7,10 @@ import {CloneFactory} from "../libraries/CloneFactory.sol";
 import {IOrderbookFactory} from "../interfaces/IOrderbookFactory.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
+interface IERC20 {
+    function name() external view returns (string memory);
+}
+
 contract OrderbookFactory is AccessControl, IOrderbookFactory, Initializable {
     // Orderbooks
     address[] public allOrderbooks;
@@ -67,16 +71,46 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory, Initializable {
         return orderbookByBaseQuote[base][quote];
     }
 
-    function getPairs(uint256 start, uint256 end) external view override returns (IOrderbookFactory.Pair[] memory) {
-        IOrderbookFactory.Pair[] memory pairs = new IOrderbookFactory.Pair[](
-            end - start
-        );
+    function getPairs(uint256 start, uint256 end) public view override returns (IOrderbookFactory.Pair[] memory) {
         uint256 last = end > allOrderbooks.length ? allOrderbooks.length : end;
+        IOrderbookFactory.Pair[] memory pairs = new IOrderbookFactory.Pair[](
+            last - start
+        );
+       
         for (uint256 i = start; i < last; i++) {
             IOrderbookFactory.Pair memory pair = baseQuoteByOrderbook[allOrderbooks[i]];
             pairs[i] = pair;
         }
         return pairs;
+    }
+
+    function getPairsWithIds(uint256[] memory ids) public view override returns (IOrderbookFactory.Pair[] memory pairs) {
+        for (uint256 i = 0; i < ids.length; i++) {
+            IOrderbookFactory.Pair memory pair = baseQuoteByOrderbook[allOrderbooks[ids[i]]];
+            pairs[i] = pair;
+        }
+        return pairs;
+    }
+
+    function getPairNames(uint256 start, uint256 end) external view override returns (string[] memory names) {
+        IOrderbookFactory.Pair[] memory pairs = getPairs(start, end);
+        
+        for (uint256 i = 0; i < pairs.length; i++) {
+            string memory baseName = IERC20(pairs[i].base).name();
+            string memory quoteName = IERC20(pairs[i].quote).name();
+            names[i] = string(abi.encodePacked(baseName, "/", quoteName));
+        }
+        return names;
+    }
+
+    function getPairNamesWithIds(uint256[] memory ids) external view override returns (string[] memory names) {
+        for (uint256 i = 0; i < ids.length; i++) {
+            IOrderbookFactory.Pair memory pair = baseQuoteByOrderbook[allOrderbooks[ids[i]]];
+            string memory baseName = IERC20(pair.base).name();
+            string memory quoteName = IERC20(pair.quote).name();
+            names[i] = string(abi.encodePacked(baseName, "/", quoteName));
+        }
+        return names;
     }
 
     function getBaseQuote(address orderbook) external view override returns (address base, address quote) {

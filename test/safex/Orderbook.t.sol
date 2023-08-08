@@ -1534,7 +1534,30 @@ contract OrderbookMatchTest is BaseSetup {
         IOrderbookFactory.Pair[] memory pairs = matchingEngine.getPairs(0,20);
         console.log("Pairs:");
         console.log(pairs[0].base, pairs[0].quote);
-        matchingEngine.getPairNames(0,20);
+        string[] memory names = matchingEngine.getPairNames(0,20);
+        console.log(names[0]);
+    }
+
+    function testAmountIsZero() public {
+        super.setUp();
+        vm.prank(booker);
+        matchingEngine.addPair(address(token1), address(token2));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token2))
+        );
+        vm.prank(trader1);
+        // placeBid or placeAsk two of them is using the _insertId function it will revert
+        // because the program will enter the "if (amount > self.orders[head].depositAmount)."
+        // statement, and eventually, it will cause an infinite loop.
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            500000000,
+            10,
+            true,
+            2,
+            0
+        );
     }
     
 }

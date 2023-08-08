@@ -19,6 +19,8 @@ interface IOrderbook {
 
     function getRequired(bool isBid, uint256 price, uint256 orderId) external view returns (uint256 required);
 
+    function convert(uint256 price, uint256 amount, bool isBid) external view returns (uint256 converted);
+
     function placeAsk(address owner, uint256 price, uint256 amount) external;
 
     function placeBid(address owner, uint256 price, uint256 amount) external;

@@ -63,6 +63,7 @@ contract MatchingEngine is AccessControl, Initializable {
     error InvalidFeeRate(uint256 feeNum, uint256 feeDenom);
     error NotContract(address newImpl);
     error InvalidRole(bytes32 role, address sender);
+    error OrderSizeTooSmall(uint256 amount, uint256 minRequired);
 
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -113,6 +114,7 @@ contract MatchingEngine is AccessControl, Initializable {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
+            0,
             quoteAmount,
             true,
             uid,
@@ -161,6 +163,7 @@ contract MatchingEngine is AccessControl, Initializable {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
+            0,
             baseAmount,
             false,
             uid,
@@ -210,6 +213,7 @@ contract MatchingEngine is AccessControl, Initializable {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
+            price,
             quoteAmount,
             true,
             uid,
@@ -252,6 +256,7 @@ contract MatchingEngine is AccessControl, Initializable {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
+            price,
             baseAmount,
             false,
             uid,
@@ -288,6 +293,7 @@ contract MatchingEngine is AccessControl, Initializable {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
+            price,
             quoteAmount,
             false,
             uid,
@@ -317,6 +323,7 @@ contract MatchingEngine is AccessControl, Initializable {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
+            price,
             baseAmount,
             false,
             uid,
@@ -661,7 +668,7 @@ contract MatchingEngine is AccessControl, Initializable {
         address quote,
         uint256 amount,
         bool isBid
-    ) external view returns (uint256 converted) {
+    ) public view returns (uint256 converted) {
         address orderbook = getBookByPair(base, quote);
         if (base == quote) {
             return amount;
@@ -882,11 +889,17 @@ contract MatchingEngine is AccessControl, Initializable {
     function _deposit(
         address base,
         address quote,
+        uint256 price,
         uint256 amount,
         bool isBid,
         uint32 uid,
         bool isMaker
     ) internal returns (uint256 withoutFee, address book) {
+        // check if amount is valid in case of both market and limit
+        uint256 converted = price == 0 ? convert(base,quote,amount, isBid) : _convert(base, quote, price, amount, isBid);
+        if (converted == 0) {
+            revert OrderSizeTooSmall(amount, price == 0 ? convert(base,quote, 1, !isBid) : _convert(base, quote, price, 1, !isBid));
+        }
         // check if sender has uid
         uint256 fee = _fee(base, quote, amount, isBid, uid, isMaker);
         withoutFee = amount - fee;
@@ -934,6 +947,34 @@ contract MatchingEngine is AccessControl, Initializable {
             return (amount * feeNum) / feeDenom;
         } else {
             return amount / 1000;
+        }
+    }
+
+    /**
+     * @dev return converted amount from base to quote or vice versa
+     * @param base address of base asset
+     * @param quote address of quote asset
+     * @param price price of base/quote regardless of decimals of the assets in the pair represented with 8 decimals (if 1000, base is 1000x quote) proposed by a trader
+     * @param amount amount of base or quote asset
+     * @param isBid if true, amount is quote asset, otherwise base asset
+     * @return converted converted amount from base to quote or vice versa.
+     * if true, amount is quote asset, otherwise base asset
+     * if orderbook does not exist, return 0
+     */
+    function _convert(
+        address base,
+        address quote,
+        uint256 price,
+        uint256 amount,
+        bool isBid
+    ) internal view returns (uint256 converted) {
+        address orderbook = getBookByPair(base, quote);
+        if (base == quote) {
+            return amount;
+        } else if (orderbook == address(0)) {
+            return 0;
+        } else {
+            return IOrderbook(orderbook).convert(price, amount, isBid);
         }
     }
 }

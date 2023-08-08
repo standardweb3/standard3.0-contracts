@@ -8,7 +8,7 @@ import {IOrderbookFactory} from "../interfaces/IOrderbookFactory.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 interface IERC20 {
-    function name() external view returns (string memory);
+    function symbol() external view returns (string memory);
 }
 
 contract OrderbookFactory is AccessControl, IOrderbookFactory, Initializable {
@@ -114,8 +114,8 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory, Initializable {
         IOrderbookFactory.Pair[] memory pairs = getPairs(start, end);
         names = new string[](pairs.length);
         for (uint256 i = 0; i < pairs.length; i++) {
-            string memory baseName = IERC20(pairs[i].base).name();
-            string memory quoteName = IERC20(pairs[i].quote).name();
+            string memory baseName = IERC20(pairs[i].base).symbol();
+            string memory quoteName = IERC20(pairs[i].quote).symbol();
             names[i] = string(abi.encodePacked(baseName, "/", quoteName));
         }
         return names;
@@ -129,8 +129,8 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory, Initializable {
             IOrderbookFactory.Pair memory pair = baseQuoteByOrderbook[
                 allOrderbooks[ids[i]]
             ];
-            string memory baseName = IERC20(pair.base).name();
-            string memory quoteName = IERC20(pair.quote).name();
+            string memory baseName = IERC20(pair.base).symbol();
+            string memory quoteName = IERC20(pair.quote).symbol();
             names[i] = string(abi.encodePacked(baseName, "/", quoteName));
         }
         return names;

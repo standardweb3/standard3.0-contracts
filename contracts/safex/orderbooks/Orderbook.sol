@@ -134,9 +134,9 @@ contract Orderbook is IOrderbook, Initializable {
         SAFEXOrderbook.Order memory order = isBid
             ? _bidOrders._getOrder(orderId)
             : _askOrders._getOrder(orderId);
-        uint256 converted = _convert(price, amount, isBid);
+        uint256 converted = convert(price, amount, isBid);
         if (converted == 0) {
-            revert OrderSizeTooSmall(amount, _convert(price, 1, isBid));
+            revert OrderSizeTooSmall(amount, convert(price, 1, !isBid));
         }
         // if isBid == true, sender is matching ask order with bid order(i.e. selling base to receive quote), otherwise sender is matching bid order with ask order(i.e. buying base with quote)
         if (isBid) {
@@ -169,7 +169,7 @@ contract Orderbook is IOrderbook, Initializable {
         SAFEXOrderbook.Order memory order = isBid
             ? _bidOrders._getOrder(orderId)
             : _askOrders._getOrder(orderId);
-        required = _convert(price, order.depositAmount, !isBid);
+        required = convert(price, order.depositAmount, !isBid);
         if (required <= remaining) {
             isBid ? _bidOrders._fpop(price) : _askOrders._fpop(price);
             if (isEmpty(isBid, price)) {
@@ -201,7 +201,7 @@ contract Orderbook is IOrderbook, Initializable {
          * converting the number converting decimal from quote to base,
          * otherwise quote amount is baseAmount * price, converting decimal from base to quote
          */
-        return _convert(price, order.depositAmount, isBid);
+        return convert(price, order.depositAmount, isBid);
     }
 
     /////////////////////////////////
@@ -273,18 +273,18 @@ contract Orderbook is IOrderbook, Initializable {
         uint256 amount,
         bool isBid
     ) external view returns (uint256 converted) {
-        return _convert(priceLists._mktPrice(), amount, isBid);
+        return convert(priceLists._mktPrice(), amount, isBid);
     }
 
     function isEmpty(bool isBid, uint256 price) public view returns (bool) {
         return isBid ? _bidOrders._isEmpty(price) : _askOrders._isEmpty(price);
     }
 
-    function _convert(
+    function convert(
         uint256 price,
         uint256 amount,
         bool isBid
-    ) internal view returns (uint256 converted) {
+    ) public view returns (uint256 converted) {
         if (isBid) {
             // convert quote to base
             return

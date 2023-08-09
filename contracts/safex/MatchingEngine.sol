@@ -896,9 +896,9 @@ contract MatchingEngine is AccessControl, Initializable {
         bool isMaker
     ) internal returns (uint256 withoutFee, address book) {
         // check if amount is valid in case of both market and limit
-        uint256 converted = price == 0 ? convert(base,quote,amount, isBid) : _convert(base, quote, price, amount, isBid);
+        uint256 converted = price == 0 ? convert(base,quote,amount, !isBid) : _convert(base, quote, price, amount, !isBid);
         if (converted == 0) {
-            revert OrderSizeTooSmall(amount, price == 0 ? convert(base,quote, 1, !isBid) : _convert(base, quote, price, 1, !isBid));
+            revert OrderSizeTooSmall(amount, price == 0 ? convert(base,quote, 1, isBid) : _convert(base, quote, price, 1, isBid));
         }
         // check if sender has uid
         uint256 fee = _fee(base, quote, amount, isBid, uid, isMaker);

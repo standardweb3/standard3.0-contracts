@@ -394,7 +394,7 @@ contract OrderbookMatchTest is BaseSetup {
             address(token1),
             address(token2),
             2,
-            10,
+            5e7,
             true,
             2,
             0
@@ -404,7 +404,7 @@ contract OrderbookMatchTest is BaseSetup {
             address(token1),
             address(token2),
             5,
-            10,
+            2e7,
             true,
             2,
             0
@@ -414,7 +414,7 @@ contract OrderbookMatchTest is BaseSetup {
             address(token1),
             address(token2),
             5,
-            10,
+            2e7,
             true,
             2,
             0
@@ -425,7 +425,7 @@ contract OrderbookMatchTest is BaseSetup {
             address(token1),
             address(token2),
             6,
-            10,
+            2e7,
             true,
             2,
             0
@@ -447,7 +447,7 @@ contract OrderbookMatchTest is BaseSetup {
             address(token1),
             address(token2),
             5,
-            10,
+            2e7,
             true,
             2,
             0
@@ -458,7 +458,7 @@ contract OrderbookMatchTest is BaseSetup {
             address(token1),
             address(token2),
             1,
-            10,
+            1e8,
             true,
             2,
             0
@@ -1371,7 +1371,7 @@ contract OrderbookMatchTest is BaseSetup {
             address(token1),
             address(token2),
             99800000000,
-            1,
+            998,
             true,
             5,
             0
@@ -1381,7 +1381,7 @@ contract OrderbookMatchTest is BaseSetup {
             address(token1),
             address(token2),
             99900000000,
-            1,
+            999,
             true,
             5,
             0
@@ -1391,7 +1391,7 @@ contract OrderbookMatchTest is BaseSetup {
             address(token1),
             address(token2),
             99700000000,
-            1,
+            997,
             true,
             5,
             0

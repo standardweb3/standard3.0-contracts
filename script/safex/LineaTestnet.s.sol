@@ -128,18 +128,18 @@ contract DistributeTestnetAssets is Deployer {
 contract SetupSABTInitialParameters is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     address constant matching_engine_address =
-        0x10Eea7fb79ACE2242B29A6eACD1aedc9eE79c52e;
+        0x8a22e83Aaf7E90eEab385C4d97cbD5F6a58d5DF7;
     address constant membership_address =
-        0xA4d1EE2aa3DE1F0CC7C3053E13F45e58F57E14f2;
-    address constant sabt_address = 0xc7C95160EF033448F9426C1a9611Dd96BB485344;
+        0xd5EC00dbaDF8d9369e5b330645478aAFA298A73D;
+    address constant sabt_address = 0x240aA2c15fBf6F65882A847462b04d5DA51A37Df;
     address constant feeToken_address =
         0x0622C0b5F53FF7252A5F90b4031a9adaa67a2d02;
     address constant stablecoin_address =
         0x11a681c574F8e1d72DDCEEe0855032A77dfF8355;
     address constant block_accountant_address =
-        0xF2CFc2aB1fE693926Daf00ab533a76ce4E930518;
+        0xb31e69f571c3B4219710931e86a9BC8b8378fb1E;
     address constant treasury_address =
-        0x626FC45Cb821DFEb89c78245a1aB54d335E52246;
+        0x86b3Bd0C9896b97f6aCfBA87E6CEe0033FF708F8;
     address constant deployer_address =
         0x34CCCa03631830cD8296c172bf3c31e126814ce9;
 
@@ -168,7 +168,7 @@ contract SetupSABTInitialParameters is Deployer {
 contract SetupSAFEXInitialParameters is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     address constant matching_engine_address =
-        0x10Eea7fb79ACE2242B29A6eACD1aedc9eE79c52e;
+        0x8a22e83Aaf7E90eEab385C4d97cbD5F6a58d5DF7;
     address constant feeToken_address =
         0xE57Cdf5796C2f5281EDF1B81129E1D4Ff9190815;
     address constant stablecoin_address =

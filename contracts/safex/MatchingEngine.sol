@@ -645,6 +645,14 @@ contract MatchingEngine is AccessControl, Initializable {
         return IOrderbookFactory(orderbookFactory).getBookByPair(base, quote);
     }
 
+    function heads(
+        address base,
+        address quote
+    ) external view returns (uint256 bidHead, uint256 askHead) {
+        address orderbook = getBookByPair(base, quote);
+        return IOrderbook(orderbook).heads();
+    }
+
     function mktPrice(
         address base,
         address quote

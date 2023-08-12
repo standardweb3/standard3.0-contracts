@@ -134,6 +134,7 @@ contract Orderbook is IOrderbook, Initializable {
         SAFEXOrderbook.Order memory order = isBid
             ? _bidOrders._getOrder(orderId)
             : _askOrders._getOrder(orderId);
+        uint256 converted = convert(price, amount, isBid);
         // if isBid == true, sender is matching ask order with bid order(i.e. selling base to receive quote), otherwise sender is matching bid order with ask order(i.e. buying base with quote)
         if (isBid) {
             // sender is matching ask order for base asset with quote asset
@@ -285,14 +286,14 @@ contract Orderbook is IOrderbook, Initializable {
             // convert quote to base
             return
                 baseBquote
-                    ?  ((amount * price) / 1e8) / decDiff 
+                    ? ((amount * price) / 1e8) / decDiff
                     : ((amount * price) / 1e8) * decDiff;
         } else {
             // convert base to quote
             return
                 baseBquote
-                    ? (amount * 1e8 / price) * decDiff
-                    : (amount * 1e8 / price) / decDiff;
+                    ? ((amount * 1e8) / price) * decDiff
+                    : ((amount * 1e8) / price) / decDiff;
         }
     }
 }

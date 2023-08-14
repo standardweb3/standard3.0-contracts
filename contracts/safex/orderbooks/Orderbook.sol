@@ -25,11 +25,6 @@ contract Orderbook is IOrderbook, Initializable {
     uint64 private decDiff;
     bool private baseBquote;
 
-    event OrderPlaced(address base, address quote, bool isBid, uint256 orderId);
-
-    //uint32 private constant PRICEONE = 1e8;
-
-    // Reuse order storage with SAFEXLinkedList with isBid always true
     SAFEXLinkedList.PriceLinkedList private priceLists;
     SAFEXOrderbook.OrderStorage private _askOrders;
     SAFEXOrderbook.OrderStorage private _bidOrders;
@@ -70,28 +65,28 @@ contract Orderbook is IOrderbook, Initializable {
         address owner,
         uint256 price,
         uint256 amount
-    ) external onlyEngine {
-        uint32 id = _askOrders._createOrder(owner, amount);
+    ) external onlyEngine returns (uint32 id)  {
+        id = _askOrders._createOrder(owner, amount);
         // check if the price is new in the list. if not, insert id to the list
         if (_askOrders._isEmpty(price)) {
             priceLists._insert(false, price);
         }
         _askOrders._insertId(price, id, amount);
-        emit OrderPlaced(pair.base, pair.quote, false, id);
+        return id;
     }
 
     function placeBid(
         address owner,
         uint256 price,
         uint256 amount
-    ) external onlyEngine {
-        uint32 id = _bidOrders._createOrder(owner, amount);
+    ) external onlyEngine returns (uint32 id) {
+        id = _bidOrders._createOrder(owner, amount);
         // check if the price is new in the list. if not, insert id to the list
         if (_bidOrders._isEmpty(price)) {
             priceLists._insert(true, price);
         }
         _bidOrders._insertId(price, id, amount);
-        emit OrderPlaced(pair.base, pair.quote, true, id);
+        return id;
     }
 
     function cancelOrder(

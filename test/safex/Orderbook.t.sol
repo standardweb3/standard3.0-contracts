@@ -169,6 +169,9 @@ contract OrderbookMatchTest is BaseSetup {
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token2))
+        );
         vm.prank(trader1);
         vm.expectRevert();
         book.placeBid(trader1, 1e8, 2);
@@ -1510,8 +1513,6 @@ contract OrderbookMatchTest is BaseSetup {
         console.log(book.askHead());
     }
 
-
-    
     function testGetPairs() public {
         super.setUp();
         vm.prank(booker);
@@ -1559,5 +1560,4 @@ contract OrderbookMatchTest is BaseSetup {
             0
         );
     }
-    
 }

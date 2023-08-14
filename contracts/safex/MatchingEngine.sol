@@ -57,6 +57,8 @@ contract MatchingEngine is AccessControl, Initializable {
         uint256 price
     );
 
+    event OrderPlaced(address base, address quote, bool isBid, uint256 orderId);
+
     event PairAdded(address orderbook, address base, address quote);
 
     error TooManyMatches(uint256 n);
@@ -121,7 +123,9 @@ contract MatchingEngine is AccessControl, Initializable {
             isMaker
         );
         // negate on give if the asset is not the base
-        (uint256 remaining, uint256 lmp) = _limitOrder(
+        uint256 lmp;
+        // reuse withoutFee variable due to stack too deep error
+        (withoutFee, lmp) = _limitOrder(
             orderbook,
             withoutFee,
             quote,
@@ -130,10 +134,12 @@ contract MatchingEngine is AccessControl, Initializable {
             n
         );
         // add make order on market price
+
         _detMake(
-            orderbook,
+            base,
             quote,
-            remaining,
+            orderbook,
+            withoutFee,
             lmp == 0 ? mktPrice(base, quote) : lmp,
             true,
             isMaker
@@ -170,18 +176,21 @@ contract MatchingEngine is AccessControl, Initializable {
             isMaker
         );
         // negate on give if the asset is not the base
-        (uint256 remaining, uint256 lmp) = _limitOrder(
+        uint256 lmp;
+        // reuse withoutFee variable for storing remaining amount after matching due to stack too deep error
+        (withoutFee, lmp) = _limitOrder(
             orderbook,
             withoutFee,
             base,
             false,
-            type(uint256).max,
+            0,
             n
         );
         _detMake(
-            orderbook,
             base,
-            remaining,
+            quote,
+            orderbook,
+            withoutFee,
             lmp == 0 ? mktPrice(base, quote) : lmp,
             false,
             isMaker
@@ -219,7 +228,10 @@ contract MatchingEngine is AccessControl, Initializable {
             uid,
             isMaker
         );
-        (uint256 remaining, uint256 lmp) = _limitOrder(
+        // negate on give if the asset is not the base
+        uint256 lmp;
+        // reuse withoutFee variable for storing remaining amount after matching due to stack too deep error
+        (withoutFee, lmp) = _limitOrder(
             orderbook,
             withoutFee,
             quote,
@@ -228,7 +240,15 @@ contract MatchingEngine is AccessControl, Initializable {
             n
         );
 
-        _detMake(orderbook, quote, remaining, lmp == 0 ? price : lmp, true, isMaker);
+        _detMake(
+            base,
+            quote,
+            orderbook,
+            withoutFee,
+            lmp == 0 ? price : lmp,
+            true,
+            isMaker
+        );
         return true;
     }
 
@@ -262,7 +282,10 @@ contract MatchingEngine is AccessControl, Initializable {
             uid,
             isMaker
         );
-        (uint256 remaining, uint256 lmp) = _limitOrder(
+        // negate on give if the asset is not the base
+        uint256 lmp;
+        // reuse withoutFee variable for storing remaining amount after matching due to stack too deep error
+        (withoutFee, lmp) = _limitOrder(
             orderbook,
             withoutFee,
             base,
@@ -270,7 +293,15 @@ contract MatchingEngine is AccessControl, Initializable {
             price,
             n
         );
-        _detMake(orderbook, base, remaining, lmp == 0 ? price : lmp, false, isMaker);
+        _detMake(
+            base,
+            quote,
+            orderbook,
+            withoutFee,
+            lmp == 0 ? price : lmp,
+            false,
+            isMaker
+        );
         return true;
     }
 
@@ -300,7 +331,7 @@ contract MatchingEngine is AccessControl, Initializable {
             true
         );
         TransferHelper.safeTransfer(quote, orderbook, withoutFee);
-        _makeOrder(orderbook, withoutFee, price, true);
+        _makeOrder(base, quote, orderbook, withoutFee, price, true);
         return true;
     }
 
@@ -330,7 +361,7 @@ contract MatchingEngine is AccessControl, Initializable {
             true
         );
         TransferHelper.safeTransfer(base, orderbook, withoutFee);
-        _makeOrder(orderbook, withoutFee, price, false);
+        _makeOrder(base, quote, orderbook, withoutFee, price, false);
         return true;
     }
 
@@ -431,17 +462,18 @@ contract MatchingEngine is AccessControl, Initializable {
             orderId,
             msg.sender
         );
-        if(isBid) {
-            if(isMarket) {
+        if (isBid) {
+            if (isMarket) {
                 return marketBuy(base, quote, remaining, isMaker, n, uid);
             } else {
                 return limitBuy(base, quote, price, remaining, isMaker, n, uid);
             }
         } else {
-            if(isMarket) {
+            if (isMarket) {
                 return marketSell(base, quote, remaining, isMaker, n, uid);
             } else {
-                return limitSell(base, quote, price, remaining, isMaker, n, uid);
+                return
+                    limitSell(base, quote, price, remaining, isMaker, n, uid);
             }
         }
     }
@@ -689,23 +721,29 @@ contract MatchingEngine is AccessControl, Initializable {
 
     /**
      * @dev Internal function which makes an order on the orderbook.
+     * @param base The address of the base asset for the trading pair
+     * @param quote The address of the quote asset for the trading pair
      * @param orderbook The address of the orderbook contract for the trading pair
      * @param withoutFee The remaining amount of the asset after the market order has been executed
      * @param price The price, base/quote regardless of decimals of the assets in the pair represented with 8 decimals (if 1000, base is 1000x quote)
      * @param isBid Boolean indicating if the order is a buy (false) or a sell (true)
      */
     function _makeOrder(
+        address base,
+        address quote,
         address orderbook,
         uint256 withoutFee,
         uint256 price,
         bool isBid
     ) internal {
+        uint32 id;
         // create order
         if (isBid) {
-            IOrderbook(orderbook).placeBid(msg.sender, price, withoutFee);
+            id = IOrderbook(orderbook).placeBid(msg.sender, price, withoutFee);
         } else {
-            IOrderbook(orderbook).placeAsk(msg.sender, price, withoutFee);
+            id = IOrderbook(orderbook).placeAsk(msg.sender, price, withoutFee);
         }
+        emit OrderPlaced(base, quote, isBid, id);
     }
 
     /**
@@ -862,16 +900,18 @@ contract MatchingEngine is AccessControl, Initializable {
      * @dev Determines if an order can be made at the market price,
      * and if so, makes the an order on the orderbook.
      * If an order cannot be made, transfers the remaining asset to either the orderbook or the user.
+     * @param base The address of the base asset for the trading pair
+     * @param quote The address of the quote asset for the trading pair
      * @param orderbook The address of the orderbook contract for the trading pair
-     * @param asset The address of the asset to be traded after making order
      * @param remaining The remaining amount of the asset after the market order has been taken
      * @param price The price used to determine if an order can be made
      * @param isBid Boolean indicating if the order was a buy (true) or a sell (false)
      * @param isMaker Boolean indicating if an order is for storing in orderbook
      */
     function _detMake(
+        address base,
+        address quote,
         address orderbook,
-        address asset,
         uint256 remaining,
         uint256 price,
         bool isBid,
@@ -879,8 +919,8 @@ contract MatchingEngine is AccessControl, Initializable {
     ) internal {
         if (remaining > 0) {
             address stopTo = isMaker ? orderbook : msg.sender;
-            TransferHelper.safeTransfer(asset, stopTo, remaining);
-            if (isMaker) _makeOrder(orderbook, remaining, price, isBid);
+            TransferHelper.safeTransfer(isBid ? quote : base, stopTo, remaining);
+            if (isMaker) _makeOrder(base, quote, orderbook, remaining, price, isBid);
         }
     }
 
@@ -904,9 +944,16 @@ contract MatchingEngine is AccessControl, Initializable {
         bool isMaker
     ) internal returns (uint256 withoutFee, address book) {
         // check if amount is valid in case of both market and limit
-        uint256 converted = price == 0 ? convert(base,quote,amount, !isBid) : _convert(base, quote, price, amount, !isBid);
+        uint256 converted = price == 0
+            ? convert(base, quote, amount, !isBid)
+            : _convert(base, quote, price, amount, !isBid);
         if (converted == 0) {
-            revert OrderSizeTooSmall(amount, price == 0 ? convert(base,quote, 1, isBid) : _convert(base, quote, price, 1, isBid));
+            revert OrderSizeTooSmall(
+                amount,
+                price == 0
+                    ? convert(base, quote, 1, isBid)
+                    : _convert(base, quote, price, 1, isBid)
+            );
         }
         // check if sender has uid
         uint256 fee = _fee(base, quote, amount, isBid, uid, isMaker);

@@ -21,9 +21,9 @@ interface IOrderbook {
 
     function convert(uint256 price, uint256 amount, bool isBid) external view returns (uint256 converted);
 
-    function placeAsk(address owner, uint256 price, uint256 amount) external;
+    function placeAsk(address owner, uint256 price, uint256 amount) external returns (uint32 orderId);
 
-    function placeBid(address owner, uint256 price, uint256 amount) external;
+    function placeBid(address owner, uint256 price, uint256 amount) external returns (uint32 orderId);
 
     function cancelOrder(bool isBid, uint256 price, uint32 orderId, address owner)
         external

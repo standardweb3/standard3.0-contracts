@@ -71,7 +71,7 @@ contract Orderbook is IOrderbook, Initializable {
         uint256 price,
         uint256 amount
     ) external onlyEngine {
-        uint256 id = _askOrders._createOrder(owner, amount);
+        uint32 id = _askOrders._createOrder(owner, amount);
         // check if the price is new in the list. if not, insert id to the list
         if (_askOrders._isEmpty(price)) {
             priceLists._insert(false, price);
@@ -85,7 +85,7 @@ contract Orderbook is IOrderbook, Initializable {
         uint256 price,
         uint256 amount
     ) external onlyEngine {
-        uint256 id = _bidOrders._createOrder(owner, amount);
+        uint32 id = _bidOrders._createOrder(owner, amount);
         // check if the price is new in the list. if not, insert id to the list
         if (_bidOrders._isEmpty(price)) {
             priceLists._insert(true, price);
@@ -97,7 +97,7 @@ contract Orderbook is IOrderbook, Initializable {
     function cancelOrder(
         bool isBid,
         uint256 price,
-        uint256 orderId,
+        uint32 orderId,
         address owner
     ) external onlyEngine returns (uint256 remaining) {
         SAFEXOrderbook.Order memory order = isBid
@@ -125,7 +125,7 @@ contract Orderbook is IOrderbook, Initializable {
     }
 
     function execute(
-        uint256 orderId,
+        uint32 orderId,
         bool isBid,
         uint256 price,
         address sender,
@@ -161,7 +161,7 @@ contract Orderbook is IOrderbook, Initializable {
         bool isBid,
         uint256 price,
         uint256 remaining
-    ) external onlyEngine returns (uint256 orderId, uint256 required) {
+    ) external onlyEngine returns (uint32 orderId, uint256 required) {
         orderId = isBid ? _bidOrders._head(price) : _askOrders._head(price);
         SAFEXOrderbook.Order memory order = isBid
             ? _bidOrders._getOrder(orderId)
@@ -186,7 +186,7 @@ contract Orderbook is IOrderbook, Initializable {
     function getRequired(
         bool isBid,
         uint256 price,
-        uint256 orderId
+        uint32 orderId
     ) external view returns (uint256 required) {
         SAFEXOrderbook.Order memory order = isBid
             ? _bidOrders._getOrder(orderId)
@@ -223,7 +223,7 @@ contract Orderbook is IOrderbook, Initializable {
 
     function getPrices(
         bool isBid,
-        uint256 n
+        uint32 n
     ) external view returns (uint256[] memory) {
         return priceLists._getPrices(isBid, n);
     }
@@ -231,8 +231,8 @@ contract Orderbook is IOrderbook, Initializable {
     function getOrderIds(
         bool isBid,
         uint256 price,
-        uint256 n
-    ) external view returns (uint256[] memory) {
+        uint32 n
+    ) external view returns (uint32[] memory) {
         return
             isBid
                 ? _bidOrders._getOrderIds(price, n)
@@ -242,7 +242,7 @@ contract Orderbook is IOrderbook, Initializable {
     function getOrders(
         bool isBid,
         uint256 price,
-        uint256 n
+        uint32 n
     ) external view returns (SAFEXOrderbook.Order[] memory) {
         return
             isBid
@@ -252,7 +252,7 @@ contract Orderbook is IOrderbook, Initializable {
 
     function getOrder(
         bool isBid,
-        uint256 orderId
+        uint32 orderId
     ) external view returns (SAFEXOrderbook.Order memory) {
         return
             isBid

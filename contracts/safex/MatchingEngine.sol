@@ -121,7 +121,7 @@ contract MatchingEngine is AccessControl, Initializable {
             isMaker
         );
         // negate on give if the asset is not the base
-        uint256 remaining = _limitOrder(
+        (uint256 remaining, uint256 lmp) = _limitOrder(
             orderbook,
             withoutFee,
             quote,
@@ -134,7 +134,7 @@ contract MatchingEngine is AccessControl, Initializable {
             orderbook,
             quote,
             remaining,
-            mktPrice(base, quote),
+            lmp == 0 ? mktPrice(base, quote) : lmp,
             true,
             isMaker
         );
@@ -170,7 +170,7 @@ contract MatchingEngine is AccessControl, Initializable {
             isMaker
         );
         // negate on give if the asset is not the base
-        uint256 remaining = _limitOrder(
+        (uint256 remaining, uint256 lmp) = _limitOrder(
             orderbook,
             withoutFee,
             base,
@@ -182,7 +182,7 @@ contract MatchingEngine is AccessControl, Initializable {
             orderbook,
             base,
             remaining,
-            mktPrice(base, quote),
+            lmp == 0 ? mktPrice(base, quote) : lmp,
             false,
             isMaker
         );
@@ -219,7 +219,7 @@ contract MatchingEngine is AccessControl, Initializable {
             uid,
             isMaker
         );
-        uint256 remaining = _limitOrder(
+        (uint256 remaining, uint256 lmp) = _limitOrder(
             orderbook,
             withoutFee,
             quote,
@@ -228,7 +228,7 @@ contract MatchingEngine is AccessControl, Initializable {
             n
         );
 
-        _detMake(orderbook, quote, remaining, price, true, isMaker);
+        _detMake(orderbook, quote, remaining, lmp == 0 ? price : lmp, true, isMaker);
         return true;
     }
 
@@ -262,7 +262,7 @@ contract MatchingEngine is AccessControl, Initializable {
             uid,
             isMaker
         );
-        uint256 remaining = _limitOrder(
+        (uint256 remaining, uint256 lmp) = _limitOrder(
             orderbook,
             withoutFee,
             base,
@@ -270,7 +270,7 @@ contract MatchingEngine is AccessControl, Initializable {
             price,
             n
         );
-        _detMake(orderbook, base, remaining, price, false, isMaker);
+        _detMake(orderbook, base, remaining, lmp == 0 ? price : lmp, false, isMaker);
         return true;
     }
 
@@ -365,7 +365,7 @@ contract MatchingEngine is AccessControl, Initializable {
         address base,
         address quote,
         uint256 price,
-        uint256 orderId,
+        uint32 orderId,
         bool isBid,
         uint32 uid
     ) external returns (bool) {
@@ -414,7 +414,7 @@ contract MatchingEngine is AccessControl, Initializable {
         address base,
         address quote,
         uint256 price,
-        uint256 orderId,
+        uint32 orderId,
         bool isBid,
         bool isMarket,
         bool isMaker,
@@ -571,7 +571,7 @@ contract MatchingEngine is AccessControl, Initializable {
         address base,
         address quote,
         bool isBid,
-        uint256 n
+        uint32 n
     ) external view returns (uint256[] memory) {
         address orderbook = getBookByPair(base, quote);
         return IOrderbook(orderbook).getPrices(isBid, n);
@@ -590,7 +590,7 @@ contract MatchingEngine is AccessControl, Initializable {
         address quote,
         bool isBid,
         uint256 price,
-        uint256 n
+        uint32 n
     ) external view returns (SAFEXOrderbook.Order[] memory) {
         address orderbook = getBookByPair(base, quote);
         return IOrderbook(orderbook).getOrders(isBid, price, n);
@@ -607,7 +607,7 @@ contract MatchingEngine is AccessControl, Initializable {
         address base,
         address quote,
         bool isBid,
-        uint256 orderId
+        uint32 orderId
     ) external view returns (SAFEXOrderbook.Order memory) {
         address orderbook = getBookByPair(base, quote);
         return IOrderbook(orderbook).getOrder(isBid, orderId);
@@ -626,8 +626,8 @@ contract MatchingEngine is AccessControl, Initializable {
         address quote,
         bool isBid,
         uint256 price,
-        uint256 n
-    ) external view returns (uint256[] memory) {
+        uint32 n
+    ) external view returns (uint32[] memory) {
         address orderbook = getBookByPair(base, quote);
         return IOrderbook(orderbook).getOrderIds(isBid, price, n);
     }
@@ -730,7 +730,7 @@ contract MatchingEngine is AccessControl, Initializable {
             i < n
         ) {
             // fpop OrderLinkedList by price, if ask you get bid order, if bid you get ask order. Get quote asset on bid order on buy, base asset on ask order on sell
-            (uint256 orderId, uint256 required) = IOrderbook(orderbook).fpop(
+            (uint32 orderId, uint256 required) = IOrderbook(orderbook).fpop(
                 !isBid,
                 price,
                 remaining
@@ -810,9 +810,9 @@ contract MatchingEngine is AccessControl, Initializable {
         bool isBid,
         uint256 limitPrice,
         uint32 n
-    ) internal returns (uint256 remaining) {
+    ) internal returns (uint256 remaining, uint256 lmp) {
         remaining = amount;
-        uint256 lmp = 0;
+        lmp = 0;
         uint32 i = 0;
         if (isBid) {
             // check if there is any matching ask order until matching ask order price is lower than the limit bid Price
@@ -855,7 +855,7 @@ contract MatchingEngine is AccessControl, Initializable {
         if (lmp != 0) {
             IOrderbook(orderbook).setLmp(lmp);
         }
-        return (remaining);
+        return (remaining, lmp);
     }
 
     /**

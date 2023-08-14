@@ -7,7 +7,7 @@ import "../libraries/SAFEXOrderbook.sol";
 interface IOrderbook {
     function initialize(uint256 id, address base_, address quote_, address engine_) external;
 
-    function fpop(bool isBid, uint256 price, uint256 remaining) external returns (uint256 orderId, uint256 required);
+    function fpop(bool isBid, uint256 price, uint256 remaining) external returns (uint32 orderId, uint256 required);
 
     function setLmp(uint256 lmp) external;
 
@@ -17,7 +17,7 @@ interface IOrderbook {
 
     function isEmpty(bool isBid, uint256 price) external view returns (bool);
 
-    function getRequired(bool isBid, uint256 price, uint256 orderId) external view returns (uint256 required);
+    function getRequired(bool isBid, uint256 price, uint32 orderId) external view returns (uint256 required);
 
     function convert(uint256 price, uint256 amount, bool isBid) external view returns (uint256 converted);
 
@@ -25,11 +25,11 @@ interface IOrderbook {
 
     function placeBid(address owner, uint256 price, uint256 amount) external;
 
-    function cancelOrder(bool isBid, uint256 price, uint256 orderId, address owner)
+    function cancelOrder(bool isBid, uint256 price, uint32 orderId, address owner)
         external
         returns (uint256 remaining);
 
-    function execute(uint256 orderId, bool isBid, uint256 price, address sender, uint256 amount)
+    function execute(uint32 orderId, bool isBid, uint256 price, address sender, uint256 amount)
         external
         returns (address owner);
 
@@ -39,11 +39,11 @@ interface IOrderbook {
 
     function bidHead() external view returns (uint256);
 
-    function getPrices(bool isBid, uint256 n) external view returns (uint256[] memory);
+    function getPrices(bool isBid, uint32 n) external view returns (uint256[] memory);
 
-    function getOrders(bool isBid, uint256 price, uint256 n) external view returns (SAFEXOrderbook.Order[] memory);
+    function getOrders(bool isBid, uint256 price, uint32 n) external view returns (SAFEXOrderbook.Order[] memory);
 
-    function getOrder(bool isBid, uint256 orderId) external view returns (SAFEXOrderbook.Order memory);
+    function getOrder(bool isBid, uint32 orderId) external view returns (SAFEXOrderbook.Order memory);
 
-    function getOrderIds(bool isBid, uint256 price, uint256 n) external view returns (uint256[] memory);
+    function getOrderIds(bool isBid, uint256 price, uint32 n) external view returns (uint32[] memory);
 }

@@ -13,21 +13,21 @@ library SAFEXOrderbook {
     struct OrderStorage {
         /// Hashmap-style linked list of prices to route orders
         // key: price, value: order indices linked hashmap
-        mapping(uint256 => mapping(uint256 => uint256)) list;
-        mapping(uint256 => Order) orders;
+        mapping(uint256 => mapping(uint32 => uint32)) list;
+        mapping(uint32 => Order) orders;
         // Head of the linked list(i.e. lowest ask price / highest bid price)
-        mapping(uint256 => uint256) head;
+        mapping(uint256 => uint32) head;
         // count of the orders, used for array allocation
-        uint256 count;
+        uint32 count;
         address engine;
     }
 
     // for orders, lower depositAmount are next, higher depositAmount comes first
-    function _insertId(OrderStorage storage self, uint256 price, uint256 id, uint256 amount) internal {
-        uint256 last = 0;
-        uint256 head = self.head[price];
-        mapping(uint256 => uint256) storage list = self.list[price];
-        mapping(uint256 => Order) storage orders = self.orders;
+    function _insertId(OrderStorage storage self, uint256 price, uint32 id, uint256 amount) internal {
+        uint32 last = 0;
+        uint32 head = self.head[price];
+        mapping(uint32 => uint32) storage list = self.list[price];
+        mapping(uint32 => Order) storage orders = self.orders;
         // insert order to the linked list
         // if the list is empty
         if (head == 0 || amount > self.orders[head].depositAmount) {
@@ -38,7 +38,7 @@ library SAFEXOrderbook {
         // Traverse through list until we find the right spot where id's deposit amount is higher than next
         while (head != 0) {
             // what if order deposit amount is bigger than the next order's deposit amount?
-            uint256 next = list[head];
+            uint32 next = list[head];
             if (amount < orders[next].depositAmount) {
                 // Keep traversing
                 head = list[head];
@@ -67,11 +67,11 @@ library SAFEXOrderbook {
 
     // pop front
     function _fpop(OrderStorage storage self, uint256 price) internal returns (uint256) {
-        uint256 first = self.head[price];
+        uint32 first = self.head[price];
         if (first == 0) {
             return 0;
         }
-        uint256 next = self.list[price][first];
+        uint32 next = self.list[price][first];
         self.head[price] = next;
         delete self.list[price][first];
         return first;
@@ -79,16 +79,16 @@ library SAFEXOrderbook {
 
     function _createOrder(OrderStorage storage self, address owner, uint256 depositAmount)
         internal
-        returns (uint256 id)
+        returns (uint32 id)
     {
         Order memory order = Order({owner: owner, depositAmount: depositAmount});
         // prevent order overflow, order id must start from 1
-        self.count = self.count == 0 || self.count == type(uint256).max ? 1 : self.count + 1;
+        self.count = self.count == 0 || self.count == type(uint32).max ? 1 : self.count + 1;
         self.orders[self.count] = order;
         return self.count;
     }
 
-    function _decreaseOrder(OrderStorage storage self, uint256 price, uint256 id, uint256 amount) internal {
+    function _decreaseOrder(OrderStorage storage self, uint256 price, uint32 id, uint256 amount) internal {
         uint256 decreased = self.orders[id].depositAmount - amount;
         if (decreased == 0) {
             _deleteOrder(self, price, id);
@@ -97,10 +97,10 @@ library SAFEXOrderbook {
         }
     }
 
-    function _deleteOrder(OrderStorage storage self, uint256 price, uint256 id) internal {
-        uint256 last = 0;
-        uint256 head = self.head[price];
-        mapping(uint256 => uint256) storage list = self.list[price];
+    function _deleteOrder(OrderStorage storage self, uint256 price, uint32 id) internal {
+        uint32 last = 0;
+        uint32 head = self.head[price];
+        mapping(uint32 => uint32) storage list = self.list[price];
         if (head == id) {
             self.head[price] = list[head];
             delete list[id];
@@ -109,7 +109,7 @@ library SAFEXOrderbook {
         }
         // search for the order id in the linked list
         while (head != 0) {
-            uint256 next = list[head];
+            uint32 next = list[head];
             if (head == id) {
                 list[last] = next;
                 delete list[id];
@@ -122,14 +122,14 @@ library SAFEXOrderbook {
     }
 
     // show n order ids at the price in the orderbook
-    function _getOrderIds(OrderStorage storage self, uint256 price, uint256 n)
+    function _getOrderIds(OrderStorage storage self, uint256 price, uint32 n)
         internal
         view
-        returns (uint256[] memory)
+        returns (uint32[] memory)
     {
-        uint256 head = self.head[price];
-        uint256[] memory orders = new uint256[](n);
-        uint256 i = 0;
+        uint32 head = self.head[price];
+        uint32[] memory orders = new uint32[](n);
+        uint32 i = 0;
         while (head != 0 && i < n) {
             orders[i] = head;
             head = self.list[price][head];
@@ -138,10 +138,10 @@ library SAFEXOrderbook {
         return orders;
     }
 
-    function _getOrders(OrderStorage storage self, uint256 price, uint256 n) internal view returns (Order[] memory) {
-        uint256 head = self.head[price];
+    function _getOrders(OrderStorage storage self, uint256 price, uint32 n) internal view returns (Order[] memory) {
+        uint32 head = self.head[price];
         Order[] memory orders = new Order[](n);
-        uint256 i = 0;
+        uint32 i = 0;
         while (head != 0 && i < n) {
             orders[i] = self.orders[head];
             head = self.list[price][head];
@@ -150,7 +150,7 @@ library SAFEXOrderbook {
         return orders;
     }
 
-    function _head(OrderStorage storage self, uint256 price) internal view returns (uint256) {
+    function _head(OrderStorage storage self, uint256 price) internal view returns (uint32) {
         return self.head[price];
     }
 
@@ -158,11 +158,11 @@ library SAFEXOrderbook {
         return self.head[price] == 0;
     }
 
-    function _next(OrderStorage storage self, uint256 price, uint256 curr) internal view returns (uint256) {
+    function _next(OrderStorage storage self, uint256 price, uint32 curr) internal view returns (uint32) {
         return self.list[price][curr];
     }
 
-    function _getOrder(OrderStorage storage self, uint256 id) internal view returns (Order memory) {
+    function _getOrder(OrderStorage storage self, uint32 id) internal view returns (Order memory) {
         return self.orders[id];
     }
 }

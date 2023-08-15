@@ -164,16 +164,17 @@ contract DeployAll is Deployer {
     }
 }
 
-
 contract DeployTestnetContracts is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     /// Second per block to finalize
     uint32 constant spb = 12;
-    address constant deployer_address = 0x34CCCa03631830cD8296c172bf3c31e126814ce9;
-    address constant foundation_address = 0x34CCCa03631830cD8296c172bf3c31e126814ce9;
+    address constant deployer_address =
+        0x34CCCa03631830cD8296c172bf3c31e126814ce9;
+    address constant foundation_address =
+        0x34CCCa03631830cD8296c172bf3c31e126814ce9;
     address constant weth = 0x2C1b868d6596a18e32E61B901E4060C872647b6C;
-    address constant feeToken = 0xE57Cdf5796C2f5281EDF1B81129E1D4Ff9190815;
-    address constant stablecoin = 0xfB4c8b2658AB2bf32ab5Fc1627f115974B52FeA7;
+    address constant feeToken = 0x0622C0b5F53FF7252A5F90b4031a9adaa67a2d02;
+    address constant stablecoin = 0x11a681c574F8e1d72DDCEEe0855032A77dfF8355;
 
     function run() external {
         _setDeployer();
@@ -185,20 +186,30 @@ contract DeployTestnetContracts is Deployer {
         sabt.initialize(address(membership));
         // Setup accountant and treasury
         BlockAccountant accountant = new BlockAccountant();
-        accountant.initialize(address(membership), address(matchingEngine), address(stablecoin), spb);
+        accountant.initialize(
+            address(membership),
+            address(matchingEngine),
+            address(stablecoin),
+            spb
+        );
         Treasury treasury = new Treasury();
         treasury.initialize(address(accountant), address(sabt));
         matchingEngine.initialize(
-            address(orderbookFactory), address(membership), address(accountant), address(treasury)
+            address(orderbookFactory),
+            address(membership),
+            address(accountant),
+            address(treasury)
         );
         orderbookFactory.initialize(address(matchingEngine));
         // Wire up matching engine with them
-        accountant.grantRole(accountant.REPORTER_ROLE(), address(matchingEngine));
+        accountant.grantRole(
+            accountant.REPORTER_ROLE(),
+            address(matchingEngine)
+        );
         treasury.grantRole(treasury.REPORTER_ROLE(), address(matchingEngine));
         vm.stopBroadcast();
     }
 }
-
 
 contract DistributeTestnetAssets is Deployer {
     // Change address constants on deploying to other networks from DeployAssets

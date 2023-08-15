@@ -39,7 +39,7 @@ To set up these tools, visit their respective [official documentation](https://b
 The environment variable file(`.env`) should store list of unexposed informaiton with variable declarations as below:
 
 ```
-RINKEBY_RPC=https://rinkeby.infura.io/v3/<INFURA_RPC_API_KEY>
+LINEA_TESTNET_RPC=https://rinkeby.infura.io/v3/<INFURA_RPC_API_KEY>
 PRIVATE_KEY=<PRIVATE KEY>
 ```
 
@@ -65,10 +65,10 @@ source .env
    Standard has customized deployment `forge-script` for each app in each network in `script` folder.
    For deploying an app to a specific network, let's say we deploy SAFEX in Linea Testnet(Goerli).
 
-   Use this command below to test results after deployment.
+   Use this command below to test results after deployment. Use declared variables from `.env` file for network connection
 
    ```bash
-   forge script script/safex/LineaTestnet.s.sol:DeployAll  -vvvv
+   forge script script/safex/LineaTestnet.s.sol:DeployAll  --rpc-url $LINEA_TESTNET_RPC -vvvv
    ```
 
    ***
@@ -110,7 +110,7 @@ source .env
    If you think you are ready to deploy after calculating costs, add `--broadcast` option to send deploying transaciton to the network as below:
 
    ```bash
-   forge script script/safex/LineaTestnet.s.sol:DeployAll  -vvvv --broadcast
+   forge script script/safex/LineaTestnet.s.sol:DeployAll  --rpc-url $LINEA_TESTNET_RPC -vvvv --broadcast
    ```
 
 ---

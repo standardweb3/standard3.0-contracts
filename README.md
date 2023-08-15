@@ -38,7 +38,7 @@ The **Standard super app** stands as a pinnacle in the web3.0 ecosystem, bestowi
 
 ### 2. [SAFEX: The Digital Marketplace](./contracts/safex/README.md)
 
-- **Core Functionality**: A trusted zone to trade digital assets.
+- **Core Functionality**: A fully decentralized orderbook exchange
 - **Benefits**:
   - Execute trades at user-defined prices and scales.
   - Equipped with tools that cater to both novices and veterans in digital trading.
@@ -49,7 +49,7 @@ The **Standard super app** stands as a pinnacle in the web3.0 ecosystem, bestowi
 
 ### 3. [SAFU: Monetary Standardization](./contracts/safu/README.md)
 
-- **Core Functionality**: Grants users the liberty to adopt a preferred financial standard.
+- **Core Functionality**: Grants users the liberty to adopt a preferred financial standard with stablecoin.
 - **Benefits**:
   - Operates with an autonomous reserve currency system, sidestepping traditional exchange rate constraints.
   - Combines autonomous monetary blueprints with monitored capital flow for customizable financial strategizing.
@@ -58,7 +58,7 @@ The **Standard super app** stands as a pinnacle in the web3.0 ecosystem, bestowi
 
 ### 4. [SAIL: Navigating Economic Currents](./contracts/sail/README.md)
 
-- **Core Functionality**: A strategic toolset for dynamic wealth management.
+- **Core Functionality**: A strategic toolset for dynamic wealth management with perpetual futures.
 - **Benefits**:
   - Users can amplify or dilute their asset exposure in line with anticipated economic trends.
   - Provides actionable insights for optimal asset placement.

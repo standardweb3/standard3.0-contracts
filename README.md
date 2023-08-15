@@ -70,7 +70,7 @@ In essence, the **Standard super app** unifies **SABT** (governance & credit man
 
 To deploy Standard Protocol contracts, please refer to our detailed deployment guide:
 
-<a href="https://github.com/standardweb3/standard-2.0-contracts/contracts/deploy.md" target="_blank" style="background-color:#3F3F3F; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Go to Deployment Guide</a>
+<a href="https://github.com/standardweb3/standard-2.0-contracts/blob/main/contracts/deploy.md" target="_blank" style="background-color:#3F3F3F; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Go to Deployment Guide</a>
 
 Instructions within this guide will walk you through the entire deployment process using Foundry and Forge tools. Please ensure you follow the steps meticulously to ensure successful deployment.
 

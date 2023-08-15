@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="./media/standard_profile.jpeg" width=100/>
+
   <h1><code>Standard</code></h1>
 
   <p>

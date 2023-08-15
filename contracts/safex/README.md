@@ -75,6 +75,11 @@ If you discover any security issues or vulnerabilities, please report them respo
 
 For developers looking to work on the contracts within a local environment, follow the deployment instructions detailed in our [deployment guide](). This guide provides a comprehensive walkthrough on setting up, interacting with, and debugging the contracts in a controlled local setting.
 
+## Documentation
+
+For a comprehensive understanding of SAFEX and its functionalities, visit the official [documentation](https://docs.standardweb3.com).
+
+
 ## Licensing
 
 The primary license for the codes in this repo are the Business Source License 1.1 (`BUSL-1.1`), see [`LICENSE`](./LICENSE).

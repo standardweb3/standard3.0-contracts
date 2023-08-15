@@ -46,6 +46,124 @@ contract DeployTestnetAssets is Deployer {
     }
 }
 
+contract DeployAll is Deployer {
+    // Change address constants on deploying to other networks or private keys
+    address constant deployer_address =
+        0x34CCCa03631830cD8296c172bf3c31e126814ce9;
+    address constant trader1_address =
+        0x6408fb579e106fC59f964eC33FE123738A2D0Da3;
+    address constant trader2_address =
+        0xf5aE3B9dF4e6972a229E7915D55F9FBE5900fE95;
+    address constant foundation_address =
+        0x34CCCa03631830cD8296c172bf3c31e126814ce9;
+    // seconds per block
+    uint32 spb = 12;
+
+    function run() external {
+        _setDeployer();
+
+        // DeployAssets
+        MockToken feeToken = new MockToken("Standard", "STND");
+        MockToken stablecoin = new MockToken("Stablecoin", "STBC");
+
+        // DeployContracts
+        OrderbookFactory orderbookFactory = new OrderbookFactory();
+        MatchingEngine matchingEngine = new MatchingEngine();
+        Membership membership = new Membership();
+        SABT sabt = new SABT();
+        membership.initialize(address(sabt), foundation_address);
+        sabt.initialize(address(membership));
+        // Setup accountant and treasury
+        BlockAccountant accountant = new BlockAccountant();
+        accountant.initialize(
+            address(membership),
+            address(matchingEngine),
+            address(stablecoin),
+            spb
+        );
+        Treasury treasury = new Treasury();
+        treasury.initialize(address(accountant), address(sabt));
+        matchingEngine.initialize(
+            address(orderbookFactory),
+            address(membership),
+            address(accountant),
+            address(treasury)
+        );
+        orderbookFactory.initialize(address(matchingEngine));
+        // Wire up matching engine with them
+        accountant.grantRole(
+            accountant.REPORTER_ROLE(),
+            address(matchingEngine)
+        );
+        treasury.grantRole(treasury.REPORTER_ROLE(), address(matchingEngine));
+
+        // DistributeAssets
+        // Mint fee Token to the deployer, trader1, trader2
+        feeToken.mint(deployer_address, 1000000000000000000000000e18);
+        feeToken.mint(trader1_address, 100000e18);
+        feeToken.mint(trader2_address, 100000e18);
+
+        // Mint stablecoin to the deployer, trader1, trader2
+        stablecoin.mint(deployer_address, 1000000000000000000000000000e18);
+        stablecoin.mint(trader1_address, 100000e18);
+        stablecoin.mint(trader2_address, 100000e18);
+
+        // SetupSABTInitialParameters
+        // set Fee in membership contract
+        membership.setMembership(1, address(feeToken), 1000, 1000, 10000);
+
+        // Get membership
+        feeToken.approve(address(membership), 1e30);
+        membership.register(1, address(feeToken));
+        membership.subscribe(1, 1000000, address(feeToken));
+
+        // SetupSAFEXInitialParameters
+        // Setup pair between stablecoin and feeToken with price
+        feeToken.approve(address(matchingEngine), 100000e18);
+        matchingEngine.addPair(address(feeToken), address(stablecoin));
+
+        // make a price in matching engine where 1 feeToken = 1000 stablecoin with buy and sell order
+        feeToken.approve(address(matchingEngine), 100000e18);
+        stablecoin.approve(address(matchingEngine), 100000000e18);
+        // add limit orders
+        matchingEngine.limitSell(
+            address(feeToken),
+            address(stablecoin),
+            1000e8,
+            10000e18,
+            true,
+            1,
+            0
+        );
+        matchingEngine.limitBuy(
+            address(feeToken),
+            address(stablecoin),
+            1000e8,
+            10000000e18,
+            false,
+            1,
+            1
+        );
+
+        // DeployTokenDispenser
+        TokenDispenser dispenser = new TokenDispenser();
+
+        uint256 deposit_amount = 1e40;
+        uint256 airdrop_amount = 100000e18;
+
+        // AddAirdrop
+        feeToken.mint(deployer_address, deposit_amount);
+        feeToken.transfer(address(dispenser), deposit_amount);
+        dispenser.setTokenAmount(address(feeToken), airdrop_amount);
+
+        stablecoin.mint(deployer_address, deposit_amount);
+        stablecoin.transfer(address(dispenser), deposit_amount);
+        dispenser.setTokenAmount(address(stablecoin), airdrop_amount);
+
+        vm.stopBroadcast();
+    }
+}
+
 contract DeployTestnetContracts is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     /// Second per block to finalize

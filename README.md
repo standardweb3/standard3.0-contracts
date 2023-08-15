@@ -26,11 +26,57 @@ The Standard super app is a self-sovereign financial platform that empowers indi
 ---
 2. **Trading Digital Assets with [SAFEX](./contracts/safex/README.md)**: Standard offers the SAFEX app, which allows users to trade digital assets at their preferred prices and quantities. Whether you're a seasoned trader or new to the digital market, SAFEX offers the tools to buy and sell with precision and control.
 ---
-3. **Choosing a Unit of Account with [SAFU](./contracts/safu/README.md)**: The SAFU app within Standard enables users to select their preferred unit of account for their finance interacting with its own reserve currency system. Independent from fixed exchange rate with the US dollar, SAFU builds a monetary system relying on both sovereign monetary policy with controlled capital flow. This unique feature allows for tailored financial planning and management, aligning with personal preferences and strategies.
+3. **Financing Digital Assets with a Shared Unit of Account with [SAFU](./contracts/safu/README.md)**: The SAFU app within Standard enables users to select their preferred unit of account for their finance interacting with its own reserve currency system. Independent from fixed exchange rate with the US dollar, SAFU builds a monetary system relying on both sovereign monetary policy with controlled capital flow. This unique feature allows for tailored financial planning and management, aligning with personal preferences and strategies.
 ---
 4. **Leveraging and Deleveraging Wealth with [SAIL](./contracts/sail/README.md)**: If you're looking to leverage (increase exposure using borrowed capital) or deleverage (reduce exposure) your wealth based on future economic cycles, the SAIL app offers a streamlined solution. This functionality provides users with the ability to strategically position their assets in accordance with market predictions.
 ---
 Collectively, these apps, including **SABT** for credit management and governance, **SAFEX** for digital asset trading, **SAFU** for unit of account selection, and **SAIL** for leveraging and deleveraging strategies, create a cohesive ecosystem within the Standard super app. Together, they offer a wide range of financial tools and capabilities, providing a comprehensive solution for navigating the complex landscape of digital finance. Whether managing credit, trading digital assets, selecting a monetary unit, or leveraging wealth, Standard equips users with the tools they need to take control of their financial futures. It's more than just a platform; it's a gateway to the future of decentralized economic empowerment.
+
+# The Standard Super App: Your Web3.0 Financial Gateway
+
+The **Standard super app** stands as a pinnacle in the web3.0 ecosystem, bestowing individuals with a suite of integrated apps. Each app is meticulously designed to elevate diverse financial management and trading needs. Here's an insight into what each facet of Standard offers:
+
+---
+
+### 1. [SABT: Your Financial Steward](./contracts/sabt/README.md)
+
+- **Core Functionality**: Acts as your self-managed account on the Standard platform.
+- **Benefits**:
+  - Houses credits that synergize with other apps within the platform.
+  - Enables seamless transactions and financial mechanics.
+  - Lets users employ credits for platform governance, actively shaping its trajectory.
+  - Active subscribers can swap credits for a slice of the company's revenue, a testimony to Standard's revolutionary revenue-sharing model.
+
+---
+
+### 2. [SAFEX: The Digital Marketplace](./contracts/safex/README.md)
+
+- **Core Functionality**: A trusted zone to trade digital assets.
+- **Benefits**:
+  - Execute trades at user-defined prices and scales.
+  - Equipped with tools that cater to both novices and veterans in digital trading.
+
+---
+
+### 3. [SAFU: Monetary Standardization](./contracts/safu/README.md)
+
+- **Core Functionality**: Grants users the liberty to adopt a preferred financial standard.
+- **Benefits**:
+  - Operates with an autonomous reserve currency system, sidestepping traditional exchange rate constraints.
+  - Combines autonomous monetary blueprints with monitored capital flow for customizable financial strategizing.
+
+---
+
+### 4. [SAIL: Navigating Economic Currents](./contracts/sail/README.md)
+
+- **Core Functionality**: A strategic toolset for dynamic wealth management.
+- **Benefits**:
+  - Users can amplify or dilute their asset exposure in line with anticipated economic trends.
+  - Provides actionable insights for optimal asset placement.
+
+---
+
+In essence, the **Standard super app** unifies **SABT** (governance & credit management), **SAFEX** (digital trading), **SAFU** (financial standardization), and **SAIL** (wealth strategy) into a cohesive ecosystem. This ensemble delivers a holistic suite of financial instruments, streamlining the intricacies of digital finance. With Standard, users are equipped, empowered, and emboldened to architect their financial destinies. It's not merely a platform but a beacon heralding the dawn of decentralized economic empowerment.
 
 
 ## Docs

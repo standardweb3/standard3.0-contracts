@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: BUSL-1.1
 
 pragma solidity ^0.8.17;
-
-import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {IOrderbookFactory} from "./interfaces/IOrderbookFactory.sol";
 import {IOrderbook, SAFEXOrderbook} from "./interfaces/IOrderbook.sol";
 import {TransferHelper} from "./libraries/TransferHelper.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 interface IRevenue {
     function report(
@@ -27,7 +26,7 @@ interface IRevenue {
 }
 
 // Onchain Matching engine for the orders
-contract MatchingEngine is AccessControl, Initializable {
+contract MatchingEngine is Initializable, ReentrancyGuard {
     // fee recipient
     address private feeTo;
     // fee denominator
@@ -67,9 +66,7 @@ contract MatchingEngine is AccessControl, Initializable {
     error InvalidRole(bytes32 role, address sender);
     error OrderSizeTooSmall(uint256 amount, uint256 minRequired);
 
-    constructor() {
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-    }
+    constructor() {}
 
     /**
      * @dev Initialize the matching engine with orderbook factory and listing requirements.
@@ -87,7 +84,7 @@ contract MatchingEngine is AccessControl, Initializable {
         address membership_,
         address accountant_,
         address treasury_
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) initializer {
+    ) external initializer {
         orderbookFactory = orderbookFactory_;
         membership = membership_;
         accountant = accountant_;
@@ -112,7 +109,7 @@ contract MatchingEngine is AccessControl, Initializable {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) public returns (bool) {
+    ) public nonReentrant returns (bool) {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
@@ -165,7 +162,7 @@ contract MatchingEngine is AccessControl, Initializable {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) public returns (bool) {
+    ) public nonReentrant returns (bool) {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
@@ -218,7 +215,7 @@ contract MatchingEngine is AccessControl, Initializable {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) public returns (bool) {
+    ) public nonReentrant returns (bool) {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
@@ -272,7 +269,7 @@ contract MatchingEngine is AccessControl, Initializable {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) public returns (bool) {
+    ) public nonReentrant returns (bool) {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
@@ -320,7 +317,7 @@ contract MatchingEngine is AccessControl, Initializable {
         uint256 price,
         uint256 quoteAmount,
         uint32 uid
-    ) public returns (bool) {
+    ) public nonReentrant returns (bool) {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
@@ -350,7 +347,7 @@ contract MatchingEngine is AccessControl, Initializable {
         uint256 price,
         uint256 baseAmount,
         uint32 uid
-    ) public returns (bool) {
+    ) public nonReentrant returns (bool) {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
@@ -399,7 +396,7 @@ contract MatchingEngine is AccessControl, Initializable {
         uint32 orderId,
         bool isBid,
         uint32 uid
-    ) external returns (bool) {
+    ) public nonReentrant returns (bool) {
         address orderbook = IOrderbookFactory(orderbookFactory).getBookByPair(
             base,
             quote
@@ -431,6 +428,20 @@ contract MatchingEngine is AccessControl, Initializable {
         return true;
     }
 
+    function cancelOrders(
+        address[] memory base,
+        address[] memory quote,
+        uint256[] memory prices,
+        uint32[] memory orderIds,
+        bool[] memory isBid,
+        uint32 uid
+    ) external nonReentrant returns (bool) {
+        for (uint32 i = 0; i<orderIds.length; i++) {
+            cancelOrder(base[i], quote[i], prices[i], orderIds[i], isBid[i], uid);
+        }
+        return true;
+    }
+
     /**
      * @dev Cancels an order in an orderbook by the given order ID and order type.
      * @param base The address of the base asset for the trading pair
@@ -451,7 +462,7 @@ contract MatchingEngine is AccessControl, Initializable {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) external returns (bool) {
+    ) external nonReentrant returns (bool) {
         address orderbook = IOrderbookFactory(orderbookFactory).getBookByPair(
             base,
             quote
@@ -919,8 +930,13 @@ contract MatchingEngine is AccessControl, Initializable {
     ) internal {
         if (remaining > 0) {
             address stopTo = isMaker ? orderbook : msg.sender;
-            TransferHelper.safeTransfer(isBid ? quote : base, stopTo, remaining);
-            if (isMaker) _makeOrder(base, quote, orderbook, remaining, price, isBid);
+            TransferHelper.safeTransfer(
+                isBid ? quote : base,
+                stopTo,
+                remaining
+            );
+            if (isMaker)
+                _makeOrder(base, quote, orderbook, remaining, price, isBid);
         }
     }
 

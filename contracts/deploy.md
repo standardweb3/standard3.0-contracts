@@ -110,7 +110,7 @@ source .env
    If you think you are ready to deploy after calculating costs, add `--broadcast` option to send deploying transaciton to the network. To get latest gas price and set it for deploying, use `--fork-url`. Just in case if the auto-configured gas price causes out of gas error, set `--gas-limit` option high enough to run script thoroughly. The final command should be written as below:
 
    ```bash
-   forge script script/safex/LineaTestnet.s.sol:DeployAll  --fork-url $LINEA_TESTNET_RPC -vvvv --broadcast --gas-limit --gas-limit 18446744073709551615 --legacy 
+   forge script script/safex/LineaTestnet.s.sol:DeployAll  --fork-url $LINEA_TESTNET_RPC -vvvv --broadcast --gas-limit 18446744073709551615 --legacy 
    ```
 
 ---

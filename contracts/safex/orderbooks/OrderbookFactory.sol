@@ -11,7 +11,7 @@ interface IERC20 {
     function symbol() external view returns (string memory);
 }
 
-contract OrderbookFactory is AccessControl, IOrderbookFactory, Initializable {
+contract OrderbookFactory is IOrderbookFactory, Initializable {
     // Orderbooks
     address[] public allOrderbooks;
     /// Address of manager
@@ -21,44 +21,50 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory, Initializable {
     /// address of order impl
     address public impl;
 
-    /// mapping of orderbooks based on base and quote
-    mapping(address => mapping(address => address)) public orderbookByBaseQuote;
-    /// mapping of base and quote asset of the orderbook
-    mapping(address => IOrderbookFactory.Pair) public baseQuoteByOrderbook;
-
-    error InvalidRole(bytes32 role, address sender);
-
     error InvalidAccess(address sender, address allowed);
-    error PairAlreadyExists(address base, address quote);
+    error PairAlreadyExists(address base, address quote, address pair);
+    error SameBaseQuote(address base, address quote);
 
     constructor() {
-        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _createImpl();
     }
 
-    /**
-     * @dev Set implementation address to be used for orderbook creation, used for upgrades.
-     * @param impl_ implementation contract address to get business logic
-     */
-    function setImpl(address impl_) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        impl = impl_;
-    }
-
     function createBook(
-        address bid_,
-        address ask_
+        address base_,
+        address quote_
     ) external override returns (address orderbook) {
         if (msg.sender != engine) {
             revert InvalidAccess(msg.sender, engine);
         }
-        if (orderbookByBaseQuote[bid_][ask_] != address(0)) {
-            revert PairAlreadyExists(bid_, ask_);
+
+        if (base_ == quote_) {
+            revert SameBaseQuote(base_, quote_);
         }
-        address proxy = CloneFactory._createClone(impl);
-        IOrderbook(proxy).initialize(allOrderbooksLength(), bid_, ask_, engine);
+
+        address pair = _predictAddress(base_, quote_);
+
+        // Check if the address has code
+        uint32 size;
+        assembly {
+            size := extcodesize(pair)
+        }
+
+        // If the address has code and it's a clone of impl, revert.
+        if (size > 0 || CloneFactory._isClone(impl, pair)) {
+            revert PairAlreadyExists(base_, quote_, pair);
+        }
+
+        address proxy = CloneFactory._createCloneWithSalt(
+            impl,
+            _getSalt(base_, quote_)
+        );
+        IOrderbook(proxy).initialize(
+            allOrderbooksLength(),
+            base_,
+            quote_,
+            engine
+        );
         allOrderbooks.push(proxy);
-        orderbookByBaseQuote[bid_][ask_] = proxy;
-        baseQuoteByOrderbook[proxy] = Pair(bid_, ask_);
         return (proxy);
     }
 
@@ -74,7 +80,7 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory, Initializable {
         address base,
         address quote
     ) external view override returns (address book) {
-        return orderbookByBaseQuote[base][quote];
+        return _predictAddress(base, quote);
     }
 
     function getPairs(
@@ -86,10 +92,9 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory, Initializable {
             last - start
         );
         for (uint256 i = start; i < last; i++) {
-            IOrderbookFactory.Pair memory pair = baseQuoteByOrderbook[
-                allOrderbooks[i]
-            ];
-            pairs[i] = pair;
+            (address base, address quote) = IOrderbook(allOrderbooks[i])
+                .getBaseQuote();
+            pairs[i] = Pair(base, quote);
         }
         return pairs;
     }
@@ -99,10 +104,9 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory, Initializable {
     ) public view override returns (IOrderbookFactory.Pair[] memory pairs) {
         pairs = new IOrderbookFactory.Pair[](ids.length);
         for (uint256 i = 0; i < ids.length; i++) {
-            IOrderbookFactory.Pair memory pair = baseQuoteByOrderbook[
-                allOrderbooks[ids[i]]
-            ];
-            pairs[i] = pair;
+            (address base, address quote) = IOrderbook(allOrderbooks[i])
+                .getBaseQuote();
+            pairs[i] = Pair(base, quote);
         }
         return pairs;
     }
@@ -126,11 +130,10 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory, Initializable {
     ) external view override returns (string[] memory names) {
         names = new string[](ids.length);
         for (uint256 i = 0; i < ids.length; i++) {
-            IOrderbookFactory.Pair memory pair = baseQuoteByOrderbook[
-                allOrderbooks[ids[i]]
-            ];
-            string memory baseName = IERC20(pair.base).symbol();
-            string memory quoteName = IERC20(pair.quote).symbol();
+            (address base, address quote) = IOrderbook(allOrderbooks[i])
+                .getBaseQuote();
+            string memory baseName = IERC20(base).symbol();
+            string memory quoteName = IERC20(quote).symbol();
             names[i] = string(abi.encodePacked(baseName, "/", quoteName));
         }
         return names;
@@ -139,8 +142,7 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory, Initializable {
     function getBaseQuote(
         address orderbook
     ) external view override returns (address base, address quote) {
-        IOrderbookFactory.Pair memory pair = baseQuoteByOrderbook[orderbook];
-        return (pair.base, pair.quote);
+        return IOrderbook(orderbook).getBaseQuote();
     }
 
     /**
@@ -148,10 +150,6 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory, Initializable {
      * @param engine_ The address of the engine contract
      */
     function initialize(address engine_) public initializer {
-        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
-            // Invalid Access
-            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
-        }
         engine = engine_;
     }
 
@@ -171,5 +169,20 @@ contract OrderbookFactory is AccessControl, IOrderbookFactory, Initializable {
             }
         }
         impl = addr;
+    }
+
+    function _predictAddress(
+        address base_,
+        address quote_
+    ) internal view returns (address) {
+        bytes32 salt = _getSalt(base_, quote_);
+        return CloneFactory.predictAddressWithSalt(address(this), impl, salt);
+    }
+
+    function _getSalt(
+        address base_,
+        address quote_
+    ) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked(base_, quote_));
     }
 }

@@ -1520,22 +1520,22 @@ contract OrderbookMatchTest is BaseSetup {
         book = Orderbook(
             orderbookFactory.getBookByPair(address(token1), address(token2))
         );
-        IOrderbookFactory.Pair[] memory pairs = matchingEngine.getPairs(0,20);
+        IOrderbookFactory.Pair[] memory pairs = matchingEngine.getPairs(0, 20);
         console.log("Pairs:");
         console.log(pairs[0].base, pairs[0].quote);
     }
 
     function testGetPairNames() public {
-         super.setUp();
+        super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
             orderbookFactory.getBookByPair(address(token1), address(token2))
         );
-        IOrderbookFactory.Pair[] memory pairs = matchingEngine.getPairs(0,20);
+        IOrderbookFactory.Pair[] memory pairs = matchingEngine.getPairs(0, 20);
         console.log("Pairs:");
         console.log(pairs[0].base, pairs[0].quote);
-        string[] memory names = matchingEngine.getPairNames(0,20);
+        string[] memory names = matchingEngine.getPairNames(0, 20);
         console.log(names[0]);
     }
 
@@ -1558,6 +1558,35 @@ contract OrderbookMatchTest is BaseSetup {
             true,
             2,
             0
+        );
+    }
+
+    function testPairAlreadyAdded() public {
+        super.setUp();
+        vm.prank(booker);
+        MockToken token3 = new MockToken("Mock3", "MOCK3");
+        matchingEngine.addPair(address(token1), address(token3));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token3))
+        );
+        vm.expectRevert();
+        matchingEngine.addPair(address(token1), address(token3));
+    }
+
+    function testPairSameBaseQuote() public {
+        super.setUp();
+        vm.prank(booker);
+        vm.expectRevert();
+        matchingEngine.addPair(address(token1), address(token1));
+    }
+
+    function testPairOrderbookQuery() public {
+        super.setUp();
+        vm.prank(booker);
+        MockToken token3 = new MockToken("Mock3", "MOCK3");
+        matchingEngine.addPair(address(token1), address(token3));
+        book = Orderbook(
+            orderbookFactory.getBookByPair(address(token1), address(token3))
         );
     }
 }

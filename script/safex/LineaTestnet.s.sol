@@ -209,7 +209,7 @@ contract DistributeTestnetAssets is Deployer {
     address constant trader2_address =
         0xf5aE3B9dF4e6972a229E7915D55F9FBE5900fE95;
     address constant feeToken_address =
-        0x0622C0b5F53FF7252A5F90b4031a9adaa67a2d02;
+        0xE57Cdf5796C2f5281EDF1B81129E1D4Ff9190815;
     address constant stablecoin_address =
         0xfB4c8b2658AB2bf32ab5Fc1627f115974B52FeA7;
 
@@ -240,9 +240,9 @@ contract SetupSABTInitialParameters is Deployer {
         0xd5EC00dbaDF8d9369e5b330645478aAFA298A73D;
     address constant sabt_address = 0x240aA2c15fBf6F65882A847462b04d5DA51A37Df;
     address constant feeToken_address =
-        0x0622C0b5F53FF7252A5F90b4031a9adaa67a2d02;
+        0xE57Cdf5796C2f5281EDF1B81129E1D4Ff9190815;
     address constant stablecoin_address =
-        0x11a681c574F8e1d72DDCEEe0855032A77dfF8355;
+        0xfB4c8b2658AB2bf32ab5Fc1627f115974B52FeA7;
     address constant block_accountant_address =
         0xb31e69f571c3B4219710931e86a9BC8b8378fb1E;
     address constant treasury_address =

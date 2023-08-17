@@ -1,48 +1,78 @@
 pragma solidity >=0.8;
-import {BaseSetup} from "../safex/Orderbook.t.sol";
 import {console} from "forge-std/console.sol";
 import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
+import {Utils} from "../utils/Utils.sol";
 import {SABT} from "../../contracts/sabt/SABT.sol";
 import {BlockAccountant} from "../../contracts/sabt/BlockAccountant.sol";
 import {Membership} from "../../contracts/sabt/Membership.sol";
+import {MatchingEngine} from "../../contracts/safex/MatchingEngine.sol";
+import {OrderbookFactory} from "../../contracts/safex/orderbooks/OrderbookFactory.sol";
 import {Treasury} from "../../contracts/sabt/Treasury.sol";
 import {TreasuryLib} from "../../contracts/sabt/libraries/TreasuryLib.sol";
 import {MockToken} from "../../contracts/mock/MockToken.sol";
 import {Orderbook} from "../../contracts/safex/orderbooks/Orderbook.sol";
 
-contract MembershipBaseSetup is BaseSetup {
+contract MembershipBaseSetup is Test {
     Membership public membership;
     Treasury public treasury;
     BlockAccountant public accountant;
     SABT public sabt;
     MockToken public stablecoin;
+    MockToken public feeToken;
     address public foundation;
     address public reporter;
+    OrderbookFactory orderbookFactory;
 
-    function setUp() public override {
-        super.setUp();
-        users = utils.addUsers(2, users);
+    Utils public utils;
+    MatchingEngine public matchingEngine;
+    address payable[] public users;
+    address public trader1;
+    address public trader2;
+    address public booker;
+    address public attacker;
+
+    function setUp() public {
+        utils = new Utils();
+        users = utils.addUsers(6, users);
+        trader1 = users[0];
+        vm.label(trader1, "Trader 1");
+        trader2 = users[1];
+        vm.label(trader2, "Trader 2");
+        booker = users[2];
+        vm.label(booker, "Booker");
+        attacker = users[3];
+        vm.label(attacker, "Attacker");
         foundation = users[4];
+        vm.label(foundation, "Foundation");
         reporter = users[5];
+        vm.label(reporter, "Reporter");
+        feeToken = new MockToken("FeeToken", "FEE");
         stablecoin = new MockToken("Stablecoin", "STBC");
         membership = new Membership();
         sabt = new SABT();
-        accountant = new BlockAccountant(
+        accountant = new BlockAccountant();
+        treasury = new Treasury();
+        matchingEngine = new MatchingEngine();
+        orderbookFactory = new OrderbookFactory();
+        membership.initialize(address(sabt), foundation);
+        sabt.initialize(address(membership));
+        treasury.initialize(address(accountant), address(sabt));
+        matchingEngine.initialize(
+            address(orderbookFactory),
             address(membership),
-            address(matchingEngine),
-            address(stablecoin),
-            1
+            address(accountant),
+            address(treasury)
         );
-        treasury = new Treasury(address(accountant), address(sabt));
-        accountant.setTreasury(address(treasury));
-        matchingEngine.setMembership(address(membership));
-        matchingEngine.setAccountant(address(accountant));
-        matchingEngine.setFeeTo(address(treasury));
+        orderbookFactory.initialize(address(matchingEngine));
+        accountant.initialize(
+            address(membership), address(matchingEngine), address(stablecoin), 1
+        );
         accountant.grantRole(
             accountant.REPORTER_ROLE(),
             address(matchingEngine)
         );
         treasury.grantRole(treasury.REPORTER_ROLE(), address(matchingEngine));
+        
         feeToken.mint(trader1, 100000000e18);
         feeToken.mint(trader2, 10000e18);
         feeToken.mint(booker, 100000e18);
@@ -54,10 +84,8 @@ contract MembershipBaseSetup is BaseSetup {
         vm.prank(trader1);
         stablecoin.approve(address(membership), 10000e18);
         // initialize membership contract
-        membership.initialize(address(sabt), foundation);
         treasury.setClaim(1, 100);
         // initialize SABT
-        sabt.initialize(address(membership), address(0));
         // set Fee in membership contract
         membership.setMembership(9, address(feeToken), 1000, 1000, 10000);
         membership.setMembership(10, address(feeToken), 1000, 1000, 10000);
@@ -89,8 +117,8 @@ contract MembershipBaseSetup is BaseSetup {
         matchingEngine.limitSell(
             address(feeToken),
             address(stablecoin),
-            10000e18,
-            1000e8,
+            10000e8,
+            1000e10,
             true,
             1,
             1
@@ -102,8 +130,8 @@ contract MembershipBaseSetup is BaseSetup {
         matchingEngine.limitBuy(
             address(feeToken),
             address(stablecoin),
-            10000e18,
-            1000e8,
+            10000e8,
+            1000e10,
             true,
             1,
             1
@@ -112,6 +140,7 @@ contract MembershipBaseSetup is BaseSetup {
 }
 
 contract MembershipTest is MembershipBaseSetup {
+
     function mSetUp() internal {
         super.setUp();
         vm.prank(trader1);
@@ -128,10 +157,10 @@ contract MembershipTest is MembershipBaseSetup {
     // register with multiple fee token succeeds
     function testRegisterWithMultipleFeeTokenSucceeds() public {
         mSetUp();
-        membership.setMembership(9, address(token1), 1000, 1000, 10000);
+        membership.setMembership(9, address(feeToken), 1000, 1000, 10000);
         vm.startPrank(trader1);
-        token1.approve(address(membership), 1e40);
-        membership.register(9, address(token1));
+        feeToken.approve(address(membership), 1e40);
+        membership.register(9, address(feeToken));
     }
 
     // registration is only possible with assigned token
@@ -139,7 +168,7 @@ contract MembershipTest is MembershipBaseSetup {
         mSetUp();
         vm.prank(trader1);
         vm.expectRevert();
-        membership.register(9, address(token2));
+        membership.register(9, address(stablecoin));
     }
 
     // membership can be transferred
@@ -202,7 +231,7 @@ contract SubscriptionTest is MembershipBaseSetup {
         membership.register(9, address(feeToken));
         membership.subscribe(1, 10000, address(feeToken));
         vm.expectRevert();
-        membership.subscribe(1, 10000, address(token1));
+        membership.subscribe(1, 10000, address(feeToken));
     }
 
     // trader point can be migrated into other ABT if one owns them all

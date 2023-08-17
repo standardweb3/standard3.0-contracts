@@ -255,6 +255,10 @@ contract Orderbook is IOrderbook, Initializable {
                 : _askOrders._getOrder(orderId);
     }
 
+    function getBaseQuote() external view returns (address base, address quote) {
+        return (pair.base, pair.quote);
+    }
+
     /**
      * @dev get asset value in quote asset if isBid is true, otherwise get asset value in base asset
      * @param amount amount of asset in base asset if isBid is true, otherwise in quote asset

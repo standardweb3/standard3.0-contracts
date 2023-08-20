@@ -231,7 +231,7 @@ contract SubscriptionTest is MembershipBaseSetup {
         membership.register(9, address(feeToken));
         membership.subscribe(1, 10000, address(feeToken));
         vm.expectRevert();
-        membership.subscribe(1, 10000, address(feeToken));
+        membership.subscribe(1, 10000, address(stablecoin));
     }
 
     // trader point can be migrated into other ABT if one owns them all
@@ -241,7 +241,7 @@ contract SubscriptionTest is MembershipBaseSetup {
         membership.balanceOf(address(trader1), 1);
         membership.register(9, address(feeToken));
         membership.subscribe(1, 10000, address(feeToken));
-        accountant.migrate(1, 2, 0, 100);
+        accountant.migrate(1, 2, 0, 1);
     }
 
     // subscribing with stnd shows subscribed STND amount

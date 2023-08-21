@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.17;
 
-import "../libraries/SAFEXOrderbook.sol";
+import "../libraries/ExchangeOrderbook.sol";
 
 interface IOrderbook {
     function initialize(uint256 id, address base_, address quote_, address engine_) external;
@@ -41,9 +41,9 @@ interface IOrderbook {
 
     function getPrices(bool isBid, uint32 n) external view returns (uint256[] memory);
 
-    function getOrders(bool isBid, uint256 price, uint32 n) external view returns (SAFEXOrderbook.Order[] memory);
+    function getOrders(bool isBid, uint256 price, uint32 n) external view returns (ExchangeOrderbook.Order[] memory);
 
-    function getOrder(bool isBid, uint32 orderId) external view returns (SAFEXOrderbook.Order memory);
+    function getOrder(bool isBid, uint32 orderId) external view returns (ExchangeOrderbook.Order memory);
 
     function getOrderIds(bool isBid, uint256 price, uint32 n) external view returns (uint32[] memory);
 

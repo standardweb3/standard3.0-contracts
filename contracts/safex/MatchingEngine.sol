@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.17;
 import {IOrderbookFactory} from "./interfaces/IOrderbookFactory.sol";
-import {IOrderbook, SAFEXOrderbook} from "./interfaces/IOrderbook.sol";
+import {IOrderbook, ExchangeOrderbook} from "./interfaces/IOrderbook.sol";
 import {TransferHelper} from "./libraries/TransferHelper.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -634,7 +634,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool isBid,
         uint256 price,
         uint32 n
-    ) external view returns (SAFEXOrderbook.Order[] memory) {
+    ) external view returns (ExchangeOrderbook.Order[] memory) {
         address orderbook = getBookByPair(base, quote);
         return IOrderbook(orderbook).getOrders(isBid, price, n);
     }
@@ -651,7 +651,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         address quote,
         bool isBid,
         uint32 orderId
-    ) external view returns (SAFEXOrderbook.Order memory) {
+    ) external view returns (ExchangeOrderbook.Order memory) {
         address orderbook = getBookByPair(base, quote);
         return IOrderbook(orderbook).getOrder(isBid, orderId);
     }

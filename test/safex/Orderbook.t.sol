@@ -11,7 +11,7 @@ import {Utils} from "../utils/Utils.sol";
 import {MatchingEngine} from "../../contracts/safex/MatchingEngine.sol";
 import {OrderbookFactory} from "../../contracts/safex/orderbooks/OrderbookFactory.sol";
 import {Orderbook} from "../../contracts/safex/orderbooks/Orderbook.sol";
-import {SAFEXOrderbook} from "../../contracts/safex/libraries/SAFEXOrderbook.sol";
+import {ExchangeOrderbook} from "../../contracts/safex/libraries/ExchangeOrderbook.sol";
 import {IOrderbookFactory} from "../../contracts/safex/interfaces/IOrderbookFactory.sol";
 
 contract BaseSetup is Test {
@@ -328,7 +328,7 @@ contract OrderbookMatchTest is BaseSetup {
         console.log("Market price after manipulation:", book.mktPrice());
     }
 
-    function testSAFEXLinkedListOutOfGas() public {
+    function testExchangeLinkedListOutOfGas() public {
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
@@ -382,7 +382,7 @@ contract OrderbookMatchTest is BaseSetup {
         );
     }
 
-    function testSAFEXLinkedListOutOfGasPlaceBid() public {
+    function testExchangeLinkedListOutOfGasPlaceBid() public {
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
@@ -435,7 +435,7 @@ contract OrderbookMatchTest is BaseSetup {
         );
     }
 
-    function testSAFEXOrderbookOutOfGas() public {
+    function testExchangeOrderbookOutOfGas() public {
         super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
@@ -983,7 +983,7 @@ contract OrderbookMatchTest is BaseSetup {
             2,
             0
         );
-        SAFEXOrderbook.Order[] memory orders = matchingEngine.getOrders(
+        ExchangeOrderbook.Order[] memory orders = matchingEngine.getOrders(
             address(token1),
             address(token2),
             false,
@@ -1052,7 +1052,7 @@ contract OrderbookMatchTest is BaseSetup {
             0
         );
 
-        SAFEXOrderbook.Order[] memory orders = matchingEngine.getOrders(
+        ExchangeOrderbook.Order[] memory orders = matchingEngine.getOrders(
             address(token1),
             address(token2),
             false,
@@ -1076,7 +1076,7 @@ contract OrderbookMatchTest is BaseSetup {
             0
         );
 
-        SAFEXOrderbook.Order[] memory orders2 = matchingEngine.getOrders(
+        ExchangeOrderbook.Order[] memory orders2 = matchingEngine.getOrders(
             address(token1),
             address(token2),
             false,
@@ -1107,7 +1107,7 @@ contract OrderbookMatchTest is BaseSetup {
             0
         );
         console.log("Ask Orders: ");
-        SAFEXOrderbook.Order[] memory askOrders0 = matchingEngine.getOrders(
+        ExchangeOrderbook.Order[] memory askOrders0 = matchingEngine.getOrders(
             address(token1),
             address(token2),
             false,
@@ -1130,7 +1130,7 @@ contract OrderbookMatchTest is BaseSetup {
         (uint256 bidHead, uint256 askHead) = book.heads();
         console.log(bidHead, askHead);
         console.log("Ask Orders: ");
-        SAFEXOrderbook.Order[] memory askOrders = matchingEngine.getOrders(
+        ExchangeOrderbook.Order[] memory askOrders = matchingEngine.getOrders(
             address(token1),
             address(token2),
             false,
@@ -1176,7 +1176,7 @@ contract OrderbookMatchTest is BaseSetup {
             0
         );
 
-        SAFEXOrderbook.Order[] memory bidOrders0 = matchingEngine.getOrders(
+        ExchangeOrderbook.Order[] memory bidOrders0 = matchingEngine.getOrders(
             address(token1),
             address(token2),
             true,
@@ -1188,7 +1188,7 @@ contract OrderbookMatchTest is BaseSetup {
             console.log(bidOrders0[i].owner, bidOrders0[i].depositAmount);
         }
 
-        SAFEXOrderbook.Order[] memory askOrders0 = matchingEngine.getOrders(
+        ExchangeOrderbook.Order[] memory askOrders0 = matchingEngine.getOrders(
             address(token1),
             address(token2),
             false,
@@ -1212,7 +1212,7 @@ contract OrderbookMatchTest is BaseSetup {
             0
         );
 
-        SAFEXOrderbook.Order[] memory bidOrders = matchingEngine.getOrders(
+        ExchangeOrderbook.Order[] memory bidOrders = matchingEngine.getOrders(
             address(token1),
             address(token2),
             true,
@@ -1224,7 +1224,7 @@ contract OrderbookMatchTest is BaseSetup {
             console.log(bidOrders[i].owner, bidOrders[i].depositAmount);
         }
 
-        SAFEXOrderbook.Order[] memory askOrders = matchingEngine.getOrders(
+        ExchangeOrderbook.Order[] memory askOrders = matchingEngine.getOrders(
             address(token1),
             address(token2),
             false,
@@ -1465,7 +1465,7 @@ contract OrderbookMatchTest is BaseSetup {
         );
 
         console.log("Bid orders: ");
-        SAFEXOrderbook.Order[] memory bidOrders = matchingEngine.getOrders(
+        ExchangeOrderbook.Order[] memory bidOrders = matchingEngine.getOrders(
             address(token1),
             address(token2),
             false,

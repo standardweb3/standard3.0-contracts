@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.17;
 
-library SAFEXOrderbook {
+library ExchangeOrderbook {
     // Order struct
     struct Order {
         address owner;

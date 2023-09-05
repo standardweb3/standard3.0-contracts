@@ -132,22 +132,23 @@ contract Orderbook is IOrderbook, Initializable {
         uint256 converted = convert(price, amount, isBid);
         // if isBid == true, sender is matching ask order with bid order(i.e. selling base to receive quote), otherwise sender is matching bid order with ask order(i.e. buying base with quote)
         if (isBid) {
+            // decrease remaining amount of order
+            _bidOrders._decreaseOrder(price, orderId, converted);
             // sender is matching ask order for base asset with quote asset
             TransferHelper.safeTransfer(pair.base, order.owner, amount);
             // send converted amount of quote asset from owner to sender
             TransferHelper.safeTransfer(pair.quote, sender, converted);
-            // decrease remaining amount of order
-            _bidOrders._decreaseOrder(price, orderId, converted);
+  
         }
         // if the order is bid order on the base/quote pair
         else {
+            // decrease remaining amount of order
+            _askOrders._decreaseOrder(price, orderId, converted);
             // sender is matching bid order for quote asset with base asset
             // send deposited amount of quote asset from sender to owner
             TransferHelper.safeTransfer(pair.quote, order.owner, amount);
             // send converted amount of base asset from owner to sender
             TransferHelper.safeTransfer(pair.base, sender, converted);
-            // decrease remaining amount of order
-            _askOrders._decreaseOrder(price, orderId, converted);
         }
         return order.owner;
     }

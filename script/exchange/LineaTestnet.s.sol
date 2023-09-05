@@ -199,7 +199,6 @@ contract DeployTestnetContracts is Deployer {
     }
 }
 
-
 contract DistributeTestnetAssets is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     address constant deployer_address =
@@ -235,18 +234,18 @@ contract DistributeTestnetAssets is Deployer {
 contract SetupSABTInitialParameters is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     address constant matching_engine_address =
-        0x8a22e83Aaf7E90eEab385C4d97cbD5F6a58d5DF7;
+        0x464f45a951CFe4f8C2c40Da847B6506E0596505F;
     address constant membership_address =
-        0xd5EC00dbaDF8d9369e5b330645478aAFA298A73D;
-    address constant sabt_address = 0x240aA2c15fBf6F65882A847462b04d5DA51A37Df;
+        0x8649214802439246ed7D554e7d6FbcAFc3ABF0b2;
+    address constant sabt_address = 0x533685742760E662Ce08cce256CCB5C2698F315B;
     address constant feeToken_address =
         0xE57Cdf5796C2f5281EDF1B81129E1D4Ff9190815;
     address constant stablecoin_address =
         0xfB4c8b2658AB2bf32ab5Fc1627f115974B52FeA7;
     address constant block_accountant_address =
-        0xb31e69f571c3B4219710931e86a9BC8b8378fb1E;
+        0xD994bB5dBb24b1dE9Ce4FD99589C29625226ef5b;
     address constant treasury_address =
-        0x86b3Bd0C9896b97f6aCfBA87E6CEe0033FF708F8;
+        0x787BE9e9934b2e4a2eC74747931632AaD01fDB58;
     address constant deployer_address =
         0x34CCCa03631830cD8296c172bf3c31e126814ce9;
 
@@ -275,7 +274,7 @@ contract SetupSABTInitialParameters is Deployer {
 contract SetupSAFEXInitialParameters is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     address constant matching_engine_address =
-        0x8a22e83Aaf7E90eEab385C4d97cbD5F6a58d5DF7;
+        0x464f45a951CFe4f8C2c40Da847B6506E0596505F;
     address constant feeToken_address =
         0xE57Cdf5796C2f5281EDF1B81129E1D4Ff9190815;
     address constant stablecoin_address =

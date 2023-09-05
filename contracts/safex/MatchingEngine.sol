@@ -5,7 +5,6 @@ import {IOrderbookFactory} from "./interfaces/IOrderbookFactory.sol";
 import {IOrderbook, ExchangeOrderbook} from "./interfaces/IOrderbook.sol";
 import {TransferHelper} from "./libraries/TransferHelper.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 interface IRevenue {
     function report(
@@ -26,7 +25,7 @@ interface IRevenue {
 }
 
 // Onchain Matching engine for the orders
-contract MatchingEngine is Initializable, ReentrancyGuard {
+contract MatchingEngine is Initializable {
     // fee recipient
     address private feeTo;
     // fee denominator
@@ -109,7 +108,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) public nonReentrant returns (bool) {
+    ) public returns (bool) {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
@@ -162,7 +161,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) public nonReentrant returns (bool) {
+    ) public returns (bool) {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
@@ -215,7 +214,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) public nonReentrant returns (bool) {
+    ) public returns (bool) {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
@@ -269,7 +268,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) public nonReentrant returns (bool) {
+    ) public returns (bool) {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
@@ -317,7 +316,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint256 price,
         uint256 quoteAmount,
         uint32 uid
-    ) public nonReentrant returns (bool) {
+    ) public returns (bool) {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
@@ -347,7 +346,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint256 price,
         uint256 baseAmount,
         uint32 uid
-    ) public nonReentrant returns (bool) {
+    ) public returns (bool) {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
@@ -396,7 +395,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint32 orderId,
         bool isBid,
         uint32 uid
-    ) public nonReentrant returns (bool) {
+    ) public returns (bool) {
         address orderbook = IOrderbookFactory(orderbookFactory).getBookByPair(
             base,
             quote
@@ -435,7 +434,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint32[] memory orderIds,
         bool[] memory isBid,
         uint32 uid
-    ) external nonReentrant returns (bool) {
+    ) external returns (bool) {
         for (uint32 i = 0; i<orderIds.length; i++) {
             cancelOrder(base[i], quote[i], prices[i], orderIds[i], isBid[i], uid);
         }
@@ -462,7 +461,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) external nonReentrant returns (bool) {
+    ) external returns (bool) {
         address orderbook = IOrderbookFactory(orderbookFactory).getBookByPair(
             base,
             quote

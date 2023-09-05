@@ -1590,3 +1590,155 @@ contract OrderbookMatchTest is BaseSetup {
         );
     }
 }
+
+contract CancelOrderReentrancyAttack {
+    MatchingEngine public matchingEngine;
+
+    constructor(address _matchingEngine) {
+        matchingEngine = MatchingEngine(_matchingEngine);
+    }
+
+    // Fallback is called when DepositFunds sends Ether to this contract.
+    fallback() external payable {
+        // matchingEngine.cancelOrder();
+    }
+
+    function attack() external payable {
+         // Send some Ether to trigger the fallback function
+        (bool success, ) = address(matchingEngine).call{ value: msg.value }("");
+        require(success, "Call failed");
+    }
+}
+
+contract CancelOrdersReentrancyAttack {
+    MatchingEngine public matchingEngine;
+
+    constructor(address _matchingEngine) {
+        matchingEngine = MatchingEngine(_matchingEngine);
+    }
+
+    // Fallback is called when DepositFunds sends Ether to this contract.
+    fallback() external payable {
+        //matchingEngine.cancelOrders();
+    }
+
+    function attack() external payable {
+         // Send some Ether to trigger the fallback function
+        (bool success, ) = address(matchingEngine).call{ value: msg.value }("");
+        require(success, "Call failed");
+    }
+}
+
+contract LimitBuyReentrancyAttack {
+    MatchingEngine public matchingEngine;
+
+    constructor(address _matchingEngine) {
+        matchingEngine = MatchingEngine(_matchingEngine);
+    }
+
+    // Fallback is called when DepositFunds sends Ether to this contract.
+    fallback() external payable {
+        // matchingEngine.limitBuy();
+    }
+
+    function attack() external payable {
+         // Send some Ether to trigger the fallback function
+        (bool success, ) = address(matchingEngine).call{ value: msg.value }("");
+        require(success, "Call failed");
+    }
+}
+
+contract LimitSellReentrancyAttack {
+    MatchingEngine public matchingEngine;
+
+    constructor(address _matchingEngine) {
+        matchingEngine = MatchingEngine(_matchingEngine);
+    }
+
+    // Fallback is called when DepositFunds sends Ether to this contract.
+    fallback() external payable {
+        // matchingEngine.limitSell();
+    }
+
+    function attack() external payable {
+         // Send some Ether to trigger the fallback function
+        (bool success, ) = address(matchingEngine).call{ value: msg.value }("");
+        require(success, "Call failed");
+    }
+}
+
+contract MarketBuyReentrancyAttack {
+    MatchingEngine public matchingEngine;
+
+    constructor(address _matchingEngine) {
+        matchingEngine = MatchingEngine(_matchingEngine);
+    }
+
+    // Fallback is called when DepositFunds sends Ether to this contract.
+    fallback() external payable {
+        // matchingEngine.marketBuy();
+    }
+
+    function attack() external payable {
+         // Send some Ether to trigger the fallback function
+        (bool success, ) = address(matchingEngine).call{ value: msg.value }("");
+        require(success, "Call failed");
+    }
+}
+
+contract MarketSellReentrancyAttack {
+    MatchingEngine public matchingEngine;
+
+    constructor(address _matchingEngine) {
+        matchingEngine = MatchingEngine(_matchingEngine);
+    }
+
+    // Fallback is called when DepositFunds sends Ether to this contract.
+    fallback() external payable {
+        // matchingEngine.marketSell();
+    }
+
+    function attack() external payable {
+         // Send some Ether to trigger the fallback function
+        (bool success, ) = address(matchingEngine).call{ value: msg.value }("");
+        require(success, "Call failed");
+    }
+}
+
+contract RematchReentrancyAttack {
+    MatchingEngine public matchingEngine;
+
+    constructor(address _matchingEngine) {
+        matchingEngine = MatchingEngine(_matchingEngine);
+    }
+
+    // Fallback is called when DepositFunds sends Ether to this contract.
+    fallback() external payable {
+        // matchingEngine.rematch();
+    }
+
+    function attack() external payable {
+         // Send some Ether to trigger the fallback function
+        (bool success, ) = address(matchingEngine).call{ value: msg.value }("");
+        require(success, "Call failed");
+    }
+}
+
+contract RematchOrdersReentrancyAttack {
+    MatchingEngine public matchingEngine;
+
+    constructor(address _matchingEngine) {
+        matchingEngine = MatchingEngine(_matchingEngine);
+    }
+
+    // Fallback is called when DepositFunds sends Ether to this contract.
+    fallback() external payable {
+        // matchingEngine.rematchOrders();
+    }
+
+    function attack() external payable {
+         // Send some Ether to trigger the fallback function
+        (bool success, ) = address(matchingEngine).call{ value: msg.value }("");
+        require(success, "Call failed");
+    }
+}

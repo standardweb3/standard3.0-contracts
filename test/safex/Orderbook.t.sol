@@ -1595,7 +1595,7 @@ contract CancelOrderReentrancyAttack {
     MatchingEngine public matchingEngine;
 
     constructor(address _matchingEngine) {
-        matchingEngine = MatchingEngine(_matchingEngine);
+       MatchingEngine matchingEngine = MatchingEngine(_matchingEngine);
     }
 
     // Fallback is called when DepositFunds sends Ether to this contract.
@@ -1614,7 +1614,7 @@ contract CancelOrdersReentrancyAttack {
     MatchingEngine public matchingEngine;
 
     constructor(address _matchingEngine) {
-        matchingEngine = MatchingEngine(_matchingEngine);
+       MatchingEngine matchingEngine = MatchingEngine(_matchingEngine);
     }
 
     // Fallback is called when DepositFunds sends Ether to this contract.
@@ -1633,7 +1633,7 @@ contract LimitBuyReentrancyAttack {
     MatchingEngine public matchingEngine;
 
     constructor(address _matchingEngine) {
-        matchingEngine = MatchingEngine(_matchingEngine);
+       MatchingEngine matchingEngine = MatchingEngine(_matchingEngine);
     }
 
     // Fallback is called when DepositFunds sends Ether to this contract.
@@ -1652,7 +1652,7 @@ contract LimitSellReentrancyAttack {
     MatchingEngine public matchingEngine;
 
     constructor(address _matchingEngine) {
-        matchingEngine = MatchingEngine(_matchingEngine);
+       MatchingEngine matchingEngine = MatchingEngine(_matchingEngine);
     }
 
     // Fallback is called when DepositFunds sends Ether to this contract.
@@ -1671,7 +1671,7 @@ contract MarketBuyReentrancyAttack {
     MatchingEngine public matchingEngine;
 
     constructor(address _matchingEngine) {
-        matchingEngine = MatchingEngine(_matchingEngine);
+       MatchingEngine matchingEngine = MatchingEngine(_matchingEngine);
     }
 
     // Fallback is called when DepositFunds sends Ether to this contract.
@@ -1690,7 +1690,7 @@ contract MarketSellReentrancyAttack {
     MatchingEngine public matchingEngine;
 
     constructor(address _matchingEngine) {
-        matchingEngine = MatchingEngine(_matchingEngine);
+       MatchingEngine matchingEngine = MatchingEngine(_matchingEngine);
     }
 
     // Fallback is called when DepositFunds sends Ether to this contract.
@@ -1709,7 +1709,7 @@ contract RematchReentrancyAttack {
     MatchingEngine public matchingEngine;
 
     constructor(address _matchingEngine) {
-        matchingEngine = MatchingEngine(_matchingEngine);
+       MatchingEngine matchingEngine = MatchingEngine(_matchingEngine);
     }
 
     // Fallback is called when DepositFunds sends Ether to this contract.
@@ -1728,7 +1728,7 @@ contract RematchOrdersReentrancyAttack {
     MatchingEngine public matchingEngine;
 
     constructor(address _matchingEngine) {
-        matchingEngine = MatchingEngine(_matchingEngine);
+       MatchingEngine matchingEngine = MatchingEngine(_matchingEngine);
     }
 
     // Fallback is called when DepositFunds sends Ether to this contract.

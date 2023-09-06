@@ -8,6 +8,14 @@ import {TransferHelper} from "../libraries/TransferHelper.sol";
 import {ExchangeLinkedList} from "../libraries/ExchangeLinkedList.sol";
 import {ExchangeOrderbook} from "../libraries/ExchangeOrderbook.sol";
 
+interface IWETHMinimal {
+    function WETH() external view returns (address);
+
+    function transfer(address to, uint256 value) external returns (bool);
+
+    function withdraw(uint256) external;
+}
+
 contract Orderbook is IOrderbook, Initializable {
     using ExchangeLinkedList for ExchangeLinkedList.PriceLinkedList;
     using ExchangeOrderbook for ExchangeOrderbook.OrderStorage;
@@ -65,7 +73,7 @@ contract Orderbook is IOrderbook, Initializable {
         address owner,
         uint256 price,
         uint256 amount
-    ) external onlyEngine returns (uint32 id)  {
+    ) external onlyEngine returns (uint32 id) {
         id = _askOrders._createOrder(owner, amount);
         // check if the price is new in the list. if not, insert id to the list
         if (_askOrders._isEmpty(price)) {
@@ -105,16 +113,8 @@ contract Orderbook is IOrderbook, Initializable {
             ? _bidOrders._deleteOrder(price, orderId)
             : _askOrders._deleteOrder(price, orderId);
         isBid
-            ? TransferHelper.safeTransfer(
-                pair.quote,
-                owner,
-                order.depositAmount
-            )
-            : TransferHelper.safeTransfer(
-                pair.base,
-                owner,
-                order.depositAmount
-            );
+            ? _sendFunds(pair.quote, owner, order.depositAmount)
+            : _sendFunds(pair.base, owner, order.depositAmount);
 
         return (order.depositAmount);
     }
@@ -135,10 +135,9 @@ contract Orderbook is IOrderbook, Initializable {
             // decrease remaining amount of order
             _bidOrders._decreaseOrder(price, orderId, converted);
             // sender is matching ask order for base asset with quote asset
-            TransferHelper.safeTransfer(pair.base, order.owner, amount);
+            _sendFunds(pair.base, order.owner, amount);
             // send converted amount of quote asset from owner to sender
-            TransferHelper.safeTransfer(pair.quote, sender, converted);
-  
+            _sendFunds(pair.quote, sender, converted);
         }
         // if the order is bid order on the base/quote pair
         else {
@@ -146,9 +145,9 @@ contract Orderbook is IOrderbook, Initializable {
             _askOrders._decreaseOrder(price, orderId, converted);
             // sender is matching bid order for quote asset with base asset
             // send deposited amount of quote asset from sender to owner
-            TransferHelper.safeTransfer(pair.quote, order.owner, amount);
+            _sendFunds(pair.quote, order.owner, amount);
             // send converted amount of base asset from owner to sender
-            TransferHelper.safeTransfer(pair.base, sender, converted);
+            _sendFunds(pair.base, sender, converted);
         }
         return order.owner;
     }
@@ -172,6 +171,21 @@ contract Orderbook is IOrderbook, Initializable {
             }
         }
         return (orderId, required);
+    }
+
+    function _sendFunds(
+        address token,
+        address to,
+        uint256 amount
+    ) internal returns (bool) {
+        address weth = IWETHMinimal(pair.engine).WETH();
+        if (token == weth) {
+            IWETHMinimal(weth).withdraw(amount);
+            return payable(to).send(amount);
+        } else {
+            TransferHelper.safeTransfer(token, to, amount);
+            return true;
+        }
     }
 
     function _absdiff(uint8 a, uint8 b) internal pure returns (uint8, bool) {
@@ -256,7 +270,11 @@ contract Orderbook is IOrderbook, Initializable {
                 : _askOrders._getOrder(orderId);
     }
 
-    function getBaseQuote() external view returns (address base, address quote) {
+    function getBaseQuote()
+        external
+        view
+        returns (address base, address quote)
+    {
         return (pair.base, pair.quote);
     }
 

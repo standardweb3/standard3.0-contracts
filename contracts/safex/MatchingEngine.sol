@@ -5,6 +5,8 @@ import {IOrderbookFactory} from "./interfaces/IOrderbookFactory.sol";
 import {IOrderbook, ExchangeOrderbook} from "./interfaces/IOrderbook.sol";
 import {TransferHelper} from "./libraries/TransferHelper.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {IWETH} from "./interfaces/IWETH.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 interface IRevenue {
     function report(
@@ -25,13 +27,15 @@ interface IRevenue {
 }
 
 // Onchain Matching engine for the orders
-contract MatchingEngine is Initializable {
+contract MatchingEngine is Initializable, ReentrancyGuard {
     // fee recipient
     address private feeTo;
     // fee denominator
     uint32 public immutable feeDenom = 1000000;
     // Factories
     address public orderbookFactory;
+    // WETH
+    address public WETH;
     // membership contract
     address public membership;
     // accountant contract
@@ -108,7 +112,7 @@ contract MatchingEngine is Initializable {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) public returns (bool) {
+    ) public nonReentrant returns (bool) {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
@@ -161,7 +165,7 @@ contract MatchingEngine is Initializable {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) public returns (bool) {
+    ) public nonReentrant returns (bool) {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
@@ -195,6 +199,44 @@ contract MatchingEngine is Initializable {
     }
 
     /**
+     * @dev Executes a market buy order,
+     * buys the base asset using the quote asset at the best available price in the orderbook up to `n` orders,
+     * and make an order at the market price with quote asset as native Ethereum(or other network currencies).
+     * @param base The address of the base asset for the trading pair
+     * @param isMaker Boolean indicating if a order should be made at the market price in orderbook
+     * @param n The maximum number of orders to match in the orderbook
+     * @return bool True if the order was successfully executed, otherwise false.
+     */
+    function marketBuyETH(
+        address base,
+        bool isMaker,
+        uint32 n,
+        uint32 uid
+    ) external nonReentrant payable returns (bool) {
+        IWETH(WETH).deposit{value: msg.value}();
+        return marketBuy(base, WETH, msg.value, isMaker, n, uid);
+    }
+
+    /**
+     * @dev Executes a market sell order,
+     * sells the base asset for the quote asset at the best available price in the orderbook up to `n` orders,
+     * and make an order at the market price with base asset as native Ethereum(or other network currencies).
+     * @param quote The address of the quote asset for the trading pair
+     * @param isMaker Boolean indicating if an order should be made at the market price in orderbook
+     * @param n The maximum number of orders to match in the orderbook
+     * @return bool True if the order was successfully executed, otherwise false.
+     */
+    function marketSellETH(
+        address quote,
+        bool isMaker,
+        uint32 n,
+        uint32 uid
+    ) external nonReentrant payable returns (bool) {
+        IWETH(WETH).deposit{value: msg.value}();
+        return marketSell(WETH, quote, msg.value, isMaker, n, uid);
+    }
+
+    /**
      * @dev Executes a limit buy order,
      * places a limit order in the orderbook for buying the base asset using the quote asset at a specified price,
      * and make an order at the limit price.
@@ -214,7 +256,7 @@ contract MatchingEngine is Initializable {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) public returns (bool) {
+    ) public nonReentrant returns (bool) {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
@@ -268,7 +310,7 @@ contract MatchingEngine is Initializable {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) public returns (bool) {
+    ) public nonReentrant returns (bool) {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
@@ -302,63 +344,43 @@ contract MatchingEngine is Initializable {
     }
 
     /**
-     * @dev Stores a bid order in the orderbook for the base asset using the quote asset,
-     * with a specified price `at`.
+     * @dev Executes a limit buy order,
+     * places a limit order in the orderbook for buying the base asset using the quote asset at a specified price,
+     * and make an order at the limit price with quote asset as native Ethereum(or network currencies).
      * @param base The address of the base asset for the trading pair
-     * @param quote The address of the quote asset for the trading pair
-     * @param price The price, base/quote regardless of decimals of the assets in the pair represented with 8 decimals (if 1000, base is 1000x quote)
-     * @param quoteAmount The amount of quote asset to be used for the bid order
+     * @param isMaker Boolean indicating if a order should be made at the market price in orderbook
+     * @param n The maximum number of orders to match in the orderbook
      * @return bool True if the order was successfully executed, otherwise false.
      */
-    function makeBuy(
+    function limitBuyETH(
         address base,
-        address quote,
         uint256 price,
-        uint256 quoteAmount,
+        bool isMaker,
+        uint32 n,
         uint32 uid
-    ) public returns (bool) {
-        (uint256 withoutFee, address orderbook) = _deposit(
-            base,
-            quote,
-            price,
-            quoteAmount,
-            false,
-            uid,
-            true
-        );
-        TransferHelper.safeTransfer(quote, orderbook, withoutFee);
-        _makeOrder(base, quote, orderbook, withoutFee, price, true);
-        return true;
+    ) external nonReentrant payable returns (bool) {
+        IWETH(WETH).deposit{value: msg.value}();
+        return limitBuy(base, WETH, price, msg.value, isMaker, n, uid);
     }
 
     /**
-     * @dev Stores an ask order in the orderbook for the quote asset using the base asset,
-     * with a specified price `at`.
-     * @param base The address of the base asset for the trading pair
+     * @dev Executes a limit sell order,
+     * places a limit order in the orderbook for selling the base asset for the quote asset at a specified price,
+     * and makes an order at the limit price with base asset as native Ethereum(or network currencies).
      * @param quote The address of the quote asset for the trading pair
-     * @param price The price, base/quote regardless of decimals of the assets in the pair represented with 8 decimals (if 1000, base is 1000x quote)
-     * @param baseAmount The amount of base asset to be used for making ask order
+     * @param isMaker Boolean indicating if an order should be made at the market price in orderbook
+     * @param n The maximum number of orders to match in the orderbook
      * @return bool True if the order was successfully executed, otherwise false.
      */
-    function makeSell(
-        address base,
+    function limitSellETH(
         address quote,
         uint256 price,
-        uint256 baseAmount,
+        bool isMaker,
+        uint32 n,
         uint32 uid
-    ) public returns (bool) {
-        (uint256 withoutFee, address orderbook) = _deposit(
-            base,
-            quote,
-            price,
-            baseAmount,
-            false,
-            uid,
-            true
-        );
-        TransferHelper.safeTransfer(base, orderbook, withoutFee);
-        _makeOrder(base, quote, orderbook, withoutFee, price, false);
-        return true;
+    ) external nonReentrant payable returns (bool) {
+        IWETH(WETH).deposit{value: msg.value}();
+        return limitSell(WETH, quote, price, msg.value, isMaker, n, uid);
     }
 
     /**
@@ -370,7 +392,7 @@ contract MatchingEngine is Initializable {
     function addPair(
         address base,
         address quote
-    ) external returns (address book) {
+    ) public returns (address book) {
         // create orderbook for the pair
         address orderBook = IOrderbookFactory(orderbookFactory).createBook(
             base,
@@ -395,7 +417,7 @@ contract MatchingEngine is Initializable {
         uint32 orderId,
         bool isBid,
         uint32 uid
-    ) public returns (bool) {
+    ) public nonReentrant returns (bool) {
         address orderbook = IOrderbookFactory(orderbookFactory).getBookByPair(
             base,
             quote
@@ -435,9 +457,20 @@ contract MatchingEngine is Initializable {
         bool[] memory isBid,
         uint32 uid
     ) external returns (bool) {
-        for (uint32 i = 0; i<orderIds.length; i++) {
-            cancelOrder(base[i], quote[i], prices[i], orderIds[i], isBid[i], uid);
+        bool locked;
+        require(!locked, "Reentrant call detected!");
+        locked = true;
+        for (uint32 i = 0; i < orderIds.length; i++) {
+            cancelOrder(
+                base[i],
+                quote[i],
+                prices[i],
+                orderIds[i],
+                isBid[i],
+                uid
+            );
         }
+        locked = false;
         return true;
     }
 
@@ -461,7 +494,7 @@ contract MatchingEngine is Initializable {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) external returns (bool) {
+    ) external nonReentrant returns (bool) {
         address orderbook = IOrderbookFactory(orderbookFactory).getBookByPair(
             base,
             quote
@@ -485,7 +518,7 @@ contract MatchingEngine is Initializable {
                 return
                     limitSell(base, quote, price, remaining, isMaker, n, uid);
             }
-        }
+        }  
     }
 
     /**
@@ -958,6 +991,11 @@ contract MatchingEngine is Initializable {
         uint32 uid,
         bool isMaker
     ) internal returns (uint256 withoutFee, address book) {
+        // get orderbook address from the base and quote asset
+        book = getBookByPair(base, quote);
+        if (book == address(0)) {
+            book = addPair(base, quote);
+        }
         // check if amount is valid in case of both market and limit
         uint256 converted = price == 0
             ? convert(base, quote, amount, !isBid)
@@ -992,8 +1030,7 @@ contract MatchingEngine is Initializable {
             );
             TransferHelper.safeTransfer(base, feeTo, fee);
         }
-        // get orderbook address from the base and quote asset
-        book = getBookByPair(base, quote);
+        
         return (withoutFee, book);
     }
 

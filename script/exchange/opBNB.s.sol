@@ -56,6 +56,7 @@ contract DeployAll is Deployer {
         0xf5aE3B9dF4e6972a229E7915D55F9FBE5900fE95;
     address constant foundation_address =
         0x34CCCa03631830cD8296c172bf3c31e126814ce9;
+    address constant weth_address = 0x2C1b868d6596a18e32E61B901E4060C872647b6C;
     // seconds per block
     uint32 spb = 12;
 
@@ -87,7 +88,8 @@ contract DeployAll is Deployer {
             address(orderbookFactory),
             address(membership),
             address(accountant),
-            address(treasury)
+            address(treasury),
+            weth_address
         );
         orderbookFactory.initialize(address(matchingEngine));
         // Wire up matching engine with them
@@ -198,7 +200,8 @@ contract DeployTestnetContracts is Deployer {
             address(orderbookFactory),
             address(membership),
             address(accountant),
-            address(treasury)
+            address(treasury),
+            weth
         );
         orderbookFactory.initialize(address(matchingEngine));
         // Wire up matching engine with them
@@ -292,7 +295,7 @@ contract SetupSAFEXInitialParameters is Deployer {
     address constant stablecoin_address =
         0xfB4c8b2658AB2bf32ab5Fc1627f115974B52FeA7;
     MatchingEngine public matchingEngine =
-        MatchingEngine(matching_engine_address);
+        MatchingEngine(payable(matching_engine_address));
     MockToken public feeToken = MockToken(feeToken_address);
     MockToken public stablecoin = MockToken(stablecoin_address);
 
@@ -366,7 +369,7 @@ contract TestOrderbookSell is Deployer {
     address constant stablecoin_address =
         0xfB4c8b2658AB2bf32ab5Fc1627f115974B52FeA7;
     MatchingEngine public matchingEngine =
-        MatchingEngine(matching_engine_address);
+        MatchingEngine(payable(matching_engine_address));
     MockToken public feeToken = MockToken(feeToken_address);
     MockToken public stablecoin = MockToken(stablecoin_address);
     Orderbook public book;
@@ -375,7 +378,7 @@ contract TestOrderbookSell is Deployer {
         _setDeployer();
 
         book = Orderbook(
-            matchingEngine.getBookByPair(address(feeToken), address(stablecoin))
+            payable(matchingEngine.getBookByPair(address(feeToken), address(stablecoin)))
         );
 
         // make a price in matching engine where 1 feeToken = 1000 stablecoin with buy and sell order
@@ -418,7 +421,7 @@ contract TestGetPrices is Deployer {
     address constant stablecoin_address =
         0xfB4c8b2658AB2bf32ab5Fc1627f115974B52FeA7;
     MatchingEngine public matchingEngine =
-        MatchingEngine(matching_engine_address);
+        MatchingEngine(payable(matching_engine_address));
     MockToken public feeToken = MockToken(feeToken_address);
     MockToken public stablecoin = MockToken(stablecoin_address);
 

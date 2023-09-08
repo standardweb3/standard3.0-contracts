@@ -314,4 +314,7 @@ contract Orderbook is IOrderbook, Initializable {
                     : ((amount * 1e8) / price) / decDiff;
         }
     }
+
+
+    receive() external payable {}
 }

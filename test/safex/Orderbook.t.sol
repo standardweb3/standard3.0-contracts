@@ -13,11 +13,12 @@ import {OrderbookFactory} from "../../contracts/safex/orderbooks/OrderbookFactor
 import {Orderbook} from "../../contracts/safex/orderbooks/Orderbook.sol";
 import {ExchangeOrderbook} from "../../contracts/safex/libraries/ExchangeOrderbook.sol";
 import {IOrderbookFactory} from "../../contracts/safex/interfaces/IOrderbookFactory.sol";
+import {WETH9} from "../../contracts/mock/WETH9.sol";
 
 contract BaseSetup is Test {
     Utils public utils;
     MatchingEngine public matchingEngine;
-
+    WETH9 public weth;
     OrderbookFactory public orderbookFactory;
     Orderbook public book;
     MockBase public token1;
@@ -44,6 +45,7 @@ contract BaseSetup is Test {
         token1 = new MockBase("Base", "BASE");
         token2 = new MockQuote("Quote", "QUOTE");
         btc = new MockBTC("Bitcoin", "BTC");
+        weth = new WETH9();
 
         token1.mint(trader1, 10000000e18);
         token2.mint(trader1, 10000000e18);
@@ -60,7 +62,8 @@ contract BaseSetup is Test {
             address(orderbookFactory),
             address(feeToken),
             address(0),
-            address(booker)
+            address(booker),
+            address(weth)
         );
 
         vm.prank(trader1);
@@ -170,7 +173,7 @@ contract OrderbookMatchTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            orderbookFactory.getBookByPair(address(token1), address(token2))
+            payable(orderbookFactory.getBookByPair(address(token1), address(token2)))
         );
         vm.prank(trader1);
         vm.expectRevert();
@@ -318,7 +321,7 @@ contract OrderbookMatchTest is BaseSetup {
             0
         );
         book = Orderbook(
-            orderbookFactory.getBookByPair(address(token1), address(token2))
+            payable(orderbookFactory.getBookByPair(address(token1), address(token2)))
         );
         console.log("Market price before manipulation: ", book.mktPrice());
         vm.prank(attacker);
@@ -333,7 +336,7 @@ contract OrderbookMatchTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            orderbookFactory.getBookByPair(address(token1), address(token2))
+            payable(orderbookFactory.getBookByPair(address(token1), address(token2)))
         );
         vm.prank(trader1);
 
@@ -387,7 +390,7 @@ contract OrderbookMatchTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            orderbookFactory.getBookByPair(address(token1), address(token2))
+            payable(orderbookFactory.getBookByPair(address(token1), address(token2)))
         );
         // We can create the same example with placeBid function
         // This time the program will enter the while (price > last && last != 0) statement
@@ -440,7 +443,7 @@ contract OrderbookMatchTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            orderbookFactory.getBookByPair(address(token1), address(token2))
+            payable(orderbookFactory.getBookByPair(address(token1), address(token2)))
         );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
@@ -473,7 +476,7 @@ contract OrderbookMatchTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(btc));
         book = Orderbook(
-            orderbookFactory.getBookByPair(address(token1), address(btc))
+            payable(orderbookFactory.getBookByPair(address(token1), address(token2)))
         );
         // before trade balances
         uint256 beforeTrader2T1Balance = token1.balanceOf(address(trader2));
@@ -550,7 +553,7 @@ contract OrderbookMatchTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(btc));
         book = Orderbook(
-            orderbookFactory.getBookByPair(address(token1), address(btc))
+            payable(orderbookFactory.getBookByPair(address(token1), address(token2)))
         );
         // before trade balances
         uint256 beforeTrader2T1Balance = token1.balanceOf(address(trader2));
@@ -628,7 +631,7 @@ contract OrderbookMatchTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(btc), address(token2));
         book = Orderbook(
-            orderbookFactory.getBookByPair(address(btc), address(token2))
+            payable(orderbookFactory.getBookByPair(address(token1), address(token2)))
         );
         // before trade balances
         uint256 beforeTrader2T2Balance = token2.balanceOf(address(trader2));
@@ -706,7 +709,7 @@ contract OrderbookMatchTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(btc), address(token2));
         book = Orderbook(
-            orderbookFactory.getBookByPair(address(btc), address(token2))
+            payable(orderbookFactory.getBookByPair(address(token1), address(token2)))
         );
         // before trade balances
         uint256 beforeTrader2T2Balance = token2.balanceOf(address(trader2));
@@ -784,7 +787,7 @@ contract OrderbookMatchTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            orderbookFactory.getBookByPair(address(token1), address(token2))
+            payable(orderbookFactory.getBookByPair(address(token1), address(token2)))
         );
         // before trade balances
         uint256 beforeTrader2T2Balance = token2.balanceOf(address(trader2));
@@ -862,7 +865,7 @@ contract OrderbookMatchTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            orderbookFactory.getBookByPair(address(token1), address(token2))
+            payable(orderbookFactory.getBookByPair(address(token1), address(token2)))
         );
         // before trade balances
         uint256 beforeTrader2T2Balance = token2.balanceOf(address(trader2));
@@ -936,7 +939,7 @@ contract OrderbookMatchTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            orderbookFactory.getBookByPair(address(token1), address(token2))
+            payable(orderbookFactory.getBookByPair(address(token1), address(token2)))
         );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
@@ -1001,7 +1004,7 @@ contract OrderbookMatchTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            orderbookFactory.getBookByPair(address(token1), address(token2))
+            payable(orderbookFactory.getBookByPair(address(token1), address(token2)))
         );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
@@ -1094,7 +1097,7 @@ contract OrderbookMatchTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            orderbookFactory.getBookByPair(address(token1), address(token2))
+            payable(orderbookFactory.getBookByPair(address(token1), address(token2)))
         );
         vm.prank(trader1);
         matchingEngine.limitSell(
@@ -1160,7 +1163,7 @@ contract OrderbookMatchTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            orderbookFactory.getBookByPair(address(token1), address(token2))
+            payable(orderbookFactory.getBookByPair(address(token1), address(token2)))
         );
         vm.prank(trader2);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
@@ -1256,7 +1259,7 @@ contract OrderbookMatchTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            orderbookFactory.getBookByPair(address(token1), address(token2))
+            payable(orderbookFactory.getBookByPair(address(token1), address(token2)))
         );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
@@ -1333,7 +1336,7 @@ contract OrderbookMatchTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            orderbookFactory.getBookByPair(address(token1), address(token2))
+            payable(orderbookFactory.getBookByPair(address(token1), address(token2)))
         );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
@@ -1427,7 +1430,7 @@ contract OrderbookMatchTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            orderbookFactory.getBookByPair(address(token1), address(token2))
+            payable(orderbookFactory.getBookByPair(address(token1), address(token2)))
         );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
@@ -1483,7 +1486,7 @@ contract OrderbookMatchTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            orderbookFactory.getBookByPair(address(token1), address(token2))
+            payable(orderbookFactory.getBookByPair(address(token1), address(token2)))
         );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
@@ -1518,7 +1521,7 @@ contract OrderbookMatchTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            orderbookFactory.getBookByPair(address(token1), address(token2))
+            payable(orderbookFactory.getBookByPair(address(token1), address(token2)))
         );
         IOrderbookFactory.Pair[] memory pairs = matchingEngine.getPairs(0, 20);
         console.log("Pairs:");
@@ -1530,7 +1533,7 @@ contract OrderbookMatchTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            orderbookFactory.getBookByPair(address(token1), address(token2))
+            payable(orderbookFactory.getBookByPair(address(token1), address(token2)))
         );
         IOrderbookFactory.Pair[] memory pairs = matchingEngine.getPairs(0, 20);
         console.log("Pairs:");
@@ -1544,7 +1547,7 @@ contract OrderbookMatchTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            orderbookFactory.getBookByPair(address(token1), address(token2))
+            payable(orderbookFactory.getBookByPair(address(token1), address(token2)))
         );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
@@ -1567,7 +1570,7 @@ contract OrderbookMatchTest is BaseSetup {
         MockToken token3 = new MockToken("Mock3", "MOCK3");
         matchingEngine.addPair(address(token1), address(token3));
         book = Orderbook(
-            orderbookFactory.getBookByPair(address(token1), address(token3))
+            payable(orderbookFactory.getBookByPair(address(token1), address(token3)))
         );
         vm.expectRevert();
         matchingEngine.addPair(address(token1), address(token3));
@@ -1586,159 +1589,35 @@ contract OrderbookMatchTest is BaseSetup {
         MockToken token3 = new MockToken("Mock3", "MOCK3");
         matchingEngine.addPair(address(token1), address(token3));
         book = Orderbook(
-            orderbookFactory.getBookByPair(address(token1), address(token3))
+            payable(orderbookFactory.getBookByPair(address(token1), address(token3)))
+        );
+    }
+
+    function testLimitBuyETH() public {
+        super.setUp();
+        console.log(trader1.balance);
+        console.log("weth deposit");
+        vm.prank(trader1);
+        weth.deposit{value: 1e2}();
+        matchingEngine.limitBuyETH{value: 1e18}(
+            address(token1),
+            1e8,
+            true,
+            5,
+            0
+        );
+        vm.prank(trader1);
+        token1.approve(address(matchingEngine), 10e18);
+        vm.prank(trader1);
+        matchingEngine.limitSell(
+            address(token1),
+            address(weth),
+            1e8,
+            1e18,
+            true,
+            5,
+            0
         );
     }
 }
 
-contract CancelOrderReentrancyAttack {
-    MatchingEngine public matchingEngine;
-
-    constructor(address _matchingEngine) {
-       MatchingEngine matchingEngine = MatchingEngine(_matchingEngine);
-    }
-
-    // Fallback is called when DepositFunds sends Ether to this contract.
-    fallback() external payable {
-        // matchingEngine.cancelOrder();
-    }
-
-    function attack() external payable {
-         // Send some Ether to trigger the fallback function
-        (bool success, ) = address(matchingEngine).call{ value: msg.value }("");
-        require(success, "Call failed");
-    }
-}
-
-contract CancelOrdersReentrancyAttack {
-    MatchingEngine public matchingEngine;
-
-    constructor(address _matchingEngine) {
-       MatchingEngine matchingEngine = MatchingEngine(_matchingEngine);
-    }
-
-    // Fallback is called when DepositFunds sends Ether to this contract.
-    fallback() external payable {
-        //matchingEngine.cancelOrders();
-    }
-
-    function attack() external payable {
-         // Send some Ether to trigger the fallback function
-        (bool success, ) = address(matchingEngine).call{ value: msg.value }("");
-        require(success, "Call failed");
-    }
-}
-
-contract LimitBuyReentrancyAttack {
-    MatchingEngine public matchingEngine;
-
-    constructor(address _matchingEngine) {
-       MatchingEngine matchingEngine = MatchingEngine(_matchingEngine);
-    }
-
-    // Fallback is called when DepositFunds sends Ether to this contract.
-    fallback() external payable {
-        // matchingEngine.limitBuy();
-    }
-
-    function attack() external payable {
-         // Send some Ether to trigger the fallback function
-        (bool success, ) = address(matchingEngine).call{ value: msg.value }("");
-        require(success, "Call failed");
-    }
-}
-
-contract LimitSellReentrancyAttack {
-    MatchingEngine public matchingEngine;
-
-    constructor(address _matchingEngine) {
-       MatchingEngine matchingEngine = MatchingEngine(_matchingEngine);
-    }
-
-    // Fallback is called when DepositFunds sends Ether to this contract.
-    fallback() external payable {
-        // matchingEngine.limitSell();
-    }
-
-    function attack() external payable {
-         // Send some Ether to trigger the fallback function
-        (bool success, ) = address(matchingEngine).call{ value: msg.value }("");
-        require(success, "Call failed");
-    }
-}
-
-contract MarketBuyReentrancyAttack {
-    MatchingEngine public matchingEngine;
-
-    constructor(address _matchingEngine) {
-       MatchingEngine matchingEngine = MatchingEngine(_matchingEngine);
-    }
-
-    // Fallback is called when DepositFunds sends Ether to this contract.
-    fallback() external payable {
-        // matchingEngine.marketBuy();
-    }
-
-    function attack() external payable {
-         // Send some Ether to trigger the fallback function
-        (bool success, ) = address(matchingEngine).call{ value: msg.value }("");
-        require(success, "Call failed");
-    }
-}
-
-contract MarketSellReentrancyAttack {
-    MatchingEngine public matchingEngine;
-
-    constructor(address _matchingEngine) {
-       MatchingEngine matchingEngine = MatchingEngine(_matchingEngine);
-    }
-
-    // Fallback is called when DepositFunds sends Ether to this contract.
-    fallback() external payable {
-        // matchingEngine.marketSell();
-    }
-
-    function attack() external payable {
-         // Send some Ether to trigger the fallback function
-        (bool success, ) = address(matchingEngine).call{ value: msg.value }("");
-        require(success, "Call failed");
-    }
-}
-
-contract RematchReentrancyAttack {
-    MatchingEngine public matchingEngine;
-
-    constructor(address _matchingEngine) {
-       MatchingEngine matchingEngine = MatchingEngine(_matchingEngine);
-    }
-
-    // Fallback is called when DepositFunds sends Ether to this contract.
-    fallback() external payable {
-        // matchingEngine.rematch();
-    }
-
-    function attack() external payable {
-         // Send some Ether to trigger the fallback function
-        (bool success, ) = address(matchingEngine).call{ value: msg.value }("");
-        require(success, "Call failed");
-    }
-}
-
-contract RematchOrdersReentrancyAttack {
-    MatchingEngine public matchingEngine;
-
-    constructor(address _matchingEngine) {
-       MatchingEngine matchingEngine = MatchingEngine(_matchingEngine);
-    }
-
-    // Fallback is called when DepositFunds sends Ether to this contract.
-    fallback() external payable {
-        // matchingEngine.rematchOrders();
-    }
-
-    function attack() external payable {
-         // Send some Ether to trigger the fallback function
-        (bool success, ) = address(matchingEngine).call{ value: msg.value }("");
-        require(success, "Call failed");
-    }
-}

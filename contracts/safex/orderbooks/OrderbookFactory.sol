@@ -80,7 +80,15 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
         address base,
         address quote
     ) external view override returns (address book) {
-        return _predictAddress(base, quote);
+        book = _predictAddress(base, quote);
+        bool isContractCode;
+        assembly {
+            // Retrieve the size of the code at the address
+            let codeSize := extcodesize(book)
+            // Check if the code size is greater than zero
+            isContractCode := gt(codeSize, 0)
+        }
+        return isContractCode ? book : address(0);
     }
 
     function getPairs(

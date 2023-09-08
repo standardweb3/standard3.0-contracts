@@ -71,6 +71,10 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
 
     constructor() {}
 
+    receive() external payable {
+        assert(msg.sender == WETH); // only accept ETH via fallback from the WETH contract
+    }
+
     /**
      * @dev Initialize the matching engine with orderbook factory and listing requirements.
      * It can be called only once.
@@ -86,12 +90,14 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         address orderbookFactory_,
         address membership_,
         address accountant_,
-        address treasury_
+        address treasury_,
+        address WETH_
     ) external initializer {
         orderbookFactory = orderbookFactory_;
         membership = membership_;
         accountant = accountant_;
         feeTo = treasury_;
+        WETH = WETH_;
     }
 
     /**
@@ -212,7 +218,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) external nonReentrant payable returns (bool) {
+    ) external payable nonReentrant returns (bool) {
         IWETH(WETH).deposit{value: msg.value}();
         return marketBuy(base, WETH, msg.value, isMaker, n, uid);
     }
@@ -231,7 +237,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) external nonReentrant payable returns (bool) {
+    ) external payable nonReentrant returns (bool) {
         IWETH(WETH).deposit{value: msg.value}();
         return marketSell(WETH, quote, msg.value, isMaker, n, uid);
     }
@@ -343,6 +349,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         return true;
     }
 
+    error limitETH(uint256 value);
     /**
      * @dev Executes a limit buy order,
      * places a limit order in the orderbook for buying the base asset using the quote asset at a specified price,
@@ -358,7 +365,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) external nonReentrant payable returns (bool) {
+    ) external payable returns (bool) {
         IWETH(WETH).deposit{value: msg.value}();
         return limitBuy(base, WETH, price, msg.value, isMaker, n, uid);
     }
@@ -378,7 +385,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) external nonReentrant payable returns (bool) {
+    ) external payable returns (bool) {
         IWETH(WETH).deposit{value: msg.value}();
         return limitSell(WETH, quote, price, msg.value, isMaker, n, uid);
     }
@@ -518,7 +525,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                 return
                     limitSell(base, quote, price, remaining, isMaker, n, uid);
             }
-        }  
+        }
     }
 
     /**
@@ -1013,24 +1020,28 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         withoutFee = amount - fee;
         if (isBid) {
             // transfer input asset give user to this contract
-            TransferHelper.safeTransferFrom(
-                quote,
-                msg.sender,
-                address(this),
-                amount
-            );
+            if (quote != WETH) {
+                TransferHelper.safeTransferFrom(
+                    quote,
+                    msg.sender,
+                    address(this),
+                    amount
+                );
+            }
             TransferHelper.safeTransfer(quote, feeTo, fee);
         } else {
             // transfer input asset give user to this contract
-            TransferHelper.safeTransferFrom(
-                base,
-                msg.sender,
-                address(this),
-                amount
-            );
+            if (base != WETH) {
+                TransferHelper.safeTransferFrom(
+                    base,
+                    msg.sender,
+                    address(this),
+                    amount
+                );
+            }
             TransferHelper.safeTransfer(base, feeTo, fee);
         }
-        
+
         return (withoutFee, book);
     }
 

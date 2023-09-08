@@ -59,7 +59,7 @@ contract DeployTestnetAssetsAndContracts is Deployer {
         Treasury treasury = new Treasury();
         treasury.initialize(address(accountant), address(sabt));
         matchingEngine.initialize(
-            address(orderbookFactory), address(membership), address(accountant), address(treasury)
+            address(orderbookFactory), address(membership), address(accountant), address(treasury), weth
         );
         orderbookFactory.initialize(address(matchingEngine));
         // Wire up matching engine with them
@@ -133,7 +133,7 @@ contract SetupSAFEXInitialParameters is Deployer {
     address constant matching_engine_address = 0xa02d713DEBba20c8f81b35576A78D66Ef4E2f868;
     address constant feeToken_address = 0xf3Db341c6001916121EB46eD669D08aDC7FF37e1;
     address constant stablecoin_address = 0x4c5ecfF8f637BE60F093808babcd03b78170b828;
-    MatchingEngine public matchingEngine = MatchingEngine(matching_engine_address);
+    MatchingEngine public matchingEngine = MatchingEngine(payable(matching_engine_address));
     MockToken public feeToken = MockToken(feeToken_address);
     MockToken public stablecoin = MockToken(stablecoin_address);
 
@@ -158,7 +158,7 @@ contract SetupSAFEXSampleOrders is Deployer {
     address constant matching_engine_address = 0xa02d713DEBba20c8f81b35576A78D66Ef4E2f868;
     address constant feeToken_address = 0xf3Db341c6001916121EB46eD669D08aDC7FF37e1;
     address constant stablecoin_address = 0x4c5ecfF8f637BE60F093808babcd03b78170b828;
-    MatchingEngine public matchingEngine = MatchingEngine(matching_engine_address);
+    MatchingEngine public matchingEngine = MatchingEngine(payable(matching_engine_address));
     MockToken public feeToken = MockToken(feeToken_address);
     MockToken public stablecoin = MockToken(stablecoin_address);
 
@@ -182,7 +182,7 @@ contract SetupSAFEXSampleOrders2 is Deployer {
     address constant matching_engine_address = 0xa02d713DEBba20c8f81b35576A78D66Ef4E2f868;
     address constant feeToken_address = 0xf3Db341c6001916121EB46eD669D08aDC7FF37e1;
     address constant stablecoin_address = 0x4c5ecfF8f637BE60F093808babcd03b78170b828;
-    MatchingEngine public matchingEngine = MatchingEngine(matching_engine_address);
+    MatchingEngine public matchingEngine = MatchingEngine(payable(matching_engine_address));
     MockToken public feeToken = MockToken(feeToken_address);
     MockToken public stablecoin = MockToken(stablecoin_address);
 

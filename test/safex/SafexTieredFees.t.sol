@@ -12,6 +12,7 @@ import {OrderbookFactory} from "../../contracts/safex/orderbooks/OrderbookFactor
 import {Treasury} from "../../contracts/sabt/Treasury.sol";
 import {MockToken} from "../../contracts/mock/MockToken.sol";
 import {Orderbook} from "../../contracts/safex/orderbooks/Orderbook.sol";
+import {WETH9} from "../../contracts/mock/WETH9.sol";
 
 contract SAFEXFeeTierSetup is BaseSetup {
     OrderbookFactory public orderbookFactoryFeeTier;
@@ -42,7 +43,7 @@ contract SAFEXFeeTierSetup is BaseSetup {
         treasury.initialize(address(accountant), address(sabt));
         orderbookFactoryFeeTier.initialize(address(matchingEngineFeeTier));
         matchingEngineFeeTier.initialize(
-            address(orderbookFactoryFeeTier), address(membership), address(accountant), address(treasury)
+            address(orderbookFactoryFeeTier), address(membership), address(accountant), address(treasury), address(weth)
         );
         accountant.grantRole(accountant.REPORTER_ROLE(), address(matchingEngineFeeTier));
         treasury.grantRole(treasury.REPORTER_ROLE(), address(matchingEngineFeeTier));

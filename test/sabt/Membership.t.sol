@@ -11,6 +11,7 @@ import {Treasury} from "../../contracts/sabt/Treasury.sol";
 import {TreasuryLib} from "../../contracts/sabt/libraries/TreasuryLib.sol";
 import {MockToken} from "../../contracts/mock/MockToken.sol";
 import {Orderbook} from "../../contracts/safex/orderbooks/Orderbook.sol";
+import {WETH9} from "../../contracts/mock/WETH9.sol";
 
 contract MembershipBaseSetup is Test {
     Membership public membership;
@@ -19,6 +20,7 @@ contract MembershipBaseSetup is Test {
     SABT public sabt;
     MockToken public stablecoin;
     MockToken public feeToken;
+    WETH9 public weth;
     address public foundation;
     address public reporter;
     OrderbookFactory orderbookFactory;
@@ -61,7 +63,8 @@ contract MembershipBaseSetup is Test {
             address(orderbookFactory),
             address(membership),
             address(accountant),
-            address(treasury)
+            address(treasury),
+            address(weth)
         );
         orderbookFactory.initialize(address(matchingEngine));
         accountant.initialize(

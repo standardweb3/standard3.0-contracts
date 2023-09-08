@@ -476,7 +476,7 @@ contract OrderbookMatchTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(btc));
         book = Orderbook(
-            payable(orderbookFactory.getBookByPair(address(token1), address(token2)))
+            payable(orderbookFactory.getBookByPair(address(token1), address(btc)))
         );
         // before trade balances
         uint256 beforeTrader2T1Balance = token1.balanceOf(address(trader2));
@@ -553,7 +553,7 @@ contract OrderbookMatchTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(btc));
         book = Orderbook(
-            payable(orderbookFactory.getBookByPair(address(token1), address(token2)))
+            payable(orderbookFactory.getBookByPair(address(token1), address(btc)))
         );
         // before trade balances
         uint256 beforeTrader2T1Balance = token1.balanceOf(address(trader2));
@@ -631,7 +631,7 @@ contract OrderbookMatchTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(btc), address(token2));
         book = Orderbook(
-            payable(orderbookFactory.getBookByPair(address(token1), address(token2)))
+            payable(orderbookFactory.getBookByPair(address(btc), address(token2)))
         );
         // before trade balances
         uint256 beforeTrader2T2Balance = token2.balanceOf(address(trader2));
@@ -709,7 +709,7 @@ contract OrderbookMatchTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(btc), address(token2));
         book = Orderbook(
-            payable(orderbookFactory.getBookByPair(address(token1), address(token2)))
+            payable(orderbookFactory.getBookByPair(address(btc), address(token2)))
         );
         // before trade balances
         uint256 beforeTrader2T2Balance = token2.balanceOf(address(trader2));

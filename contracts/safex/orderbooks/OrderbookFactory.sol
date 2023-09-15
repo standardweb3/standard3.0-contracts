@@ -26,7 +26,6 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
     error SameBaseQuote(address base, address quote);
 
     constructor() {
-        _createImpl();
     }
 
     function createBook(
@@ -159,13 +158,14 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
      */
     function initialize(address engine_) public initializer {
         engine = engine_;
+        _createImpl();
     }
 
     function allOrderbooksLength() public view returns (uint256) {
         return allOrderbooks.length;
     }
 
-    // Set immutable, consistent, one rule for orderbook implementation
+    // Set immutable, consistant, one rule for orderbook implementation
     function _createImpl() internal {
         address addr;
         bytes memory bytecode = type(Orderbook).creationCode;

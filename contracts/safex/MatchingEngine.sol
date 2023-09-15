@@ -218,7 +218,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) external payable nonReentrant returns (bool) {
+    ) external payable returns (bool) {
         IWETH(WETH).deposit{value: msg.value}();
         return marketBuy(base, WETH, msg.value, isMaker, n, uid);
     }
@@ -237,7 +237,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) external payable nonReentrant returns (bool) {
+    ) external payable returns (bool) {
         IWETH(WETH).deposit{value: msg.value}();
         return marketSell(WETH, quote, msg.value, isMaker, n, uid);
     }
@@ -349,7 +349,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         return true;
     }
 
-    error limitETH(uint256 value);
     /**
      * @dev Executes a limit buy order,
      * places a limit order in the orderbook for buying the base asset using the quote asset at a specified price,
@@ -464,9 +463,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool[] memory isBid,
         uint32 uid
     ) external returns (bool) {
-        bool locked;
-        require(!locked, "Reentrant call detected!");
-        locked = true;
         for (uint32 i = 0; i < orderIds.length; i++) {
             cancelOrder(
                 base[i],
@@ -477,7 +473,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                 uid
             );
         }
-        locked = false;
         return true;
     }
 
@@ -808,7 +803,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint32 i,
         uint32 n
     ) internal returns (uint256 remaining, uint32 k) {
-        if (n >= 20) {
+        if (n > 20) {
             revert TooManyMatches(n);
         }
         remaining = amount;

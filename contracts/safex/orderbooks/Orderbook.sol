@@ -316,5 +316,7 @@ contract Orderbook is IOrderbook, Initializable {
     }
 
 
-    receive() external payable {}
+    receive() external payable {
+        assert(msg.sender == IWETHMinimal(pair.engine).WETH());
+    }
 }

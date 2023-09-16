@@ -1722,5 +1722,19 @@ contract OrderbookMatchTest is BaseSetup {
         console.log("weth balance");
         console.log(trader1.balance / 1e18);
     }
+
+    function testProxyImplCorruption() public {
+        book = Orderbook(
+            payable(orderbookFactory.impl())
+        );
+        book.initialize(0, address(weth), address(btc), address(matchingEngine));
+        // check if generated new pair follows impl's pair state
+        MockBase mockBase2 = new MockBase("BASE2", "BASE2");
+        address book2 = matchingEngine.addPair(address(token1), address(mockBase2));
+        (address bookBase, address bookQuote) = book.getBaseQuote();
+        (address book2Base, address book2Quote) = Orderbook(payable(book2)).getBaseQuote();
+        assert(bookBase != book2Base);
+        assert(bookQuote != book2Quote);
+    }
 }
 

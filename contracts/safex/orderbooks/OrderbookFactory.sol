@@ -13,7 +13,7 @@ interface IERC20 {
 
 contract OrderbookFactory is IOrderbookFactory, Initializable {
     // Orderbooks
-    address[] public allOrderbooks;
+    address[] public allPairs;
     /// Address of manager
     address public override engine;
     /// version number of impl
@@ -58,12 +58,12 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
             _getSalt(base_, quote_)
         );
         IOrderbook(proxy).initialize(
-            allOrderbooksLength(),
+            allPairsLength(),
             base_,
             quote_,
             engine
         );
-        allOrderbooks.push(proxy);
+        allPairs.push(proxy);
         return (proxy);
     }
 
@@ -72,7 +72,7 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
     }
 
     function getBook(uint256 bookId_) external view override returns (address) {
-        return allOrderbooks[bookId_];
+        return allPairs[bookId_];
     }
 
     function getBookByPair(
@@ -94,12 +94,12 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
         uint256 start,
         uint256 end
     ) public view override returns (IOrderbookFactory.Pair[] memory) {
-        uint256 last = end > allOrderbooks.length ? allOrderbooks.length : end;
+        uint256 last = end > allPairs.length ? allPairs.length : end;
         IOrderbookFactory.Pair[] memory pairs = new IOrderbookFactory.Pair[](
             last - start
         );
         for (uint256 i = start; i < last; i++) {
-            (address base, address quote) = IOrderbook(allOrderbooks[i])
+            (address base, address quote) = IOrderbook(allPairs[i])
                 .getBaseQuote();
             pairs[i] = Pair(base, quote);
         }
@@ -111,7 +111,7 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
     ) public view override returns (IOrderbookFactory.Pair[] memory pairs) {
         pairs = new IOrderbookFactory.Pair[](ids.length);
         for (uint256 i = 0; i < ids.length; i++) {
-            (address base, address quote) = IOrderbook(allOrderbooks[i])
+            (address base, address quote) = IOrderbook(allPairs[i])
                 .getBaseQuote();
             pairs[i] = Pair(base, quote);
         }
@@ -137,7 +137,7 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
     ) external view override returns (string[] memory names) {
         names = new string[](ids.length);
         for (uint256 i = 0; i < ids.length; i++) {
-            (address base, address quote) = IOrderbook(allOrderbooks[i])
+            (address base, address quote) = IOrderbook(allPairs[i])
                 .getBaseQuote();
             string memory baseName = IERC20(base).symbol();
             string memory quoteName = IERC20(quote).symbol();
@@ -161,8 +161,8 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
         _createImpl();
     }
 
-    function allOrderbooksLength() public view returns (uint256) {
-        return allOrderbooks.length;
+    function allPairsLength() public view returns (uint256) {
+        return allPairs.length;
     }
 
     // Set immutable, consistant, one rule for orderbook implementation

@@ -46,7 +46,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         address orderbook,
         uint256 id,
         bool isBid,
-        address owner
+        address indexed owner
     );
 
     event OrderMatched(
@@ -54,14 +54,23 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint256 id,
         bool isBid,
         address sender,
-        address owner,
+        address indexed owner,
         uint256 amount,
         uint256 price
     );
 
-    event OrderPlaced(address base, address quote, bool isBid, uint256 orderId);
+    event OrderPlaced(
+        address indexed base,
+        address indexed quote,
+        bool indexed isBid,
+        uint256 orderId
+    );
 
-    event PairAdded(address orderbook, address base, address quote);
+    event PairAdded(
+        address orderbook,
+        address base,
+        address quote
+    );
 
     error TooManyMatches(uint256 n);
     error InvalidFeeRate(uint256 feeNum, uint256 feeDenom);
@@ -846,6 +855,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             }
             // order is null
             else if (required == 0) {
+                ++i;
                 continue;
             }
             // remaining >= depositAmount

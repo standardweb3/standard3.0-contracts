@@ -100,6 +100,7 @@ library ExchangeOrderbook {
     function _deleteOrder(OrderStorage storage self, uint256 price, uint32 id) internal {
         uint32 last = 0;
         uint32 head = self.head[price];
+        uint16 i;
         mapping(uint32 => uint32) storage list = self.list[price];
         if (head == id) {
             self.head[price] = list[head];
@@ -108,7 +109,7 @@ library ExchangeOrderbook {
             return;
         }
         // search for the order id in the linked list
-        while (head != 0) {
+        while (head != 0 && i < 20) {
             uint32 next = list[head];
             if (head == id) {
                 list[last] = next;
@@ -118,6 +119,7 @@ library ExchangeOrderbook {
             }
             last = head;
             head = next;
+            ++i;
         }
     }
 

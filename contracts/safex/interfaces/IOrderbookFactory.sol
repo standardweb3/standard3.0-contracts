@@ -16,7 +16,7 @@ interface IOrderbookFactory {
 
     function getBaseQuote(address orderbook) external view returns (address base, address quote);
 
-    function allOrderbooksLength() external view returns (uint256);
+    function allPairsLength() external view returns (uint256);
 
     /// Address of a manager
     function engine() external view returns (address);

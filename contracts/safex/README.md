@@ -67,7 +67,7 @@ When working with contracts, especially in a live environment, security is param
 - Regularly audit your contracts for vulnerabilities.
 - Keep private keys and sensitive information secure.
 
-If you discover any security issues or vulnerabilities, please report them responsibly to our team via [official communication channels](mailto:contact@standardweb3.com).
+If you discover any security issues or vulnerabilities, please report them responsibly to our team via [official communication channel](mailto:contact@standardweb3.com).
 
 ---
 
@@ -82,4 +82,6 @@ For a comprehensive understanding of SAFEX and its functionalities, visit the of
 
 ## Licensing
 
-The primary license for the codes in this repo are the Business Source License 1.1 (`BUSL-1.1`), see [`LICENSE`](./LICENSE).
+The license for the codes in this monorepo is the Business Source License 1.1 (`BSL-1.1`). See [LICENSE](./LICENSE)
+
+For information about alternative licensing arrangements for the Licensed Work, please contact [official communication channel](mailto:contact@standardweb3.com)

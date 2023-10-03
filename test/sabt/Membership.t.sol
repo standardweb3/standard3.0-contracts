@@ -12,6 +12,7 @@ import {TreasuryLib} from "../../contracts/sabt/libraries/TreasuryLib.sol";
 import {MockToken} from "../../contracts/mock/MockToken.sol";
 import {Orderbook} from "../../contracts/safex/orderbooks/Orderbook.sol";
 import {WETH9} from "../../contracts/mock/WETH9.sol";
+import {Revenue} from "../../contracts/sabt/Revenue.sol";
 
 contract MembershipBaseSetup is Test {
     Membership public membership;
@@ -24,6 +25,7 @@ contract MembershipBaseSetup is Test {
     address public foundation;
     address public reporter;
     OrderbookFactory orderbookFactory;
+    Revenue public revenue;
 
     Utils public utils;
     MatchingEngine public matchingEngine;
@@ -56,14 +58,14 @@ contract MembershipBaseSetup is Test {
         treasury = new Treasury();
         matchingEngine = new MatchingEngine();
         orderbookFactory = new OrderbookFactory();
-        membership.initialize(address(sabt), foundation);
+        membership.initialize(address(sabt), foundation, address(weth));
         sabt.initialize(address(membership));
         treasury.initialize(address(accountant), address(sabt));
+        revenue = new Revenue();
+        revenue.set(address(membership), address(accountant), address(treasury));
         matchingEngine.initialize(
             address(orderbookFactory),
-            address(membership),
-            address(accountant),
-            address(treasury),
+            address(revenue),
             address(weth)
         );
         orderbookFactory.initialize(address(matchingEngine));
@@ -72,9 +74,9 @@ contract MembershipBaseSetup is Test {
         );
         accountant.grantRole(
             accountant.REPORTER_ROLE(),
-            address(matchingEngine)
+            address(revenue)
         );
-        treasury.grantRole(treasury.REPORTER_ROLE(), address(matchingEngine));
+        treasury.grantRole(treasury.REPORTER_ROLE(), address(revenue));
         
         feeToken.mint(trader1, 100000000e18);
         feeToken.mint(trader2, 10000e18);

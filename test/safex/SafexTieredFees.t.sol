@@ -13,6 +13,7 @@ import {Treasury} from "../../contracts/sabt/Treasury.sol";
 import {MockToken} from "../../contracts/mock/MockToken.sol";
 import {Orderbook} from "../../contracts/safex/orderbooks/Orderbook.sol";
 import {WETH9} from "../../contracts/mock/WETH9.sol";
+import {Revenue} from "../../contracts/sabt/Revenue.sol";
 
 contract SAFEXFeeTierSetup is BaseSetup {
     OrderbookFactory public orderbookFactoryFeeTier;
@@ -42,11 +43,16 @@ contract SAFEXFeeTierSetup is BaseSetup {
         treasury = new Treasury();
         treasury.initialize(address(accountant), address(sabt));
         orderbookFactoryFeeTier.initialize(address(matchingEngineFeeTier));
+        revenue = new Revenue();
+        revenue.set(address(membership), address(accountant), address(treasury));
         matchingEngineFeeTier.initialize(
-            address(orderbookFactoryFeeTier), address(membership), address(accountant), address(treasury), address(weth)
+            address(orderbookFactoryFeeTier), address(revenue), address(weth)
         );
-        accountant.grantRole(accountant.REPORTER_ROLE(), address(matchingEngineFeeTier));
-        treasury.grantRole(treasury.REPORTER_ROLE(), address(matchingEngineFeeTier));
+        accountant.grantRole(
+            accountant.REPORTER_ROLE(),
+            address(revenue)
+        );
+        treasury.grantRole(treasury.REPORTER_ROLE(), address(revenue));
 
         feeToken.mint(trader1, 10e41);
         feeToken.mint(trader2, 100000e18);
@@ -59,7 +65,7 @@ contract SAFEXFeeTierSetup is BaseSetup {
         stablecoin.approve(address(membership), 10000e18);
 
         // initialize  membership contract
-        membership.initialize(address(sabt), foundation);
+        membership.initialize(address(sabt), foundation, address(weth));
         // initialize SABT
         sabt.initialize(address(membership));
         membership.setMembership(1, address(feeToken), 1000, 1000, 10000);
@@ -98,10 +104,13 @@ contract SAFEXFeeTierSetup is BaseSetup {
         vm.prank(trader2);
         matchingEngineFeeTier.limitSell(address(feeToken), address(stablecoin), 1000e8, 10000e18, true, 1, 0);
         // match the order to make lmp so that accountant can report
+        stablecoin.mint(address(trader1), 1000000000e18);
         vm.prank(trader1);
-        feeToken.approve(address(matchingEngineFeeTier), 10000e18);
+        stablecoin.approve(address(matchingEngineFeeTier), 1000000000e18);
         vm.prank(trader1);
-        matchingEngineFeeTier.limitBuy(address(feeToken), address(stablecoin), 1000e8, 10000e18, false, 1, 1);
+        matchingEngineFeeTier.limitBuy(address(feeToken), address(stablecoin), 1000e8, 100000e18, true, 5, 1);
+        vm.prank(trader1);
+        matchingEngineFeeTier.limitBuy(address(feeToken), address(stablecoin), 1000e8, 10000000e18, true, 5, 1);
     }
 }
 

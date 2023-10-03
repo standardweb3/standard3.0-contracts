@@ -3,6 +3,7 @@ pragma solidity ^0.8.17;
 
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {MembershipLib} from "./libraries/MembershipLib.sol";
+import {IWETH} from "./interfaces/IWETH.sol";
 
 /// @author Hyungsuk Kang <hskang9@gmail.com>
 /// @title Standard Membership registration and subscription
@@ -20,12 +21,13 @@ contract Membership is AccessControl {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    function initialize(address sabt_, address foundation_) external {
+    function initialize(address sabt_, address foundation_, address weth_) external {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
         }
         _membership.sabt = sabt_;
         _membership.foundation = foundation_;
+        _membership.weth = weth_;
     }
 
     /// @dev setFees: Set fees for registration and subscription and token address
@@ -81,14 +83,21 @@ contract Membership is AccessControl {
 
     /// @dev register: Register as a member
     function register(uint8 metaId_, address feeToken_) external returns (uint32 uid) {
-        // check if metaId is valid
+        // check if metaId is valid, meta only supports 1~11
         if (metaId_ == 0 || _membership.metas[metaId_].metaId != metaId_) {
             revert InvalidMeta(metaId_, msg.sender);
         }
-        if ((metaId_ == 9 || metaId_ == 10) && !hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+        // check if early adoptor, foundation, beta account is only used by admin
+        if ((metaId_ == 9 || metaId_ == 10 || metaId_ == 11) && !hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
         }
         return _membership._register(metaId_, feeToken_);
+    }
+
+    function registerETH(uint8 metaId_) external payable returns (uint32 uid) {
+        require(msg.value > 0, "Membership: zero value");
+        IWETH(_membership.weth).deposit{value: msg.value}();
+        return _membership._register(metaId_, _membership.weth);
     }
 
     /**
@@ -99,6 +108,12 @@ contract Membership is AccessControl {
      */
     function subscribe(uint32 uid_, uint64 blocks_, address feeToken_) external {
         _membership._subscribe(uid_, blocks_, feeToken_);
+    }
+
+    function subscribeETH(uint32 uid_, uint64 blocks_) external payable {
+        require(msg.value > 0, "Membership: zero value");
+        IWETH(_membership.weth).deposit{value: msg.value}();
+        _membership._subscribe(uid_, blocks_, _membership.weth);
     }
 
     function offerBonus(uint32 uid_, address holder_, uint256 blocks_) external {

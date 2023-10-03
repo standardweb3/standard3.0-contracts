@@ -14,6 +14,7 @@ import { Orderbook } from "../../contracts/safex/orderbooks/Orderbook.sol";
 import { ExchangeOrderbook } from "../../contracts/safex/libraries/ExchangeOrderbook.sol";
 import { IOrderbookFactory } from "../../contracts/safex/interfaces/IOrderbookFactory.sol";
 import { WETH9 } from "../../contracts/mock/WETH9.sol";
+import { Revenue } from "../../contracts/sabt/Revenue.sol";
 
 contract BaseSetup is Test {
   Utils public utils;
@@ -25,6 +26,7 @@ contract BaseSetup is Test {
   MockQuote public token2;
   MockBTC public btc;
   MockToken public feeToken;
+  Revenue public revenue;
   address payable[] public users;
   address public trader1;
   address public trader2;
@@ -58,11 +60,11 @@ contract BaseSetup is Test {
     matchingEngine = new MatchingEngine();
     orderbookFactory = new OrderbookFactory();
     orderbookFactory.initialize(address(matchingEngine));
+    revenue = new Revenue();
+    revenue.set(address(0), address(0), address(0));
     matchingEngine.initialize(
       address(orderbookFactory),
-      address(feeToken),
-      address(0),
-      address(booker),
+      address(revenue),
       address(weth)
     );
 
@@ -1769,7 +1771,7 @@ contract OrderbookMatchTest is BaseSetup {
         address(token1),
         address(token2),
         500000000,
-        i+1,
+        i + 1,
         true,
         2,
         0

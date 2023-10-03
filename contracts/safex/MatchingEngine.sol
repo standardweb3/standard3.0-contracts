@@ -88,24 +88,19 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
      * @dev Initialize the matching engine with orderbook factory and listing requirements.
      * It can be called only once.
      * @param orderbookFactory_ address of orderbook factory
-     * @param membership_ membership contract address
-     * @param accountant_ accountant contract address
-     * @param treasury_ treasury to collect fees
+     * @param revenue_ address of revenue contract
+     * @param WETH_ address of wrapped ether contract
      *
      * Requirements:
      * - `msg.sender` must have the default admin role.
      */
     function initialize(
         address orderbookFactory_,
-        address membership_,
-        address accountant_,
-        address treasury_,
+        address revenue_,
         address WETH_
     ) external initializer {
         orderbookFactory = orderbookFactory_;
-        membership = membership_;
-        accountant = accountant_;
-        feeTo = treasury_;
+        feeTo = revenue_;
         WETH = WETH_;
     }
 
@@ -444,9 +439,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             msg.sender
         );
         // decrease point from orderbook
-        if (uid != 0 && IRevenue(membership).isReportable(msg.sender, uid)) {
+        if (uid != 0 && IRevenue(feeTo).isReportable(msg.sender, uid)) {
             // report cancelation to accountant
-            IRevenue(accountant).report(
+            IRevenue(feeTo).report(
                 uid,
                 isBid ? quote : base,
                 remaining,
@@ -1009,15 +1004,11 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             book = addPair(base, quote);
         }
         // check if amount is valid in case of both market and limit
-        uint256 converted = price == 0
-            ? convert(base, quote, amount, !isBid)
-            : _convert(base, quote, price, amount, !isBid);
+        uint256 converted = _convert(book, price, amount, !isBid);
         if (converted == 0) {
             revert OrderSizeTooSmall(
                 amount,
-                price == 0
-                    ? convert(base, quote, 1, isBid)
-                    : _convert(base, quote, price, 1, isBid)
+                _convert(book, price, 1, isBid)
             );
         }
         // check if sender has uid
@@ -1058,10 +1049,10 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint32 uid,
         bool isMaker
     ) internal returns (uint256 fee) {
-        if (uid != 0 && IRevenue(membership).isReportable(msg.sender, uid)) {
-            uint32 feeNum = IRevenue(accountant).feeOf(uid, isMaker);
+        if (uid != 0 && IRevenue(feeTo).isReportable(msg.sender, uid)) {
+            uint32 feeNum = IRevenue(feeTo).feeOf(uid, isMaker);
             // report fee to accountant
-            IRevenue(accountant).report(
+            IRevenue(feeTo).report(
                 uid,
                 isBid ? quote : base,
                 amount,
@@ -1075,8 +1066,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
 
     /**
      * @dev return converted amount from base to quote or vice versa
-     * @param base address of base asset
-     * @param quote address of quote asset
+     * @param orderbook address of orderbook
      * @param price price of base/quote regardless of decimals of the assets in the pair represented with 8 decimals (if 1000, base is 1000x quote) proposed by a trader
      * @param amount amount of base or quote asset
      * @param isBid if true, amount is quote asset, otherwise base asset
@@ -1085,19 +1075,15 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
      * if orderbook does not exist, return 0
      */
     function _convert(
-        address base,
-        address quote,
+        address orderbook,
         uint256 price,
         uint256 amount,
         bool isBid
     ) internal view returns (uint256 converted) {
-        address orderbook = getBookByPair(base, quote);
-        if (base == quote) {
-            return amount;
-        } else if (orderbook == address(0)) {
+        if (orderbook == address(0)) {
             return 0;
         } else {
-            return IOrderbook(orderbook).convert(price, amount, isBid);
+            return price == 0 ? IOrderbook(orderbook).assetValue(amount, isBid) : IOrderbook(orderbook).convert(price, amount, isBid);
         }
     }
 }

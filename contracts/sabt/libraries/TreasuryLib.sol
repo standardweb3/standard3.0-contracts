@@ -78,7 +78,7 @@ library TreasuryLib {
     }
 
     function _claim(Storage storage self, address token, uint32 nthEra, uint32 uid) internal {
-        // check if the sender has UID with investor meta id
+        // check if the sender has UID with early adoptor meta id
         _checkMembership(self, uid, EARLYADOPTER_META_ID);
         // check if the era has already passed
         _checkEraPassed(self, nthEra);

@@ -33,6 +33,8 @@ library MembershipLib {
         address stnd;
         /// @dev address of foundation
         address foundation;
+        /// @dev address of WETH
+        address weth;
     }
 
     struct SubStatus {

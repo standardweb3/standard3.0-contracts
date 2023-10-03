@@ -236,6 +236,9 @@ library BlockAccountantLib {
                 // 0.0200% / 0.0400%
                 return isMaker ? 200 : 400;
             }
+        } else if (level >= 11) {
+            // when beta account is used, fee rate is zero
+            return 0;
         }
     }
 }

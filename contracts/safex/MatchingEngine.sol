@@ -36,10 +36,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
     address public orderbookFactory;
     // WETH
     address public WETH;
-    // membership contract
-    address public membership;
-    // accountant contract
-    address public accountant;
 
     // events
     event OrderCanceled(

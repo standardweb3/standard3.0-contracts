@@ -12,7 +12,6 @@ import {TreasuryLib} from "../../contracts/sabt/libraries/TreasuryLib.sol";
 import {MockToken} from "../../contracts/mock/MockToken.sol";
 import {Orderbook} from "../../contracts/safex/orderbooks/Orderbook.sol";
 import {WETH9} from "../../contracts/mock/WETH9.sol";
-import {Revenue} from "../../contracts/sabt/Revenue.sol";
 
 contract MembershipBaseSetup is Test {
     Membership public membership;
@@ -25,8 +24,7 @@ contract MembershipBaseSetup is Test {
     address public foundation;
     address public reporter;
     OrderbookFactory orderbookFactory;
-    Revenue public revenue;
-
+    
     Utils public utils;
     MatchingEngine public matchingEngine;
     address payable[] public users;
@@ -60,12 +58,10 @@ contract MembershipBaseSetup is Test {
         orderbookFactory = new OrderbookFactory();
         membership.initialize(address(sabt), foundation, address(weth));
         sabt.initialize(address(membership));
-        treasury.initialize(address(accountant), address(sabt));
-        revenue = new Revenue();
-        revenue.set(address(membership), address(accountant), address(treasury));
+        treasury.set(address(membership), address(accountant), address(sabt));
         matchingEngine.initialize(
             address(orderbookFactory),
-            address(revenue),
+            address(treasury),
             address(weth)
         );
         orderbookFactory.initialize(address(matchingEngine));
@@ -74,9 +70,9 @@ contract MembershipBaseSetup is Test {
         );
         accountant.grantRole(
             accountant.REPORTER_ROLE(),
-            address(revenue)
+            address(treasury)
         );
-        treasury.grantRole(treasury.REPORTER_ROLE(), address(revenue));
+        treasury.grantRole(treasury.REPORTER_ROLE(), address(matchingEngine));
         
         feeToken.mint(trader1, 100000000e18);
         feeToken.mint(trader2, 10000e18);
@@ -279,7 +275,7 @@ contract MembershipTresuryTest is MembershipBaseSetup {
     }
 
     // early adoptors can settle share of revenue from foundation
-    function testClaimRevenueWorksWorksForOnlyEarlyAdoptors() public {
+    function testClaimtreasuryWorksWorksForOnlyEarlyAdoptors() public {
         tSetUp();
         membership.setMembership(1, address(feeToken), 1000, 1000, 10000);
         vm.startPrank(trader1);
@@ -299,7 +295,7 @@ contract MembershipTresuryTest is MembershipBaseSetup {
     }
 
     // Only foundation can settle share of revenue on treasury
-    function testSettleRevenueWorksForOnlyFoundation() public {
+    function testSettletreasuryWorksForOnlyFoundation() public {
         tSetUp();
         vm.startPrank(trader1);
         membership.setMembership(1, address(feeToken), 1000, 1000, 10000);

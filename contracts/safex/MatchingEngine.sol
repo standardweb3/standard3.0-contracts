@@ -84,7 +84,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
      * @dev Initialize the matching engine with orderbook factory and listing requirements.
      * It can be called only once.
      * @param orderbookFactory_ address of orderbook factory
-     * @param revenue_ address of revenue contract
+     * @param treasury_ address of treasury contract
      * @param WETH_ address of wrapped ether contract
      *
      * Requirements:
@@ -92,11 +92,11 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
      */
     function initialize(
         address orderbookFactory_,
-        address revenue_,
+        address treasury_,
         address WETH_
     ) external initializer {
         orderbookFactory = orderbookFactory_;
-        feeTo = revenue_;
+        feeTo = treasury_;
         WETH = WETH_;
     }
 
@@ -914,7 +914,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                     i,
                     n
                 );
-                askHead = IOrderbook(orderbook).askHead();
+                // i == 0 when orders are all empty and only head price is left
+                askHead = i == 0 ? 0 : IOrderbook(orderbook).askHead();
             }
         } else {
             // check if there is any maching bid order until matching bid order price is higher than the limit ask price
@@ -932,7 +933,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                     i,
                     n
                 );
-                bidHead = IOrderbook(orderbook).bidHead();
+                // i == 0 when orders are all empty and only head price is left
+                bidHead = i == 0 ? 0 : IOrderbook(orderbook).bidHead();
             }
         }
         // set last match price

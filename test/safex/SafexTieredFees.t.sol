@@ -13,13 +13,12 @@ import {Treasury} from "../../contracts/sabt/Treasury.sol";
 import {MockToken} from "../../contracts/mock/MockToken.sol";
 import {Orderbook} from "../../contracts/safex/orderbooks/Orderbook.sol";
 import {WETH9} from "../../contracts/mock/WETH9.sol";
-import {Revenue} from "../../contracts/sabt/Revenue.sol";
+import {Treasury} from "../../contracts/sabt/Treasury.sol";
 
 contract SAFEXFeeTierSetup is BaseSetup {
     OrderbookFactory public orderbookFactoryFeeTier;
     MatchingEngine public matchingEngineFeeTier;
     Membership public membership;
-    Treasury public treasury;
     BlockAccountant public accountant;
     SABT public sabt;
     MockToken public stablecoin;
@@ -39,20 +38,22 @@ contract SAFEXFeeTierSetup is BaseSetup {
         matchingEngineFeeTier = new MatchingEngine();
 
         accountant = new BlockAccountant();
-        accountant.initialize(address(membership), address(matchingEngineFeeTier), address(stablecoin), 1);
+        accountant.initialize(
+            address(membership),
+            address(matchingEngineFeeTier),
+            address(stablecoin),
+            1
+        );
         treasury = new Treasury();
-        treasury.initialize(address(accountant), address(sabt));
+        treasury.set(address(membership), address(accountant), address(sabt));
         orderbookFactoryFeeTier.initialize(address(matchingEngineFeeTier));
-        revenue = new Revenue();
-        revenue.set(address(membership), address(accountant), address(treasury));
         matchingEngineFeeTier.initialize(
-            address(orderbookFactoryFeeTier), address(revenue), address(weth)
+            address(orderbookFactoryFeeTier),
+            address(treasury),
+            address(weth)
         );
-        accountant.grantRole(
-            accountant.REPORTER_ROLE(),
-            address(revenue)
-        );
-        treasury.grantRole(treasury.REPORTER_ROLE(), address(revenue));
+        accountant.grantRole(accountant.REPORTER_ROLE(), address(treasury));
+        treasury.grantRole(treasury.REPORTER_ROLE(), address(matchingEngineFeeTier));
 
         feeToken.mint(trader1, 10e41);
         feeToken.mint(trader2, 100000e18);
@@ -87,37 +88,144 @@ contract SAFEXFeeTierSetup is BaseSetup {
         feeToken.approve(address(membership), 10000e18);
         vm.prank(trader1);
         membership.register(1, address(feeToken));
-        assert(sabt.balanceOf(trader1, 1) == 1);
+        vm.prank(trader2);
+        feeToken.approve(address(membership), 10000e18);
+        vm.prank(trader2);
+        membership.register(1, address(feeToken));
+        assert(sabt.balanceOf(trader2, 2) == 1);
 
         // subscribe
         vm.prank(trader1);
         feeToken.approve(address(membership), 1e40);
         vm.prank(trader1);
         membership.subscribe(1, 10000, address(feeToken));
+        feeToken.mint(trader2, 1e40);
+        vm.prank(trader2);
+        feeToken.approve(address(membership), 1e40);
+        vm.prank(trader2);
+        membership.subscribe(2, 10000, address(feeToken));
 
         // mine 1000 blocks
         utils.mineBlocks(1000);
         console.log("Block number after mining 1000 blocks: ", block.number);
-        console.log("Financial block where accountant started its accounting: ", accountant.fb());
-
-        // make a price in matching engine where 1 feeToken = 1000 stablecoin with buy and sell order
-        vm.prank(trader2);
-        matchingEngineFeeTier.limitSell(address(feeToken), address(stablecoin), 1000e8, 10000e18, true, 1, 0);
-        // match the order to make lmp so that accountant can report
-        stablecoin.mint(address(trader1), 1000000000e18);
-        vm.prank(trader1);
-        stablecoin.approve(address(matchingEngineFeeTier), 1000000000e18);
-        vm.prank(trader1);
-        matchingEngineFeeTier.limitBuy(address(feeToken), address(stablecoin), 1000e8, 100000e18, true, 5, 1);
-        vm.prank(trader1);
-        matchingEngineFeeTier.limitBuy(address(feeToken), address(stablecoin), 1000e8, 10000000e18, true, 5, 1);
+        console.log(
+            "Financial block where accountant started its accounting: ",
+            accountant.fb()
+        );
     }
 }
 
 contract FeeTierTest is SAFEXFeeTierSetup {
     // After trading, TI and trader level can be shown
+
+    function _trade() internal {
+        vm.prank(trader2);
+        matchingEngineFeeTier.limitSell(
+            address(feeToken),
+            address(stablecoin),
+            1000e8,
+            10000e18,
+            true,
+            1,
+            0
+        );
+        // match the order to make lmp so that accountant can report
+        stablecoin.mint(address(trader1), 1000000000e18);
+        vm.prank(trader1);
+        stablecoin.approve(address(matchingEngineFeeTier), 1000000000e18);
+        vm.prank(trader1);
+        matchingEngineFeeTier.limitBuy(
+            address(feeToken),
+            address(stablecoin),
+            1000e8,
+            100000e18,
+            true,
+            5,
+            1
+        );
+        vm.prank(trader1);
+        matchingEngineFeeTier.limitBuy(
+            address(feeToken),
+            address(stablecoin),
+            1000e8,
+            10000000e18,
+            true,
+            5,
+            1
+        );
+        vm.prank(trader1);
+        matchingEngineFeeTier.cancelOrder(
+            address(feeToken),
+            address(stablecoin),
+            1000e8,
+            1,
+            true,
+            1
+        );
+    }
+
+    function _trade2() internal {
+        vm.prank(trader2);
+        matchingEngineFeeTier.limitSell(
+            address(feeToken),
+            address(stablecoin),
+            1000e8,
+            10000e18,
+            true,
+            1,
+            2
+        );
+        // match the order to make lmp so that accountant can report
+        stablecoin.mint(address(trader1), 1000000000e18);
+        vm.prank(trader1);
+        stablecoin.approve(address(matchingEngineFeeTier), 1000000000e18);
+        vm.prank(trader1);
+        matchingEngineFeeTier.limitBuy(
+            address(feeToken),
+            address(stablecoin),
+            1000e8,
+            100000e18,
+            true,
+            5,
+            1
+        );
+        vm.prank(trader1);
+        matchingEngineFeeTier.limitBuy(
+            address(feeToken),
+            address(stablecoin),
+            1000e8,
+            10000000e18,
+            true,
+            5,
+            1
+        );
+        vm.prank(trader1);
+        matchingEngineFeeTier.cancelOrder(
+            address(feeToken),
+            address(stablecoin),
+            1000e8,
+            1,
+            true,
+            1
+        );
+        feeToken.mint(trader2, 1e40);
+        vm.prank(trader2);
+        feeToken.approve(address(matchingEngineFeeTier), 1e40);
+        vm.prank(trader2);
+        matchingEngineFeeTier.limitSell(
+            address(feeToken),
+            address(stablecoin),
+            1000e8,
+            10000e18,
+            true,
+            1,
+            2
+        );
+    }
+
     function testTraderProfileShowsTIandLvl() public {
         super.feeTierSetUp();
+        _trade();
         uint256 point = accountant.pointOf(1, 0);
         uint256 ti = accountant.getTI(1);
         console.log("Trader 1 Trader Point:");
@@ -132,5 +240,22 @@ contract FeeTierTest is SAFEXFeeTierSetup {
         uint256 level = accountant.levelOf(1);
         console.log("Trader 1 level:");
         console.log(level);
+    }
+
+    function testMultipleTraderProfileShowsAssignedTIandLvl() public {
+        super.feeTierSetUp();
+        _trade2();
+        uint256 point = accountant.pointOf(1, 0);
+        uint256 ti = accountant.getTI(1);
+        console.log("Trader 1 Trader Point:");
+        console.log(point);
+        console.log("Trader 1 TI(%):");
+        console.log(ti);
+        uint256 point2 = accountant.pointOf(2, 0);
+        uint256 ti2 = accountant.getTI(2);
+        console.log("Trader 2 Trader Point:");
+        console.log(point2);
+        console.log("Trader 2 TI(%):");
+        console.log(ti2);
     }
 }

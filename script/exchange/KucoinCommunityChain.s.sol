@@ -12,7 +12,6 @@ import {MockToken} from "../../contracts/mock/MockToken.sol";
 import {MatchingEngine} from "../../contracts/safex/MatchingEngine.sol";
 import {OrderbookFactory} from "../../contracts/safex/orderbooks/OrderbookFactory.sol";
 import {Multicall3} from "../Multicall3.sol";
-import {Revenue} from "../../contracts/sabt/Revenue.sol";
 
 contract Deployer is Script {
     function _setDeployer() internal {
@@ -43,7 +42,7 @@ contract DeployTestnetAssetsAndContracts is Deployer {
     address constant deployer_address = 0x34CCCa03631830cD8296c172bf3c31e126814ce9;
     address constant foundation_address = 0x34CCCa03631830cD8296c172bf3c31e126814ce9;
     address constant weth = 0x2C1b868d6596a18e32E61B901E4060C872647b6C;
-    Revenue public revenue;
+    Treasury public treasury;
 
     function run() external {
         _setDeployer();
@@ -58,20 +57,18 @@ contract DeployTestnetAssetsAndContracts is Deployer {
         // Setup accountant and treasury
         BlockAccountant accountant = new BlockAccountant();
         accountant.initialize(address(membership), address(matchingEngine), address(stablecoin), spb);
-        Treasury treasury = new Treasury();
-        treasury.initialize(address(accountant), address(sabt));
-        revenue = new Revenue();
-        revenue.set(address(membership), address(accountant), address(treasury));
+        treasury = new Treasury();
+        treasury.set(address(membership), address(accountant), address(sabt));
         matchingEngine.initialize(
-            address(orderbookFactory), address(revenue), weth
+            address(orderbookFactory), address(treasury), weth
         );
         orderbookFactory.initialize(address(matchingEngine));
         // Wire up matching engine with them
         accountant.grantRole(
             accountant.REPORTER_ROLE(),
-            address(revenue)
+            address(treasury)
         );
-        treasury.grantRole(treasury.REPORTER_ROLE(), address(revenue));
+        treasury.grantRole(treasury.REPORTER_ROLE(), address(matchingEngine));
         vm.stopBroadcast();
     }
 }

@@ -14,7 +14,6 @@ import {OrderbookFactory} from "../../contracts/safex/orderbooks/OrderbookFactor
 import {Orderbook} from "../../contracts/safex/orderbooks/Orderbook.sol";
 import {Multicall3} from "../Multicall3.sol";
 import {TokenDispenser} from "../../contracts/safex/airdrops/TokenDispenser.sol";
-import {Revenue} from "../../contracts/sabt/Revenue.sol";
 
 contract Deployer is Script {
     function _setDeployer() internal {
@@ -60,7 +59,7 @@ contract DeployAll is Deployer {
     address constant weth_address = 0x2C1b868d6596a18e32E61B901E4060C872647b6C;
     // seconds per block
     uint32 spb = 12;
-    Revenue public revenue;
+    Treasury public treasury;
 
     function run() external {
         _setDeployer();
@@ -84,22 +83,20 @@ contract DeployAll is Deployer {
             address(stablecoin),
             spb
         );
-        Treasury treasury = new Treasury();
-        treasury.initialize(address(accountant), address(sabt));
-        revenue = new Revenue();
-        revenue.set(address(membership), address(accountant), address(treasury));
+        treasury = new Treasury();
+        treasury.set(address(membership), address(accountant), address(sabt));
         matchingEngine.initialize(
             address(orderbookFactory),
-            address(revenue),
+            address(treasury),
             weth_address
         );
         orderbookFactory.initialize(address(matchingEngine));
         // Wire up matching engine with them
         accountant.grantRole(
             accountant.REPORTER_ROLE(),
-            address(revenue)
+            address(treasury)
         );
-        treasury.grantRole(treasury.REPORTER_ROLE(), address(revenue));
+        treasury.grantRole(treasury.REPORTER_ROLE(), address(matchingEngine));
 
         // DistributeAssets
         // Mint fee Token to the deployer, trader1, trader2
@@ -179,7 +176,7 @@ contract DeployTestnetContracts is Deployer {
     address constant weth = 0x2C1b868d6596a18e32E61B901E4060C872647b6C;
     address constant feeToken = 0x0622C0b5F53FF7252A5F90b4031a9adaa67a2d02;
     address constant stablecoin = 0x11a681c574F8e1d72DDCEEe0855032A77dfF8355;
-    Revenue public revenue;
+    Treasury public treasury;
 
     function run() external {
         _setDeployer();
@@ -197,22 +194,20 @@ contract DeployTestnetContracts is Deployer {
             address(stablecoin),
             spb
         );
-        Treasury treasury = new Treasury();
-        treasury.initialize(address(accountant), address(sabt));
-        revenue = new Revenue();
-        revenue.set(address(membership), address(accountant), address(treasury));
+        treasury = new Treasury();
+        treasury.set(address(membership), address(accountant), address(sabt));
         matchingEngine.initialize(
             address(orderbookFactory),
-            address(revenue),
+            address(treasury),
             weth
         );
         orderbookFactory.initialize(address(matchingEngine));
         // Wire up matching engine with them
         accountant.grantRole(
             accountant.REPORTER_ROLE(),
-            address(revenue)
+            address(treasury)
         );
-        treasury.grantRole(treasury.REPORTER_ROLE(), address(revenue));
+        treasury.grantRole(treasury.REPORTER_ROLE(), address(matchingEngine));
         vm.stopBroadcast();
     }
 }

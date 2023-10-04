@@ -5,14 +5,33 @@ import {TreasuryLib, TransferHelper} from "./libraries/TreasuryLib.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
+interface IRevenue {
+    function report(
+        uint32 uid,
+        address token,
+        uint256 amount,
+        bool isAdd
+    ) external;
+
+    function isReportable(
+        address token,
+        uint32 uid
+    ) external view returns (bool);
+
+    function refundFee(address to, address token, uint256 amount) external;
+
+    function feeOf(uint32 uid, bool isMaker) external returns (uint32 feeNum);
+}
+
 /// @author Hyungsuk Kang <hskang9@github.com>
 /// @title Standard Membership Treasury to exchange membership points with rewards
-contract Treasury is AccessControl, Initializable {
+contract Treasury is AccessControl, IRevenue {
     using TreasuryLib for TreasuryLib.Storage;
 
     bytes32 public constant REPORTER_ROLE = keccak256("REPORTER_ROLE");
 
     TreasuryLib.Storage private _treasury;
+    address private _membership;
 
     error InvalidRole(bytes32 role, address sender);
 
@@ -20,12 +39,34 @@ contract Treasury is AccessControl, Initializable {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    function initialize(address accountant_, address sabt_) external initializer {
+
+    function set(address membership, address accountant, address sabt) external {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
         }
-        _treasury.accountant = accountant_;
-        _treasury.sabt = sabt_;
+        _membership = membership;
+        _treasury.accountant = accountant;
+        _treasury.sabt = sabt;
+    }
+
+    function report(
+        uint32 uid,
+        address token,
+        uint256 amount,
+        bool isAdd
+    ) external override {
+        IRevenue(_treasury.accountant).report(uid, token, amount, isAdd);
+    }
+
+    function isReportable(
+        address token,
+        uint32 uid
+    ) external view override returns (bool) {
+        return IRevenue(_membership).isReportable(token, uid);
+    }
+
+    function feeOf(uint32 uid, bool isMaker) external override returns (uint32 feeNum) {
+        return IRevenue(_treasury.accountant).feeOf(uid, isMaker);
     }
 
     /// @dev For subscribers, exchange point to reward

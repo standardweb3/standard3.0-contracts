@@ -85,7 +85,7 @@ contract OrderbookHook is BaseHook, ERC1155 {
         PoolKey calldata key,
         uint160,
         int24 tick
-    ) external override poolManagerOnly returns (bytes4) {
+    ) external poolManagerOnly returns (bytes4) {
         return OrderbookHook.afterInitialize.selector;
     }
 
@@ -94,37 +94,37 @@ contract OrderbookHook is BaseHook, ERC1155 {
         PoolKey calldata key,
         IPoolManager.SwapParams calldata params,
         BalanceDelta
-    ) external override poolManagerOnly returns (bytes4) {
+    ) external poolManagerOnly returns (bytes4) {
         // find out base and quote with buy/sell option
         bool zeroForOne = params.zeroForOne;
-        Currency memory base = zeroForOne ? key.currency0 : key.currency1;
-        Currency memory quote = zeroForOne ? key.currency1 : key.currency0;
+        address base;
+        address quote;
         if(zeroForOne) {
             // if buy, then base is quote and quote is base
-            base = key.currency1;
-            quote = key.currency0;
+            base = Currency.unwrap(key.currency1);
+            quote = Currency.unwrap(key.currency0);
             // turn price from param into 8 decimal uint256
             uint256 price = FixedPointMathLib.mulDivDown(params.sqrtPriceLimitX96, params.sqrtPriceLimitX96, 2**96);
             IEngine(matchingEngine).limitBuy(
                 base,
                 quote,
                 price,
-                params.amountSpecified,
+                uint256(params.amountSpecified),
                 true,
                 3,
                 0
             );
         } else {
             // if sell, then base is base and quote is quote
-            base = key.currency0;
-            quote = key.currency1;
+            base = Currency.unwrap(key.currency0);
+            quote = Currency.unwrap(key.currency1);
             // turn price from param into 8 decimal uint256
             uint256 price = FixedPointMathLib.mulDivDown(params.sqrtPriceLimitX96, params.sqrtPriceLimitX96, 2**96);
             IEngine(matchingEngine).limitSell(
                 base,
                 quote,
                 price,
-                params.amountSpecified,
+                uint256(params.amountSpecified),
                 true,
                 3,
                 0

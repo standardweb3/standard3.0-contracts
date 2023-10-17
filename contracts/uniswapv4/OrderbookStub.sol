@@ -9,8 +9,9 @@ import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 contract OrderbookStub is OrderbookHook {
     constructor(
         IPoolManager _poolManager,
-        OrderbookHook addressToEtch
-    ) OrderbookHook(_poolManager, "") {}
+        OrderbookHook addressToEtch,
+        address _matchingEngine
+    ) OrderbookHook(_poolManager, "", _matchingEngine) {}
 
     // make this a no-op in testing
     function validateHookAddress(BaseHook _this) internal pure override {}

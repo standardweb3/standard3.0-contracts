@@ -1821,4 +1821,119 @@ contract OrderbookMatchTest is BaseSetup {
     // recheck orders
     _showOrderbook(matchingEngine, address(token1), address(token2));
   }
+
+  function testCancelEdgeCase2() public {
+
+    super.setUp();
+    vm.prank(booker);
+    matchingEngine.addPair(address(token1), address(token2));
+    book = Orderbook(
+      payable(orderbookFactory.getBookByPair(address(token1), address(token2)))
+    );
+    vm.prank(trader1);
+    // placeBid or placeAsk two of them is using the _insertId function it will revert
+    // because the program will enter the "if (amount > self.orders[head].depositAmount)."
+    // statement, and eventually, it will cause an infinite loop.
+    matchingEngine.limitSell(
+      address(token1),
+      address(token2),
+      500000000,
+      10,
+      true,
+      2,
+      0
+    );
+
+    vm.prank(trader1);
+    //vm.expectRevert("OutOfGas");
+    matchingEngine.limitSell(
+      address(token1),
+      address(token2),
+      100000000,
+      10,
+      true,
+      2,
+      0
+    );
+
+    vm.prank(trader1);
+    matchingEngine.limitBuy(
+      address(token1),
+      address(token2),
+      90000000,
+      10,
+      true,
+      5,
+      0
+    );
+
+    vm.prank(trader1);
+    matchingEngine.limitBuy(
+      address(token1),
+      address(token2),
+      500000000,
+      10,
+      true,
+      5,
+      0
+    );
+
+    _showOrderbook(matchingEngine, address(token1), address(token2));
+
+    for (uint256 i = 0; i < 10; i++) {
+      vm.prank(trader1);
+      matchingEngine.limitSell(
+        address(token1),
+        address(token2),
+        500000000,
+        i + 1,
+        true,
+        2,
+        0
+      );
+    }
+
+    // cancel order
+    vm.prank(trader1);
+    matchingEngine.cancelOrder(
+      address(token1),
+      address(token2),
+      500000000,
+      1,
+      false,
+      0
+    );
+
+    // recheck orders
+    _showOrderbook(matchingEngine, address(token1), address(token2));
+
+    // cancel order
+    vm.prank(trader1);
+    matchingEngine.cancelOrder(
+      address(token1),
+      address(token2),
+      500000000,
+      11,
+      false,
+      0
+    );
+
+    // recheck orders
+    _showOrderbook(matchingEngine, address(token1), address(token2));
+
+    // limit buy to check passing cancelled order
+    vm.prank(trader1);
+    matchingEngine.limitBuy(
+      address(token1),
+      address(token2),
+      500000000,
+      55,
+      true,
+      5,
+      0
+    );
+
+    // recheck orders
+    _showOrderbook(matchingEngine, address(token1), address(token2));
+  }
 }

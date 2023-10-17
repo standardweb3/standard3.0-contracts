@@ -46,6 +46,57 @@ contract DeployTestnetAssets is Deployer {
     }
 }
 
+contract DeploySAFEXMainnetContracts is Deployer {
+    // Change address constants on deploying to other networks from DeployAssets
+    /// Second per block to finalize
+    uint32 constant spb = 12;
+    address constant deployer_address = 0x34CCCa03631830cD8296c172bf3c31e126814ce9;
+    address constant foundation_address = 0x34CCCa03631830cD8296c172bf3c31e126814ce9;
+    address constant weth = 0x2C1b868d6596a18e32E61B901E4060C872647b6C;
+
+    Treasury public treasury;
+    
+    function run() external {
+        _setDeployer();
+        OrderbookFactory orderbookFactory = new OrderbookFactory();
+        MatchingEngine matchingEngine = new MatchingEngine();
+        treasury = new Treasury();
+        matchingEngine.initialize(
+            address(orderbookFactory), address(treasury), address(weth)
+        );
+        orderbookFactory.initialize(address(matchingEngine));
+        vm.stopBroadcast();
+    }
+}
+
+
+contract DeploySABTMainnetContracts is Deployer {
+    Treasury constant treasury = Treasury(0xd75e38838d292AD17b72D724d91Bb9A514bEF05e);
+    uint32 constant spb = 12;
+    address constant weth = 0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f; // weth on mainnet
+    address constant feeToken = 0xE57Cdf5796C2f5281EDF1B81129E1D4Ff9190815;
+    address constant stablecoin = 0xfB4c8b2658AB2bf32ab5Fc1627f115974B52FeA7;
+    address constant matchingEngine = 0x0eE70bF6e59087998Bb415F3Ffc3D6183E25121c;
+    address constant foundation_address = 0x34CCCa03631830cD8296c172bf3c31e126814ce9;
+
+    function run() external {
+        Membership membership = new Membership();
+        SABT sabt = new SABT();
+        membership.initialize(address(sabt), foundation_address, weth);
+        sabt.initialize(address(membership));
+        // Setup accountant and treasury
+        BlockAccountant accountant = new BlockAccountant();
+        accountant.initialize(address(membership), address(matchingEngine), address(stablecoin), spb);
+        treasury.set(address(membership), address(accountant), address(sabt));
+        // Wire up matching engine with them
+        accountant.grantRole(
+            accountant.REPORTER_ROLE(),
+            address(treasury)
+        );
+        treasury.grantRole(treasury.REPORTER_ROLE(), address(matchingEngine));
+    }
+}
+
 contract DeployAll is Deployer {
     // Change address constants on deploying to other networks or private keys
     address constant deployer_address =

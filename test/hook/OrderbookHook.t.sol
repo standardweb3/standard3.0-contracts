@@ -26,8 +26,8 @@ import {PoolModifyPositionTest} from "v4-core/test/PoolModifyPositionTest.sol";
 import {PoolSwapTest} from "v4-core/test/PoolSwapTest.sol";
 
 // Our contracts
-import {OrderbookHook} from "../../contracts/hook/OrderbookHook.sol";
-import {OrderbookStub} from "../../contracts/hook/OrderbookStub.sol";
+import {OrderbookHook} from "../../contracts/uniswapv4/OrderbookHook.sol";
+import {OrderbookStub} from "../../contracts/uniswapv4/OrderbookStub.sol";
 
 contract OrderbookHookTest is Test, GasSnapshot {
     // Use the libraries
@@ -298,7 +298,7 @@ contract OrderbookHookTest is Test, GasSnapshot {
 
     function _stubValidateHookAddress() private {
         // Deploy the stub contract
-        TakeProfitsStub stub = new TakeProfitsStub(poolManager, hook);
+        OrderbookStub stub = new OrderbookStub(poolManager, hook);
 
         // Fetch all the storage slot writes that have been done at the stub address
         // during deployment

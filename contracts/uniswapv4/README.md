@@ -1,6 +1,8 @@
 # v4-orderbook
 
-![](./media/v4-orderbook-overview.png)
+<div align="center">
+<img src="./media/v4-orderbook-overview.png" alt="Image" width="1000" height="300">
+</div>
 
 ### **Ultimate on-chain trading with both AMM and orderbook working together**
 

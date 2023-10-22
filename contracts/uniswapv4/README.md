@@ -1,18 +1,28 @@
 # v4-orderbook
 
-[![test](https://github.com/saucepoint/v4-stoploss/actions/workflows/test.yml/badge.svg)](https://github.com/saucepoint/v4-stoploss/actions/workflows/test.yml)
+![](./media/v4-orderbook-overview.png)
 
-### **Limit/Market orders with Uniswap V4 Hooks 🦄**
+### **Ultimate on-chain trading with both AMM and orderbook working together**
 
-*"if ETH drops below $1500, market sell my bags"*
+> *"if ETH drops below $1500, market sell my bags"*
 
-*"Only sell ETH when the price goes up to $1600"*
+> *"Only sell ETH when the price goes up to $1600"*
 
-*"Allow slippage of 0.5% on market price, store amount which exceeds slippage threshold to limit order"*
+> *"Allow slippage of 0.5% on market price, store amount which exceeds slippage threshold to limit order"*
 
 Integrated directly into the Uniswap V4 pools, limit/market orders are posted onchain and executed via the `afterSwap()` hook. No external bots or actors are required to guarantee execution.
 
 ---
+
+## How the hook works
+
+![](./media/how-it-works.png)
+
+The hook has two processes to customize in trading digital assets.
+
+1. **`Committing Capital`**: User first commits capital to trade in UniswapV4 to trade in AMM. **`beforeSwap()`** can modify amount to trade in amm for a certain tick or price by decoding it. This phase utilizes AMM to create price actions or instantly finalize trade.
+
+2. **`Hedging Capital`**: This phase uses orderbook to hedge user's digital assets to by only traded at certain limit price. **`afterSwap()`** customizes the amount and price to hedge user's left amount after trading in AMM. if there are lower orders placed than the limit price, the hedging capital is matched. If not, it is stored at the limit price to wait for matching orders. This protects slippage or price actions from MEV attacks. 
 
 ## Use Cases
 
@@ -46,7 +56,7 @@ Additional resources:
 forge test --fork-url https://eth.llamarpc.com
 ```
 
-# Notice
+# Acknowledgements
 
 this project was inspired by [v4-stoploss](https://github.com/saucepoint/v4-stoploss/tree/main), and the project was inspired by [uniswap v4 example](https://github.com/Uniswap/v4-periphery/blob/main/contracts/hooks/examples/LimitOrder.sol).
 

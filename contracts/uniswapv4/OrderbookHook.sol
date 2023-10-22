@@ -85,7 +85,7 @@ contract OrderbookHook is BaseHook, ERC1155 {
         PoolKey calldata key,
         uint160,
         int24 tick
-    ) external poolManagerOnly returns (bytes4) {
+    ) external view poolManagerOnly returns (bytes4) {
         return OrderbookHook.afterInitialize.selector;
     }
 

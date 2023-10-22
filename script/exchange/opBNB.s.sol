@@ -375,9 +375,7 @@ contract TestOrderbookSell is Deployer {
     function run() external {
         _setDeployer();
 
-        book = Orderbook(
-            payable(matchingEngine.getBookByPair(address(feeToken), address(stablecoin)))
-        );
+        
 
         // make a price in matching engine where 1 feeToken = 1000 stablecoin with buy and sell order
         feeToken.approve(address(matchingEngine), 100000e18);
@@ -425,7 +423,7 @@ contract TestGetPrices is Deployer {
 
     function run() external {
         _setDeployer();
-
+    
         uint256[] memory bidPrices = matchingEngine.getPrices(
             address(feeToken),
             address(stablecoin),

@@ -115,34 +115,54 @@ contract AddAirdrop is Deployer {
     }
 }
 
+contract TestAddPair is Deployer {
+    address constant matching_engine_address =
+        0x2CC505C4bc86B28503B5b8C450407D32e5E20A9f;
+    address constant base_address =
+        0xA219439258ca9da29E9Cc4cE5596924745e12B93;
+    address constant quote_address =
+        0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f;
+    
+    function run() external {
+        _setDeployer();
+
+        MatchingEngine matchingEngine = MatchingEngine(
+            payable(matching_engine_address)
+        );
+        matchingEngine.addPair(address(base_address), address(quote_address));
+    }
+}
+
 contract TestOrderbookSell is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     address constant matching_engine_address =
-        0xa7431faC42c7D5ff6C5EE297B9D65960B9970f12;
-    address constant feeToken_address =
-        0xE57Cdf5796C2f5281EDF1B81129E1D4Ff9190815;
-    address constant stablecoin_address =
-        0xfB4c8b2658AB2bf32ab5Fc1627f115974B52FeA7;
+        0x2CC505C4bc86B28503B5b8C450407D32e5E20A9f;
+    address constant base_address =
+        0xA219439258ca9da29E9Cc4cE5596924745e12B93;
+    address constant quote_address =
+        0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f;
     MatchingEngine public matchingEngine =
         MatchingEngine(payable(matching_engine_address));
-    MockToken public feeToken = MockToken(feeToken_address);
-    MockToken public stablecoin = MockToken(stablecoin_address);
+    MockToken public base = MockToken(base_address);
+    MockToken public quote = MockToken(quote_address);
     Orderbook public book;
 
     function run() external {
         _setDeployer();
 
         book = Orderbook(
-            payable(matchingEngine.getBookByPair(address(feeToken), address(stablecoin)))
+            payable(matchingEngine.getBookByPair(address(base), address(quote)))
         );
 
         // make a price in matching engine where 1 feeToken = 1000 stablecoin with buy and sell order
-        feeToken.approve(address(matchingEngine), 100000e18);
-        stablecoin.approve(address(matchingEngine), 100000000e18);
+        base.approve(address(matchingEngine), 100000e18);
+        quote.approve(address(matchingEngine), 100000000e18);
+
+        matchingEngine.mktPrice(address(base), address(quote));
         // add limit orders
         matchingEngine.limitSell(
-            address(feeToken),
-            address(stablecoin),
+            address(base),
+            address(quote),
             100002e6,
             10000e18,
             true,
@@ -151,8 +171,8 @@ contract TestOrderbookSell is Deployer {
         );
         //matchingEngine.getOrders(address(token1), address(token2), true, 0, 0);
         uint256[] memory askPrices = matchingEngine.getPrices(
-            address(feeToken),
-            address(stablecoin),
+            address(base),
+            address(quote),
             false,
             20
         );

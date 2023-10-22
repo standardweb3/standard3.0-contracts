@@ -93,6 +93,7 @@ contract OrderbookAddPairTest is BaseSetup {
     super.setUp();
     vm.prank(booker);
     matchingEngine.addPair(address(token1), address(token2));
+    matchingEngine.addPair(address(token2), address(token1));
   }
 
   function testAddPairWithOver18DecFails() public {
@@ -1574,6 +1575,14 @@ contract OrderbookMatchTest is BaseSetup {
       0
     );
     vm.prank(trader1);
+     matchingEngine.limitBuyETH{ value: 1e18 }(
+      address(token1),
+      1e8,
+      true,
+      5,
+      0
+    );
+    vm.prank(trader1);
     token1.approve(address(matchingEngine), 10e18);
     vm.prank(trader1);
     matchingEngine.limitBuy(
@@ -1587,6 +1596,7 @@ contract OrderbookMatchTest is BaseSetup {
     );
     console.log("weth balance");
     console.log(trader1.balance / 1e18);
+    
   }
 
   function testMarketBuyETH() public {
@@ -1936,4 +1946,5 @@ contract OrderbookMatchTest is BaseSetup {
     // recheck orders
     _showOrderbook(matchingEngine, address(token1), address(token2));
   }
+
 }

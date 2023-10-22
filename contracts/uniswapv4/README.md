@@ -54,6 +54,8 @@ Additional resources:
 
 ---
 
+## Testing
+
 *requires [foundry](https://book.getfoundry.sh)*
 
 ```shell

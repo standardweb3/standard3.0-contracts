@@ -15,8 +15,9 @@ Integrated directly into the Uniswap V4 pools, limit/market orders are posted on
 ---
 
 ## How the hook works
-
-![](./media/how-it-works.png)
+<div align="center">
+<img src="./media/how-it-works.png" alt="Image" width="500" height="550">
+</div>
 
 The hook has two processes to customize in trading digital assets.
 

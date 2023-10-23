@@ -48,19 +48,26 @@ The hook has two processes to customize in trading digital assets.
 
 Additional resources:
 
-[v4-periphery](https://github.com/uniswap/v4-periphery) and [LimitOrder.sol](https://github.com/Uniswap/v4-periphery/blob/main/contracts/hooks/examples/LimitOrder.sol)
-
+[v4-periphery](https://github.com/uniswap/v4-periphery) 
 [v4-core](https://github.com/uniswap/v4-core)
 
 ---
+
+## Building
+
+```shell
+forge build
+```
 
 ## Testing
 
 *requires [foundry](https://book.getfoundry.sh)*
 
+> Due to breaking changes in Uniswap v4 PoolManager, test is under development. 
+
 ```shell
 # tests require a local mainnet fork
-forge test --fork-url https://eth.llamarpc.com
+forge test --fork-url https://eth.llamarpc.com --match-test test_placeOrder
 ```
 
 # Acknowledgements

@@ -40,15 +40,16 @@ The hook has two processes to customize in trading digital assets.
 
 ## Features
 
-* Guaranteed execution -- if the pool crosses the user-specified tick, the posted capital is guaranteed to market-sell
+* Contribute to price action, protect on price drop: Traders now can avoid rug pull or dangerously volatile price actions by hedging a certain amount of capital in orderbook to only trade when price satisfies with their limit.
 
-* Asynchronous claims -- opening a stop loss order gives data space for an order in Standard orderbook. Upon successful order execution, the trading token is sent to the trader or liquidator's wallet.
+* Safe and versatile liquidation process for decentralized lending/borrowing protocols: lending protocols do not need to worry about price actions on AMM when liquidating assets. They can take available profit in AMM where slippage is tolerant, then protect position by storing atomic swap order in orderbook in future.  
 
 ---
 
 Additional resources:
 
 [v4-periphery](https://github.com/uniswap/v4-periphery) 
+
 [v4-core](https://github.com/uniswap/v4-core)
 
 ---

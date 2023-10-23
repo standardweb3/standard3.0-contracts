@@ -44,16 +44,6 @@ The hook has two processes to customize in trading digital assets.
 
 * **Safe and versatile liquidation process for decentralized lending/borrowing protocols**: lending protocols do not need to worry about price actions on AMM when liquidating assets. They can take available profit in AMM where slippage is tolerant, then protect position by storing atomic swap order in orderbook in future.  
 
----
-
-Additional resources:
-
-[v4-periphery](https://github.com/uniswap/v4-periphery) 
-
-[v4-core](https://github.com/uniswap/v4-core)
-
----
-
 ## Building
 
 ```shell

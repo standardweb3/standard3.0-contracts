@@ -42,7 +42,9 @@ The hook has two processes to customize in trading digital assets.
 
 * **Contribute to price action, protect on price drop**: Traders now can avoid rug pull or dangerously volatile price actions by hedging a certain amount of capital in orderbook to only trade when price satisfies with their limit.
 
-* **Safe and versatile liquidation process for decentralized lending/borrowing protocols**: lending protocols do not need to worry about price actions on AMM when liquidating assets. They can take available profit in AMM where slippage is tolerant, then protect position by storing atomic swap order in orderbook in future.  
+* **Safe and versatile liquidation process for decentralized lending/borrowing protocols**: lending protocols do not need to worry about price actions on AMM when liquidating assets. They can take available profit in AMM where slippage is tolerant, then protect position by storing atomic swap order in orderbook in future.
+
+* **Customizing trading strategy**: By carefully adjusting AMM and orderbook trade amount, hook developers can make rug pull guard trading hook where it exposes certain capital to price increases on AMM, and hedge other capital to be traded at certain price to be only traded when the price keeps increasing. Good customized hooks can be sold at a hook marketplace just as trading algorithms are sold in financial market.
 
 ## Building
 

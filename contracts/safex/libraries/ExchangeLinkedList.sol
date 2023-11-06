@@ -19,6 +19,11 @@ library ExchangeLinkedList {
         uint256 lmp;
     }
 
+    error ZeroPrice(uint256 price);
+    error NoHeadBelow(bool isBid, uint256 head);
+    error PriceOutOfRange(uint256 price, uint256 np);
+    error PriceNoneInRange(uint256 price, uint256 np);
+
     function _setLmp(PriceLinkedList storage self, uint256 lmp_) internal {
         self.lmp = lmp_;
     }
@@ -170,5 +175,86 @@ library ExchangeLinkedList {
             i++;
         }
         return prices;
+    }
+
+    function _checkPriceExists(
+        PriceLinkedList storage self,
+        bool isBid,
+        uint256 price
+    ) internal view returns (bool) {
+        // traverse the list
+        if (price == 0) {
+            revert ZeroPrice(price);
+            //return false;
+        }
+
+        if (isBid) {
+            uint256 last = 0;
+            uint256 head = self.bidHead;
+            // insert bid price to the linked list
+            // if the list is empty
+            if (head == 0 || price > head) {
+                revert NoHeadBelow(isBid, head);
+            }
+            while (head != 0 && price > head) {
+                uint256 next = self.bidPrices[head];
+                if (price < next) {
+                    // Keep traversing
+                    head = self.bidPrices[head];
+                    last = next;
+                } else if (price > next) {
+                    if (next == 0) {
+                        // if there is only one price left, check if it is the price we are looking for
+                        if(head == price) {
+                            return true;
+                        }
+                        // Price does not exist in price list
+                        revert PriceOutOfRange(head, price);
+                    }
+                    // Price does not exist within range of prices
+                    revert PriceNoneInRange(head, price);
+                } else {
+                    // price is already included in the queue as it is equal to next. price exists in the orderbook
+                    // End traversal as there is no need to traverse further
+                    return true;
+                }
+            }
+        }
+        // insert ask price to the linked list
+        else {
+            uint256 last = 0;
+            uint256 head = self.askHead;
+            // insert order to the linked list
+            // if the list is empty and price is the lowest ask
+            if (head == 0 || price < head) {
+                revert NoHeadBelow(isBid, head);
+            }
+            // traverse the list
+            while (head != 0) {
+                uint256 next = self.askPrices[head];
+                // Keep traversing
+                if (price > next) {
+                    if (next == 0) {
+                        // if there is only one price left, check if it is the price we are looking for
+                        if(head == price) {
+                            return true;
+                        }
+                        // Price does not exist in price list                       
+                        revert PriceOutOfRange(head, price);
+                    }
+                    head = self.askPrices[head];
+                    last = next;
+                } else if (price < next) {
+                    // Price does not exist within range of prices
+                    revert PriceNoneInRange(head, price);
+                } else {
+                    // price is already included in the queue as it is equal to next
+                    // End traversal as there is no need to traverse further
+                    return true;
+                }
+            }
+        }
+
+        return true;
     }
 }

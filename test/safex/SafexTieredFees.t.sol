@@ -119,6 +119,11 @@ contract FeeTierTest is SAFEXFeeTierSetup {
     // After trading, TI and trader level can be shown
 
     function _trade() internal {
+        Orderbook book = Orderbook(
+            payable(
+                orderbookFactoryFeeTier.getBookByPair(address(feeToken), address(stablecoin))
+            )
+        );
         vm.prank(trader2);
         matchingEngineFeeTier.limitSell(
             address(feeToken),
@@ -155,8 +160,7 @@ contract FeeTierTest is SAFEXFeeTierSetup {
         );
         vm.prank(trader1);
         matchingEngineFeeTier.cancelOrder(
-            address(feeToken),
-            address(stablecoin),
+            address(book),
             1000e8,
             1,
             true,
@@ -165,6 +169,11 @@ contract FeeTierTest is SAFEXFeeTierSetup {
     }
 
     function _trade2() internal {
+        Orderbook book = Orderbook(
+            payable(
+                orderbookFactoryFeeTier.getBookByPair(address(feeToken), address(stablecoin))
+            )
+        );
         vm.prank(trader2);
         matchingEngineFeeTier.limitSell(
             address(feeToken),
@@ -201,8 +210,7 @@ contract FeeTierTest is SAFEXFeeTierSetup {
         );
         vm.prank(trader1);
         matchingEngineFeeTier.cancelOrder(
-            address(feeToken),
-            address(stablecoin),
+            address(book),
             1000e8,
             1,
             true,

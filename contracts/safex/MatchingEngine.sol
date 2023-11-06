@@ -46,19 +46,20 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
     );
 
     event OrderMatched(
-        address orderbook,
+        address indexed orderbook,
         uint256 id,
         bool isBid,
         address sender,
-        address indexed owner,
+        address owner,
         uint256 amount,
         uint256 price
     );
 
     event OrderPlaced(
-        address indexed base,
-        address indexed quote,
-        bool indexed isBid,
+        address orderbook,
+        address indexed sender,
+        uint256 price,
+        bool isBid,
         uint256 orderId
     );
 
@@ -410,24 +411,21 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
 
     /**
      * @dev Cancels an order in an orderbook by the given order ID and order type.
-     * @param base The address of the base asset for the trading pair
-     * @param quote The address of the quote asset for the trading pair
+     * @param orderbook The address of the orderbook to cancel the order in
+     * @param price The price of the order to cancel
      * @param orderId The ID of the order to cancel
      * @param isBid Boolean indicating if the order to cancel is an ask order
      * @return bool True if the order was successfully canceled, otherwise false.
      */
     function cancelOrder(
-        address base,
-        address quote,
+        address orderbook,
         uint256 price,
         uint32 orderId,
         bool isBid,
         uint32 uid
     ) public nonReentrant returns (bool) {
-        address orderbook = IOrderbookFactory(orderbookFactory).getBookByPair(
-            base,
-            quote
-        );
+        (address base, address quote) = IOrderbookFactory(orderbookFactory).getBaseQuote(orderbook);
+
         uint256 remaining = IOrderbook(orderbook).cancelOrder(
             isBid,
             price,
@@ -456,8 +454,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
     }
 
     function cancelOrders(
-        address[] memory base,
-        address[] memory quote,
+        address[] memory orderbook,
         uint256[] memory prices,
         uint32[] memory orderIds,
         bool[] memory isBid,
@@ -465,8 +462,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
     ) external returns (bool) {
         for (uint32 i = 0; i < orderIds.length; i++) {
             cancelOrder(
-                base[i],
-                quote[i],
+                orderbook[i],
                 prices[i],
                 orderIds[i],
                 isBid[i],
@@ -766,16 +762,12 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
 
     /**
      * @dev Internal function which makes an order on the orderbook.
-     * @param base The address of the base asset for the trading pair
-     * @param quote The address of the quote asset for the trading pair
      * @param orderbook The address of the orderbook contract for the trading pair
      * @param withoutFee The remaining amount of the asset after the market order has been executed
      * @param price The price, base/quote regardless of decimals of the assets in the pair represented with 8 decimals (if 1000, base is 1000x quote)
      * @param isBid Boolean indicating if the order is a buy (false) or a sell (true)
      */
     function _makeOrder(
-        address base,
-        address quote,
         address orderbook,
         uint256 withoutFee,
         uint256 price,
@@ -788,7 +780,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         } else {
             id = IOrderbook(orderbook).placeAsk(msg.sender, price, withoutFee);
         }
-        emit OrderPlaced(base, quote, isBid, id);
+        emit OrderPlaced(orderbook, msg.sender, price, isBid, id);
     }
 
     /**
@@ -973,7 +965,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                 remaining
             );
             if (isMaker)
-                _makeOrder(base, quote, orderbook, remaining, price, isBid);
+                _makeOrder(orderbook, remaining, price, isBid);
         }
     }
 

@@ -103,18 +103,22 @@ contract Orderbook is IOrderbook, Initializable {
         uint32 orderId,
         address owner
     ) external onlyEngine returns (uint256 remaining) {
+        // check order owner
         ExchangeOrderbook.Order memory order = isBid
             ? _bidOrders._getOrder(orderId)
             : _askOrders._getOrder(orderId);
         if (order.owner != owner) {
             revert InvalidAccess(owner, order.owner);
         }
-        isBid
-            ? _bidOrders._deleteOrder(price, orderId)
-            : _askOrders._deleteOrder(price, orderId);
-        isBid
-            ? _sendFunds(pair.quote, owner, order.depositAmount)
-            : _sendFunds(pair.base, owner, order.depositAmount);
+
+        if (priceLists._checkPriceExists(isBid, price)) {
+            isBid
+                ? _bidOrders._deleteOrder(price, orderId)
+                : _askOrders._deleteOrder(price, orderId);
+            isBid
+                ? _sendFunds(pair.quote, owner, order.depositAmount)
+                : _sendFunds(pair.base, owner, order.depositAmount);
+        }
 
         return (order.depositAmount);
     }
@@ -314,7 +318,6 @@ contract Orderbook is IOrderbook, Initializable {
                     : ((amount * 1e8) / price) / decDiff;
         }
     }
-
 
     receive() external payable {
         assert(msg.sender == IWETHMinimal(pair.engine).WETH());

@@ -113,11 +113,11 @@ library ExchangeOrderbook {
     uint256 price,
     uint32 id,
     uint256 amount,
-    uint256 min
+    uint256 dust
   ) internal {
     uint256 decreased = self.orders[id].depositAmount - amount;
     // remove dust
-    if (decreased < min) {
+    if (decreased < dust) {
       _deleteOrder(self, price, id);
     } else {
       self.orders[id].depositAmount = decreased;

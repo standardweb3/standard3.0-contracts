@@ -134,10 +134,11 @@ contract Orderbook is IOrderbook, Initializable {
             ? _bidOrders._getOrder(orderId)
             : _askOrders._getOrder(orderId);
         uint256 converted = convert(price, amount, isBid);
+        uint256 dust = convert(price, 1, isBid);
         // if isBid == true, sender is matching ask order with bid order(i.e. selling base to receive quote), otherwise sender is matching bid order with ask order(i.e. buying base with quote)
         if (isBid) {
             // decrease remaining amount of order
-            _bidOrders._decreaseOrder(price, orderId, converted);
+            _bidOrders._decreaseOrder(price, orderId, converted, dust);
             // sender is matching ask order for base asset with quote asset
             _sendFunds(pair.base, order.owner, amount);
             // send converted amount of quote asset from owner to sender
@@ -146,7 +147,7 @@ contract Orderbook is IOrderbook, Initializable {
         // if the order is bid order on the base/quote pair
         else {
             // decrease remaining amount of order
-            _askOrders._decreaseOrder(price, orderId, converted);
+            _askOrders._decreaseOrder(price, orderId, converted, dust);
             // sender is matching bid order for quote asset with base asset
             // send deposited amount of quote asset from sender to owner
             _sendFunds(pair.quote, order.owner, amount);

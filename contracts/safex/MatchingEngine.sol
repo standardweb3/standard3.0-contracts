@@ -120,6 +120,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint32 n,
         uint32 uid
     ) public nonReentrant returns (bool) {
+        
+        // reuse quoteAmount variable as minRequired from _deposit to avoid stack too deep error
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
@@ -129,7 +131,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             uid,
             isMaker
         );
-        // negate on give if the asset is not the base
+         // negate on give if the asset is not the base
         uint256 lmp;
         // reuse withoutFee variable due to stack too deep error
         (withoutFee, lmp) = _limitOrder(
@@ -141,7 +143,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             n
         );
         // add make order on market price
-
         _detMake(
             base,
             quote,
@@ -173,7 +174,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint32 n,
         uint32 uid
     ) public nonReentrant returns (bool) {
-        (uint256 withoutFee, address orderbook, uint256 minRequired) = _deposit(
+        (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
             0,
@@ -191,8 +192,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             base,
             false,
             0,
-            minRequired,
-            n,
+            n
         );
         _detMake(
             base,
@@ -886,7 +886,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         address give,
         bool isBid,
         uint256 limitPrice,
-        uint256 minRequired,
         uint32 n
     ) internal returns (uint256 remaining, uint256 lmp) {
         remaining = amount;
@@ -989,7 +988,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool isBid,
         uint32 uid,
         bool isMaker
-    ) internal returns (uint256 withoutFee, address book, uint256 minRequired) {
+    ) internal returns (uint256 withoutFee, address book) {
         // get orderbook address from the base and quote asset
         book = getBookByPair(base, quote);
         if (book == address(0)) {
@@ -997,11 +996,11 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         }
         // check if amount is valid in case of both market and limit
         uint256 converted = _convert(book, price, amount, !isBid);
-        minRequired = _convert(book, price, 1, isBid);
+         
         if (converted == 0) {
             revert OrderSizeTooSmall(
                 amount,
-                minRequired
+                _convert(book, price, 1, isBid)
             );
         }
         // check if sender has uid
@@ -1031,7 +1030,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             TransferHelper.safeTransfer(base, feeTo, fee);
         }
 
-        return (withoutFee, book, minRequired);
+        return (withoutFee, book);
     }
 
     function _fee(

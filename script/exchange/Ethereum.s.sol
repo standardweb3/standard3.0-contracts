@@ -56,11 +56,13 @@ contract DeploySAFEXMainnetContracts is Deployer {
         OrderbookFactory orderbookFactory = new OrderbookFactory();
         MatchingEngine matchingEngine = new MatchingEngine();
         treasury = new Treasury();
+        
         matchingEngine.initialize(
             address(orderbookFactory),
             address(treasury),
             address(weth)
         );
+        
         orderbookFactory.initialize(address(matchingEngine));
         vm.stopBroadcast();
     }
@@ -73,7 +75,7 @@ contract DeploySABTMainnetContracts is Deployer {
     address constant weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // weth on mainnet
     address constant stablecoin = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48; // usdc on mainnet
     address constant matchingEngine =
-        0x93d744De3c805e15136459FEad77F17E5Ac6Cfcf;
+        0x677B1CA9ACb800f7b40C89ef9BB441f79A7363f0;
     address constant foundation_address =
         0x34CCCa03631830cD8296c172bf3c31e126814ce9;
 
@@ -129,7 +131,7 @@ contract AddAirdrop is Deployer {
 contract TestOrderbookSell is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     address constant matching_engine_address =
-        0x93d744De3c805e15136459FEad77F17E5Ac6Cfcf;
+        0x677B1CA9ACb800f7b40C89ef9BB441f79A7363f0;
     address constant base_addr = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address constant quote_addr = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
     MatchingEngine public matchingEngine =
@@ -180,7 +182,7 @@ contract TestOrderbookSell is Deployer {
 contract TestOrderbookBuy is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     address constant matching_engine_address =
-        0x93d744De3c805e15136459FEad77F17E5Ac6Cfcf;
+        0x677B1CA9ACb800f7b40C89ef9BB441f79A7363f0;
     address constant base_addr = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address constant quote_addr = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
     MatchingEngine public matchingEngine =
@@ -232,7 +234,7 @@ contract TestOrderbookBuy is Deployer {
 contract TestGetPrices is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     address constant matching_engine_address =
-        0xa7431faC42c7D5ff6C5EE297B9D65960B9970f12;
+        0x677B1CA9ACb800f7b40C89ef9BB441f79A7363f0;
     address constant feeToken_address =
         0xE57Cdf5796C2f5281EDF1B81129E1D4Ff9190815;
     address constant stablecoin_address =
@@ -275,7 +277,7 @@ contract ShowOrderbook is Deployer {
     address constant token1 = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address constant token2 = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
     MatchingEngine matchingEngine =
-        MatchingEngine(payable(0x93d744De3c805e15136459FEad77F17E5Ac6Cfcf));
+        MatchingEngine(payable(0x677B1CA9ACb800f7b40C89ef9BB441f79A7363f0));
 
     function _showOrderbook(
         MatchingEngine matchingEngine,

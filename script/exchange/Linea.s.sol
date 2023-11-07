@@ -72,7 +72,7 @@ contract DeploySABTMainnetContracts is Deployer {
     address constant weth = 0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f; // weth on mainnet
     address constant stablecoin = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48; // usdc on mainnet
     address constant matchingEngine =
-        0x2CC505C4bc86B28503B5b8C450407D32e5E20A9f;
+        0x66a8b38D8B573Dbb6beBe163324b2DC0070d3430;
     address constant foundation_address =
         0x34CCCa03631830cD8296c172bf3c31e126814ce9;
 
@@ -127,7 +127,7 @@ contract AddAirdrop is Deployer {
 
 contract TestAddPair is Deployer {
     address constant matching_engine_address =
-        0x2CC505C4bc86B28503B5b8C450407D32e5E20A9f;
+        0x99e87D3f46079CeeE33859Fb6055A912090c9683;
     address constant base_address = 0xA219439258ca9da29E9Cc4cE5596924745e12B93;
     address constant quote_address = 0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f;
 
@@ -144,7 +144,7 @@ contract TestAddPair is Deployer {
 contract TestOrderbookSell is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     address constant matching_engine_address =
-        0x2CC505C4bc86B28503B5b8C450407D32e5E20A9f;
+        0x99e87D3f46079CeeE33859Fb6055A912090c9683;
     address constant base_address = 0x176211869cA2b568f2A7D4EE941E073a821EE1ff;
     address constant quote_address = 0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f;
     MatchingEngine public matchingEngine =
@@ -196,7 +196,7 @@ contract TestOrderbookSell is Deployer {
 contract TestOrderbookBuy is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     address constant matching_engine_address =
-        0x2CC505C4bc86B28503B5b8C450407D32e5E20A9f;
+        0x99e87D3f46079CeeE33859Fb6055A912090c9683;
     address constant base_address = 0x176211869cA2b568f2A7D4EE941E073a821EE1ff;
     address constant quote_address = 0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f;
     MatchingEngine public matchingEngine =
@@ -248,7 +248,7 @@ contract TestOrderbookBuy is Deployer {
 contract TestGetPrices is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     address constant matching_engine_address =
-        0xa7431faC42c7D5ff6C5EE297B9D65960B9970f12;
+        0x99e87D3f46079CeeE33859Fb6055A912090c9683;
     address constant feeToken_address =
         0xE57Cdf5796C2f5281EDF1B81129E1D4Ff9190815;
     address constant stablecoin_address =

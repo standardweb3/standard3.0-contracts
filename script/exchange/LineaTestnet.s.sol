@@ -14,6 +14,7 @@ import {OrderbookFactory} from "../../contracts/safex/orderbooks/OrderbookFactor
 import {Orderbook} from "../../contracts/safex/orderbooks/Orderbook.sol";
 import {Multicall3} from "../Multicall3.sol";
 import {TokenDispenser} from "../../contracts/safex/airdrops/TokenDispenser.sol";
+import {ExchangeOrderbook} from "../../contracts/safex/libraries/ExchangeOrderbook.sol";
 
 contract Deployer is Script {
     function _setDeployer() internal {
@@ -71,12 +72,12 @@ contract DeploySAFEXMainnetContracts is Deployer {
 
 
 contract DeploySABTMainnetContracts is Deployer {
-    Treasury constant treasury = Treasury(0xd75e38838d292AD17b72D724d91Bb9A514bEF05e);
+    Treasury constant treasury = Treasury(0x0452806AF305A0cd61aDACFB67111bfF338cE6a9);
     uint32 constant spb = 12;
     address constant weth = 0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f; // weth on mainnet
     address constant feeToken = 0xE57Cdf5796C2f5281EDF1B81129E1D4Ff9190815;
     address constant stablecoin = 0xfB4c8b2658AB2bf32ab5Fc1627f115974B52FeA7;
-    address constant matchingEngine = 0x0eE70bF6e59087998Bb415F3Ffc3D6183E25121c;
+    address constant matchingEngine = 0x6Dd6A2D269b2e971272e3a29fc204Fe35B20E827;
     address constant foundation_address = 0x34CCCa03631830cD8296c172bf3c31e126814ce9;
 
     function run() external {
@@ -491,6 +492,87 @@ contract TestGetPrices is Deployer {
             console.log(askPrices[i]);
         }
 
+        vm.stopBroadcast();
+    }
+}
+
+contract ShowOrderbook is Deployer {
+    address constant matching_engine_address =
+        0x6Dd6A2D269b2e971272e3a29fc204Fe35B20E827;
+    address constant base_address = 0xE57Cdf5796C2f5281EDF1B81129E1D4Ff9190815;
+    address constant quote_address = 0xfB4c8b2658AB2bf32ab5Fc1627f115974B52FeA7;
+    MatchingEngine public matchingEngine =
+        MatchingEngine(payable(matching_engine_address));
+
+    function _orderbookIsEmpty(address b_addr, address q_addr, uint256 price, bool isBid) internal view returns (bool) {
+        address orderbook = matchingEngine.getBookByPair(b_addr, q_addr);
+        console.log("Orderbook", orderbook);
+        return Orderbook(payable(orderbook)).isEmpty(isBid, price);
+    }
+
+    function _showOrderbook(
+        MatchingEngine matchingEngine,
+        address base,
+        address quote
+    ) internal view {
+        (uint256 bidHead, uint256 askHead) = matchingEngine.heads(base, quote);
+        console.log("Bid Head: ", bidHead);
+        console.log("Ask Head: ", askHead);
+        console.log("is empty: ", _orderbookIsEmpty(base, quote, askHead, false));
+        uint256[] memory bidPrices = matchingEngine.getPrices(
+            address(base),
+            address(quote),
+            true,
+            20
+        );
+        uint256[] memory askPrices = matchingEngine.getPrices(
+            address(base),
+            address(quote),
+            false,
+            20
+        );
+        console.log("Ask prices: ");
+        for (uint256 i = 0; i < 6; i++) {
+            console.log(askPrices[i]);
+            console.log("Ask Orders: ");
+            ExchangeOrderbook.Order[] memory askOrders = matchingEngine
+                .getOrders(
+                    address(base),
+                    address(quote),
+                    false,
+                    askPrices[i],
+                    10
+                );
+            for (uint256 j = 0; j < 10; j++) {
+                console.log(askOrders[j].owner, askOrders[j].depositAmount);
+            }
+        }
+
+        console.log("Bid prices: ");
+        for (uint256 i = 0; i < 6; i++) {
+            console.log(bidPrices[i]);
+            console.log("Bid Orders: ");
+            ExchangeOrderbook.Order[] memory bidOrders = matchingEngine
+                .getOrders(
+                    address(base),
+                    address(quote),
+                    true,
+                    bidPrices[i],
+                    10
+                );
+            for (uint256 j = 0; j < 10; j++) {
+                console.log(bidOrders[j].owner, bidOrders[j].depositAmount);
+            }
+        }
+    }
+
+    function run() external {
+        _setDeployer();
+        _showOrderbook(
+            MatchingEngine(payable(0x6Dd6A2D269b2e971272e3a29fc204Fe35B20E827)),
+            0xfB4c8b2658AB2bf32ab5Fc1627f115974B52FeA7,
+            0xE57Cdf5796C2f5281EDF1B81129E1D4Ff9190815
+        );
         vm.stopBroadcast();
     }
 }

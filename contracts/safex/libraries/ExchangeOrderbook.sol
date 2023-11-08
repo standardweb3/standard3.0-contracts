@@ -52,12 +52,16 @@ library ExchangeOrderbook {
       } else if (amount > orders[next].depositAmount) {
         // This is either order is cancelled or order is at the end of the list
         if (orders[next].depositAmount == 0) {
-          // what if order is canceled and order id still stays in the list?
+          // what if next order is canceled and order id still stays in the list?
           // if order is canceled and stays in the list, there is at least a next order in the list
-          if (self.canceled[head]) {
-            // Keep traversing
+          if (self.canceled[next]) {
+            // remove index of cancelled order
+            list[head] = list[next];
+            delete list[next];
+            delete self.canceled[next];
+            // skip canceled order
+            last = head;
             head = list[head];
-            last = next;
           } else {
             // Insert order at the end of the list
             list[head] = id;
@@ -72,8 +76,8 @@ library ExchangeOrderbook {
       }
       // what if there is same order with same deposit amount?
       else if (amount == orders[next].depositAmount) {
-        list[id] = list[head];
-        list[head] = id;
+        list[id] = list[next];
+        list[next] = id;
         return;
       }
     }
@@ -114,13 +118,16 @@ library ExchangeOrderbook {
     uint32 id,
     uint256 amount,
     uint256 dust
-  ) internal {
+  ) internal returns (uint256) {
     uint256 decreased = self.orders[id].depositAmount - amount;
     // remove dust
-    if (decreased < dust) {
+    if (decreased <= dust) {
+      decreased = self.orders[id].depositAmount;
       _deleteOrder(self, price, id);
+      return decreased;
     } else {
       self.orders[id].depositAmount = decreased;
+      return amount;
     }
   }
 
@@ -131,6 +138,7 @@ library ExchangeOrderbook {
   ) internal {
     uint32 last = 0;
     uint32 head = self.head[price];
+    uint32 next;
     uint16 i;
     mapping(uint32 => uint32) storage list = self.list[price];
     // delete id in the order linked list
@@ -140,9 +148,9 @@ library ExchangeOrderbook {
     } else {
       // search for the order id in the linked list
       while (head != 0 && i < 30) {
-        uint32 next = list[head];
-        if (head == id) {
-          list[last] = next;
+        next = list[head];
+        if (next == id) {
+          list[head] = list[next];
           delete list[id];
           break;
         }

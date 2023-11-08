@@ -63,11 +63,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint256 orderId
     );
 
-    event PairAdded(
-        address orderbook,
-        address base,
-        address quote
-    );
+    event PairAdded(address orderbook, address base, address quote);
 
     error TooManyMatches(uint256 n);
     error InvalidFeeRate(uint256 feeNum, uint256 feeDenom);
@@ -110,7 +106,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
      * @param quoteAmount The amount of quote asset to be used for the market buy order
      * @param isMaker Boolean indicating if a order should be made at the market price in orderbook
      * @param n The maximum number of orders to match in the orderbook
-     * @return bool True if the order was successfully executed, otherwise false.
+     * @return clear True if the order was successfully executed, otherwise false.
      */
     function marketBuy(
         address base,
@@ -119,8 +115,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) public nonReentrant returns (bool) {
-        
+    ) public nonReentrant returns (bool clear) {
         // reuse quoteAmount variable as minRequired from _deposit to avoid stack too deep error
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
@@ -131,10 +126,10 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             uid,
             isMaker
         );
-         // negate on give if the asset is not the base
+        // negate on give if the asset is not the base
         uint256 lmp;
         // reuse withoutFee variable due to stack too deep error
-        (withoutFee, lmp) = _limitOrder(
+        (withoutFee, lmp, clear) = _limitOrder(
             orderbook,
             withoutFee,
             quote,
@@ -164,7 +159,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
      * @param baseAmount The amount of base asset to be sold in the market sell order
      * @param isMaker Boolean indicating if an order should be made at the market price in orderbook
      * @param n The maximum number of orders to match in the orderbook
-     * @return bool True if the order was successfully executed, otherwise false.
+     * @return clear True if the order was successfully executed, otherwise false.
      */
     function marketSell(
         address base,
@@ -173,7 +168,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) public nonReentrant returns (bool) {
+    ) public nonReentrant returns (bool clear) {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
@@ -186,7 +181,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         // negate on give if the asset is not the base
         uint256 lmp;
         // reuse withoutFee variable for storing remaining amount after matching due to stack too deep error
-        (withoutFee, lmp) = _limitOrder(
+        (withoutFee, lmp, clear) = _limitOrder(
             orderbook,
             withoutFee,
             base,
@@ -254,7 +249,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
      * @param quoteAmount The amount of quote asset to be used for the limit buy order
      * @param isMaker Boolean indicating if an order should be made at the limit price
      * @param n The maximum number of orders to match in the orderbook
-     * @return bool True if the order was successfully executed, otherwise false.
+     * @return clear True if the order was successfully executed, otherwise false.
      */
     function limitBuy(
         address base,
@@ -264,7 +259,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) public nonReentrant returns (bool) {
+    ) public nonReentrant returns (bool clear) {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
@@ -277,7 +272,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         // negate on give if the asset is not the base
         uint256 lmp;
         // reuse withoutFee variable for storing remaining amount after matching due to stack too deep error
-        (withoutFee, lmp) = _limitOrder(
+        (withoutFee, lmp, clear) = _limitOrder(
             orderbook,
             withoutFee,
             quote,
@@ -291,7 +286,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             orderbook,
             withoutFee,
-            lmp == 0 ? price : lmp,
+            clear ? price : lmp == 0 ? price : lmp,
             true,
             isMaker
         );
@@ -308,7 +303,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
      * @param baseAmount The amount of base asset to be used for the limit sell order
      * @param isMaker Boolean indicating if an order should be made at the limit price
      * @param n The maximum number of orders to match in the orderbook
-     * @return bool True if the order was successfully executed, otherwise false.
+     * @return clear  True if the order was successfully executed, otherwise false.
      */
     function limitSell(
         address base,
@@ -318,7 +313,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) public nonReentrant returns (bool) {
+    ) public nonReentrant returns (bool clear) {
         (uint256 withoutFee, address orderbook) = _deposit(
             base,
             quote,
@@ -331,7 +326,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         // negate on give if the asset is not the base
         uint256 lmp;
         // reuse withoutFee variable for storing remaining amount after matching due to stack too deep error
-        (withoutFee, lmp) = _limitOrder(
+        (withoutFee, lmp, clear) = _limitOrder(
             orderbook,
             withoutFee,
             base,
@@ -344,7 +339,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             orderbook,
             withoutFee,
-            lmp == 0 ? price : lmp,
+            clear ? price : lmp == 0 ? price : lmp,
             false,
             isMaker
         );
@@ -425,7 +420,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool isBid,
         uint32 uid
     ) public nonReentrant returns (bool) {
-        (address base, address quote) = IOrderbookFactory(orderbookFactory).getBaseQuote(orderbook);
+        (address base, address quote) = IOrderbookFactory(orderbookFactory)
+            .getBaseQuote(orderbook);
 
         uint256 remaining = IOrderbook(orderbook).cancelOrder(
             isBid,
@@ -436,12 +432,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         // decrease point from orderbook
         if (uid != 0 && IRevenue(feeTo).isReportable(msg.sender, uid)) {
             // report cancelation to accountant
-            IRevenue(feeTo).report(
-                uid,
-                isBid ? quote : base,
-                remaining,
-                false
-            );
+            IRevenue(feeTo).report(uid, isBid ? quote : base, remaining, false);
             // refund fee from treasury to sender
             IRevenue(feeTo).refundFee(
                 msg.sender,
@@ -462,13 +453,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint32 uid
     ) external returns (bool) {
         for (uint32 i = 0; i < orderIds.length; i++) {
-            cancelOrder(
-                orderbook[i],
-                prices[i],
-                orderIds[i],
-                isBid[i],
-                uid
-            );
+            cancelOrder(orderbook[i], prices[i], orderIds[i], isBid[i], uid);
         }
         return true;
     }
@@ -887,7 +872,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool isBid,
         uint256 limitPrice,
         uint32 n
-    ) internal returns (uint256 remaining, uint256 lmp) {
+    ) internal returns (uint256 remaining, uint256 lmp, bool clear) {
         remaining = amount;
         lmp = 0;
         uint32 i = 0;
@@ -910,6 +895,11 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                 // i == 0 when orders are all empty and only head price is left
                 askHead = i == 0 ? 0 : IOrderbook(orderbook).askHead();
             }
+            // set last match price
+            if (lmp != 0) {
+                IOrderbook(orderbook).setLmp(lmp);
+            }
+            return (remaining, lmp, askHead == 0);
         } else {
             // check if there is any maching bid order until matching bid order price is higher than the limit ask price
             uint256 bidHead = IOrderbook(orderbook).bidHead();
@@ -929,12 +919,12 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                 // i == 0 when orders are all empty and only head price is left
                 bidHead = i == 0 ? 0 : IOrderbook(orderbook).bidHead();
             }
+            // set last match price
+            if (lmp != 0) {
+                IOrderbook(orderbook).setLmp(lmp);
+            }
+            return (remaining, lmp, bidHead == 0);
         }
-        // set last match price
-        if (lmp != 0) {
-            IOrderbook(orderbook).setLmp(lmp);
-        }
-        return (remaining, lmp);
     }
 
     /**
@@ -965,8 +955,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                 stopTo,
                 remaining
             );
-            if (isMaker)
-                _makeOrder(orderbook, remaining, price, isBid);
+            if (isMaker) _makeOrder(orderbook, remaining, price, isBid);
         }
     }
 
@@ -996,12 +985,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         }
         // check if amount is valid in case of both market and limit
         uint256 converted = _convert(book, price, amount, !isBid);
-         
+
         if (converted == 0) {
-            revert OrderSizeTooSmall(
-                amount,
-                _convert(book, price, 1, isBid)
-            );
+            revert OrderSizeTooSmall(amount, _convert(book, price, 1, isBid));
         }
         // check if sender has uid
         uint256 fee = _fee(base, quote, amount, isBid, uid, isMaker);
@@ -1044,12 +1030,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         if (uid != 0 && IRevenue(feeTo).isReportable(msg.sender, uid)) {
             uint32 feeNum = IRevenue(feeTo).feeOf(uid, isMaker);
             // report fee to accountant
-            IRevenue(feeTo).report(
-                uid,
-                isBid ? quote : base,
-                amount,
-                true
-            );
+            IRevenue(feeTo).report(uid, isBid ? quote : base, amount, true);
             return (amount * feeNum) / feeDenom;
         } else {
             return amount / 1000;
@@ -1075,7 +1056,10 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         if (orderbook == address(0)) {
             return 0;
         } else {
-            return price == 0 ? IOrderbook(orderbook).assetValue(amount, isBid) : IOrderbook(orderbook).convert(price, amount, isBid);
+            return
+                price == 0
+                    ? IOrderbook(orderbook).assetValue(amount, isBid)
+                    : IOrderbook(orderbook).convert(price, amount, isBid);
         }
     }
 }

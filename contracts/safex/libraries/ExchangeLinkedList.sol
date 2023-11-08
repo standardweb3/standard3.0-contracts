@@ -158,6 +158,97 @@ library ExchangeLinkedList {
         }
     }
 
+    function _delete(
+        PriceLinkedList storage self,
+        bool isBid,
+        uint256 price
+    ) internal returns (bool) {
+        // traverse the list
+        if (price == 0) {
+            revert ZeroPrice(price);
+            //return false;
+        }
+
+        if (isBid) {
+            uint256 last = 0;
+            uint256 head = self.bidHead;
+            // insert bid price to the linked list
+            // if the list is empty
+            if (head == 0 || price > head) {
+                revert NoHeadBelow(isBid, head);
+            }
+            while (head != 0 && price > head) {
+                uint256 next = self.bidPrices[head];
+                if (price < next) {
+                    // Keep traversing
+                    head = self.bidPrices[head];
+                    last = next;
+                } else if (price > next) {
+                    if (next == 0) {
+                        // if there is only one price left, check if it is the price we are looking for
+                        if(head == price) {
+                            // remove price at the end
+                            self.bidPrices[last] = 0;
+                            delete self.bidPrices[head];
+                            return true;
+                        }
+                        // Price does not exist in price list
+                        revert PriceOutOfRange(head, price);
+                    }
+                    // Price does not exist within range of prices
+                    revert PriceNoneInRange(head, price);
+                } else {
+                    // price is already included in the queue as it is equal to next. price exists in the orderbook
+                    // End traversal as there is no need to traverse further
+                    // remove price in next, connect next next to the head
+                    self.bidPrices[head] = self.bidPrices[next];
+                    delete self.bidPrices[next];
+                    return true;
+                }
+            }
+        }
+        // insert ask price to the linked list
+        else {
+            uint256 last = 0;
+            uint256 head = self.askHead;
+            // insert order to the linked list
+            // if the list is empty and price is the lowest ask
+            if (head == 0 || price < head) {
+                revert NoHeadBelow(isBid, head);
+            }
+            // traverse the list
+            while (head != 0) {
+                uint256 next = self.askPrices[head];
+                // Keep traversing
+                if (price > next) {
+                    if (next == 0) {
+                        // if there is only one price left, check if it is the price we are looking for
+                        if(head == price) {
+                             self.askPrices[last] = 0;
+                            delete self.askPrices[head];
+                            return true;
+                        }
+                        // Price does not exist in price list                       
+                        revert PriceOutOfRange(head, price);
+                    }
+                    head = self.askPrices[head];
+                    last = next;
+                } else if (price < next) {
+                    // Price does not exist within range of prices
+                    revert PriceNoneInRange(head, price);
+                } else {
+                    // price is already included in the queue as it is equal to next
+                    // End traversal as there is no need to traverse further
+                    self.askPrices[head] = self.askPrices[next];
+                    delete self.askPrices[next];
+                    return true;
+                }
+            }
+        }
+
+        return true;
+    }
+
     // show n prices shown in the orderbook
     function _getPrices(
         PriceLinkedList storage self,

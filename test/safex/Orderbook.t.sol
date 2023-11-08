@@ -870,7 +870,7 @@ contract OrderbookMatchTest is BaseSetup {
 
         // Trader2's token2 balance should be increased by 9.99e21
         assert(diffTrader2T2Balance == 9990e18);
-
+        console.log("flag");
         // Trader2's token1 balance should be decreased by 10e18
         assert(diffTrader2T1Balance == 10e18);
         // Trader1's token2 balance should be decreased by 10000e18
@@ -1798,46 +1798,71 @@ contract OrderbookMatchTest is BaseSetup {
         console.log("Bid Head: ", bidHead);
         console.log("Ask Head: ", askHead);
         uint256[] memory bidPrices = matchingEngine.getPrices(
-            address(token1),
-            address(token2),
+            address(base),
+            address(quote),
             true,
             20
         );
         uint256[] memory askPrices = matchingEngine.getPrices(
-            address(token1),
-            address(token2),
+            address(base),
+            address(quote),
             false,
             20
         );
         console.log("Ask prices: ");
-        for (uint256 i = 0; i < 3; i++) {
+        for (uint256 i = 0; i < 6; i++) {
             console.log(askPrices[i]);
+            console.log("Ask Orders: ");
+            uint32[] memory askOrderIds = matchingEngine.getOrderIds(
+                address(base),
+                address(quote),
+                false,
+                askPrices[i],
+                10
+            );
+            ExchangeOrderbook.Order[] memory askOrders = matchingEngine
+                .getOrders(
+                    address(base),
+                    address(quote),
+                    false,
+                    askPrices[i],
+                    10
+                );
+            for (uint256 j = 0; j < 10; j++) {
+                console.log(
+                    askOrderIds[j],
+                    askOrders[j].owner,
+                    askOrders[j].depositAmount
+                );
+            }
         }
-        console.log("Ask Orders: ");
-        ExchangeOrderbook.Order[] memory askOrders = matchingEngine.getOrders(
-            address(token1),
-            address(token2),
-            false,
-            askHead,
-            10
-        );
-        for (uint256 i = 0; i < 10; i++) {
-            console.log(askOrders[i].owner, askOrders[i].depositAmount);
-        }
+
         console.log("Bid prices: ");
-        for (uint256 i = 0; i < 4; i++) {
+        for (uint256 i = 0; i < 6; i++) {
             console.log(bidPrices[i]);
-        }
-        console.log("Bid Orders: ");
-        ExchangeOrderbook.Order[] memory bidOrders = matchingEngine.getOrders(
-            address(token1),
-            address(token2),
-            true,
-            bidHead,
-            10
-        );
-        for (uint256 i = 0; i < 10; i++) {
-            console.log(bidOrders[i].owner, bidOrders[i].depositAmount);
+            console.log("Bid Orders: ");
+            uint32[] memory bidOrderIds = matchingEngine.getOrderIds(
+                address(base),
+                address(quote),
+                false,
+                bidPrices[i],
+                10
+            );
+            ExchangeOrderbook.Order[] memory bidOrders = matchingEngine
+                .getOrders(
+                    address(base),
+                    address(quote),
+                    true,
+                    bidPrices[i],
+                    10
+                );
+            for (uint256 j = 0; j < 10; j++) {
+                console.log(
+                    bidOrderIds[j],
+                    bidOrders[j].owner,
+                    bidOrders[j].depositAmount
+                );
+            }
         }
     }
 
@@ -2149,5 +2174,83 @@ contract OrderbookMatchTest is BaseSetup {
 
         // recheck orders
         _showOrderbook(matchingEngine, address(token1), address(token2));
+    }
+
+    function testCancelJammingOrderbook() public {
+        super.setUp();
+        vm.prank(booker);
+        matchingEngine.addPair(address(token1), address(token2));
+        book = Orderbook(
+            payable(
+                orderbookFactory.getBookByPair(address(token1), address(token2))
+            )
+        );
+
+
+        vm.prank(trader1);
+        token1.approve(address(matchingEngine), 1000000000000000000e18);
+
+        // deposit 10000e18(9990e18 after fee) for buying token1 for 1000 token2 * amount
+        vm.prank(trader1);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            1000e8,
+            1000e18,
+            true,
+            5,
+            0
+        );
+
+        vm.prank(trader1);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            1100e8,
+            1000e18,
+            true,
+            5,
+            0
+        );
+
+        vm.prank(trader1);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            1200e8,
+            1000e18,
+            true,
+            5,
+            0
+        );
+
+        vm.prank(trader1);
+        matchingEngine.cancelOrder(address(book), 1100e8, 3, false, 0);
+
+        //_showOrderbook(matchingEngine, address(token1), address(token2));
+
+
+        vm.prank(trader1);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            1400e8,
+            3400000e18,
+            true,
+            5,
+            0
+        );
+
+        console.log(
+            "minRequired quote",
+            matchingEngine.convert(address(token1), address(token2), 1, true)
+        );
+
+        console.log(
+            "minRequired base",
+            matchingEngine.convert(address(token1), address(token2), 1, false)
+        );
+
+        
     }
 }

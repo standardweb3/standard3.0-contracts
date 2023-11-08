@@ -144,8 +144,8 @@ contract TestAddPair is Deployer {
 contract TestOrderbookSell is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     address constant matching_engine_address =
-        0x99e87D3f46079CeeE33859Fb6055A912090c9683;
-    address constant base_address = 0x176211869cA2b568f2A7D4EE941E073a821EE1ff;
+        0x66a8b38D8B573Dbb6beBe163324b2DC0070d3430;
+    address constant base_address = 0xA219439258ca9da29E9Cc4cE5596924745e12B93;
     address constant quote_address = 0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f;
     MatchingEngine public matchingEngine =
         MatchingEngine(payable(matching_engine_address));
@@ -161,16 +161,16 @@ contract TestOrderbookSell is Deployer {
         );
 
         // make a price in matching engine where 1 feeToken = 1000 stablecoin with buy and sell order
-        base.approve(address(matchingEngine), 100000e18);
-        quote.approve(address(matchingEngine), 100000000e18);
+        base.approve(address(matchingEngine), 1e18);
+        quote.approve(address(matchingEngine), 1e18);
 
         matchingEngine.mktPrice(address(base), address(quote));
         // add limit orders
         matchingEngine.limitSell(
             address(base),
             address(quote),
-            100002e6,
-            10000e18,
+            50600,
+            100000,
             true,
             1,
             0
@@ -326,6 +326,13 @@ contract ShowOrderbook is Deployer {
         for (uint256 i = 0; i < 6; i++) {
             console.log(askPrices[i]);
             console.log("Ask Orders: ");
+            uint32[] memory askOrderIds = matchingEngine.getOrderIds(
+                address(base),
+                address(quote),
+                false,
+                askPrices[i],
+                10
+            );
             ExchangeOrderbook.Order[] memory askOrders = matchingEngine
                 .getOrders(
                     address(base),
@@ -335,7 +342,7 @@ contract ShowOrderbook is Deployer {
                     10
                 );
             for (uint256 j = 0; j < 10; j++) {
-                console.log(askOrders[j].owner, askOrders[j].depositAmount);
+                console.log(askOrderIds[j], askOrders[j].owner, askOrders[j].depositAmount);
             }
         }
 
@@ -343,6 +350,13 @@ contract ShowOrderbook is Deployer {
         for (uint256 i = 0; i < 6; i++) {
             console.log(bidPrices[i]);
             console.log("Bid Orders: ");
+            uint32[] memory bidOrderIds = matchingEngine.getOrderIds(
+                address(base),
+                address(quote),
+                false,
+                bidPrices[i],
+                10
+            );
             ExchangeOrderbook.Order[] memory bidOrders = matchingEngine
                 .getOrders(
                     address(base),
@@ -352,7 +366,7 @@ contract ShowOrderbook is Deployer {
                     10
                 );
             for (uint256 j = 0; j < 10; j++) {
-                console.log(bidOrders[j].owner, bidOrders[j].depositAmount);
+                console.log(bidOrderIds[j], bidOrders[j].owner, bidOrders[j].depositAmount);
             }
         }
     }
@@ -360,8 +374,8 @@ contract ShowOrderbook is Deployer {
     function run() external {
         _setDeployer();
         _showOrderbook(
-            MatchingEngine(payable(0x2CC505C4bc86B28503B5b8C450407D32e5E20A9f)),
-            0x176211869cA2b568f2A7D4EE941E073a821EE1ff,
+            MatchingEngine(payable(0x66a8b38D8B573Dbb6beBe163324b2DC0070d3430)),
+            0xA219439258ca9da29E9Cc4cE5596924745e12B93,
             0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f
         );
         vm.stopBroadcast();

@@ -118,6 +118,11 @@ contract Orderbook is IOrderbook, Initializable {
             isBid
                 ? _sendFunds(pair.quote, owner, order.depositAmount)
                 : _sendFunds(pair.base, owner, order.depositAmount);
+
+            // check if the canceled order was the last order in the list
+            if (isEmpty(isBid, price)) {
+                priceLists._delete(isBid, price);
+            }
         }
 
         return (order.depositAmount);
@@ -138,21 +143,21 @@ contract Orderbook is IOrderbook, Initializable {
         // if isBid == true, sender is matching ask order with bid order(i.e. selling base to receive quote), otherwise sender is matching bid order with ask order(i.e. buying base with quote)
         if (isBid) {
             // decrease remaining amount of order
-            _bidOrders._decreaseOrder(price, orderId, converted, dust);
+            uint256 withDust = _bidOrders._decreaseOrder(price, orderId, converted, dust);
             // sender is matching ask order for base asset with quote asset
             _sendFunds(pair.base, order.owner, amount);
             // send converted amount of quote asset from owner to sender
-            _sendFunds(pair.quote, sender, converted);
+            _sendFunds(pair.quote, sender, withDust);
         }
         // if the order is bid order on the base/quote pair
         else {
             // decrease remaining amount of order
-            _askOrders._decreaseOrder(price, orderId, converted, dust);
+            uint256 withDust = _askOrders._decreaseOrder(price, orderId, converted, dust);
             // sender is matching bid order for quote asset with base asset
             // send deposited amount of quote asset from sender to owner
             _sendFunds(pair.quote, order.owner, amount);
             // send converted amount of base asset from owner to sender
-            _sendFunds(pair.base, sender, converted);
+            _sendFunds(pair.base, sender, withDust);
         }
         return order.owner;
     }

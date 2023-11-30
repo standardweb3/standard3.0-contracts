@@ -2249,8 +2249,65 @@ contract OrderbookMatchTest is BaseSetup {
         console.log(
             "minRequired base",
             matchingEngine.convert(address(token1), address(token2), 1, false)
+        );        
+    }
+
+    function testCancelAtHeadPrice() public {
+         super.setUp();
+        vm.prank(booker);
+        matchingEngine.addPair(address(token1), address(token2));
+        book = Orderbook(
+            payable(
+                orderbookFactory.getBookByPair(address(token1), address(token2))
+            )
         );
 
-        
+
+        vm.prank(trader1);
+        token1.approve(address(matchingEngine), 1000000000000000000e18);
+
+        // Make buy order then cancel at head price
+        vm.prank(trader1);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            1000e8,
+            1000e18,
+            true,
+            5,
+            0
+        );
+
+        (uint256 bidHead, uint256 askHead) = matchingEngine.heads(
+            address(token1),
+            address(token2)
+        );
+
+        console.log(bidHead, askHead);
+
+        vm.prank(trader1);
+        matchingEngine.cancelOrder(address(book), 1000e8, 1, true, 0);
+
+        // Make sell orer then cancel at head price
+        vm.prank(trader1);
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            1001e8,
+            1000e18,
+            true,
+            5,
+            0
+        );
+
+        (uint256 bidHead2, uint256 askHead2) = matchingEngine.heads(
+            address(token1),
+            address(token2)
+        );
+
+        console.log(bidHead2, askHead2);
+
+        vm.prank(trader1);
+        matchingEngine.cancelOrder(address(book), 1001e8, 1, false, 0);
     }
 }

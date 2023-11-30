@@ -54,10 +54,10 @@ contract DeploySAFEXMainnetContracts is Deployer {
         _setDeployer();
         OrderbookFactory orderbookFactory = new OrderbookFactory();
         MatchingEngine matchingEngine = new MatchingEngine();
-        treasury = new Treasury();
+        //treasury = new Treasury();
         matchingEngine.initialize(
             address(orderbookFactory),
-            address(treasury),
+            address(0x7a2e3a7A1bf8FaCCAd68115DC509DB5a5af4e7e4),
             address(weth)
         );
         orderbookFactory.initialize(address(matchingEngine));

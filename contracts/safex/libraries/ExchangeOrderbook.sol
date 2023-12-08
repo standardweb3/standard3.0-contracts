@@ -121,7 +121,7 @@ library ExchangeOrderbook {
   ) internal returns (uint256) {
     uint256 decreased = self.orders[id].depositAmount - amount;
     // remove dust
-    if (decreased <= dust) {
+    if (decreased <= dust || amount == 0) {
       decreased = self.orders[id].depositAmount;
       _deleteOrder(self, price, id);
       return decreased;

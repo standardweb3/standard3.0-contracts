@@ -72,7 +72,9 @@ contract DeploySABTMainnetContracts is Deployer {
     address constant weth = 0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f; // weth on mainnet
     address constant stablecoin = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48; // usdc on mainnet
     address constant matchingEngine =
-        0x66a8b38D8B573Dbb6beBe163324b2DC0070d3430;
+        0xa2F02d36206EDD2EAE9Fd5FBaBd90CdFCE939614;
+    address constant orderbookFactory =
+        0x73EbE91068d0908cbF51f83B5c7b58824f3Ae69B;
     address constant foundation_address =
         0x34CCCa03631830cD8296c172bf3c31e126814ce9;
 
@@ -196,9 +198,10 @@ contract TestOrderbookSell is Deployer {
 contract TestOrderbookBuy is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     address constant matching_engine_address =
-        0x99e87D3f46079CeeE33859Fb6055A912090c9683;
-    address constant base_address = 0x176211869cA2b568f2A7D4EE941E073a821EE1ff;
-    address constant quote_address = 0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f;
+        0xa2F02d36206EDD2EAE9Fd5FBaBd90CdFCE939614;
+    address constant quote_address = 0xB79DD08EA68A908A97220C76d19A6aA9cBDE4376;
+    address constant base_address = 0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f;
+
     MatchingEngine public matchingEngine =
         MatchingEngine(payable(matching_engine_address));
     MockToken public base = MockToken(base_address);
@@ -221,8 +224,8 @@ contract TestOrderbookBuy is Deployer {
         matchingEngine.limitBuy(
             address(base),
             address(quote),
-            100002e6,
-            10000e18,
+            2234e8,
+            100000,
             true,
             1,
             0

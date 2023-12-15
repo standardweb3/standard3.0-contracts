@@ -409,15 +409,15 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
      * @dev Cancels an order in an orderbook by the given order ID and order type.
      * @param orderbook The address of the orderbook to cancel the order in
      * @param price The price of the order to cancel
-     * @param orderId The ID of the order to cancel
      * @param isBid Boolean indicating if the order to cancel is an ask order
+     * @param orderId The ID of the order to cancel
      * @return bool True if the order was successfully canceled, otherwise false.
      */
     function cancelOrder(
         address orderbook,
         uint256 price,
-        uint32 orderId,
         bool isBid,
+        uint32 orderId,
         uint32 uid
     ) public nonReentrant returns (bool) {
         (address base, address quote) = IOrderbookFactory(orderbookFactory)

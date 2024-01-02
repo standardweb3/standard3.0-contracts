@@ -40,8 +40,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
     // events
     event OrderCanceled(
         address orderbook,
-        uint256 id,
         bool isBid,
+        uint256 orderId,
         address indexed owner
     );
 
@@ -441,19 +441,19 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             );
         }
 
-        emit OrderCanceled(orderbook, orderId, isBid, msg.sender);
+        emit OrderCanceled(orderbook, isBid, orderId, msg.sender);
         return true;
     }
 
     function cancelOrders(
         address[] memory orderbook,
         uint256[] memory prices,
-        uint32[] memory orderIds,
         bool[] memory isBid,
+        uint32[] memory orderIds,
         uint32 uid
     ) external returns (bool) {
         for (uint32 i = 0; i < orderIds.length; i++) {
-            cancelOrder(orderbook[i], prices[i], orderIds[i], isBid[i], uid);
+            cancelOrder(orderbook[i], prices[i], isBid[i], orderIds[i], uid);
         }
         return true;
     }
@@ -472,8 +472,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         address base,
         address quote,
         uint256 price,
-        uint32 orderId,
         bool isBid,
+        uint32 orderId,
         bool isMarket,
         bool isMaker,
         uint32 n,

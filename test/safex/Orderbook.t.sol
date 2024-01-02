@@ -1099,7 +1099,7 @@ contract OrderbookMatchTest is BaseSetup {
         // cancel order
 
         vm.prank(trader1);
-        matchingEngine.cancelOrder(address(book), 100000000, 3, false, 0);
+        matchingEngine.cancelOrder(address(book), 100000000, false, 3, 0);
 
         ExchangeOrderbook.Order[] memory orders2 = matchingEngine.getOrders(
             address(token1),
@@ -1943,14 +1943,14 @@ contract OrderbookMatchTest is BaseSetup {
 
         // cancel order
         vm.prank(trader1);
-        matchingEngine.cancelOrder(address(book), 500000000, 1, false, 0);
+        matchingEngine.cancelOrder(address(book), 500000000, false, 1, 0);
 
         // recheck orders
         _showOrderbook(matchingEngine, address(token1), address(token2));
 
         // cancel order
         vm.prank(trader1);
-        matchingEngine.cancelOrder(address(book), 500000000, 11, false, 0);
+        matchingEngine.cancelOrder(address(book), 500000000, false, 11, 0);
 
         // recheck orders
         _showOrderbook(matchingEngine, address(token1), address(token2));
@@ -2045,14 +2045,14 @@ contract OrderbookMatchTest is BaseSetup {
 
         // cancel order
         vm.prank(trader1);
-        matchingEngine.cancelOrder(address(book), 500000000, 1, false, 0);
+        matchingEngine.cancelOrder(address(book), 500000000, false, 1, 0);
 
         // recheck orders
         _showOrderbook(matchingEngine, address(token1), address(token2));
 
         // cancel order
         vm.prank(trader1);
-        matchingEngine.cancelOrder(address(book), 500000000, 11, false, 0);
+        matchingEngine.cancelOrder(address(book), 500000000, false, 11, 0);
 
         // recheck orders
         _showOrderbook(matchingEngine, address(token1), address(token2));
@@ -2147,7 +2147,7 @@ contract OrderbookMatchTest is BaseSetup {
 
         // cancel order
         vm.prank(trader1);
-        matchingEngine.cancelOrder(address(book), 500000000, 1, false, 0);
+        matchingEngine.cancelOrder(address(book), 500000000, false, 1, 0);
 
         // recheck orders
         _showOrderbook(matchingEngine, address(token1), address(token2));
@@ -2155,7 +2155,7 @@ contract OrderbookMatchTest is BaseSetup {
         // cancel order
         vm.prank(trader1);
         vm.expectRevert();
-        matchingEngine.cancelOrder(address(book), 700000000, 11, false, 0);
+        matchingEngine.cancelOrder(address(book), 700000000, false, 11, 0);
 
         // recheck orders
         _showOrderbook(matchingEngine, address(token1), address(token2));
@@ -2225,7 +2225,7 @@ contract OrderbookMatchTest is BaseSetup {
         );
 
         vm.prank(trader1);
-        matchingEngine.cancelOrder(address(book), 1100e8, 3, false, 0);
+        matchingEngine.cancelOrder(address(book), 1100e8, false, 3, 0);
 
         //_showOrderbook(matchingEngine, address(token1), address(token2));
 
@@ -2286,7 +2286,7 @@ contract OrderbookMatchTest is BaseSetup {
         console.log(bidHead, askHead);
 
         vm.prank(trader1);
-        matchingEngine.cancelOrder(address(book), 1000e8, 1, true, 0);
+        matchingEngine.cancelOrder(address(book), 1000e8, true, 1, 0);
 
         // Make sell orer then cancel at head price
         vm.prank(trader1);
@@ -2308,6 +2308,6 @@ contract OrderbookMatchTest is BaseSetup {
         console.log(bidHead2, askHead2);
 
         vm.prank(trader1);
-        matchingEngine.cancelOrder(address(book), 1001e8, 1, false, 0);
+        matchingEngine.cancelOrder(address(book), 1001e8, false, 1, 0);
     }
 }

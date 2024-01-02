@@ -162,8 +162,8 @@ contract FeeTierTest is SAFEXFeeTierSetup {
         matchingEngineFeeTier.cancelOrder(
             address(book),
             1000e8,
-            1,
             true,
+            1,
             1
         );
     }
@@ -212,8 +212,8 @@ contract FeeTierTest is SAFEXFeeTierSetup {
         matchingEngineFeeTier.cancelOrder(
             address(book),
             1000e8,
-            1,
             true,
+            1,
             1
         );
         feeToken.mint(trader2, 1e40);

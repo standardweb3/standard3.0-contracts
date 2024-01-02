@@ -53,13 +53,11 @@ contract Bond  {
 
     // called once by the factory at time of deployment
     function initialize(
-        uint256 vaultId_,
+        uint128 vaultId_,
         address collateral_,
         address debt_,
         address v1_,
-        uint256 amount_,
-        address v2Factory_,
-        address weth_
+        uint256 amount_
     ) external onlyState {
         id = vaultId_;
         collateral = collateral_;
@@ -80,7 +78,8 @@ contract Bond  {
             "Vault: Position is still safe"
         );
         // check the pair if it exists
-        address pair = IEngine(v2Factory).getPair(
+        address market = INetworkState(state).market();
+        address pair = IEngine(market).getPair(
             collateral,
             debt
         );
@@ -90,7 +89,7 @@ contract Bond  {
         uint256 liquidationFee = (lfr * balance) / 100;
         uint256 left = _sendFee(collateral, balance, liquidationFee);
         // Distribute collaterals
-        TransferHelper.safeTransfer(collateral, pair, left);
+        IEngine(market).marketSell(collateral, debt, left);
         // burn vault nft
         _burnV1FromVault();
         //emit Liquidated(address(this), collateral, balance);
@@ -185,7 +184,7 @@ contract Bond  {
 
     /// burn vault v1
     function _burnV1FromVault() internal {
-        ICoupon(v1).burnFromVault(vaultId);
+        ICoupon(coupon).burnFromVault(id);
     }
 
     /// burn vault mtr

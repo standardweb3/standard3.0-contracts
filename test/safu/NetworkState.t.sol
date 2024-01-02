@@ -28,6 +28,7 @@ contract BaseSetup is Test {
     MockBTC public btc;
     MockToken public feeToken;
     Treasury public treasury;
+    NetworkState public networkState;
     address payable[] public users;
     address public trader1;
     address public trader2;

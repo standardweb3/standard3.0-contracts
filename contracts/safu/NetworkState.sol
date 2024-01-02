@@ -165,7 +165,9 @@ contract NetworkState is Initializable {
         address bond = state._predictAddress(collateral_, state.currency, id);
         //return state._liquidate(collateral_, debt_, id);
     }
-    
 
+    function market() external view returns(address) {
+        return state.market;
+    }
 
 }

@@ -10,7 +10,7 @@ interface INetworkState {
     /// Stablecoin address
     function meter() external view returns (address);
     /// UniswapV2Factory address
-    function v2Factory() external view returns (address);
+    function market() external view returns (address);
     /// Address of feeTo
     function feeTo() external view returns (address);
     /// Address of the dividend pool

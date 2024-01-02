@@ -56,7 +56,7 @@ library NetworkStateLibrary {
         address currency_,
         address market_,
         address weth_
-    ) internal {
+    ) public {
         if (msg.sender != self.gov) revert InvalidAccess(msg.sender, self.gov);
         self.weth = weth_;
         self.market = market_;
@@ -70,7 +70,7 @@ library NetworkStateLibrary {
         uint32 mcr,
         uint32 rfr,
         uint32 lfr
-    ) internal returns (bool success) {
+    ) public returns (bool success) {
         if (msg.sender != self.gov) revert InvalidAccess(msg.sender, self.gov);
         if (mcr > 0) {
             self.cdps[collateral].mcr = mcr;
@@ -87,7 +87,7 @@ library NetworkStateLibrary {
     function _setSupply(
         State storage self,
         uint256 supply
-    ) internal returns (bool success) {
+    ) public returns (bool success) {
         if (msg.sender != self.gov) revert InvalidAccess(msg.sender, self.gov);
         self.supply = supply;
         return true;
@@ -96,11 +96,11 @@ library NetworkStateLibrary {
     function _getCDP(
         State storage self,
         address collateral
-    ) internal view returns (CDP memory) {
+    ) public view returns (CDP memory) {
         return self.cdps[collateral];
     }
 
-    function allBondsLength(State storage self) internal view returns (uint) {
+    function allBondsLength(State storage self) public view returns (uint) {
         return self.count;
     }
 
@@ -109,7 +109,7 @@ library NetworkStateLibrary {
         address collateral,
         uint256 cAmount,
         uint256 dAmount
-    ) internal returns (address orderbook) {
+    ) public returns (address bond) {
         // get id
         uint128 id = self.count;
         uint256 issued = IERC20(self.currency).totalSupply();
@@ -123,7 +123,7 @@ library NetworkStateLibrary {
             revert SupplyLimitExceeded(self.supply, issued, dAmount);
         }
 
-        address bond = _predictAddress(self, collateral, self.currency, id);
+        bond = _predictAddress(self, collateral, self.currency, id);
 
         // Check if the address has code
         uint32 size;
@@ -148,12 +148,24 @@ library NetworkStateLibrary {
         return (proxy);
     }
 
+    function _liquidate(
+        State storage self,
+        address collateral_,
+        address debt_,
+        uint128 id_
+    ) public returns (bool) {
+        if (msg.sender != self.liquidator) revert InvalidAccess(msg.sender, self.liquidator);
+        address bond = _predictAddress(self, collateral_, debt_, id_);
+        IBond(bond).liquidate();
+        return true;
+    }
+
     function _predictAddress(
         State storage self,
         address collateral_,
         address debt_,
         uint128 id_
-    ) internal view returns (address) {
+    ) public view returns (address) {
         bytes32 salt = _getSalt(collateral_, debt_, id_);
         return
             CloneFactory.predictAddressWithSalt(address(this), self.impl, salt);
@@ -163,7 +175,7 @@ library NetworkStateLibrary {
         State storage self,
         uint256 issued_,
         uint256 issueAmount_
-    ) internal view returns (bool) {
+    ) public view returns (bool) {
         return
             issued_ + issueAmount_ - IERC20(self.currency).balanceOf(self.liquidator) <=
             self.supply;
@@ -175,7 +187,7 @@ library NetworkStateLibrary {
         address debt_,
         uint256 cAmount_,
         uint256 dAmount_
-    ) internal view returns (bool) {
+    ) public view returns (bool) {
         (uint256 collateralValueTimes100, uint256 debtValue) = _calculateValues(
             self,
             collateral_,
@@ -202,7 +214,7 @@ library NetworkStateLibrary {
         address debt_,
         uint256 cAmount_,
         uint256 dAmount_
-    ) internal view returns (uint256, uint256) {
+    ) public view returns (uint256, uint256) {
         uint256 collateralValue = getAssetValue(self, collateral_, cAmount_);
         uint256 debtValue = getAssetValue(self, debt_, dAmount_);
         uint256 collateralValueTimes100 = collateralValue * 100;
@@ -213,7 +225,7 @@ library NetworkStateLibrary {
     function _getAssetPrice(
         State storage self,
         address asset_
-    ) internal view returns (uint) {
+    ) public view returns (uint) {
         uint price = IEngine(self.market).mktPrice(asset_, self.currency);
         if (price == 0) {
             revert MktPriceIsZero(asset_, self.currency);
@@ -225,7 +237,7 @@ library NetworkStateLibrary {
         State storage self,
         address asset_,
         uint256 amount_
-    ) internal view returns (uint256) {
+    ) public view returns (uint256) {
         uint price = _getAssetPrice(self, asset_);
         uint256 value = price * amount_;
         if (value < amount_) {
@@ -238,7 +250,7 @@ library NetworkStateLibrary {
         address collateral_,
         address debt_,
         uint128 id_
-    ) internal pure returns (bytes32) {
+    ) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(collateral_, debt_, id_));
     }
 }

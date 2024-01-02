@@ -7,4 +7,8 @@ interface IBond {
         address debt_,
         address market_
     ) external;
+    
+    function liquidate() external;
+
+    function withdrawCollateral(uint256 amount) external;
 }

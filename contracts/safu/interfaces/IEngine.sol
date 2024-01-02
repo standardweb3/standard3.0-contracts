@@ -42,4 +42,9 @@ interface IEngine {
         address base,
         address quote
     ) external returns (address book);
+
+    function getPair(
+        address base,
+        address quote
+    ) external view returns (address book);
 }

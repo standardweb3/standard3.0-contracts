@@ -10,13 +10,37 @@ interface IEngine {
 
     function getOrderbook(uint256 bookId) external view returns (address);
 
-    function marketBuy(address base, address quote, uint256 amount) external;
+    function marketBuy(
+        address base,
+        address quote,
+        uint256 quoteAmount,
+        bool isMaker,
+        uint32 n,
+        uint32 uid
+    ) external;
 
-    function marketSell(address base, address quote, uint256 amount) external;
+    function marketSell(
+        address base,
+        address quote,
+        uint256 baseAmount,
+        bool isMaker,
+        uint32 n,
+        uint32 uid
+    ) external;
 
-    function marketBuyEth(address quote, uint256 amount) external;
+    function marketBuyETH(
+        address base,
+        bool isMaker,
+        uint32 n,
+        uint32 uid
+    ) external payable returns (bool);
 
-    function marketSellEth(address quote, uint256 amount) external;
+    function marketSellETH(
+        address quote,
+        bool isMaker,
+        uint32 n,
+        uint32 uid
+    ) external payable returns (bool);
 
     function limitBuy(
         address base,
@@ -42,4 +66,9 @@ interface IEngine {
         address base,
         address quote
     ) external returns (address book);
+
+    function getPair(
+        address base,
+        address quote
+    ) external view returns (address book);
 }

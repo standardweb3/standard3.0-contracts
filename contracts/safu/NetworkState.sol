@@ -6,6 +6,7 @@ import {IWETH} from "./interfaces/IWETH.sol";
 import {TransferHelper} from "./libraries/TransferHelper.sol";
 import {IERC721Minimal} from "./interfaces/IERC721Minimal.sol";
 import {IBond} from "./interfaces/IBond.sol";
+import {IERC20Minimal} from "./interfaces/IERC20Minimal.sol";
 
 contract NetworkState is Initializable {
     using NetworkStateLibrary for NetworkStateLibrary.State;
@@ -72,12 +73,21 @@ contract NetworkState is Initializable {
         return state._getCDP(collateral_);
     }
 
-    function createBond(
+    function borrow(
         address collateral_,
         uint cAmount_,
-        uint dAmount_
+        uint dAmount_,
+        uint128 id_
     ) external returns (address bond) {
-        return state._createBond(collateral_, cAmount_, dAmount_);
+        if (id_ == 0) {
+            // create bond
+            bond = state._createBond(collateral_, cAmount_, dAmount_);
+            IERC20Minimal(state.currency).mint(msg.sender, dAmount_);
+        } else {
+            // borrow more from existing bond
+            bond = state._predictAddress(collateral_, state.currency, id_);
+            // TODO: get margin from bond and check if it exceeeds the amount
+        }
     }
 
     function createBondETH(
@@ -97,7 +107,7 @@ contract NetworkState is Initializable {
     }
 
     function _takeFee(uint256 amount) internal {
-       // state._takeFee();
+        // state._takeFee();
     }
 
     modifier onlyBondOwner(uint256 id) {
@@ -107,23 +117,28 @@ contract NetworkState is Initializable {
         }
         _;
     }
-    
+
     function depositCollateral(
         uint128 id,
-        address collateral, 
+        address collateral,
         uint256 amount
-    ) public onlyBondOwner(id) returns (bool success)  {
+    ) public onlyBondOwner(id) returns (bool success) {
         address bond = state._predictAddress(collateral, state.currency, id);
-        TransferHelper.safeTransferFrom(collateral, msg.sender, address(this), amount);
+        TransferHelper.safeTransferFrom(
+            collateral,
+            msg.sender,
+            address(this),
+            amount
+        );
         TransferHelper.safeTransfer(collateral, bond, amount);
         //return state._depositCollateral(id, amount);
     }
 
     function depositCollateralETH(
         uint128 id,
-        address collateral, 
+        address collateral,
         uint256 amount
-    ) external payable onlyBondOwner(id) returns (bool success)  {
+    ) external payable onlyBondOwner(id) returns (bool success) {
         address bond = state._predictAddress(collateral, state.currency, id);
         IWETH(state.weth).deposit{value: msg.value}();
         TransferHelper.safeTransfer(collateral, bond, amount);
@@ -131,7 +146,7 @@ contract NetworkState is Initializable {
 
     function withdrawCollateral(
         uint128 id,
-        address collateral, 
+        address collateral,
         uint256 amount
     ) external onlyBondOwner(id) returns (bool success) {
         address bond = state._predictAddress(collateral, state.currency, id);
@@ -141,20 +156,20 @@ contract NetworkState is Initializable {
 
     function borrowMore(
         uint128 id,
-        address collateral, 
+        address collateral,
         uint256 amount
     ) external onlyBondOwner(id) returns (bool success) {
         address bond = state._predictAddress(collateral, state.currency, id);
-        //return state._borrowMore(id, amount);
+        return state._borrowMore(id, collateral, amount);
     }
 
     function payBackDebt(
         uint128 id,
-        address collateral, 
+        address collateral,
         uint256 amount
     ) external onlyBondOwner(id) returns (bool success) {
         address bond = state._predictAddress(collateral, state.currency, id);
-        //return state._payBackDebt(id, amount);
+        //return state._payBackDebt(bond, id, amount);
     }
 
     function liquidate(
@@ -166,8 +181,7 @@ contract NetworkState is Initializable {
         //return state._liquidate(collateral_, debt_, id);
     }
 
-    function market() external view returns(address) {
+    function market() external view returns (address) {
         return state.market;
     }
-
 }

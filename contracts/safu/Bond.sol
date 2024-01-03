@@ -12,21 +12,21 @@ import "./interfaces/IWETH.sol";
 import "./interfaces/IEngine.sol";
 import "./interfaces/ISAFU.sol";
 
-contract Bond  {
+contract Bond {
     /// Address of the state
-    address public  state;
+    address public state;
     /// Address of debt;
-    address public  debt;
+    address public debt;
     /// Address of vault ownership registry
-    address public  coupon;
+    address public coupon;
     /// Address of a collateral
-    address public  collateral;
+    address public collateral;
     /// Bond global identifier
-    uint128 public  id;
+    uint128 public id;
     /// Borrowed amount
-    uint256 public  borrow;
+    uint256 public borrow;
     /// Created block timestamp
-    uint256 public  createdAt;
+    uint256 public createdAt;
 
     constructor() public {
         state = msg.sender;
@@ -56,18 +56,18 @@ contract Bond  {
         uint128 vaultId_,
         address collateral_,
         address debt_,
-        address v1_,
+        address coupon_,
         uint256 amount_
     ) external onlyState {
         id = vaultId_;
         collateral = collateral_;
         debt = debt_;
-        coupon = v1_;
+        coupon = coupon_;
         borrow = amount_;
     }
 
     /// liquidate
-    function liquidate() external  {
+    function liquidate() external {
         require(
             !INetworkState(state).isValidCDP(
                 collateral,
@@ -79,17 +79,14 @@ contract Bond  {
         );
         // check the pair if it exists
         address market = INetworkState(state).market();
-        address pair = IEngine(market).getPair(
-            collateral,
-            debt
-        );
+        address pair = IEngine(market).getPair(collateral, debt);
         require(pair != address(0), "Vault: Liquidating pair not supported");
         uint256 balance = IERC20Minimal(collateral).balanceOf(address(this));
         uint256 lfr = INetworkState(state).getLFR(collateral);
         uint256 liquidationFee = (lfr * balance) / 100;
         uint256 left = _sendFee(collateral, balance, liquidationFee);
         // Distribute collaterals
-        IEngine(market).marketSell(collateral, debt, left);
+        IEngine(market).marketSell(collateral, debt, left, true, 10, 0);
         // burn vault nft
         _burnV1FromVault();
         //emit Liquidated(address(this), collateral, balance);
@@ -97,27 +94,18 @@ contract Bond  {
         selfdestruct(payable(msg.sender));
     }
 
-    
-
     /// Deposit collateral
-    function depositCollateral(uint256 amount_)
-        external
-        onlyBondOwner
-    {
+    function depositCollateral(uint256 amount_) external onlyBondOwner {
         TransferHelper.safeTransferFrom(
             collateral,
             msg.sender,
             address(this),
             amount_
         );
-        //emit DepositCollateral(vaultId, amount_);
     }
 
     /// Withdraw collateral
-    function withdrawCollateral(uint256 amount_)
-        external
-        onlyBondOwner
-    {
+    function withdrawCollateral(uint256 amount_) external onlyBondOwner {
         require(
             IERC20Minimal(collateral).balanceOf(address(this)) >= amount_,
             "Vault: Not enough collateral"
@@ -135,15 +123,14 @@ contract Bond  {
             );
         }
         TransferHelper.safeTransfer(collateral, msg.sender, amount_);
-        //emit WithdrawCollateral(vaultId, amount_);
     }
 
     /// Payback debt
-    function payDebt(uint256 amount_) external  onlyBondOwner {
+    function payDebt(uint256 amount_) external onlyBondOwner {
         // calculate debt with interest
         uint256 fee = _calculateFee();
         require(amount_ != 0, "Vault: amount is zero");
-        // send MTR to the vault
+        // send M1 to the vault
         TransferHelper.safeTransferFrom(
             debt,
             msg.sender,
@@ -151,20 +138,20 @@ contract Bond  {
             amount_
         );
         uint256 left = _sendFee(debt, amount_, fee);
-        _burnMTRFromVault(left);
+        _burnM1FromVault(left);
         borrow -= left;
-       //emit PayBack(vaultId, borrow, fee);
+        //emit PayBack(vaultId, borrow, fee);
     }
 
     /// Close CDP
-    function redeemBond(uint256 amount_) external  onlyBondOwner {
+    function redeemBond(uint256 amount_) external onlyBondOwner {
         // calculate debt with interest
         uint256 fee = _calculateFee();
         require(
             fee + borrow == amount_,
             "Vault: not enough balance to payback"
         );
-        // send MTR to the vault
+        // send M1 to the vault
         TransferHelper.safeTransferFrom(
             debt,
             msg.sender,
@@ -173,8 +160,8 @@ contract Bond  {
         );
         // send fee to the pool
         uint256 left = _sendFee(debt, amount_, fee);
-        // burn mtr debt with interest
-        _burnMTRFromVault(left);
+        // burn M1 debt with interest
+        _burnM1FromVault(left);
         // burn vault nft
         _burnV1FromVault();
         //emit CloseVault(address(this), amount_, fee);
@@ -182,13 +169,20 @@ contract Bond  {
         selfdestruct(payable(msg.sender));
     }
 
+    /// get amount left to borrow
+    function getMargin(uint256 mcr) external view returns (uint256 available) {
+        return
+            ((IERC20Minimal(collateral).balanceOf(address(this)) / mcr) *
+                100000) - borrow;
+    }
+
     /// burn vault v1
     function _burnV1FromVault() internal {
         ICoupon(coupon).burnFromVault(id);
     }
 
-    /// burn vault mtr
-    function _burnMTRFromVault(uint256 amount_) internal {
+    /// burn vault M1
+    function _burnM1FromVault(uint256 amount_) internal {
         ISAFU(debt).burnFrom(msg.sender, amount_);
     }
 
@@ -203,7 +197,7 @@ contract Bond  {
         return (sfrTimesV / 100) * duration;
     }
 
-    function getDebt() external  returns (uint256) {
+    function getDebt() external returns (uint256) {
         return _calculateFee() + borrow;
     }
 

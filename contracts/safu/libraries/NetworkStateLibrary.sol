@@ -154,10 +154,21 @@ library NetworkStateLibrary {
         address debt_,
         uint128 id_
     ) public returns (bool) {
+        // TODO: modify liquidator validation
         if (msg.sender != self.liquidator) revert InvalidAccess(msg.sender, self.liquidator);
         address bond = _predictAddress(self, collateral_, debt_, id_);
         IBond(bond).liquidate();
         return true;
+    }
+
+    function _borrowMore(
+        State storage self,
+        uint128 id_,
+        address collateral_, 
+        uint256 amount_
+    ) public returns (bool) {
+        address bond = _predictAddress(self, collateral_, self.currency, id_);
+        //IBond(bond).borrowMore();
     }
 
     function _predictAddress(

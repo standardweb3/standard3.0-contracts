@@ -133,7 +133,7 @@ contract FeeTierTest is SAFEXFeeTierSetup {
             true,
             1,
             0,
-            msg.sender
+            trader2
         );
         // match the order to make lmp so that accountant can report
         stablecoin.mint(address(trader1), 1000000000e18);
@@ -148,7 +148,7 @@ contract FeeTierTest is SAFEXFeeTierSetup {
             true,
             5,
             1,
-            msg.sender
+            trader1
         );
         vm.prank(trader1);
         matchingEngineFeeTier.limitBuy(
@@ -159,7 +159,7 @@ contract FeeTierTest is SAFEXFeeTierSetup {
             true,
             5,
             1,
-            msg.sender
+            trader1
         );
         vm.prank(trader1);
         matchingEngineFeeTier.cancelOrder(
@@ -186,7 +186,7 @@ contract FeeTierTest is SAFEXFeeTierSetup {
             true,
             1,
             2,
-            msg.sender
+            trader2
         );
         // match the order to make lmp so that accountant can report
         stablecoin.mint(address(trader1), 1000000000e18);
@@ -201,7 +201,7 @@ contract FeeTierTest is SAFEXFeeTierSetup {
             true,
             5,
             1,
-            msg.sender
+            trader1
         );
         vm.prank(trader1);
         matchingEngineFeeTier.limitBuy(
@@ -212,7 +212,7 @@ contract FeeTierTest is SAFEXFeeTierSetup {
             true,
             5,
             1,
-            msg.sender
+            trader1
         );
         vm.prank(trader1);
         matchingEngineFeeTier.cancelOrder(
@@ -234,7 +234,7 @@ contract FeeTierTest is SAFEXFeeTierSetup {
             true,
             1,
             2,
-            msg.sender
+            trader2
         );
     }
 

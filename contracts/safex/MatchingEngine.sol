@@ -155,7 +155,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             orderData.withoutFee,
             orderData.lmp == 0 ? mktPrice(base, quote) : orderData.lmp,
             true,
-            isMaker
+            isMaker,
+            recipient
         );
 
         return true;
@@ -208,7 +209,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             orderData.withoutFee,
             orderData.lmp == 0 ? mktPrice(base, quote) : orderData.lmp,
             false,
-            isMaker
+            isMaker,
+            recipient
         );
         return true;
     }
@@ -306,7 +308,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             orderData.withoutFee,
             orderData.clear ? price : orderData.lmp == 0 ? price : orderData.lmp,
             true,
-            isMaker
+            isMaker,
+            recipient
         );
         return true;
     }
@@ -360,7 +363,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             orderData.withoutFee,
             orderData.clear ? price : orderData.lmp == 0 ? price : orderData.lmp,
             false,
-            isMaker
+            isMaker,
+            recipient
         );
         return true;
     }
@@ -784,21 +788,23 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
      * @param withoutFee The remaining amount of the asset after the market order has been executed
      * @param price The price, base/quote regardless of decimals of the assets in the pair represented with 8 decimals (if 1000, base is 1000x quote)
      * @param isBid Boolean indicating if the order is a buy (false) or a sell (true)
+     * @param recipient The address of the recipient to receive traded asset and claim ownership of made order
      */
     function _makeOrder(
         address orderbook,
         uint256 withoutFee,
         uint256 price,
-        bool isBid
+        bool isBid,
+        address recipient
     ) internal {
         uint32 id;
         // create order
         if (isBid) {
-            id = IOrderbook(orderbook).placeBid(msg.sender, price, withoutFee);
+            id = IOrderbook(orderbook).placeBid(recipient, price, withoutFee);
         } else {
-            id = IOrderbook(orderbook).placeAsk(msg.sender, price, withoutFee);
+            id = IOrderbook(orderbook).placeAsk(recipient, price, withoutFee);
         }
-        emit OrderPlaced(orderbook, msg.sender, price, isBid, id);
+        emit OrderPlaced(orderbook, recipient, price, isBid, id);
     }
 
     /**
@@ -975,6 +981,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
      * @param price The price used to determine if an order can be made
      * @param isBid Boolean indicating if the order was a buy (true) or a sell (false)
      * @param isMaker Boolean indicating if an order is for storing in orderbook
+     * @param recipient The address to receive asset after matching a trade and making an order
      */
     function _detMake(
         address base,
@@ -983,16 +990,17 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint256 remaining,
         uint256 price,
         bool isBid,
-        bool isMaker
+        bool isMaker,
+        address recipient
     ) internal {
         if (remaining > 0) {
-            address stopTo = isMaker ? orderbook : msg.sender;
+            address stopTo = isMaker ? orderbook : recipient;
             TransferHelper.safeTransfer(
                 isBid ? quote : base,
                 stopTo,
                 remaining
             );
-            if (isMaker) _makeOrder(orderbook, remaining, price, isBid);
+            if (isMaker) _makeOrder(orderbook, remaining, price, isBid, recipient);
         }
     }
 

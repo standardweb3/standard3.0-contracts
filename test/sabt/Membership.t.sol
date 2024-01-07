@@ -122,7 +122,8 @@ contract MembershipBaseSetup is Test {
             1000e10,
             true,
             1,
-            1
+            1,
+            msg.sender
         );
         // match the order to make lmp so that accountant can report
         vm.prank(trader1);
@@ -135,7 +136,8 @@ contract MembershipBaseSetup is Test {
             1000e10,
             true,
             1,
-            1
+            1,
+            msg.sender
         );
     }
 }

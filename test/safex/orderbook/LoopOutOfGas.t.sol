@@ -39,7 +39,8 @@ contract LoopOutOfGasTest is BaseSetup {
             10,
             true,
             2,
-            0
+            0,
+            trader1
         );
         vm.prank(trader1);
         matchingEngine.limitBuy(
@@ -49,7 +50,8 @@ contract LoopOutOfGasTest is BaseSetup {
             10,
             true,
             2,
-            0
+            0,
+            trader1
         );
         vm.prank(trader1);
         matchingEngine.limitBuy(
@@ -59,7 +61,8 @@ contract LoopOutOfGasTest is BaseSetup {
             10,
             true,
             2,
-            0
+            0,
+            trader1
         );
         vm.prank(trader1);
         //vm.expectRevert("OutOfGas");
@@ -70,7 +73,8 @@ contract LoopOutOfGasTest is BaseSetup {
             10,
             true,
             2,
-            0
+            0,
+            trader1
         );
     }
 
@@ -94,7 +98,8 @@ contract LoopOutOfGasTest is BaseSetup {
             5e7,
             true,
             2,
-            0
+            0,
+            trader1
         );
         vm.prank(trader1);
         matchingEngine.limitSell(
@@ -104,7 +109,8 @@ contract LoopOutOfGasTest is BaseSetup {
             2e7,
             true,
             2,
-            0
+            0,
+            trader1
         );
         vm.prank(trader1);
         matchingEngine.limitSell(
@@ -114,7 +120,8 @@ contract LoopOutOfGasTest is BaseSetup {
             2e7,
             true,
             2,
-            0
+            0,
+            trader1
         );
         vm.prank(trader1);
         //vm.expectRevert("OutOfGas");
@@ -125,7 +132,8 @@ contract LoopOutOfGasTest is BaseSetup {
             2e7,
             true,
             2,
-            0
+            0,
+            trader1
         );
     }
 
@@ -149,7 +157,8 @@ contract LoopOutOfGasTest is BaseSetup {
             2e7,
             true,
             2,
-            0
+            0,
+            trader1
         );
         vm.prank(trader1);
         //vm.expectRevert("OutOfGas");
@@ -160,7 +169,8 @@ contract LoopOutOfGasTest is BaseSetup {
             1e8,
             true,
             2,
-            0
+            0,
+            trader1
         );
     }
 }

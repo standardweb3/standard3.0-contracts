@@ -35,7 +35,8 @@ contract OrderMatchTest is BaseSetup {
             10000e18,
             true,
             2,
-            0
+            0,
+            trader1
         );
         console.log("Ask Orders: ");
         ExchangeOrderbook.Order[] memory askOrders0 = matchingEngine.getOrders(
@@ -56,7 +57,8 @@ contract OrderMatchTest is BaseSetup {
             10000e18,
             false,
             2,
-            0
+            0,
+            trader1
         );
         (uint256 bidHead, uint256 askHead) = book.heads();
         console.log(bidHead, askHead);
@@ -82,7 +84,8 @@ contract OrderMatchTest is BaseSetup {
             10000e18,
             true,
             2,
-            0
+            0,
+            trader1
         );
     }
 
@@ -106,7 +109,8 @@ contract OrderMatchTest is BaseSetup {
             3000e18,
             true,
             2,
-            0
+            0,
+            trader2
         );
 
         ExchangeOrderbook.Order[] memory bidOrders0 = matchingEngine.getOrders(
@@ -142,7 +146,8 @@ contract OrderMatchTest is BaseSetup {
             1e18,
             true,
             2,
-            0
+            0,
+            trader1
         );
 
         ExchangeOrderbook.Order[] memory bidOrders = matchingEngine.getOrders(
@@ -180,7 +185,8 @@ contract OrderMatchTest is BaseSetup {
             1e18,
             true,
             2,
-            0
+            0,
+            trader2
         );
     }
 
@@ -204,7 +210,8 @@ contract OrderMatchTest is BaseSetup {
             10,
             true,
             2,
-            0
+            0,
+            trader1
         );
     }
 }

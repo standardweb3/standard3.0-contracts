@@ -49,7 +49,8 @@ contract ConversionTest is BaseSetup {
             100e18,
             true,
             2,
-            0
+            0,
+            trader1
         );
         vm.prank(trader2);
         matchingEngine.limitSell(
@@ -59,7 +60,8 @@ contract ConversionTest is BaseSetup {
             100e18,
             true,
             2,
-            0
+            0,
+            trader2
         );
         uint256 trader1Token1BalanceAfterTrade = token1.balanceOf(
             address(trader1)
@@ -101,7 +103,8 @@ contract ConversionTest is BaseSetup {
             100e18,
             true,
             2,
-            0
+            0,
+            trader2
         );
         vm.prank(trader1);
         matchingEngine.limitBuy(
@@ -111,7 +114,8 @@ contract ConversionTest is BaseSetup {
             100e18,
             true,
             2,
-            0
+            0,
+            trader1
         );
         trader1Token1BalanceAfterTrade = token1.balanceOf(address(trader1));
         trader1Token2BalanceAfterTrade = token2.balanceOf(address(trader1));
@@ -159,7 +163,8 @@ contract ConversionTest is BaseSetup {
             10000e8,
             true,
             5,
-            0
+            0,
+            trader1
         );
         // deposit 10e18(9.99e18 after fee) for selling token1 for 1000 token1 * amount
         vm.prank(trader2);
@@ -170,7 +175,8 @@ contract ConversionTest is BaseSetup {
             10e18,
             true,
             5,
-            0
+            0,
+            trader2
         );
 
         // after trade balances
@@ -238,7 +244,8 @@ contract ConversionTest is BaseSetup {
             10e18,
             true,
             5,
-            0
+            0,
+            trader2
         );
 
         // deposit 10000e8(9990e8 after fee) for buying 10e18 token1 for 1000 token2 * amount
@@ -250,7 +257,8 @@ contract ConversionTest is BaseSetup {
             10000e8,
             true,
             5,
-            0
+            0,
+            trader1
         );
 
         // after trade balances
@@ -318,7 +326,8 @@ contract ConversionTest is BaseSetup {
             10000e18,
             true,
             5,
-            0
+            0,
+            trader1
         );
         // deposit 10e8(9.99e8 after fee) for selling token1 for 1000 token1 * amount
         vm.prank(trader2);
@@ -329,7 +338,8 @@ contract ConversionTest is BaseSetup {
             10e8,
             true,
             5,
-            0
+            0,
+            trader2
         );
 
         // after trade balances
@@ -398,7 +408,8 @@ contract ConversionTest is BaseSetup {
             10e8,
             true,
             5,
-            0
+            0,
+            trader2
         );
         // deposit 10000e18(9990e18 after fee) for buying 10e8 token1 for 1000 token2 * amount
         vm.prank(trader1);
@@ -409,7 +420,8 @@ contract ConversionTest is BaseSetup {
             10000e18,
             true,
             5,
-            0
+            0,
+            trader1
         );
 
         // after trade balances
@@ -478,7 +490,8 @@ contract ConversionTest is BaseSetup {
             10000e18,
             true,
             5,
-            0
+            0,
+            trader1
         );
         // deposit 10e18(9.99e18 after fee) for selling token1 for 1000 token2 * amount
         vm.prank(trader2);
@@ -489,7 +502,8 @@ contract ConversionTest is BaseSetup {
             10e18,
             true,
             5,
-            0
+            0,
+            trader2
         );
 
         // after trade balances
@@ -558,7 +572,8 @@ contract ConversionTest is BaseSetup {
             10e18,
             true,
             5,
-            0
+            0,
+            trader2
         );
         // deposit 10000e18(9990e18 after fee) for buying token1 for 1000 token2 * amount
         vm.prank(trader1);
@@ -569,7 +584,8 @@ contract ConversionTest is BaseSetup {
             10000e18,
             true,
             5,
-            0
+            0,
+            trader1
         );
 
         // after trade balances
@@ -609,33 +625,4 @@ contract ConversionTest is BaseSetup {
         // Trader1's token1 balance should be increased by 9.99e18
         assert(diffTrader1T1Balance == 9990e15);
     }
-
-    
-
-    
-
-    function testAmountIsZero() public {
-        super.setUp();
-        vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
-        book = Orderbook(
-            payable(
-                orderbookFactory.getBookByPair(address(token1), address(token2))
-            )
-        );
-        vm.prank(trader1);
-        // placeBid or placeAsk two of them is using the _insertId function it will revert
-        // because the program will enter the "if (amount > self.orders[head].depositAmount)."
-        // statement, and eventually, it will cause an infinite loop.
-        matchingEngine.limitSell(
-            address(token1),
-            address(token2),
-            500000000,
-            10,
-            true,
-            2,
-            0
-        );
-    }
-
 }

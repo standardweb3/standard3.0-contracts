@@ -38,7 +38,8 @@ contract GetterTest is BaseSetup {
             10,
             true,
             2,
-            0
+            0,
+            trader1
         );
 
         vm.prank(trader1);
@@ -50,7 +51,8 @@ contract GetterTest is BaseSetup {
             10,
             true,
             2,
-            0
+            0,
+            trader1
         );
 
         vm.prank(trader1);
@@ -61,7 +63,8 @@ contract GetterTest is BaseSetup {
             10,
             true,
             5,
-            0
+            0,
+            trader1
         );
 
         vm.prank(trader1);
@@ -72,7 +75,8 @@ contract GetterTest is BaseSetup {
             10,
             true,
             5,
-            0
+            0,
+            trader1
         );
         uint256[] memory bidPrices = matchingEngine.getPrices(
             address(token1),
@@ -117,7 +121,8 @@ contract GetterTest is BaseSetup {
             10,
             true,
             2,
-            0
+            0,
+            trader1
         );
         vm.prank(trader1);
         //vm.expectRevert("OutOfGas");
@@ -128,7 +133,8 @@ contract GetterTest is BaseSetup {
             10,
             true,
             2,
-            0
+            0,
+            trader1
         );
         vm.prank(trader1);
         matchingEngine.limitSell(
@@ -138,7 +144,8 @@ contract GetterTest is BaseSetup {
             10,
             true,
             5,
-            0
+            0,
+            trader1
         );
         vm.prank(trader1);
         matchingEngine.limitBuy(
@@ -148,7 +155,8 @@ contract GetterTest is BaseSetup {
             998,
             true,
             5,
-            0
+            0,
+            trader1
         );
         vm.prank(trader1);
         matchingEngine.limitBuy(
@@ -158,7 +166,8 @@ contract GetterTest is BaseSetup {
             999,
             true,
             5,
-            0
+            0,
+            trader1
         );
         vm.prank(trader1);
         matchingEngine.limitBuy(
@@ -168,7 +177,8 @@ contract GetterTest is BaseSetup {
             997,
             true,
             5,
-            0
+            0,
+            trader1
         );
         uint256[] memory bidPrices = matchingEngine.getPrices(
             address(token1),
@@ -213,7 +223,8 @@ contract GetterTest is BaseSetup {
             10,
             true,
             2,
-            0
+            0,
+            trader1
         );
         vm.prank(trader1);
         //vm.expectRevert("OutOfGas");
@@ -224,7 +235,8 @@ contract GetterTest is BaseSetup {
             10,
             true,
             2,
-            0
+            0,
+            trader1
         );
         vm.prank(trader1);
         matchingEngine.limitBuy(
@@ -234,7 +246,8 @@ contract GetterTest is BaseSetup {
             10,
             true,
             5,
-            0
+            0,
+            trader1
         );
 
         console.log("Bid orders: ");
@@ -271,7 +284,8 @@ contract GetterTest is BaseSetup {
             10,
             true,
             2,
-            0
+            0,
+            trader1
         );
         vm.prank(trader1);
         //vm.expectRevert("OutOfGas");
@@ -282,7 +296,8 @@ contract GetterTest is BaseSetup {
             10,
             true,
             2,
-            0
+            0,
+            trader1
         );
         console.log("Ask Head:");
         console.log(book.askHead());
@@ -338,7 +353,8 @@ contract GetterTest is BaseSetup {
             10,
             true,
             2,
-            0
+            0,
+            trader1
         );
         vm.prank(trader1);
         matchingEngine.limitSell(
@@ -348,7 +364,8 @@ contract GetterTest is BaseSetup {
             10,
             true,
             2,
-            0
+            0,
+            trader1
         );
         vm.prank(trader1);
         //vm.expectRevert("OutOfGas");
@@ -359,7 +376,8 @@ contract GetterTest is BaseSetup {
             5,
             true,
             2,
-            0
+            0,
+            trader1
         );
         vm.prank(trader1);
         //vm.expectRevert("OutOfGas");
@@ -370,7 +388,8 @@ contract GetterTest is BaseSetup {
             8,
             true,
             2,
-            0
+            0,
+            trader1
         );
         ExchangeOrderbook.Order[] memory orders = matchingEngine.getOrders(
             address(token1),

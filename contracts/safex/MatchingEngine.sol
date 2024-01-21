@@ -919,7 +919,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint32 i = 0;
         if (isBid) {
             // check if there is any matching ask order until matching ask order price is lower than the limit bid Price
-            uint256 askHead = IOrderbook(orderbook).askHead();
+            uint256 askHead = IOrderbook(orderbook).clearEmptyHead(false);
             while (
                 remaining > 0 && askHead != 0 && askHead <= limitPrice && i < n
             ) {
@@ -935,7 +935,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                     n
                 );
                 // i == 0 when orders are all empty and only head price is left
-                askHead = i == 0 ? 0 : IOrderbook(orderbook).askHead();
+                askHead = i == 0 ? 0 : IOrderbook(orderbook).clearEmptyHead(false);
             }
             // set last match price
             if (lmp != 0) {
@@ -944,7 +944,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             return (remaining, lmp, askHead == 0);
         } else {
             // check if there is any maching bid order until matching bid order price is higher than the limit ask price
-            uint256 bidHead = IOrderbook(orderbook).bidHead();
+            uint256 bidHead = IOrderbook(orderbook).clearEmptyHead(true);
             while (
                 remaining > 0 && bidHead != 0 && bidHead >= limitPrice && i < n
             ) {
@@ -960,7 +960,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                     n
                 );
                 // i == 0 when orders are all empty and only head price is left
-                bidHead = i == 0 ? 0 : IOrderbook(orderbook).bidHead();
+                bidHead = i == 0 ? 0 : IOrderbook(orderbook).clearEmptyHead(true);
             }
             // set last match price
             if (lmp != 0) {

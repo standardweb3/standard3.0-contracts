@@ -70,7 +70,7 @@ contract DeploySABTMainnetContracts is Deployer {
         Treasury(0x7a2e3a7A1bf8FaCCAd68115DC509DB5a5af4e7e4);
     uint32 constant spb = 12;
     address constant weth = 0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f; // weth on mainnet
-    address constant stablecoin = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48; // usdc on mainnet
+    address constant stablecoin = 0x176211869cA2b568f2A7D4EE941E073a821EE1ff; // usdc on mainnet
     address constant matchingEngine =
         0xa2F02d36206EDD2EAE9Fd5FBaBd90CdFCE939614;
     address constant orderbookFactory =
@@ -294,9 +294,9 @@ contract TestGetPrices is Deployer {
 
 contract ShowOrderbook is Deployer {
     address constant matching_engine_address =
-        0x2CC505C4bc86B28503B5b8C450407D32e5E20A9f;
-    address constant base_address = 0x176211869cA2b568f2A7D4EE941E073a821EE1ff;
-    address constant quote_address = 0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f;
+        0xa2F02d36206EDD2EAE9Fd5FBaBd90CdFCE939614;
+    address constant base_address = 0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f;
+    address constant quote_address = 0x176211869cA2b568f2A7D4EE941E073a821EE1ff; 
     MatchingEngine public matchingEngine =
         MatchingEngine(payable(matching_engine_address));
 
@@ -379,9 +379,9 @@ contract ShowOrderbook is Deployer {
     function run() external {
         _setDeployer();
         _showOrderbook(
-            MatchingEngine(payable(0x66a8b38D8B573Dbb6beBe163324b2DC0070d3430)),
-            0xA219439258ca9da29E9Cc4cE5596924745e12B93,
-            0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f
+            MatchingEngine(payable(matching_engine_address)),
+            base_address,
+            quote_address
         );
         vm.stopBroadcast();
     }

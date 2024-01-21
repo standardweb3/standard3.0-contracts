@@ -162,6 +162,20 @@ contract Orderbook is IOrderbook, Initializable {
         return order.owner;
     }
 
+    function clearEmptyHead(
+        bool isBid
+    ) external returns (uint256 head) {
+        head = isBid ? priceLists._bidHead() : priceLists._askHead();
+        uint32 orderId = isBid ? _bidOrders._head(head) : _askOrders._head(head);
+        while (orderId == 0 && head != 0) {
+            orderId = isBid ? _bidOrders._head(head) : _askOrders._head(head);
+            if(orderId == 0) {
+                head = priceLists._clearHead(isBid);
+            }
+        }
+        return head;
+    }
+
     function fpop(
         bool isBid,
         uint256 price,

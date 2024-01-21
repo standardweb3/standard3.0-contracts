@@ -158,6 +158,18 @@ library ExchangeLinkedList {
     }
   }
 
+  function _clearHead(
+    PriceLinkedList storage self,
+    bool isBid
+  ) internal returns (uint256 newHead) {
+    if(isBid) {
+      self.bidHead = self.bidPrices[self.bidHead];
+    } else {
+      self.askHead = self.askPrices[self.askHead];
+    }
+    return isBid ? self.bidHead : self.askHead;
+  }
+
   function _delete(
     PriceLinkedList storage self,
     bool isBid,

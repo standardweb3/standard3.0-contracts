@@ -529,7 +529,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
      * @param price The price of the order to cancel
      * @param isBid Boolean indicating if the order to cancel is an ask order
      * @param orderId The ID of the order to cancel
-     * @return bool True if the order was successfully canceled, otherwise false.
+     * @return refunded Refunded amount from order
      */
     function cancelOrder(
         address base,
@@ -538,7 +538,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool isBid,
         uint32 orderId,
         uint32 uid
-    ) public nonReentrant returns (bool) {
+    ) public nonReentrant returns (uint256 refunded) {
         address orderbook = IOrderbookFactory(orderbookFactory).getPair(
             base,
             quote
@@ -567,7 +567,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         }
 
         emit OrderCanceled(orderbook, isBid, orderId, msg.sender);
-        return true;
+        return remaining;
     }
 
     function cancelOrders(
@@ -577,9 +577,10 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool[] memory isBid,
         uint32[] memory orderIds,
         uint32 uid
-    ) external returns (bool) {
+    ) external returns (uint256[] memory refunded) {
+        refunded = new uint256[](orderIds.length);
         for (uint32 i = 0; i < orderIds.length; i++) {
-            cancelOrder(
+            refunded[i] = cancelOrder(
                 base[i],
                 quote[i],
                 prices[i],
@@ -588,7 +589,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                 uid
             );
         }
-        return true;
+        return refunded;
     }
 
     /**
@@ -700,6 +701,19 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         address orderbook
     ) external view returns (address base, address quote) {
         return IOrderbookFactory(orderbookFactory).getBaseQuote(orderbook);
+    }
+
+    /**
+     * @dev Returns the orderbook address from base and quote.
+     * @param base The address of the base asset.
+     * @param quote The address of the quote asset.
+     * @return orderbook The address of the orderbook from the base and quote asset addresses.
+     */
+    function getPair(
+        address base,
+        address quote
+    ) external view returns (address orderbook) {
+        return IOrderbookFactory(orderbookFactory).getPair(base, quote);
     }
 
     /**

@@ -55,15 +55,15 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         address indexed orderbook,
         uint256 id,
         bool isBid,
-        address sender,
-        address owner,
+        uint256 price,
         uint256 amount,
-        uint256 price
+        address sender,
+        address owner
     );
 
     event OrderPlaced(
         address orderbook,
-        address indexed sender,
+        address indexed owner,
         uint256 price,
         bool isBid,
         uint256 orderId
@@ -976,10 +976,10 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                     orderbook,
                     orderId,
                     isBid,
-                    recipient,
-                    owner,
+                    price,
                     remaining,
-                    price
+                    recipient,
+                    owner
                 );
                 // end loop as remaining is 0
                 return (0, n);
@@ -1005,10 +1005,10 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                     orderbook,
                     orderId,
                     isBid,
-                    recipient,
-                    owner,
+                    price,
                     required,
-                    price
+                    recipient,
+                    owner
                 );
                 ++i;
             }

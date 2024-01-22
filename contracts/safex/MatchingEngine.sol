@@ -76,6 +76,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
     error NotContract(address newImpl);
     error InvalidRole(bytes32 role, address sender);
     error OrderSizeTooSmall(uint256 amount, uint256 minRequired);
+    error NoOrderMade(address base, address quote);
 
     constructor() {}
 
@@ -113,7 +114,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
      * @param isMaker Boolean indicating if a order should be made at the market price in orderbook
      * @param n The maximum number of orders to match in the orderbook
      * @param recipient The address of the order owner
-     * @return clear True if the order was successfully executed, otherwise false.
+     * @return makePrice price where the order is placed
+     * @return matched matched amount
+     * @return placed placed amount
      */
     function marketBuy(
         address base,
@@ -123,7 +126,11 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint32 n,
         uint32 uid,
         address recipient
-    ) public nonReentrant returns (bool clear) {
+    )
+        public
+        nonReentrant
+        returns (uint256 makePrice, uint256 matched, uint256 placed)
+    {
         OrderData memory orderData;
         // reuse quoteAmount variable as minRequired from _deposit to avoid stack too deep error
         (orderData.withoutFee, orderData.orderbook) = _deposit(
@@ -147,19 +154,27 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             n
         );
 
+        if(orderData.lmp == 0) {
+            orderData.lmp = mktPrice(base, quote);
+        }
+
         // add make order on market price
         _detMake(
             base,
             quote,
             orderData.orderbook,
             orderData.withoutFee,
-            orderData.lmp == 0 ? mktPrice(base, quote) : orderData.lmp,
+            orderData.lmp,
             true,
             isMaker,
             recipient
         );
 
-        return true;
+        return (
+            orderData.lmp,
+            quoteAmount - orderData.withoutFee,
+            orderData.withoutFee
+        );
     }
 
     /**
@@ -171,7 +186,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
      * @param baseAmount The amount of base asset to be sold in the market sell order
      * @param isMaker Boolean indicating if an order should be made at the market price in orderbook
      * @param n The maximum number of orders to match in the orderbook
-     * @return clear True if the order was successfully executed, otherwise false.
+     * @return makePrice price where the order is placed
+     * @return matched matched amount
+     * @return placed placed amount
      */
     function marketSell(
         address base,
@@ -181,7 +198,11 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint32 n,
         uint32 uid,
         address recipient
-    ) public nonReentrant returns (bool clear) {
+    )
+        public
+        nonReentrant
+        returns (uint256 makePrice, uint256 matched, uint256 placed)
+    {
         OrderData memory orderData;
         (orderData.withoutFee, orderData.orderbook) = _deposit(
             base,
@@ -202,17 +223,26 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             0,
             n
         );
+
+        if(orderData.lmp == 0) {
+            orderData.lmp = mktPrice(base, quote);
+        }
+
         _detMake(
             base,
             quote,
             orderData.orderbook,
             orderData.withoutFee,
-            orderData.lmp == 0 ? mktPrice(base, quote) : orderData.lmp,
+            orderData.lmp,
             false,
             isMaker,
             recipient
         );
-        return true;
+        return (
+            orderData.lmp,
+            baseAmount - orderData.withoutFee,
+            orderData.withoutFee
+        );
     }
 
     /**
@@ -223,7 +253,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
      * @param isMaker Boolean indicating if a order should be made at the market price in orderbook
      * @param n The maximum number of orders to match in the orderbook
      * @param recipient The address of the recipient to receive traded asset and claim ownership of made order
-     * @return bool True if the order was successfully executed, otherwise false.
+     * @return makePrice price where the order is placed
+     * @return matched matched amount
+     * @return placed placed amount
      */
     function marketBuyETH(
         address base,
@@ -231,7 +263,11 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint32 n,
         uint32 uid,
         address recipient
-    ) external payable returns (bool) {
+    )
+        external
+        payable
+        returns (uint256 makePrice, uint256 matched, uint256 placed)
+    {
         IWETH(WETH).deposit{value: msg.value}();
         return marketBuy(base, WETH, msg.value, isMaker, n, uid, recipient);
     }
@@ -244,7 +280,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
      * @param isMaker Boolean indicating if an order should be made at the market price in orderbook
      * @param n The maximum number of orders to match in the orderbook
      * @param recipient The address of the recipient to receive traded asset and claim ownership of made order
-     * @return bool True if the order was successfully executed, otherwise false.
+     * @return makePrice price where the order is placed
+     * @return matched matched amount
+     * @return placed placed amount
      */
     function marketSellETH(
         address quote,
@@ -252,7 +290,11 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint32 n,
         uint32 uid,
         address recipient
-    ) external payable returns (bool) {
+    )
+        external
+        payable
+        returns (uint256 makePrice, uint256 matched, uint256 placed)
+    {
         IWETH(WETH).deposit{value: msg.value}();
         return marketSell(WETH, quote, msg.value, isMaker, n, uid, recipient);
     }
@@ -268,7 +310,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
      * @param isMaker Boolean indicating if an order should be made at the limit price
      * @param n The maximum number of orders to match in the orderbook
      * @param recipient The address of the recipient to receive traded asset and claim ownership of made order
-     * @return clear True if the order was successfully executed, otherwise false.
+     * @return makePrice price where the order is placed
+     * @return matched matched amount
+     * @return placed placed amount
      */
     function limitBuy(
         address base,
@@ -279,7 +323,11 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint32 n,
         uint32 uid,
         address recipient
-    ) public nonReentrant returns (bool clear) {
+    )
+        public
+        nonReentrant
+        returns (uint256 makePrice, uint256 matched, uint256 placed)
+    {
         OrderData memory orderData;
         (orderData.withoutFee, orderData.orderbook) = _deposit(
             base,
@@ -306,12 +354,18 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             orderData.orderbook,
             orderData.withoutFee,
-            orderData.clear ? price : orderData.lmp == 0 ? price : orderData.lmp,
+            orderData.clear ? price : orderData.lmp == 0
+                ? price
+                : orderData.lmp,
             true,
             isMaker,
             recipient
         );
-        return true;
+        return (
+            orderData.lmp,
+            quoteAmount - orderData.withoutFee,
+            orderData.withoutFee
+        );
     }
 
     /**
@@ -324,7 +378,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
      * @param baseAmount The amount of base asset to be used for the limit sell order
      * @param isMaker Boolean indicating if an order should be made at the limit price
      * @param n The maximum number of orders to match in the orderbook
-     * @return clear  True if the order was successfully executed, otherwise false.
+     * @return makePrice price where the order is placed
+     * @return matched matched amount
+     * @return placed placed amount
      */
     function limitSell(
         address base,
@@ -335,7 +391,11 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint32 n,
         uint32 uid,
         address recipient
-    ) public nonReentrant returns (bool clear) {
+    )
+        public
+        nonReentrant
+        returns (uint256 makePrice, uint256 matched, uint256 placed)
+    {
         OrderData memory orderData;
         (orderData.withoutFee, orderData.orderbook) = _deposit(
             base,
@@ -361,12 +421,18 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             orderData.orderbook,
             orderData.withoutFee,
-            orderData.clear ? price : orderData.lmp == 0 ? price : orderData.lmp,
+            orderData.clear ? price : orderData.lmp == 0
+                ? price
+                : orderData.lmp,
             false,
             isMaker,
             recipient
         );
-        return true;
+        return (
+            orderData.lmp,
+            baseAmount - orderData.withoutFee,
+            orderData.withoutFee
+        );
     }
 
     /**
@@ -377,7 +443,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
      * @param isMaker Boolean indicating if a order should be made at the market price in orderbook
      * @param n The maximum number of orders to match in the orderbook
      * @param recipient The address of the recipient to receive traded asset and claim ownership of made order
-     * @return bool True if the order was successfully executed, otherwise false.
+     * @return makePrice price where the order is placed
+     * @return matched matched amount
+     * @return placed placed amount
      */
     function limitBuyETH(
         address base,
@@ -386,9 +454,14 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint32 n,
         uint32 uid,
         address recipient
-    ) external payable returns (bool) {
+    )
+        external
+        payable
+        returns (uint256 makePrice, uint256 matched, uint256 placed)
+    {
         IWETH(WETH).deposit{value: msg.value}();
-        return limitBuy(base, WETH, price, msg.value, isMaker, n, uid, recipient);
+        return
+            limitBuy(base, WETH, price, msg.value, isMaker, n, uid, recipient);
     }
 
     /**
@@ -399,7 +472,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
      * @param isMaker Boolean indicating if an order should be made at the market price in orderbook
      * @param n The maximum number of orders to match in the orderbook
      * @param recipient The address of the recipient to receive traded asset and claim ownership of made order
-     * @return bool True if the order was successfully executed, otherwise false.
+     * @return makePrice price where the order is placed
+     * @return matched matched amount
+     * @return placed placed amount
      */
     function limitSellETH(
         address quote,
@@ -408,9 +483,23 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint32 n,
         uint32 uid,
         address recipient
-    ) external payable returns (bool) {
+    )
+        external
+        payable
+        returns (uint256 makePrice, uint256 matched, uint256 placed)
+    {
         IWETH(WETH).deposit{value: msg.value}();
-        return limitSell(WETH, quote, price, msg.value, isMaker, n, uid, recipient);
+        return
+            limitSell(
+                WETH,
+                quote,
+                price,
+                msg.value,
+                isMaker,
+                n,
+                uid,
+                recipient
+            );
     }
 
     /**
@@ -493,7 +582,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
      * @param orderId The ID of the order to cancel
      * @param isBid Boolean indicating if the order to cancel is an ask order
      * @param uid The ID of the user
-     * @return bool True if the order was successfully rematched, otherwise false.
+     * @return makePrice price where the order is placed
+     * @return matched matched amount of an order
+     * @return placed placed amount of an order
      */
     function rematchOrder(
         address base,
@@ -505,7 +596,11 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool isMaker,
         uint32 n,
         uint32 uid
-    ) external nonReentrant returns (bool) {
+    )
+        external
+        nonReentrant
+        returns (uint256 makePrice, uint256 matched, uint256 placed)
+    {
         address orderbook = IOrderbookFactory(orderbookFactory).getBookByPair(
             base,
             quote
@@ -529,14 +624,42 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                         msg.sender
                     );
             } else {
-                return limitBuy(base, quote, price, remaining, isMaker, n, uid, msg.sender);
+                return
+                    limitBuy(
+                        base,
+                        quote,
+                        price,
+                        remaining,
+                        isMaker,
+                        n,
+                        uid,
+                        msg.sender
+                    );
             }
         } else {
             if (isMarket) {
-                return marketSell(base, quote, remaining, isMaker, n, uid, msg.sender);
+                return
+                    marketSell(
+                        base,
+                        quote,
+                        remaining,
+                        isMaker,
+                        n,
+                        uid,
+                        msg.sender
+                    );
             } else {
                 return
-                    limitSell(base, quote, price, remaining, isMaker, n, uid, msg.sender);
+                    limitSell(
+                        base,
+                        quote,
+                        price,
+                        remaining,
+                        isMaker,
+                        n,
+                        uid,
+                        msg.sender
+                    );
             }
         }
     }
@@ -935,7 +1058,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                     n
                 );
                 // i == 0 when orders are all empty and only head price is left
-                askHead = i == 0 ? 0 : IOrderbook(orderbook).clearEmptyHead(false);
+                askHead = i == 0
+                    ? 0
+                    : IOrderbook(orderbook).clearEmptyHead(false);
             }
             // set last match price
             if (lmp != 0) {
@@ -960,7 +1085,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                     n
                 );
                 // i == 0 when orders are all empty and only head price is left
-                bidHead = i == 0 ? 0 : IOrderbook(orderbook).clearEmptyHead(true);
+                bidHead = i == 0
+                    ? 0
+                    : IOrderbook(orderbook).clearEmptyHead(true);
             }
             // set last match price
             if (lmp != 0) {
@@ -1000,7 +1127,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                 stopTo,
                 remaining
             );
-            if (isMaker) _makeOrder(orderbook, remaining, price, isBid, recipient);
+            if (isMaker)
+                _makeOrder(orderbook, remaining, price, isBid, recipient);
         }
     }
 

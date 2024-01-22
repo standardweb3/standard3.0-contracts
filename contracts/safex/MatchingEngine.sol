@@ -702,20 +702,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
     ) external view returns (address base, address quote) {
         return IOrderbookFactory(orderbookFactory).getBaseQuote(orderbook);
     }
-
-    /**
-     * @dev Returns the orderbook address from base and quote.
-     * @param base The address of the base asset.
-     * @param quote The address of the quote asset.
-     * @return orderbook The address of the orderbook from the base and quote asset addresses.
-     */
-    function getPair(
-        address base,
-        address quote
-    ) external view returns (address orderbook) {
-        return IOrderbookFactory(orderbookFactory).getPair(base, quote);
-    }
-
+    
     /**
      * @dev returns addresses of pairs in OrderbookFactory registry
      * @return pairs list of pairs from start to end

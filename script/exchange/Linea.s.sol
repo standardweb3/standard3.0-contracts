@@ -159,7 +159,7 @@ contract TestOrderbookSell is Deployer {
         _setDeployer();
 
         book = Orderbook(
-            payable(matchingEngine.getBookByPair(address(base), address(quote)))
+            payable(matchingEngine.getPair(address(base), address(quote)))
         );
 
         // make a price in matching engine where 1 feeToken = 1000 stablecoin with buy and sell order
@@ -213,7 +213,7 @@ contract TestOrderbookBuy is Deployer {
         _setDeployer();
 
         book = Orderbook(
-            payable(matchingEngine.getBookByPair(address(base), address(quote)))
+            payable(matchingEngine.getPair(address(base), address(quote)))
         );
 
         // make a price in matching engine where 1 feeToken = 1000 stablecoin with buy and sell order
@@ -301,7 +301,7 @@ contract ShowOrderbook is Deployer {
         MatchingEngine(payable(matching_engine_address));
 
     function _orderbookIsEmpty(address b_addr, address q_addr, uint256 price, bool isBid) internal view returns (bool) {
-        address orderbook = matchingEngine.getBookByPair(b_addr, q_addr);
+        address orderbook = matchingEngine.getPair(b_addr, q_addr);
         console.log("Orderbook", orderbook);
         return Orderbook(payable(orderbook)).isEmpty(isBid, price);
     }

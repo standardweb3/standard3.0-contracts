@@ -145,7 +145,7 @@ contract TestOrderbookSell is Deployer {
         _setDeployer();
 
         book = Orderbook(
-            payable(matchingEngine.getBookByPair(address(base), address(quote)))
+            payable(matchingEngine.getPair(address(base), address(quote)))
         );
 
         // make a price in matching engine where 1 feeToken = 1000 stablecoin with buy and sell order
@@ -197,7 +197,7 @@ contract TestOrderbookBuy is Deployer {
         _setDeployer();
 
         book = Orderbook(
-            payable(matchingEngine.getBookByPair(address(base), address(quote)))
+            payable(matchingEngine.getPair(address(base), address(quote)))
         );
 
         // make a price in matching engine where 1 feeToken = 1000 stablecoin with buy and sell order

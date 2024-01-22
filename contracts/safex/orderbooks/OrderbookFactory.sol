@@ -75,7 +75,7 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
         return allPairs[bookId_];
     }
 
-    function getBookByPair(
+    function getPair(
         address base,
         address quote
     ) external view override returns (address book) {

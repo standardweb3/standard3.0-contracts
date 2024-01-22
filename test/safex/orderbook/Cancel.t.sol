@@ -24,9 +24,7 @@ contract CancelTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            payable(
-                orderbookFactory.getBookByPair(address(token1), address(token2))
-            )
+            payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
@@ -98,14 +96,28 @@ contract CancelTest is BaseSetup {
 
         // cancel order
         vm.prank(trader1);
-        matchingEngine.cancelOrder(address(book), 500000000, false, 1, 0);
+        matchingEngine.cancelOrder(
+            address(token1),
+            address(token2),
+            500000000,
+            false,
+            1,
+            0
+        );
 
         // recheck orders
         _showOrderbook(matchingEngine, address(token1), address(token2));
 
         // cancel order
         vm.prank(trader1);
-        matchingEngine.cancelOrder(address(book), 500000000, false, 11, 0);
+        matchingEngine.cancelOrder(
+            address(token1),
+            address(token2),
+            500000000,
+            false,
+            11,
+            0
+        );
 
         // recheck orders
         _showOrderbook(matchingEngine, address(token1), address(token2));
@@ -132,9 +144,7 @@ contract CancelTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            payable(
-                orderbookFactory.getBookByPair(address(token1), address(token2))
-            )
+            payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
@@ -206,14 +216,28 @@ contract CancelTest is BaseSetup {
 
         // cancel order
         vm.prank(trader1);
-        matchingEngine.cancelOrder(address(book), 500000000, false, 1, 0);
+        matchingEngine.cancelOrder(
+            address(token1),
+            address(token2),
+            500000000,
+            false,
+            1,
+            0
+        );
 
         // recheck orders
         _showOrderbook(matchingEngine, address(token1), address(token2));
 
         // cancel order
         vm.prank(trader1);
-        matchingEngine.cancelOrder(address(book), 500000000, false, 11, 0);
+        matchingEngine.cancelOrder(
+            address(token1),
+            address(token2),
+            500000000,
+            false,
+            11,
+            0
+        );
 
         // recheck orders
         _showOrderbook(matchingEngine, address(token1), address(token2));
@@ -240,9 +264,7 @@ contract CancelTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            payable(
-                orderbookFactory.getBookByPair(address(token1), address(token2))
-            )
+            payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
@@ -314,7 +336,14 @@ contract CancelTest is BaseSetup {
 
         // cancel order
         vm.prank(trader1);
-        matchingEngine.cancelOrder(address(book), 500000000, false, 1, 0);
+        matchingEngine.cancelOrder(
+            address(token1),
+            address(token2),
+            500000000,
+            false,
+            1,
+            0
+        );
 
         // recheck orders
         _showOrderbook(matchingEngine, address(token1), address(token2));
@@ -322,7 +351,14 @@ contract CancelTest is BaseSetup {
         // cancel order
         vm.prank(trader1);
         vm.expectRevert();
-        matchingEngine.cancelOrder(address(book), 700000000, false, 11, 0);
+        matchingEngine.cancelOrder(
+            address(token1),
+            address(token2),
+            700000000,
+            false,
+            11,
+            0
+        );
 
         // recheck orders
         _showOrderbook(matchingEngine, address(token1), address(token2));
@@ -349,11 +385,8 @@ contract CancelTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            payable(
-                orderbookFactory.getBookByPair(address(token1), address(token2))
-            )
+            payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
-
 
         vm.prank(trader1);
         token1.approve(address(matchingEngine), 1000000000000000000e18);
@@ -396,10 +429,16 @@ contract CancelTest is BaseSetup {
         );
 
         vm.prank(trader1);
-        matchingEngine.cancelOrder(address(book), 1100e8, false, 3, 0);
+        matchingEngine.cancelOrder(
+            address(token1),
+            address(token2),
+            1100e8,
+            false,
+            3,
+            0
+        );
 
         //_showOrderbook(matchingEngine, address(token1), address(token2));
-
 
         vm.prank(trader1);
         matchingEngine.limitBuy(
@@ -421,19 +460,16 @@ contract CancelTest is BaseSetup {
         console.log(
             "minRequired base",
             matchingEngine.convert(address(token1), address(token2), 1, false)
-        );        
+        );
     }
 
     function testCancelAtHeadPrice() public {
-         super.setUp();
+        super.setUp();
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            payable(
-                orderbookFactory.getBookByPair(address(token1), address(token2))
-            )
+            payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
-
 
         vm.prank(trader1);
         token1.approve(address(matchingEngine), 1000000000000000000e18);
@@ -459,7 +495,14 @@ contract CancelTest is BaseSetup {
         console.log(bidHead, askHead);
 
         vm.prank(trader1);
-        matchingEngine.cancelOrder(address(book), 1000e8, true, 1, 0);
+        matchingEngine.cancelOrder(
+            address(token1),
+            address(token2),
+            1000e8,
+            true,
+            1,
+            0
+        );
 
         // Make sell orer then cancel at head price
         vm.prank(trader1);
@@ -482,7 +525,14 @@ contract CancelTest is BaseSetup {
         console.log(bidHead2, askHead2);
 
         vm.prank(trader1);
-        matchingEngine.cancelOrder(address(book), 1001e8, false, 1, 0);
+        matchingEngine.cancelOrder(
+            address(token1),
+            address(token2),
+            1001e8,
+            false,
+            1,
+            0
+        );
     }
 
     function testCancelOrderDeletion() public {
@@ -490,9 +540,7 @@ contract CancelTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            payable(
-                orderbookFactory.getBookByPair(address(token1), address(token2))
-            )
+            payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
@@ -562,7 +610,14 @@ contract CancelTest is BaseSetup {
         // cancel order
 
         vm.prank(trader1);
-        matchingEngine.cancelOrder(address(book), 100000000, false, 3, 0);
+        matchingEngine.cancelOrder(
+            address(token1),
+            address(token2),
+            100000000,
+            false,
+            3,
+            0
+        );
 
         ExchangeOrderbook.Order[] memory orders2 = matchingEngine.getOrders(
             address(token1),
@@ -577,12 +632,3 @@ contract CancelTest is BaseSetup {
         }
     }
 }
-
-
-
-
-
-
-
-
-    

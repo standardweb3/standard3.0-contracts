@@ -39,7 +39,13 @@ contract MarketOrderTest is BaseSetup {
         );
         console.log(bidHead, askHead);
         vm.prank(trader1);
-        matchingEngine.marketBuyETH{value: 1e18}(address(token1), true, 5, 0, trader1);
+        matchingEngine.marketBuyETH{value: 1e18}(
+            address(token1),
+            true,
+            5,
+            0,
+            trader1
+        );
         vm.prank(trader1);
         token1.approve(address(matchingEngine), 10e18);
         vm.prank(trader1);
@@ -72,7 +78,13 @@ contract MarketOrderTest is BaseSetup {
             trader1
         );
         vm.prank(trader1);
-        matchingEngine.marketSellETH{value: 1e18}(address(token1), true, 5, 0, trader1);
+        matchingEngine.marketSellETH{value: 1e18}(
+            address(token1),
+            true,
+            5,
+            0,
+            trader1
+        );
         vm.prank(trader1);
         token1.approve(address(matchingEngine), 10e18);
         vm.prank(trader1);
@@ -94,9 +106,7 @@ contract MarketOrderTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            payable(
-                orderbookFactory.getBookByPair(address(token1), address(token2))
-            )
+            payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
 
         vm.prank(trader1);
@@ -140,9 +150,23 @@ contract MarketOrderTest is BaseSetup {
         );
 
         vm.prank(trader1);
-        matchingEngine.cancelOrder(address(book), 1100e8, false, 1, 0);
+        matchingEngine.cancelOrder(
+            address(token1),
+            address(token2),
+            1100e8,
+            false,
+            1,
+            0
+        );
         vm.prank(trader1);
-        matchingEngine.cancelOrder(address(book), 1000e8, false, 2, 0);
+        matchingEngine.cancelOrder(
+            address(token1),
+            address(token2),
+            1000e8,
+            false,
+            2,
+            0
+        );
         ExchangeOrderbook.Order memory order = matchingEngine.getOrder(
             address(token1),
             address(token2),
@@ -151,8 +175,8 @@ contract MarketOrderTest is BaseSetup {
         );
         console.log("Order id 3: ", order.owner, order.depositAmount);
         _showOrderbook(matchingEngine, address(token1), address(token2));
-        
-        vm.prank(trader1);  
+
+        vm.prank(trader1);
         matchingEngine.marketBuy(
             address(token1),
             address(token2),
@@ -164,7 +188,10 @@ contract MarketOrderTest is BaseSetup {
             trader1
         );
 
-        console.log("Mkt Price: ", matchingEngine.mktPrice(address(token1), address(token2)));
+        console.log(
+            "Mkt Price: ",
+            matchingEngine.mktPrice(address(token1), address(token2))
+        );
 
         console.log(
             "minRequired quote",

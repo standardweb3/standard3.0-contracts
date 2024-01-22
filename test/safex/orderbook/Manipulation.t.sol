@@ -46,7 +46,7 @@ contract ManipulationTest is BaseSetup {
         );
         book = Orderbook(
             payable(
-                orderbookFactory.getBookByPair(address(token1), address(token2))
+                orderbookFactory.getPair(address(token1), address(token2))
             )
         );
         console.log("Market price before manipulation: ", book.mktPrice());

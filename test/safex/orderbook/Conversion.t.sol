@@ -25,7 +25,7 @@ contract ConversionTest is BaseSetup {
         matchingEngine.addPair(address(token1), address(token2));
         console.log(
             "Base/Quote Pair: ",
-            matchingEngine.getBookByPair(address(token1), address(token2))
+            matchingEngine.getPair(address(token1), address(token2))
         );
         console.log("Buy and sell with one price (Fee off)");
         vm.prank(trader1);
@@ -145,7 +145,7 @@ contract ConversionTest is BaseSetup {
         matchingEngine.addPair(address(token1), address(btc));
         book = Orderbook(
             payable(
-                orderbookFactory.getBookByPair(address(token1), address(btc))
+                orderbookFactory.getPair(address(token1), address(btc))
             )
         );
         // before trade balances
@@ -226,7 +226,7 @@ contract ConversionTest is BaseSetup {
         matchingEngine.addPair(address(token1), address(btc));
         book = Orderbook(
             payable(
-                orderbookFactory.getBookByPair(address(token1), address(btc))
+                orderbookFactory.getPair(address(token1), address(btc))
             )
         );
         // before trade balances
@@ -308,7 +308,7 @@ contract ConversionTest is BaseSetup {
         matchingEngine.addPair(address(btc), address(token2));
         book = Orderbook(
             payable(
-                orderbookFactory.getBookByPair(address(btc), address(token2))
+                orderbookFactory.getPair(address(btc), address(token2))
             )
         );
         // before trade balances
@@ -390,7 +390,7 @@ contract ConversionTest is BaseSetup {
         matchingEngine.addPair(address(btc), address(token2));
         book = Orderbook(
             payable(
-                orderbookFactory.getBookByPair(address(btc), address(token2))
+                orderbookFactory.getPair(address(btc), address(token2))
             )
         );
         // before trade balances
@@ -472,7 +472,7 @@ contract ConversionTest is BaseSetup {
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
             payable(
-                orderbookFactory.getBookByPair(address(token1), address(token2))
+                orderbookFactory.getPair(address(token1), address(token2))
             )
         );
         // before trade balances
@@ -554,7 +554,7 @@ contract ConversionTest is BaseSetup {
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
             payable(
-                orderbookFactory.getBookByPair(address(token1), address(token2))
+                orderbookFactory.getPair(address(token1), address(token2))
             )
         );
         // before trade balances

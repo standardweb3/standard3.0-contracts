@@ -47,7 +47,7 @@ contract PairTest is BaseSetup {
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
             payable(
-                orderbookFactory.getBookByPair(address(token1), address(token2))
+                orderbookFactory.getPair(address(token1), address(token2))
             )
         );
         vm.prank(trader1);
@@ -62,7 +62,7 @@ contract PairTest is BaseSetup {
         matchingEngine.addPair(address(token1), address(token3));
         book = Orderbook(
             payable(
-                orderbookFactory.getBookByPair(address(token1), address(token3))
+                orderbookFactory.getPair(address(token1), address(token3))
             )
         );
         vm.expectRevert();
@@ -83,7 +83,7 @@ contract PairTest is BaseSetup {
         matchingEngine.addPair(address(token1), address(token3));
         book = Orderbook(
             payable(
-                orderbookFactory.getBookByPair(address(token1), address(token3))
+                orderbookFactory.getPair(address(token1), address(token3))
             )
         );
     }

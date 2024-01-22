@@ -24,7 +24,7 @@ contract OrderMatchTest is BaseSetup {
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
             payable(
-                orderbookFactory.getBookByPair(address(token1), address(token2))
+                orderbookFactory.getPair(address(token1), address(token2))
             )
         );
         vm.prank(trader1);
@@ -95,7 +95,7 @@ contract OrderMatchTest is BaseSetup {
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
             payable(
-                orderbookFactory.getBookByPair(address(token1), address(token2))
+                orderbookFactory.getPair(address(token1), address(token2))
             )
         );
         vm.prank(trader2);
@@ -196,7 +196,7 @@ contract OrderMatchTest is BaseSetup {
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
             payable(
-                orderbookFactory.getBookByPair(address(token1), address(token2))
+                orderbookFactory.getPair(address(token1), address(token2))
             )
         );
         vm.prank(trader1);

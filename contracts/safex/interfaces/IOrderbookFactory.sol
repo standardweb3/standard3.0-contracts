@@ -12,7 +12,7 @@ interface IOrderbookFactory {
 
     function getBook(uint256 bookId_) external view returns (address orderbook);
 
-    function getBookByPair(address base, address quote) external view returns (address book);
+    function getPair(address base, address quote) external view returns (address);
 
     function getBaseQuote(address orderbook) external view returns (address base, address quote);
 

@@ -24,7 +24,7 @@ contract LimitOrderTest is BaseSetup {
         matchingEngine.addPair(address(token1), address(btc));
         console.log(
             "Base/Quote Pair: ",
-            matchingEngine.getBookByPair(address(token1), address(btc))
+            matchingEngine.getPair(address(token1), address(btc))
         );
         vm.prank(trader1);
         matchingEngine.limitBuy(
@@ -56,7 +56,7 @@ contract LimitOrderTest is BaseSetup {
         matchingEngine.addPair(address(token1), address(token2));
         console.log(
             "Base/Quote Pair: ",
-            matchingEngine.getBookByPair(address(token1), address(token2))
+            matchingEngine.getPair(address(token1), address(token2))
         );
         vm.prank(trader1);
         matchingEngine.limitBuy(

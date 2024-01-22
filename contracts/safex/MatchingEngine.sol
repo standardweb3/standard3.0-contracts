@@ -77,6 +77,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
     error InvalidRole(bytes32 role, address sender);
     error OrderSizeTooSmall(uint256 amount, uint256 minRequired);
     error NoOrderMade(address base, address quote);
+    error InvalidPair(address base, address quote, address pair);
 
     constructor() {}
 
@@ -154,7 +155,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             n
         );
 
-        if(orderData.lmp == 0) {
+        if (orderData.lmp == 0) {
             orderData.lmp = mktPrice(base, quote);
         }
 
@@ -224,7 +225,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             n
         );
 
-        if(orderData.lmp == 0) {
+        if (orderData.lmp == 0) {
             orderData.lmp = mktPrice(base, quote);
         }
 
@@ -523,21 +524,29 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
 
     /**
      * @dev Cancels an order in an orderbook by the given order ID and order type.
-     * @param orderbook The address of the orderbook to cancel the order in
+     * @param base The address of the base asset for the trading pair
+     * @param quote The address of the quote asset for the trading pair
      * @param price The price of the order to cancel
      * @param isBid Boolean indicating if the order to cancel is an ask order
      * @param orderId The ID of the order to cancel
      * @return bool True if the order was successfully canceled, otherwise false.
      */
     function cancelOrder(
-        address orderbook,
+        address base,
+        address quote,
         uint256 price,
         bool isBid,
         uint32 orderId,
         uint32 uid
     ) public nonReentrant returns (bool) {
-        (address base, address quote) = IOrderbookFactory(orderbookFactory)
-            .getBaseQuote(orderbook);
+        address orderbook = IOrderbookFactory(orderbookFactory).getPair(
+            base,
+            quote
+        );
+
+        if (orderbook == address(0)) {
+            revert InvalidPair(base, quote, orderbook);
+        }
 
         uint256 remaining = IOrderbook(orderbook).cancelOrder(
             isBid,
@@ -562,14 +571,22 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
     }
 
     function cancelOrders(
-        address[] memory orderbook,
+        address[] memory base,
+        address[] memory quote,
         uint256[] memory prices,
         bool[] memory isBid,
         uint32[] memory orderIds,
         uint32 uid
     ) external returns (bool) {
         for (uint32 i = 0; i < orderIds.length; i++) {
-            cancelOrder(orderbook[i], prices[i], isBid[i], orderIds[i], uid);
+            cancelOrder(
+                base[i],
+                quote[i],
+                prices[i],
+                isBid[i],
+                orderIds[i],
+                uid
+            );
         }
         return true;
     }
@@ -601,7 +618,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         nonReentrant
         returns (uint256 makePrice, uint256 matched, uint256 placed)
     {
-        address orderbook = IOrderbookFactory(orderbookFactory).getBookByPair(
+        address orderbook = IOrderbookFactory(orderbookFactory).getPair(
             base,
             quote
         );
@@ -791,7 +808,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool isBid,
         uint32 n
     ) external view returns (uint256[] memory) {
-        address orderbook = getBookByPair(base, quote);
+        address orderbook = getPair(base, quote);
         return IOrderbook(orderbook).getPrices(isBid, n);
     }
 
@@ -810,7 +827,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint256 price,
         uint32 n
     ) external view returns (ExchangeOrderbook.Order[] memory) {
-        address orderbook = getBookByPair(base, quote);
+        address orderbook = getPair(base, quote);
         return IOrderbook(orderbook).getOrders(isBid, price, n);
     }
 
@@ -827,7 +844,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool isBid,
         uint32 orderId
     ) external view returns (ExchangeOrderbook.Order memory) {
-        address orderbook = getBookByPair(base, quote);
+        address orderbook = getPair(base, quote);
         return IOrderbook(orderbook).getOrder(isBid, orderId);
     }
 
@@ -846,7 +863,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint256 price,
         uint32 n
     ) external view returns (uint32[] memory) {
-        address orderbook = getBookByPair(base, quote);
+        address orderbook = getPair(base, quote);
         return IOrderbook(orderbook).getOrderIds(isBid, price, n);
     }
 
@@ -856,18 +873,18 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
      * @param quote The address of the quote asset for the trading pair.
      * @return book The address of the orderbook.
      */
-    function getBookByPair(
+    function getPair(
         address base,
         address quote
     ) public view returns (address book) {
-        return IOrderbookFactory(orderbookFactory).getBookByPair(base, quote);
+        return IOrderbookFactory(orderbookFactory).getPair(base, quote);
     }
 
     function heads(
         address base,
         address quote
     ) external view returns (uint256 bidHead, uint256 askHead) {
-        address orderbook = getBookByPair(base, quote);
+        address orderbook = getPair(base, quote);
         return IOrderbook(orderbook).heads();
     }
 
@@ -875,7 +892,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         address base,
         address quote
     ) public view returns (uint256) {
-        address orderbook = getBookByPair(base, quote);
+        address orderbook = getPair(base, quote);
         return IOrderbook(orderbook).mktPrice();
     }
 
@@ -895,7 +912,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint256 amount,
         bool isBid
     ) public view returns (uint256 converted) {
-        address orderbook = getBookByPair(base, quote);
+        address orderbook = getPair(base, quote);
         if (base == quote) {
             return amount;
         } else if (orderbook == address(0)) {
@@ -1152,7 +1169,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool isMaker
     ) internal returns (uint256 withoutFee, address book) {
         // get orderbook address from the base and quote asset
-        book = getBookByPair(base, quote);
+        book = getPair(base, quote);
         if (book == address(0)) {
             book = addPair(base, quote);
         }

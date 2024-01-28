@@ -153,7 +153,6 @@ contract MarketOrderTest is BaseSetup {
         matchingEngine.cancelOrder(
             address(token1),
             address(token2),
-            1100e8,
             false,
             1,
             0
@@ -162,7 +161,6 @@ contract MarketOrderTest is BaseSetup {
         matchingEngine.cancelOrder(
             address(token1),
             address(token2),
-            1000e8,
             false,
             2,
             0

@@ -27,11 +27,11 @@ interface IOrderbook {
 
     function placeBid(address owner, uint256 price, uint256 amount) external returns (uint32 orderId);
 
-    function cancelOrder(bool isBid, uint256 price, uint32 orderId, address owner)
+    function cancelOrder(bool isBid, uint32 orderId, address owner)
         external
         returns (uint256 remaining);
 
-    function execute(uint32 orderId, bool isBid, uint256 price, address sender, uint256 amount)
+    function execute(uint32 orderId, bool isBid, address sender, uint256 amount)
         external
         returns (address owner);
 

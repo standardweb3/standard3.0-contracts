@@ -45,7 +45,6 @@ contract CancelTest is BaseSetup {
         matchingEngine.cancelOrder(
             address(token1),
             address(token2),
-            0,
             false,
             1,
             0
@@ -78,7 +77,6 @@ contract CancelTest is BaseSetup {
         matchingEngine.cancelOrder(
             address(token1),
             address(token2),
-            1,
             false,
             1,
             0
@@ -166,7 +164,6 @@ contract CancelTest is BaseSetup {
         matchingEngine.cancelOrder(
             address(token1),
             address(token2),
-            500000000,
             false,
             1,
             0
@@ -180,7 +177,6 @@ contract CancelTest is BaseSetup {
         matchingEngine.cancelOrder(
             address(token1),
             address(token2),
-            500000000,
             false,
             11,
             0
@@ -286,7 +282,6 @@ contract CancelTest is BaseSetup {
         matchingEngine.cancelOrder(
             address(token1),
             address(token2),
-            500000000,
             false,
             1,
             0
@@ -300,7 +295,6 @@ contract CancelTest is BaseSetup {
         matchingEngine.cancelOrder(
             address(token1),
             address(token2),
-            500000000,
             false,
             11,
             0
@@ -406,7 +400,6 @@ contract CancelTest is BaseSetup {
         matchingEngine.cancelOrder(
             address(token1),
             address(token2),
-            500000000,
             false,
             1,
             0
@@ -421,7 +414,6 @@ contract CancelTest is BaseSetup {
         matchingEngine.cancelOrder(
             address(token1),
             address(token2),
-            700000000,
             false,
             11,
             0
@@ -499,7 +491,6 @@ contract CancelTest is BaseSetup {
         matchingEngine.cancelOrder(
             address(token1),
             address(token2),
-            1100e8,
             false,
             3,
             0
@@ -565,7 +556,6 @@ contract CancelTest is BaseSetup {
         matchingEngine.cancelOrder(
             address(token1),
             address(token2),
-            1000e8,
             true,
             1,
             0
@@ -595,7 +585,6 @@ contract CancelTest is BaseSetup {
         matchingEngine.cancelOrder(
             address(token1),
             address(token2),
-            1001e8,
             false,
             1,
             0
@@ -680,7 +669,6 @@ contract CancelTest is BaseSetup {
         matchingEngine.cancelOrder(
             address(token1),
             address(token2),
-            100000000,
             false,
             3,
             0

@@ -74,7 +74,7 @@ contract Orderbook is IOrderbook, Initializable {
         uint256 price,
         uint256 amount
     ) external onlyEngine returns (uint32 id) {
-        id = _askOrders._createOrder(owner, amount);
+        id = _askOrders._createOrder(owner, price, amount);
         // check if the price is new in the list. if not, insert id to the list
         if (_askOrders._isEmpty(price)) {
             priceLists._insert(false, price);
@@ -88,7 +88,7 @@ contract Orderbook is IOrderbook, Initializable {
         uint256 price,
         uint256 amount
     ) external onlyEngine returns (uint32 id) {
-        id = _bidOrders._createOrder(owner, amount);
+        id = _bidOrders._createOrder(owner, price, amount);
         // check if the price is new in the list. if not, insert id to the list
         if (_bidOrders._isEmpty(price)) {
             priceLists._insert(true, price);
@@ -99,30 +99,31 @@ contract Orderbook is IOrderbook, Initializable {
 
     function cancelOrder(
         bool isBid,
-        uint256 price,
         uint32 orderId,
         address owner
     ) external onlyEngine returns (uint256 remaining) {
-        // check before the price had an order not being empty
-        bool check = isEmpty(isBid, price);
         // check order owner
         ExchangeOrderbook.Order memory order = isBid
             ? _bidOrders._getOrder(orderId)
             : _askOrders._getOrder(orderId);
+
+        // check before the price had an order not being empty
+        bool wasEmpty = isEmpty(isBid, order.price);
+        
         if (order.owner != owner) {
             revert InvalidAccess(owner, order.owner);
         }
 
         isBid
-            ? _bidOrders._deleteOrder(price, orderId)
-            : _askOrders._deleteOrder(price, orderId);
+            ? _bidOrders._deleteOrder(orderId)
+            : _askOrders._deleteOrder(orderId);
         isBid
             ? _sendFunds(pair.quote, owner, order.depositAmount)
             : _sendFunds(pair.base, owner, order.depositAmount);
 
         // check if the canceled order was the last order in the list
-        if (!check && isEmpty(isBid, price)) {
-            priceLists._delete(isBid, price);
+        if (!wasEmpty && isEmpty(isBid, order.price)) {
+            priceLists._delete(isBid, order.price);
         }
 
         return (order.depositAmount);
@@ -131,20 +132,18 @@ contract Orderbook is IOrderbook, Initializable {
     function execute(
         uint32 orderId,
         bool isBid,
-        uint256 price,
         address sender,
         uint256 amount
     ) external onlyEngine returns (address owner) {
         ExchangeOrderbook.Order memory order = isBid
             ? _bidOrders._getOrder(orderId)
             : _askOrders._getOrder(orderId);
-        uint256 converted = convert(price, amount, isBid);
-        uint256 dust = convert(price, 1, isBid);
+        uint256 converted = convert(order.price, amount, isBid);
+        uint256 dust = convert(order.price, 1, isBid);
         // if isBid == true, sender is matching ask order with bid order(i.e. selling base to receive quote), otherwise sender is matching bid order with ask order(i.e. buying base with quote)
         if (isBid) {
             // decrease remaining amount of order
             uint256 withDust = _bidOrders._decreaseOrder(
-                price,
                 orderId,
                 converted,
                 dust
@@ -158,7 +157,6 @@ contract Orderbook is IOrderbook, Initializable {
         else {
             // decrease remaining amount of order
             uint256 withDust = _askOrders._decreaseOrder(
-                price,
                 orderId,
                 converted,
                 dust

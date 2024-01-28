@@ -6,6 +6,7 @@ library ExchangeOrderbook {
   // Order struct
   struct Order {
     address owner;
+    uint256 price;
     uint256 depositAmount;
   }
 
@@ -103,9 +104,10 @@ library ExchangeOrderbook {
   function _createOrder(
     OrderStorage storage self,
     address owner,
+    uint256 price,
     uint256 depositAmount
   ) internal returns (uint32 id) {
-    Order memory order = Order({ owner: owner, depositAmount: depositAmount });
+    Order memory order = Order({ owner: owner, price: price, depositAmount: depositAmount });
     // prevent order overflow, order id must start from 1
     self.count = self.count == 0 || self.count == type(uint32).max
       ? 1
@@ -116,7 +118,6 @@ library ExchangeOrderbook {
 
   function _decreaseOrder(
     OrderStorage storage self,
-    uint256 price,
     uint32 id,
     uint256 amount,
     uint256 dust
@@ -125,7 +126,7 @@ library ExchangeOrderbook {
     // remove dust
     if (decreased <= dust || amount == 0) {
       decreased = self.orders[id].depositAmount;
-      _deleteOrder(self, price, id);
+      _deleteOrder(self, id);
       return decreased;
     } else {
       self.orders[id].depositAmount = decreased;
@@ -135,9 +136,9 @@ library ExchangeOrderbook {
 
   function _deleteOrder(
     OrderStorage storage self,
-    uint256 price,
     uint32 id
   ) internal {
+    uint256 price = self.orders[id].price;
     uint32 last = 0;
     uint32 head = self.head[price];
     uint32 next;
@@ -149,7 +150,7 @@ library ExchangeOrderbook {
       delete list[id];
     } else {
       // search for the order id in the linked list
-      while (head != 0 && i < 30) {
+      while (head != 0) {
         next = list[head];
         if (next == id) {
           list[head] = list[next];
@@ -163,10 +164,6 @@ library ExchangeOrderbook {
     }
     // delete order
     delete self.orders[id];
-    // add canceled info to see if the order was deleted in the list
-    if (i == 30) {
-      self.canceled[id] = true;
-    }
     return;
   }
 

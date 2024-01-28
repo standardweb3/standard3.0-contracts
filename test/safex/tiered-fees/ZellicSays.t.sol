@@ -65,7 +65,6 @@ contract FeeTierTest is SAFEXFeeTierSetup {
         matchingEngineFeeTier.cancelOrder(
             address(feeToken),
             address(stablecoin),
-            1000e8,
             true,
             1,
             1
@@ -119,7 +118,6 @@ contract FeeTierTest is SAFEXFeeTierSetup {
         matchingEngineFeeTier.cancelOrder(
             address(feeToken),
             address(stablecoin),
-            1000e8,
             true,
             1,
             1

@@ -526,7 +526,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
      * @dev Cancels an order in an orderbook by the given order ID and order type.
      * @param base The address of the base asset for the trading pair
      * @param quote The address of the quote asset for the trading pair
-     * @param price The price of the order to cancel
      * @param isBid Boolean indicating if the order to cancel is an ask order
      * @param orderId The ID of the order to cancel
      * @return refunded Refunded amount from order
@@ -534,7 +533,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
     function cancelOrder(
         address base,
         address quote,
-        uint256 price,
         bool isBid,
         uint32 orderId,
         uint32 uid
@@ -550,7 +548,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
 
         uint256 remaining = IOrderbook(orderbook).cancelOrder(
             isBid,
-            price,
             orderId,
             msg.sender
         );
@@ -573,7 +570,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
     function cancelOrders(
         address[] memory base,
         address[] memory quote,
-        uint256[] memory prices,
         bool[] memory isBid,
         uint32[] memory orderIds,
         uint32 uid
@@ -583,7 +579,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             refunded[i] = cancelOrder(
                 base[i],
                 quote[i],
-                prices[i],
                 isBid[i],
                 orderIds[i],
                 uid
@@ -625,7 +620,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         );
         uint256 remaining = IOrderbook(orderbook).cancelOrder(
             isBid,
-            price,
             orderId,
             msg.sender
         );
@@ -985,7 +979,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                 address owner = IOrderbook(orderbook).execute(
                     orderId,
                     !isBid,
-                    price,
                     recipient,
                     remaining
                 );
@@ -1014,7 +1007,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                 address owner = IOrderbook(orderbook).execute(
                     orderId,
                     !isBid,
-                    price,
                     recipient,
                     required
                 );

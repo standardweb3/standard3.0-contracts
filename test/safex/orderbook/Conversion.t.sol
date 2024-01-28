@@ -19,6 +19,30 @@ import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 
 // test cases for orderbooks
 contract ConversionTest is BaseSetup {
+    
+    function testOrderWithPriceZeroFails() public {
+        vm.prank(booker);
+        matchingEngine.addPair(address(token1), address(token2));
+        book = Orderbook(
+            payable(orderbookFactory.getPair(address(token1), address(token2)))
+        );
+        vm.prank(trader1);
+        vm.expectRevert();
+        // placeBid or placeAsk two of them is using the _insertId function it will revert
+        // because the program will enter the "if (amount > self.orders[head].depositAmount)."
+        // statement, and eventually, it will cause an infinite loop.
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            0,
+            10,
+            true,
+            2,
+            0,
+            trader1
+        );
+    }
+
     function testInvalidConversion() public {
         super.setUp();
         vm.prank(booker);
@@ -144,9 +168,7 @@ contract ConversionTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(btc));
         book = Orderbook(
-            payable(
-                orderbookFactory.getPair(address(token1), address(btc))
-            )
+            payable(orderbookFactory.getPair(address(token1), address(btc)))
         );
         // before trade balances
         uint256 beforeTrader2T1Balance = token1.balanceOf(address(trader2));
@@ -225,9 +247,7 @@ contract ConversionTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(btc));
         book = Orderbook(
-            payable(
-                orderbookFactory.getPair(address(token1), address(btc))
-            )
+            payable(orderbookFactory.getPair(address(token1), address(btc)))
         );
         // before trade balances
         uint256 beforeTrader2T1Balance = token1.balanceOf(address(trader2));
@@ -307,9 +327,7 @@ contract ConversionTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(btc), address(token2));
         book = Orderbook(
-            payable(
-                orderbookFactory.getPair(address(btc), address(token2))
-            )
+            payable(orderbookFactory.getPair(address(btc), address(token2)))
         );
         // before trade balances
         uint256 beforeTrader2T2Balance = token2.balanceOf(address(trader2));
@@ -389,9 +407,7 @@ contract ConversionTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(btc), address(token2));
         book = Orderbook(
-            payable(
-                orderbookFactory.getPair(address(btc), address(token2))
-            )
+            payable(orderbookFactory.getPair(address(btc), address(token2)))
         );
         // before trade balances
         uint256 beforeTrader2T2Balance = token2.balanceOf(address(trader2));
@@ -471,9 +487,7 @@ contract ConversionTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            payable(
-                orderbookFactory.getPair(address(token1), address(token2))
-            )
+            payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
         // before trade balances
         uint256 beforeTrader2T2Balance = token2.balanceOf(address(trader2));
@@ -553,9 +567,7 @@ contract ConversionTest is BaseSetup {
         vm.prank(booker);
         matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            payable(
-                orderbookFactory.getPair(address(token1), address(token2))
-            )
+            payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
         // before trade balances
         uint256 beforeTrader2T2Balance = token2.balanceOf(address(trader2));

@@ -103,6 +103,8 @@ contract Orderbook is IOrderbook, Initializable {
         uint32 orderId,
         address owner
     ) external onlyEngine returns (uint256 remaining) {
+        // check before the price had an order not being empty
+        bool check = isEmpty(isBid, price);
         // check order owner
         ExchangeOrderbook.Order memory order = isBid
             ? _bidOrders._getOrder(orderId)
@@ -111,18 +113,16 @@ contract Orderbook is IOrderbook, Initializable {
             revert InvalidAccess(owner, order.owner);
         }
 
-        if (priceLists._checkPriceExists(isBid, price)) {
-            isBid
-                ? _bidOrders._deleteOrder(price, orderId)
-                : _askOrders._deleteOrder(price, orderId);
-            isBid
-                ? _sendFunds(pair.quote, owner, order.depositAmount)
-                : _sendFunds(pair.base, owner, order.depositAmount);
+        isBid
+            ? _bidOrders._deleteOrder(price, orderId)
+            : _askOrders._deleteOrder(price, orderId);
+        isBid
+            ? _sendFunds(pair.quote, owner, order.depositAmount)
+            : _sendFunds(pair.base, owner, order.depositAmount);
 
-            // check if the canceled order was the last order in the list
-            if (isEmpty(isBid, price)) {
-                priceLists._delete(isBid, price);
-            }
+        // check if the canceled order was the last order in the list
+        if (!check && isEmpty(isBid, price)) {
+            priceLists._delete(isBid, price);
         }
 
         return (order.depositAmount);
@@ -143,7 +143,12 @@ contract Orderbook is IOrderbook, Initializable {
         // if isBid == true, sender is matching ask order with bid order(i.e. selling base to receive quote), otherwise sender is matching bid order with ask order(i.e. buying base with quote)
         if (isBid) {
             // decrease remaining amount of order
-            uint256 withDust = _bidOrders._decreaseOrder(price, orderId, converted, dust);
+            uint256 withDust = _bidOrders._decreaseOrder(
+                price,
+                orderId,
+                converted,
+                dust
+            );
             // sender is matching ask order for base asset with quote asset
             _sendFunds(pair.base, order.owner, amount);
             // send converted amount of quote asset from owner to sender
@@ -152,7 +157,12 @@ contract Orderbook is IOrderbook, Initializable {
         // if the order is bid order on the base/quote pair
         else {
             // decrease remaining amount of order
-            uint256 withDust = _askOrders._decreaseOrder(price, orderId, converted, dust);
+            uint256 withDust = _askOrders._decreaseOrder(
+                price,
+                orderId,
+                converted,
+                dust
+            );
             // sender is matching bid order for quote asset with base asset
             // send deposited amount of quote asset from sender to owner
             _sendFunds(pair.quote, order.owner, amount);
@@ -162,14 +172,14 @@ contract Orderbook is IOrderbook, Initializable {
         return order.owner;
     }
 
-    function clearEmptyHead(
-        bool isBid
-    ) external returns (uint256 head) {
+    function clearEmptyHead(bool isBid) external returns (uint256 head) {
         head = isBid ? priceLists._bidHead() : priceLists._askHead();
-        uint32 orderId = isBid ? _bidOrders._head(head) : _askOrders._head(head);
+        uint32 orderId = isBid
+            ? _bidOrders._head(head)
+            : _askOrders._head(head);
         while (orderId == 0 && head != 0) {
             orderId = isBid ? _bidOrders._head(head) : _askOrders._head(head);
-            if(orderId == 0) {
+            if (orderId == 0) {
                 head = priceLists._clearHead(isBid);
             }
         }

@@ -187,7 +187,8 @@ library ExchangeLinkedList {
       // insert bid price to the linked list
       // if the list is empty
       if (head == 0 || price > head) {
-        revert NoHeadBelow(isBid, head);
+        // NoHeadBelow(isBid, head);
+        return false;
       }
       while (head != 0 && price > head) {
         uint256 next = self.bidPrices[head];
@@ -205,10 +206,12 @@ library ExchangeLinkedList {
               return true;
             }
             // Price does not exist in price list
-            revert PriceOutOfRange(head, price);
+            // PriceOutOfRange(head, price);
+            return false;
           }
           // Price does not exist within range of prices
-          revert PriceNoneInRange(head, price);
+          // PriceNoneInRange(head, price);
+          return false;
         } else {
           // price is already included in the queue as it is equal to next. price exists in the orderbook
           // End traversal as there is no need to traverse further

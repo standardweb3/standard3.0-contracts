@@ -68,12 +68,12 @@ contract DeploySAFEXMainnetContracts is Deployer {
 
 contract DeploySABTMainnetContracts is Deployer {
     Treasury constant treasury =
-        Treasury(0x2962e46FF1340cb34f7E04db2F3DB91f1448b0AD);
+        Treasury(0xCF95A0A08B80f08fC4A02CA3E512802928d1419E);
     uint32 constant spb = 12;
     address constant weth = 0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f; // weth on mainnet
     address constant stablecoin = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48; // usdc on mainnet
     address constant matchingEngine =
-        0xE600331fA6E594eC10d5F5736558e3646c0D051d;
+        0x93d744De3c805e15136459FEad77F17E5Ac6Cfcf;
     address constant orderbookFactory =
         0x7a2e3a7A1bf8FaCCAd68115DC509DB5a5af4e7e4;
     address constant foundation_address =

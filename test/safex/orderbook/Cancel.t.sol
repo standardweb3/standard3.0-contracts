@@ -18,6 +18,73 @@ import {console} from "forge-std/console.sol";
 import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 
 contract CancelTest is BaseSetup {
+
+    function testCancelAtPriceZeroPasses() public {
+        vm.prank(booker);
+        matchingEngine.addPair(address(token1), address(token2));
+        book = Orderbook(
+            payable(orderbookFactory.getPair(address(token1), address(token2)))
+        );
+        vm.prank(trader1);
+        // placeBid or placeAsk two of them is using the _insertId function it will revert
+        // because the program will enter the "if (amount > self.orders[head].depositAmount)."
+        // statement, and eventually, it will cause an infinite loop.
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            500000000,
+            10,
+            true,
+            2,
+            0,
+            trader1
+        );
+
+        vm.prank(trader1);
+        //vm.expectRevert();
+        matchingEngine.cancelOrder(
+            address(token1),
+            address(token2),
+            0,
+            false,
+            1,
+            0
+        );
+    }
+
+    function testCancelAtPriceWhateverPasses() public {
+        vm.prank(booker);
+        matchingEngine.addPair(address(token1), address(token2));
+        book = Orderbook(
+            payable(orderbookFactory.getPair(address(token1), address(token2)))
+        );
+        vm.prank(trader1);
+        // placeBid or placeAsk two of them is using the _insertId function it will revert
+        // because the program will enter the "if (amount > self.orders[head].depositAmount)."
+        // statement, and eventually, it will cause an infinite loop.
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            500000000,
+            10,
+            true,
+            2,
+            0,
+            trader1
+        );
+
+        vm.prank(trader1);
+        //vm.expectRevert();
+        matchingEngine.cancelOrder(
+            address(token1),
+            address(token2),
+            1,
+            false,
+            1,
+            0
+        );
+    }
+
     // edge cases on cancelling orders
     function testCancelEdgeCase() public {
         super.setUp();
@@ -350,7 +417,7 @@ contract CancelTest is BaseSetup {
 
         // cancel order
         vm.prank(trader1);
-        vm.expectRevert();
+        //vm.expectRevert();
         matchingEngine.cancelOrder(
             address(token1),
             address(token2),

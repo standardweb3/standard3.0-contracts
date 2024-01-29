@@ -177,7 +177,8 @@ library ExchangeLinkedList {
     ) internal returns (bool) {
         // traverse the list
         if (price == 0) {
-            revert ZeroPrice(price);
+            // revert ZeroPrice(price);
+            return false;
         }
 
         if (isBid) {
@@ -186,7 +187,8 @@ library ExchangeLinkedList {
             // insert bid price to the linked list
             // if the list is empty
             if (head == 0 || price > head) {
-                revert NoHeadBelow(isBid, head);
+                // revert NoHeadBelow(isBid, head);
+                return false;
             }
             while (head != 0 && price > head) {
                 uint256 next = self.bidPrices[head];
@@ -208,7 +210,8 @@ library ExchangeLinkedList {
                             return true;
                         }
                         // Price does not exist in price list
-                        revert PriceOutOfRange(head, price);
+                        // revert PriceOutOfRange(head, price);
+                        return false;
                     } 
                     // the search price is right above the next price which is not zero
                     else {
@@ -219,7 +222,8 @@ library ExchangeLinkedList {
                         }
                     }
                     // Price does not exist within range of prices
-                    revert PriceNoneInRange(head, price);
+                    // revert PriceNoneInRange(head, price);
+                    return false;
                 } 
                 // price is above lowest bid price, and the search price is next price
                 else {
@@ -239,7 +243,8 @@ library ExchangeLinkedList {
             // insert order to the linked list
             // if the list is empty and price is the lowest ask
             if (head == 0 || price < head) {
-                revert NoHeadBelow(isBid, head);
+                // revert NoHeadBelow(isBid, head);
+                return false;
             }
             // traverse the list
             while (head != 0 && price < head) {
@@ -255,8 +260,8 @@ library ExchangeLinkedList {
                             return true;
                         }
                         // Price does not exist in price list
-                        revert PriceOutOfRange(head, price);
-                        // return false;
+                        //revert PriceOutOfRange(head, price);
+                        return false;
                     } 
                     // Keep traversing
                     head = self.askPrices[head];
@@ -272,7 +277,8 @@ library ExchangeLinkedList {
                         delete self.askPrices[head];
                         return true;
                     } else {
-                      revert PriceNoneInRange(head, price);
+                      // revert PriceNoneInRange(head, price);
+                      return false;
                     }
                     //return false;
                 }

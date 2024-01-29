@@ -79,7 +79,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
     error NoOrderMade(address base, address quote);
     error InvalidPair(address base, address quote, address pair);
 
-    constructor() {}
+    constructor() {
+    }
 
     receive() external payable {
         assert(msg.sender == WETH); // only accept ETH via fallback from the WETH contract

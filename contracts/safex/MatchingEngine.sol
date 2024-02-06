@@ -43,7 +43,13 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool clear;
     }
 
-    // events
+    /**
+    * @dev This event is emitted when an order is canceled.
+    * @param orderbook The address of the order book contract to get base and quote asset contract address.
+    * @param isBid A boolean indicating whether the canceled order is a bid (true) or ask (false).
+    * @param orderId The unique identifier of the canceled order in bid/ask order database.
+    * @param owner The address of the owner who canceled the order.
+    */
     event OrderCanceled(
         address orderbook,
         bool isBid,
@@ -51,6 +57,16 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         address indexed owner
     );
 
+    /**
+    * @dev This event is emitted when an order is successfully matched with a counterparty.
+    * @param orderbook The address of the order book contract to get base and quote asset contract address.
+    * @param id The unique identifier of the canceled order in bid/ask order database.
+    * @param isBid A boolean indicating whether the matched order is a bid (true) or ask (false).
+    * @param sender The address initiating the match.
+    * @param owner The address of the order owner whose order is matched with the sender.
+    * @param price The price at which the order is matched.
+    * @param amount The matched amount of the asset being traded in the match. if isBid==true, it is base asset, if isBid==false, it is quote asset.
+    */
     event OrderMatched(
         address indexed orderbook,
         uint256 id,
@@ -61,6 +77,14 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint256 amount
     );
 
+    /**
+    * @dev This event is emitted when a new order is successfully placed in the order book.
+    * @param orderbook The address of the order book contract to get base and quote asset contract address.
+    * @param owner The address of the owner placing the order.
+    * @param price The price at which the order is placed.
+    * @param isBid A boolean indicating whether the placed order is a bid (true) or ask (false).
+    * @param orderId The unique identifier assigned to the newly placed order.if isBid==true, it is quote asset, if isBid==false, it is base asset.
+    */
     event OrderPlaced(
         address orderbook,
         address indexed owner,

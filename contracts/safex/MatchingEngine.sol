@@ -145,6 +145,10 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             isMaker
         );
 
+        if (orderData.lmp == 0) {
+            orderData.lmp = mktPrice(base, quote);
+        }
+
         // reuse withoutFee variable due to stack too deep error
         (orderData.withoutFee, orderData.lmp, orderData.clear) = _limitOrder(
             orderData.orderbook,
@@ -155,10 +159,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             type(uint256).max,
             n
         );
-
-        if (orderData.lmp == 0) {
-            orderData.lmp = mktPrice(base, quote);
-        }
 
         // add make order on market price
         _detMake(
@@ -215,6 +215,11 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             uid,
             isMaker
         );
+
+        if (orderData.lmp == 0) {
+            orderData.lmp = mktPrice(base, quote);
+        }
+
         // reuse withoutFee variable for storing remaining amount after matching due to stack too deep error
         (orderData.withoutFee, orderData.lmp, orderData.clear) = _limitOrder(
             orderData.orderbook,
@@ -225,10 +230,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             0,
             n
         );
-
-        if (orderData.lmp == 0) {
-            orderData.lmp = mktPrice(base, quote);
-        }
 
         _detMake(
             base,

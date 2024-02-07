@@ -43,6 +43,11 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool clear;
     }
 
+    event OrderDeposit(
+        address sender,
+        address asset,
+        uint256 fee
+    );
     
     event OrderCanceled(
         address orderbook,
@@ -1214,7 +1219,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             }
             TransferHelper.safeTransfer(base, feeTo, fee);
         }
-
+        emit OrderDeposit(msg.sender, isBid ? quote : base, fee);
         return (withoutFee, book);
     }
 

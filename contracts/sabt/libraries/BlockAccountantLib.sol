@@ -49,6 +49,10 @@ library BlockAccountantLib {
         uint32 spb;
         /// @dev era: The number of blocks per an era
         uint32 era;
+        /// @dev revShare: turn on/off revShare;
+        bool revShare;
+        /// @dev developer 
+        address dev;
     }
 
     error NotTheSameOwner(uint32 fromUid, uint32 toUid, address owner);
@@ -64,7 +68,15 @@ library BlockAccountantLib {
         return self.totalTokensOn[key];
     }
 
+    function _setRevShare(Storage storage self, bool on) internal {
+        self.revShare = on;
+    }
+
     function _getEra(Storage storage self) internal view returns (uint32 nthEra) {
+        // add revenue share switch
+        if(!self.revShare && msg.sender == self.dev) {
+            return 0;
+        }
         return (block.number - self.fb) > self.era ? uint32((block.number - self.fb) / self.era) : 0;
     }
 

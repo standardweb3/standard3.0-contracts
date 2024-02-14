@@ -36,6 +36,21 @@ contract BlockAccountant is AccessControl, Initializable {
         _accountant.fb = block.number;
         _accountant.spb = spb_;
         _accountant.era = uint32(30 days / spb_);
+        _accountant.dev = msg.sender;
+    }
+
+    function setSpb(uint32 spb_) external {
+         if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        }
+        _accountant.spb = spb_;
+    }
+
+    function setEra(uint32 era_) external {
+         if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        }
+        _accountant.era = era_;
     }
 
     function setStablecoin(address stablecoin) external {
@@ -76,6 +91,13 @@ contract BlockAccountant is AccessControl, Initializable {
             revert NotTreasury(msg.sender, _accountant.treasury);
         }
         _accountant._subtractTP(uid, nthEra, point);
+    }
+
+    function setRevShare(bool on) external {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        }
+        return _accountant._setRevShare(on);
     }
 
     function getTotalPoints(uint32 nthEra) external view returns (uint256) {

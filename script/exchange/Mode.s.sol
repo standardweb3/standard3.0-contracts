@@ -9,7 +9,8 @@ import {BlockAccountant} from "../../contracts/sabt/BlockAccountant.sol";
 import {Membership} from "../../contracts/sabt/Membership.sol";
 import {Treasury} from "../../contracts/sabt/Treasury.sol";
 import {MockToken} from "../../contracts/mock/MockToken.sol";
-import {MatchingEngine} from "../../contracts/safex/MatchingEngine.sol";
+//import {MatchingEngine} from "../../contracts/safex/MatchingEngine.sol";
+import {MatchingEngine} from "../../contracts/safex/MatchingEngineMode.sol";
 import {OrderbookFactory} from "../../contracts/safex/orderbooks/OrderbookFactory.sol";
 import {Orderbook} from "../../contracts/safex/orderbooks/Orderbook.sol";
 import {Multicall3} from "../Multicall3.sol";
@@ -36,6 +37,17 @@ contract DeployWETH is Deployer {
     function run() external {
         _setDeployer();
         vm.stopBroadcast();
+    }
+}
+
+contract limitBuyatZeroPrice is Deployer {
+    MatchingEngine matchingEngine;
+    function run() external {
+        _setDeployer();
+        matchingEngine = MatchingEngine(payable(0xe063Be26AAeb50db3866A7534551aA789bC368b7));
+
+        matchingEngine.limitBuy(0x4200000000000000000000000000000000000006, 0xf0F161fDA2712DB8b566946122a5af183995e2eD, 0, 1000000000, false, 10, 0, 0x34CCCa03631830cD8296c172bf3c31e126814ce9);
+        
     }
 }
 
@@ -108,17 +120,18 @@ contract RegisterSFS is Deployer {
 contract DeploySABTMainnetContracts is Deployer {
     Treasury constant treasury =
         Treasury(0xBDf1c8C3fFd6f6C8E4AC13dAA3436Eb239D3e203);
-    uint32 constant spb = 12;
-    address constant weth = 0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f; // weth on mainnet
-    address constant stablecoin = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48; // usdc on mainnet
+    uint32 constant spb = 2;
+    address constant weth = 0x4200000000000000000000000000000000000006; // weth on mainnet
+    address constant stablecoin = 0xf0F161fDA2712DB8b566946122a5af183995e2eD; // usdc on mainnet
     address constant matchingEngine =
-        0x93d744De3c805e15136459FEad77F17E5Ac6Cfcf;
+        0xe063Be26AAeb50db3866A7534551aA789bC368b7;
     address constant orderbookFactory =
         0x7a2e3a7A1bf8FaCCAd68115DC509DB5a5af4e7e4;
     address constant foundation_address =
         0x34CCCa03631830cD8296c172bf3c31e126814ce9;
 
     function run() external {
+        _setDeployer();
         Membership membership = new Membership();
         SABT sabt = new SABT();
         membership.initialize(address(sabt), foundation_address, weth);
@@ -135,8 +148,10 @@ contract DeploySABTMainnetContracts is Deployer {
         // Wire up matching engine with them
         accountant.grantRole(accountant.REPORTER_ROLE(), address(treasury));
         treasury.grantRole(treasury.REPORTER_ROLE(), address(matchingEngine));
+
     }
 }
+
 
 contract DeployTokenDispenser is Deployer {
     function run() external {

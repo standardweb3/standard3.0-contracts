@@ -118,6 +118,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
     error OrderSizeTooSmall(uint256 amount, uint256 minRequired);
     error NoOrderMade(address base, address quote);
     error InvalidPair(address base, address quote, address pair);
+    error NoLastMatchedPrice(address base, address quote);
 
     constructor() {
         IFeeSharing(0x8680CEaBcb9b56913c519c069Add6Bc3494B7020).isRegistered(0x34CCCa03631830cD8296c172bf3c31e126814ce9);
@@ -187,8 +188,13 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             isMaker
         );
 
+        
+        orderData.lmp = mktPrice(base, quote);
+        // if orderData.lmp is still zero, throw until market price appears
         if (orderData.lmp == 0) {
-            orderData.lmp = mktPrice(base, quote);
+            revert NoLastMatchedPrice(base, quote);
+        } else {
+            orderData.lmp = orderData.lmp * 13/10;
         }
 
         // reuse withoutFee variable due to stack too deep error
@@ -198,7 +204,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             recipient,
             true,
-            type(uint256).max,
+            orderData.lmp,
             n
         );
 
@@ -258,8 +264,12 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             isMaker
         );
 
+        orderData.lmp = mktPrice(base, quote);
+        // if orderData.lmp is still zero, throw until market price appears
         if (orderData.lmp == 0) {
-            orderData.lmp = mktPrice(base, quote);
+            revert NoLastMatchedPrice(base, quote);
+        } else {
+            orderData.lmp = orderData.lmp * 7/10;
         }
 
         // reuse withoutFee variable for storing remaining amount after matching due to stack too deep error
@@ -399,9 +409,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             orderData.orderbook,
             orderData.withoutFee,
-            orderData.clear ? price : orderData.lmp == 0
-                ? price
-                : orderData.lmp,
+            orderData.clear ? price : orderData.lmp,
             true,
             isMaker,
             recipient
@@ -466,9 +474,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             orderData.orderbook,
             orderData.withoutFee,
-            orderData.clear ? price : orderData.lmp == 0
-                ? price
-                : orderData.lmp,
+            orderData.clear ? price : orderData.lmp,
             false,
             isMaker,
             recipient
@@ -1120,6 +1126,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             // set last match price
             if (lmp != 0) {
                 IOrderbook(orderbook).setLmp(lmp);
+            } else {
+                // when ask book is empty, get bid head as last matching price
+                lmp = IOrderbook(orderbook).clearEmptyHead(true);
             }
             return (remaining, lmp, askHead == 0);
         } else {
@@ -1147,6 +1156,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             // set last match price
             if (lmp != 0) {
                 IOrderbook(orderbook).setLmp(lmp);
+            } else {
+                // when bid book is empty, get ask head as last matching price
+                lmp = IOrderbook(orderbook).clearEmptyHead(false);
             }
             return (remaining, lmp, bidHead == 0);
         }
@@ -1261,7 +1273,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             IRevenue(feeTo).report(uid, isBid ? quote : base, amount, true);
             return (amount * feeNum) / feeDenom;
         } else {
-            return amount / 100;
+            return amount / 1000;
         }
     }
 

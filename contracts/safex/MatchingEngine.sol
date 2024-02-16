@@ -385,9 +385,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             orderData.orderbook,
             orderData.withoutFee,
-            orderData.clear ? price : orderData.lmp == 0
-                ? price
-                : orderData.lmp,
+            orderData.clear ? price : orderData.lmp,
             true,
             isMaker,
             recipient
@@ -452,9 +450,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             orderData.orderbook,
             orderData.withoutFee,
-            orderData.clear ? price : orderData.lmp == 0
-                ? price
-                : orderData.lmp,
+            orderData.clear ? price : orderData.lmp,
             false,
             isMaker,
             recipient
@@ -1106,6 +1102,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             // set last match price
             if (lmp != 0) {
                 IOrderbook(orderbook).setLmp(lmp);
+            } else {
+                // when ask book is empty, get bid head as last matching price
+                lmp = IOrderbook(orderbook).clearEmptyHead(true);
             }
             return (remaining, lmp, askHead == 0);
         } else {
@@ -1133,6 +1132,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             // set last match price
             if (lmp != 0) {
                 IOrderbook(orderbook).setLmp(lmp);
+            } else {
+                // when bid book is empty, get ask head as last matching price
+                lmp = IOrderbook(orderbook).clearEmptyHead(false);
             }
             return (remaining, lmp, bidHead == 0);
         }

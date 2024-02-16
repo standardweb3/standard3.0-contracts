@@ -6,6 +6,7 @@ build/
 coverage/
 coverage.json
 .vscode
+bin
 
 
 *.log

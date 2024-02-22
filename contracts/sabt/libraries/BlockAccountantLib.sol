@@ -64,6 +64,9 @@ library BlockAccountantLib {
     }
 
     function _totalTokens(Storage storage self, address token, uint32 era) internal view returns (uint256) {
+        if(!self.revShare) {
+            return 100;
+        }
         bytes32 key = keccak256(abi.encodePacked(token, era));
         return self.totalTokensOn[key];
     }
@@ -88,6 +91,9 @@ library BlockAccountantLib {
      * @param isAdd The flag to add or subtract the point
      */
     function _report(Storage storage self, uint32 uid, address token, uint256 amount, bool isAdd) internal {
+        if(!self.revShare) {
+            return;
+        }
         // check if the asset has pair in the orderbook dex between stablecoin
         try IAccountant(self.engine).convert(token, self.stablecoin, amount, true) returns (uint256 converted) {
             if (converted == 0) {
@@ -131,6 +137,9 @@ library BlockAccountantLib {
     }
 
     function _subtractTP(Storage storage self, uint32 uid, uint32 nthEra, uint64 point) internal {
+        if(!self.revShare) {
+            return;
+        }
         if (self.pointOf[nthEra][uid] < point) {
             revert InsufficientPoint(nthEra, uid, self.pointOf[nthEra][uid], self.pointOf[nthEra][uid]);
         }
@@ -138,14 +147,23 @@ library BlockAccountantLib {
     }
 
     function _totalPoints(Storage storage self, uint32 nthEra) internal view returns (uint64) {
+        if(!self.revShare) {
+            return 100;
+        }
         return self.totalPointsOn[nthEra];
     }
 
     function _getTP(Storage storage self, uint32 uid, uint32 nthEra) internal view returns (uint64) {
+        if(!self.revShare) {
+            return msg.sender == self.dev ? 100 : 0;
+        }
         return self.pointOf[nthEra][uid];
     }
 
     function _getTI(Storage storage self, uint32 uid, uint32 nthEra) internal view returns (uint8) {
+        if(!self.revShare) {
+            return msg.sender == self.dev ? 100 : 0;
+        }
         return
             self.totalPointsOn[nthEra] > 0 ? uint8((self.pointOf[nthEra][uid] * 100) / self.totalPointsOn[nthEra]) : 0;
     }
@@ -178,75 +196,75 @@ library BlockAccountantLib {
         // Perform different aclevelons based on the level
         if (level == 0) {
             if (subSTND >= 10000) {
-                // 0.0750% / 0.0750%
-                return 750;
+                // 0.750% / 0.750%
+                return 7500;
             } else {
-                // 0.1% / 0.1%
-                return 1000;
+                // 1% / 1%
+                return 10000;
             }
         } else if (level == 1) {
             if (subSTND >= 25000) {
-                // 0.0675 / 0.0750%
-                return isMaker ? 675 : 750;
+                // 0.675 / 0.750%
+                return isMaker ? 6750 : 7500;
             } else {
-                // 0.09 / 0.1%
-                return isMaker ? 900 : 1000;
+                // 0.9 / 0.1%
+                return isMaker ? 9000 : 10000;
             }
         } else if (level == 2) {
             if (subSTND >= 100000) {
-                // 0.0600% / 0.0750%
-                return isMaker ? 600 : 750;
+                // 0.600% / 0.750%
+                return isMaker ? 6000 : 7500;
             } else {
-                // 0.0800% / 0.1000%
-                return isMaker ? 800 : 1000;
+                // 0.800% / 1.000%
+                return isMaker ? 8000 : 10000;
             }
         } else if (level == 3) {
             if (subSTND >= 250000) {
-                // 0.0525% / 0.0750%
-                return isMaker ? 525 : 750;
+                // 0.525% / 0.750%
+                return isMaker ? 5250 : 7500;
             } else {
-                // 0.0700% / 0.1000%
-                return isMaker ? 700 : 1000;
+                // 0.700% / 1.000%
+                return isMaker ? 7000 : 10000;
             }
         } else if (level == 4) {
             if (subSTND >= 500000) {
-                // 0.045% / 0.0600%
-                return isMaker ? 450 : 600;
+                // 0.45% / 0.600%
+                return isMaker ? 4500 : 6000;
             } else {
-                // 0.0600% / 0.0800%
-                return isMaker ? 600 : 800;
+                // 0.600% / 0.800%
+                return isMaker ? 6000 : 8000;
             }
         } else if (level == 5) {
             if (subSTND >= 750000) {
-                // 0.0375% / 0.0525%
-                return isMaker ? 375 : 525;
+                // 0.375% / 0.525%
+                return isMaker ? 3750 : 5250;
             } else {
-                // 0.0500% / 0.0700%
-                return isMaker ? 500 : 700;
+                // 0.500% / 0.700%
+                return isMaker ? 5000 : 7000;
             }
         } else if (level == 6) {
             if (subSTND >= 1000000) {
-                // 0.03% / 0.045%
-                return isMaker ? 300 : 450;
+                // 0.3% / 0.45%
+                return isMaker ? 3000 : 4500;
             } else {
-                // 0.0400% / 0.0600%
-                return isMaker ? 400 : 600;
+                // 0.400% / 0.600%
+                return isMaker ? 4000 : 6000;
             }
         } else if (level == 7) {
             if (subSTND >= 1250000) {
-                // 0.0225% / 0.0375%
-                return isMaker ? 225 : 375;
+                // 0.225% / 0.375%
+                return isMaker ? 2250 : 3750;
             } else {
-                // 0.0300% / 0.0500%
-                return isMaker ? 300 : 500;
+                // 0.300% / 0.500%
+                return isMaker ? 3000 : 5000;
             }
         } else if (level >= 8) {
             if (subSTND >= 1500000) {
-                // 0.0150% / 0.0300%
-                return isMaker ? 150 : 300;
+                // 0.150% / 0.300%
+                return isMaker ? 1500 : 3000;
             } else {
-                // 0.0200% / 0.0400%
-                return isMaker ? 200 : 400;
+                // 0.200% / 0.400%
+                return isMaker ? 2000 : 4000;
             }
         } else if (level >= 11) {
             // when beta account is used, fee rate is zero

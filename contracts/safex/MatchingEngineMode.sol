@@ -62,6 +62,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint256 withoutFee;
         address orderbook;
         uint256 lmp;
+        uint256 mp;
         bool clear;
     }
 
@@ -189,13 +190,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         );
 
         
-        orderData.lmp = mktPrice(base, quote);
-        // if orderData.lmp is still zero, throw until market price appears
-        if (orderData.lmp == 0) {
-            revert NoLastMatchedPrice(base, quote);
-        } else {
-            orderData.lmp = orderData.lmp * 13/10;
-        }
+        orderData.mp = mktPrice(base, quote);
 
         // reuse withoutFee variable due to stack too deep error
         (orderData.withoutFee, orderData.lmp, orderData.clear) = _limitOrder(
@@ -204,7 +199,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             recipient,
             true,
-            orderData.lmp,
+            orderData.mp * 13/10,
             n
         );
 
@@ -214,7 +209,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             orderData.orderbook,
             orderData.withoutFee,
-            orderData.lmp,
+            orderData.lmp == 0 ? orderData.mp : orderData.lmp,
             true,
             isMaker,
             recipient
@@ -264,13 +259,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             isMaker
         );
 
-        orderData.lmp = mktPrice(base, quote);
-        // if orderData.lmp is still zero, throw until market price appears
-        if (orderData.lmp == 0) {
-            revert NoLastMatchedPrice(base, quote);
-        } else {
-            orderData.lmp = orderData.lmp * 7/10;
-        }
+        orderData.mp = mktPrice(base, quote);
 
         // reuse withoutFee variable for storing remaining amount after matching due to stack too deep error
         (orderData.withoutFee, orderData.lmp, orderData.clear) = _limitOrder(
@@ -279,7 +268,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             base,
             recipient,
             false,
-            0,
+            orderData.mp * 7 / 10,
             n
         );
 
@@ -288,7 +277,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             orderData.orderbook,
             orderData.withoutFee,
-            orderData.lmp,
+            orderData.lmp == 0 ? orderData.mp : orderData.lmp,
             false,
             isMaker,
             recipient
@@ -409,7 +398,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             orderData.orderbook,
             orderData.withoutFee,
-            orderData.clear ? price : orderData.lmp,
+            orderData.clear ? price : orderData.lmp == 0 ? price : orderData.lmp,
             true,
             isMaker,
             recipient
@@ -474,7 +463,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             orderData.orderbook,
             orderData.withoutFee,
-            orderData.clear ? price : orderData.lmp,
+            orderData.clear ? price : orderData.lmp == 0 ? price : orderData.lmp,
             false,
             isMaker,
             recipient

@@ -139,6 +139,7 @@ contract MembershipBaseSetup is Test {
             1,
             trader1
         );
+        accountant.setRevShare(true);
     }
 }
 

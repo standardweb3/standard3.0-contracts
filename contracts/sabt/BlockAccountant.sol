@@ -37,6 +37,7 @@ contract BlockAccountant is AccessControl, Initializable {
         _accountant.spb = spb_;
         _accountant.era = uint32(30 days / spb_);
         _accountant.dev = msg.sender;
+        _accountant.revShare = false;
     }
 
     function setSpb(uint32 spb_) external {

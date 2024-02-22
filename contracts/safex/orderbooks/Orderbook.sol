@@ -74,6 +74,8 @@ contract Orderbook is IOrderbook, Initializable {
         uint256 price,
         uint256 amount
     ) external onlyEngine returns (uint32 id) {
+        // clear empty head
+        clearEmptyHead(false);
         id = _askOrders._createOrder(owner, price, amount);
         // check if the price is new in the list. if not, insert id to the list
         if (_askOrders._isEmpty(price)) {
@@ -88,6 +90,8 @@ contract Orderbook is IOrderbook, Initializable {
         uint256 price,
         uint256 amount
     ) external onlyEngine returns (uint32 id) {
+        // clear empty head
+        clearEmptyHead(true);
         id = _bidOrders._createOrder(owner, price, amount);
         // check if the price is new in the list. if not, insert id to the list
         if (_bidOrders._isEmpty(price)) {
@@ -170,7 +174,7 @@ contract Orderbook is IOrderbook, Initializable {
         return order.owner;
     }
 
-    function clearEmptyHead(bool isBid) external returns (uint256 head) {
+    function clearEmptyHead(bool isBid) public returns (uint256 head) {
         head = isBid ? priceLists._bidHead() : priceLists._askHead();
         uint32 orderId = isBid
             ? _bidOrders._head(head)

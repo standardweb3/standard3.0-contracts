@@ -68,6 +68,7 @@ contract MembershipBaseSetup is Test {
         accountant.initialize(
             address(membership), address(matchingEngine), address(stablecoin), 1
         );
+        accountant.setRevShare(true);
         accountant.grantRole(
             accountant.REPORTER_ROLE(),
             address(treasury)
@@ -139,7 +140,6 @@ contract MembershipBaseSetup is Test {
             1,
             trader1
         );
-        accountant.setRevShare(true);
     }
 }
 
@@ -313,5 +313,18 @@ contract MembershipTresuryTest is MembershipBaseSetup {
             abi.encodeWithSelector(TreasuryLib.InvalidMetaId.selector, 10, 3, 9)
         );
         treasury.settle(address(feeToken), 0, 3);
+    }
+}
+
+contract AccountantTest is MembershipBaseSetup {
+    function testOnlyDevCanSetRevShare() public {
+        super.setUp();
+        vm.startPrank(trader1);
+        vm.expectRevert();
+        accountant.setRevShare(true);
+
+        vm.startPrank(trader1);
+        vm.expectRevert();
+        accountant.setRevShare(false);
     }
 }

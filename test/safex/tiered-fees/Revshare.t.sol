@@ -14,6 +14,7 @@ import {IOrderbookFactory} from "../../../contracts/safex/interfaces/IOrderbookF
 import {WETH9} from "../../../contracts/mock/WETH9.sol";
 import {Treasury} from "../../../contracts/sabt/Treasury.sol";
 import {SAFEXFeeTierSetup} from "../SAFEXFeeTierSetup.sol";
+import {SAFEXFeeTierSetupWithoutRevShare} from "../SAFEXFeeTierSetup.sol";
 
 contract FeeTierTest is SAFEXFeeTierSetup {
     // After trading, TI and trader level can be shown
@@ -172,5 +173,10 @@ contract FeeTierTest is SAFEXFeeTierSetup {
         console.log(point2);
         console.log("Trader 2 TI(%):");
         console.log(ti2);
+    }
+}
+contract WithoutRevShareTest is SAFEXFeeTierSetupWithoutRevShare {
+    function testSettle() public {
+        super.feeTierSetUp();
     }
 }

@@ -1216,9 +1216,10 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         }
         // check if amount is valid in case of both market and limit
         uint256 converted = _convert(book, price, amount, !isBid);
+        uint256 minRequired = _convert(book, price, 1, !isBid);
 
-        if (converted <= _convert(book, price, 1, !isBid)) {
-            revert OrderSizeTooSmall(amount, _convert(book, price, 1, isBid));
+        if (converted <= minRequired) {
+            revert OrderSizeTooSmall(amount, minRequired);
         }
         // check if sender has uid
         uint256 fee = _fee(base, quote, amount, isBid, uid, isMaker);
@@ -1264,7 +1265,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             IRevenue(feeTo).report(uid, isBid ? quote : base, amount, true);
             return (amount * feeNum) / feeDenom;
         } else {
-            return amount / 1000;
+            return amount / 100;
         }
     }
 
@@ -1293,4 +1294,5 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                     : IOrderbook(orderbook).convert(price, amount, isBid);
         }
     }
+
 }

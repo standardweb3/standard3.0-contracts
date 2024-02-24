@@ -150,4 +150,37 @@ contract LimitOrderTest is BaseSetup {
         console.log("weth balance");
         console.log(trader1.balance / 1e18);
     }
+
+    function testLimitBuyETHMakingNewBidHead() public {
+        super.setUp();
+        console.log("weth balance");
+        console.log(trader1.balance / 1e18);
+        vm.startPrank(trader1);
+
+        matchingEngine.limitBuy(
+            address(weth),
+            address(token1),
+            1e8,
+            1e18,
+            true,
+            5,
+            0,
+            trader1
+        );
+        console.log("weth balance");
+        console.log(trader1.balance / 1e18);
+        (uint256 bidHead, uint256 askHead) = matchingEngine.heads(address(weth), address(token1));
+        uint256 mktPrice = matchingEngine.mktPrice(address(weth), address(token1));
+        matchingEngine.limitBuy(
+            address(weth),
+            address(token1),
+            mktPrice + 1,
+            1e18,
+            true,
+            5,
+            0,
+            trader1
+        );
+        
+    }
 }

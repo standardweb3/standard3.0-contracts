@@ -26,6 +26,10 @@ interface IRevenue {
     function feeOf(uint32 uid, bool isMaker) external returns (uint32 feeNum);
 }
 
+interface IDecimals {
+    function decimals() external view returns (uint8 decimals);
+}
+
 // Onchain Matching engine for the orders
 contract MatchingEngine is Initializable, ReentrancyGuard {
     // fee recipient
@@ -88,7 +92,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint256 amount
     );
 
-    event PairAdded(address orderbook, address base, address quote);
+    event PairAdded(address orderbook, address base, address quote, uint8 bDecimal, uint8 qDecimal);
 
     error TooManyMatches(uint256 n);
     error InvalidFeeRate(uint256 feeNum, uint256 feeDenom);
@@ -530,7 +534,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             base,
             quote
         );
-        emit PairAdded(orderBook, base, quote);
+        uint8 bDecimal = IDecimals(base).decimals();
+        uint8 qDecimal = IDecimals(quote).decimals();
+        emit PairAdded(orderBook, base, quote, bDecimal, qDecimal);
         return orderBook;
     }
 

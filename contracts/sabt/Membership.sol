@@ -83,6 +83,10 @@ contract Membership is AccessControl {
 
     /// @dev register: Register as a member
     function register(uint8 metaId_, address feeToken_) external returns (uint32 uid) {
+        // if the sender is default admin, make admin membership
+        if (hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+            return _membership._register(metaId_, feeToken_, true);
+        } 
         // check if metaId is valid, meta only supports 1~11
         if (metaId_ == 0 || _membership.metas[metaId_].metaId != metaId_) {
             revert InvalidMeta(metaId_, msg.sender);
@@ -91,13 +95,17 @@ contract Membership is AccessControl {
         if ((metaId_ == 9 || metaId_ == 10 || metaId_ == 11) && !hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
         }
-        return _membership._register(metaId_, feeToken_);
+        return _membership._register(metaId_, feeToken_, false);
     }
 
     function registerETH(uint8 metaId_) external payable returns (uint32 uid) {
-        require(msg.value > 0, "Membership: zero value");
+        require(msg.value > 0, "Membership: zero value ETH");
+        // if the sender is default admin, make admin membership
+        if (hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+            _membership._register(metaId_, _membership.weth, true);
+        }
         IWETH(_membership.weth).deposit{value: msg.value}();
-        return _membership._register(metaId_, _membership.weth);
+        return _membership._register(metaId_, _membership.weth, false);
     }
 
     /**

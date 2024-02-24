@@ -94,15 +94,17 @@ library MembershipLib {
         self.fees[metaId_][feeToken_].subFee = subFee_ * 10 ** decimals;
     }
 
-    function _register(Member storage self, uint8 metaId_, address feeToken_) internal returns (uint32 uid) {
-        uint256 regFee = self.fees[metaId_][feeToken_].regFee;
-        // check if the fee token is supported
-        if (regFee == 0) {
-            revert InvalidFeeToken(feeToken_, metaId_);
+    function _register(Member storage self, uint8 metaId_, address feeToken_, bool isDev) internal returns (uint32 uid) {
+        if(!isDev) {
+            uint256 regFee = self.fees[metaId_][feeToken_].regFee;
+            // check if the fee token is supported
+            if (regFee == 0) {
+                revert InvalidFeeToken(feeToken_, metaId_);
+            }
+            // Transfer required fund
+            TransferHelper.safeTransferFrom(feeToken_, msg.sender, address(this), regFee);
+            TransferHelper.safeTransfer(feeToken_, self.foundation, regFee);
         }
-        // Transfer required fund
-        TransferHelper.safeTransferFrom(feeToken_, msg.sender, address(this), regFee);
-        TransferHelper.safeTransfer(feeToken_, self.foundation, regFee);
         // issue membership from SABT and get id
         return ISABT(self.sabt).mint(msg.sender, metaId_);
     }

@@ -153,6 +153,7 @@ contract SAFEXFeeTierSetupWithoutRevShare is BaseSetup {
             address(weth)
         );
         accountant.grantRole(accountant.REPORTER_ROLE(), address(treasury));
+        accountant.setDev(address(trader1));
         treasury.grantRole(treasury.REPORTER_ROLE(), address(matchingEngineFeeTier));
 
         feeToken.mint(trader1, 10e41);
@@ -170,6 +171,7 @@ contract SAFEXFeeTierSetupWithoutRevShare is BaseSetup {
         // initialize SABT
         sabt.initialize(address(membership));
         membership.setMembership(1, address(feeToken), 1000, 1000, 10000);
+        membership.grantRole(membership.DEFAULT_ADMIN_ROLE(), address(trader1));
 
         // set stablecoin price
         vm.prank(booker);

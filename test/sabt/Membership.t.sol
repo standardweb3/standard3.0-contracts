@@ -170,7 +170,7 @@ contract MembershipTest is MembershipBaseSetup {
     // registration is only possible with assigned token
     function testRegisterWithUnassignedTokenFails() public {
         mSetUp();
-        vm.prank(trader1);
+        vm.prank(trader2);
         vm.expectRevert();
         membership.register(9, address(stablecoin));
     }

@@ -176,7 +176,20 @@ contract FeeTierTest is SAFEXFeeTierSetup {
     }
 }
 contract WithoutRevShareTest is SAFEXFeeTierSetupWithoutRevShare {
-    function testSettle() public {
+    function testSettleWithoutRevShare() public {
         super.feeTierSetUp();
+        membership.grantRole(membership.DEFAULT_ADMIN_ROLE(), address(trader1));
+        treasury.setSettlement(3);
+        
+        vm.startPrank(trader1);
+        accountant.setTreasury(address(treasury));
+        token1.transfer(address(treasury), 8000000);
+        assert(membership.hasRole(membership.DEFAULT_ADMIN_ROLE(), address(trader1)));
+        membership.setMembership(10, address(token1), 0, 0, 1);
+        vm.startPrank(trader1);
+        membership.register(10, address(token1));
+        assert(accountant.dev() == address(trader1));
+        treasury.settle(address(token1), 0, 3);
+        treasury.exchange(address(token1), 0, 3, 2500);
     }
 }

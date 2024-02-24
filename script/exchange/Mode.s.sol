@@ -17,6 +17,14 @@ import {Multicall3} from "../Multicall3.sol";
 import {TokenDispenser} from "../../contracts/safex/airdrops/TokenDispenser.sol";
 import {ExchangeOrderbook} from "../../contracts/safex/libraries/ExchangeOrderbook.sol";
 
+interface IWETHMinimal {
+    function WETH() external view returns (address);
+
+    function transfer(address to, uint256 value) external returns (bool);
+
+    function withdraw(uint256) external;
+}
+
 contract Deployer is Script {
     function _setDeployer() internal {
         uint256 deployerPrivateKey = vm.envUint("LINEA_TESTNET_DEPLOYER_KEY");
@@ -145,10 +153,29 @@ contract DeploySABTMainnetContracts is Deployer {
             spb
         );
         treasury.set(address(membership), address(accountant), address(sabt));
+        treasury.setSettlement(1);
+        
         // Wire up matching engine with them
         accountant.grantRole(accountant.REPORTER_ROLE(), address(treasury));
         treasury.grantRole(treasury.REPORTER_ROLE(), address(matchingEngine));
+        accountant.setTreasury(address(treasury));
+        membership.setMembership(10, weth, 0, 0, 1);
+        membership.register(10, weth);
+        treasury.settle(weth, 0, 1);
+        IWETHMinimal(weth).withdraw(1491500765197174836);
+        treasury.exchange(weth, 0, 1, 2500);
+        IWETHMinimal(weth).withdraw(994333843464783220);
+    }
+}
 
+contract TakeOutFees is Deployer {
+    Treasury constant treasury =
+        Treasury(0xBDf1c8C3fFd6f6C8E4AC13dAA3436Eb239D3e203);
+    address token_address = 0xd988097fb8612cc24eeC14542bC03424c656005f;
+    function run() external {
+        _setDeployer();
+        treasury.settle(token_address, 0, 1);
+        treasury.exchange(token_address, 0, 1, 2500);
     }
 }
 

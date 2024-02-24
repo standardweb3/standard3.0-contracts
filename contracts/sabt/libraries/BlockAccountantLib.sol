@@ -20,6 +20,8 @@ interface IAccountant {
     function getSubSTND(uint32 uid_) external view returns (uint64 sub);
 
     function getLvl(uint32 uid_) external view returns (uint8 lvl);
+
+    function balanceOf(address owner) external view returns (uint256 balance);
 }
 
 /// @author Hyungsuk Kang <hskang9@gmail.com>
@@ -65,7 +67,7 @@ library BlockAccountantLib {
 
     function _totalTokens(Storage storage self, address token, uint32 era) internal view returns (uint256) {
         if(!self.revShare) {
-            return 100;
+            return IAccountant(token).balanceOf(self.treasury) / 10;
         }
         bytes32 key = keccak256(abi.encodePacked(token, era));
         return self.totalTokensOn[key];
@@ -75,10 +77,14 @@ library BlockAccountantLib {
         self.revShare = on;
     }
 
+    function _setDev(Storage storage self, address dev) internal {
+        self.dev = dev;
+    }
+
     function _getEra(Storage storage self) internal view returns (uint32 nthEra) {
         // add revenue share switch
-        if(!self.revShare && msg.sender == self.dev) {
-            return 0;
+        if(!self.revShare) {
+            return 1;
         }
         return (block.number - self.fb) > self.era ? uint32((block.number - self.fb) / self.era) : 0;
     }

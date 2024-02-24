@@ -22,6 +22,14 @@ contract BlockAccountant is AccessControl, Initializable {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
+    function setTreasury(address treasury) external {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        }
+
+        _accountant.treasury = treasury;
+    }
+
     function initialize(address membership, address engine, address stablecoin, uint32 spb_) external initializer {
         if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
@@ -99,6 +107,19 @@ contract BlockAccountant is AccessControl, Initializable {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
         }
         return _accountant._setRevShare(on);
+    }
+
+    function setDev(address _dev) external {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        }
+        grantRole(DEFAULT_ADMIN_ROLE, _dev);
+        revokeRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        return _accountant._setDev(_dev);
+    }
+
+    function dev() external view returns (address) {
+        return _accountant.dev;
     }
 
     function getTotalPoints(uint32 nthEra) external view returns (uint256) {

@@ -171,13 +171,14 @@ contract LimitOrderTest is BaseSetup {
         console.log(trader1.balance / 1e18);
         (uint256 bidHead, uint256 askHead) = matchingEngine.heads(address(weth), address(token1));
         uint256 mktPrice = matchingEngine.mktPrice(address(weth), address(token1));
+        console.log(mktPrice);
         matchingEngine.limitBuy(
             address(weth),
             address(token1),
-            mktPrice + 1,
+            294900000001,
             1e18,
             true,
-            5,
+            0,
             0,
             trader1
         );

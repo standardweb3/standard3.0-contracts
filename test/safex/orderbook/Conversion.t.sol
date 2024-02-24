@@ -229,13 +229,13 @@ contract ConversionTest is BaseSetup {
         );
 
         // Trader2's btc balance should be increased by 9.99e11
-        assert(diffTrader2BTCBalance == 9990e8);
+        assert(diffTrader2BTCBalance == 99e10);
         // Trader2's token1 balance should be decreased by 10e18
-        assert(diffTrader2T1Balance == 10e18);
+        assert(diffTrader2T1Balance == 1e19);
         // Trader1's btc balance should be decreased by 10000e8
-        assert(diffTrader1BTCBalance == 10000e8);
+        assert(diffTrader1BTCBalance == 1e12);
         // Trader1's token1 balance should be increased by 9.99e18
-        assert(diffTrader1T1Balance == 9990e15);
+        assert(diffTrader1T1Balance == 99e17);
 
         (uint256 bidHead, uint256 askHead) = book.heads();
         console.log("bidHead: ", bidHead);
@@ -309,13 +309,13 @@ contract ConversionTest is BaseSetup {
         );
 
         // Trader2's btc balance should be increased by 9.99e11
-        assert(diffTrader2BTCBalance == 9990e8);
+        assert(diffTrader2BTCBalance == 99e10);
         // Trader2's token1 balance should be decreased by 10e18
-        assert(diffTrader2T1Balance == 10e18);
+        assert(diffTrader2T1Balance == 1e19);
         // Trader1's btc balance should be decreased by 10000e8
         assert(diffTrader1BTCBalance == 10000e8);
         // Trader1's token1 balance should be increased by 9.99e18
-        assert(diffTrader1T1Balance == 9990e15);
+        assert(diffTrader1T1Balance == 99e17);
 
         (uint256 bidHead, uint256 askHead) = book.heads();
         console.log("bidHead: ", bidHead);
@@ -388,14 +388,14 @@ contract ConversionTest is BaseSetup {
         );
 
         // Trader2's token2 balance should be increased by 9.99e21
-        assert(diffTrader2T2Balance == 9990e18);
+        assert(diffTrader2T2Balance == 99e20);
 
         // Trader2's token1 balance should be decreased by 10e8
-        assert(diffTrader2BTCBalance == 10e8);
+        assert(diffTrader2BTCBalance == 1e9);
         // Trader1's token2 balance should be decreased by 10000e18
         assert(diffTrader1T2Balance == 10000e18);
         // Trader1's token1 balance should be increased by 9.99e8
-        assert(diffTrader1BTCBalance == 9990e5);
+        assert(diffTrader1BTCBalance == 99e7);
 
         (uint256 bidHead, uint256 askHead) = book.heads();
         console.log("bidHead: ", bidHead);
@@ -468,14 +468,14 @@ contract ConversionTest is BaseSetup {
         );
 
         // Trader2's token2 balance should be increased by 9.99e21
-        assert(diffTrader2T2Balance == 9990e18);
+        assert(diffTrader2T2Balance == 99e20);
 
         // Trader2's token1 balance should be decreased by 10e8
         assert(diffTrader2BTCBalance == 10e8);
         // Trader1's token2 balance should be decreased by 10000e18
         assert(diffTrader1T2Balance == 10000e18);
         // Trader1's token1 balance should be increased by 9.99e8
-        assert(diffTrader1BTCBalance == 9990e5);
+        assert(diffTrader1BTCBalance == 99e7);
 
         (uint256 bidHead, uint256 askHead) = book.heads();
         console.log("bidHead: ", bidHead);
@@ -548,14 +548,14 @@ contract ConversionTest is BaseSetup {
         );
 
         // Trader2's token2 balance should be increased by 9.99e21
-        assert(diffTrader2T2Balance == 9990e18);
+        assert(diffTrader2T2Balance == 99e20);
         console.log("flag");
         // Trader2's token1 balance should be decreased by 10e18
-        assert(diffTrader2T1Balance == 10e18);
+        assert(diffTrader2T1Balance == 1e19);
         // Trader1's token2 balance should be decreased by 10000e18
-        assert(diffTrader1T2Balance == 10000e18);
+        assert(diffTrader1T2Balance == 1e22);
         // Trader1's token1 balance should be increased by 9.99e18
-        assert(diffTrader1T1Balance == 9990e15);
+        assert(diffTrader1T1Balance == 99e17);
 
         (uint256 bidHead, uint256 askHead) = book.heads();
         console.log("bidHead: ", bidHead);
@@ -628,13 +628,13 @@ contract ConversionTest is BaseSetup {
         );
 
         // Trader2's token2 balance should be increased by 9.99e21
-        assert(diffTrader2T2Balance == 9990e18);
+        assert(diffTrader2T2Balance == 99e20);
 
         // Trader2's token1 balance should be decreased by 10e18
-        assert(diffTrader2T1Balance == 10e18);
+        assert(diffTrader2T1Balance == 1e19);
         // Trader1's token2 balance should be decreased by 10000e18
-        assert(diffTrader1T2Balance == 10000e18);
+        assert(diffTrader1T2Balance == 1e22);
         // Trader1's token1 balance should be increased by 9.99e18
-        assert(diffTrader1T1Balance == 9990e15);
+        assert(diffTrader1T1Balance == 99e17);
     }
 }

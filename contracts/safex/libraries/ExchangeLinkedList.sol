@@ -315,6 +315,36 @@ library ExchangeLinkedList {
         return prices;
     }
 
+    function _getPricesPaginated(
+        PriceLinkedList storage self,
+        bool isBid,
+        uint256 start,
+        uint256 end
+    ) internal view returns (uint256[] memory) {
+        uint256 i = 0;
+        uint256[] memory prices = new uint256[](end - start);
+        uint256 price = isBid ? self.bidHead : self.askHead;
+        for (
+            price;
+            price != 0 && i < start;
+            price = isBid ? self.bidPrices[price] : self.askPrices[price]
+        ) {
+            i++;
+        }
+        if (price == 0) {
+            return prices;
+        }
+        for (
+            price;
+            price != 0 && i < end;
+            price = isBid ? self.bidPrices[price] : self.askPrices[price]
+        ) {
+            prices[i] = price;
+            i++;
+        }
+        return prices;
+    }
+
     function _checkPriceExists(
         PriceLinkedList storage self,
         bool isBid,

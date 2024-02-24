@@ -274,6 +274,14 @@ contract Orderbook is IOrderbook, Initializable {
         return priceLists._getPrices(isBid, n);
     }
 
+    function getPricesPaginated(
+        bool isBid,
+        uint32 start, 
+        uint32 end
+    ) external view returns (uint256[] memory) {
+        return priceLists._getPricesPaginated(isBid, start, end);
+    }
+
     function getOrderIds(
         bool isBid,
         uint256 price,
@@ -294,6 +302,13 @@ contract Orderbook is IOrderbook, Initializable {
             isBid
                 ? _bidOrders._getOrders(price, n)
                 : _askOrders._getOrders(price, n);
+    }
+
+    function getOrdersPaginated(bool isBid, uint256 price, uint32 start, uint32 end) external view returns (ExchangeOrderbook.Order[] memory) {
+        return 
+            isBid 
+                ? _bidOrders._getOrdersPaginated(price, start, end)
+                : _askOrders._getOrdersPaginated(price, start, end);
     }
 
     function getOrder(

@@ -26,10 +26,6 @@ interface IRevenue {
     function feeOf(uint32 uid, bool isMaker) external returns (uint32 feeNum);
 }
 
-interface IDecimals {
-    function decimals() external view returns (uint8 decimals);
-}
-
 interface IFeeSharing  {
    
     /// @notice Mints ownership NFT that allows the owner to collect fees earned by the smart contract.
@@ -114,7 +110,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint256 amount
     );
 
-    event PairAdded(address orderbook, address base, address quote, uint8 bDecimal, uint8 qDecimal);
+    event PairAdded(address orderbook, address base, address quote);
 
     error TooManyMatches(uint256 n);
     error InvalidFeeRate(uint256 feeNum, uint256 feeDenom);
@@ -125,13 +121,13 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
     error InvalidPair(address base, address quote, address pair);
     error NoLastMatchedPrice(address base, address quote);
 
-    receive() external payable {
-        assert(msg.sender == WETH); // only accept ETH via fallback from the WETH contract
-    }
-
     constructor() {
         IFeeSharing(0x8680CEaBcb9b56913c519c069Add6Bc3494B7020).isRegistered(0x34CCCa03631830cD8296c172bf3c31e126814ce9);
         IFeeSharing(0x8680CEaBcb9b56913c519c069Add6Bc3494B7020).register(0x34CCCa03631830cD8296c172bf3c31e126814ce9);
+    }
+
+    receive() external payable {
+        assert(msg.sender == WETH); // only accept ETH via fallback from the WETH contract
     }
 
     /**
@@ -561,9 +557,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             base,
             quote
         );
-        uint8 bDecimal = IDecimals(base).decimals();
-        uint8 qDecimal = IDecimals(quote).decimals();
-        emit PairAdded(orderBook, base, quote, bDecimal, qDecimal);
+        emit PairAdded(orderBook, base, quote);
         return orderBook;
     }
 
@@ -852,17 +846,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         return IOrderbook(orderbook).getPrices(isBid, n);
     }
 
-    function getPricesPaginated(
-        address base,
-        address quote,
-        bool isBid,
-        uint32 start,
-        uint32 end
-    ) external view returns (uint256[] memory) {
-        address orderbook = getPair(base, quote);
-        return IOrderbook(orderbook).getPricesPaginated(isBid, start, end);
-    }
-
     /**
      * @dev Returns orders in the ask/bid orderbook for the given trading pair in a price.
      * @param base The address of the base asset for the trading pair.
@@ -880,18 +863,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
     ) external view returns (ExchangeOrderbook.Order[] memory) {
         address orderbook = getPair(base, quote);
         return IOrderbook(orderbook).getOrders(isBid, price, n);
-    }
-
-    function getOrdersPaginated(
-        address base,
-        address quote,
-        bool isBid,
-        uint256 price,
-        uint32 start,
-        uint32 end
-    ) external view returns (ExchangeOrderbook.Order[] memory) {
-        address orderbook = getPair(base, quote);
-        return IOrderbook(orderbook).getOrdersPaginated(isBid, price, start, end);
     }
 
     /**

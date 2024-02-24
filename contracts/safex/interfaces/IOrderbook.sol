@@ -43,7 +43,11 @@ interface IOrderbook {
 
     function getPrices(bool isBid, uint32 n) external view returns (uint256[] memory);
 
+    function getPricesPaginated(bool isBid, uint32 start, uint32 end) external view returns (uint256[] memory);
+
     function getOrders(bool isBid, uint256 price, uint32 n) external view returns (ExchangeOrderbook.Order[] memory);
+
+    function getOrdersPaginated(bool isBid, uint256 price, uint32 start, uint32 end) external view returns (ExchangeOrderbook.Order[] memory);
 
     function getOrder(bool isBid, uint32 orderId) external view returns (ExchangeOrderbook.Order memory);
 

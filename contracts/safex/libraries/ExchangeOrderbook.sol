@@ -200,6 +200,30 @@ library ExchangeOrderbook {
     return orders;
   }
 
+  function _getOrdersPaginated(
+    OrderStorage storage self,
+    uint256 price,
+    uint32 start,
+    uint32 end
+  ) internal view returns (Order[] memory) {
+    uint32 head = self.head[price];
+    Order[] memory orders = new Order[](end-start);
+    uint32 i = 0;
+    while (head != 0 && i < start) {
+      head = self.list[price][head];
+      i++;
+    }
+    if (head == 0) {
+      return orders;
+    }
+    while (head != 0 && i < end) {
+      orders[i] = self.orders[head];
+      head = self.list[price][head];
+      i++;
+    }
+    return orders;
+  }
+
   function _head(
     OrderStorage storage self,
     uint256 price

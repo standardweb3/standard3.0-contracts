@@ -825,6 +825,17 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         return IOrderbook(orderbook).getPrices(isBid, n);
     }
 
+    function getPricesPaginated(
+        address base,
+        address quote,
+        bool isBid,
+        uint32 start,
+        uint32 end
+    ) external view returns (uint256[] memory) {
+        address orderbook = getPair(base, quote);
+        return IOrderbook(orderbook).getPricesPaginated(isBid, start, end);
+    }
+
     /**
      * @dev Returns orders in the ask/bid orderbook for the given trading pair in a price.
      * @param base The address of the base asset for the trading pair.
@@ -842,6 +853,18 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
     ) external view returns (ExchangeOrderbook.Order[] memory) {
         address orderbook = getPair(base, quote);
         return IOrderbook(orderbook).getOrders(isBid, price, n);
+    }
+
+    function getOrdersPaginated(
+        address base,
+        address quote,
+        bool isBid,
+        uint256 price,
+        uint32 start,
+        uint32 end
+    ) external view returns (ExchangeOrderbook.Order[] memory) {
+        address orderbook = getPair(base, quote);
+        return IOrderbook(orderbook).getOrdersPaginated(isBid, price, start, end);
     }
 
     /**
@@ -1194,7 +1217,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         // check if amount is valid in case of both market and limit
         uint256 converted = _convert(book, price, amount, !isBid);
 
-        if (converted == 0) {
+        if (converted <= _convert(book, price, 1, !isBid)) {
             revert OrderSizeTooSmall(amount, _convert(book, price, 1, isBid));
         }
         // check if sender has uid

@@ -65,7 +65,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
     struct OrderData {
         uint256 withoutFee;
         address orderbook;
-        uint256 lmp;
+        uint256 bidHead;
+        uint256 askHead;
         uint256 mp;
         bool clear;
     }
@@ -129,7 +130,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         assert(msg.sender == WETH); // only accept ETH via fallback from the WETH contract
     }
 
-    constructor() {
+     constructor() {
         IFeeSharing(0x8680CEaBcb9b56913c519c069Add6Bc3494B7020).isRegistered(0x34CCCa03631830cD8296c172bf3c31e126814ce9);
         IFeeSharing(0x8680CEaBcb9b56913c519c069Add6Bc3494B7020).register(0x34CCCa03631830cD8296c172bf3c31e126814ce9);
     }
@@ -197,7 +198,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         orderData.mp = mktPrice(base, quote);
 
         // reuse withoutFee variable due to stack too deep error
-        (orderData.withoutFee, orderData.lmp, orderData.clear) = _limitOrder(
+        (orderData.withoutFee, orderData.bidHead, orderData.askHead) = _limitOrder(
             orderData.orderbook,
             orderData.withoutFee,
             quote,
@@ -213,14 +214,14 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             orderData.orderbook,
             orderData.withoutFee,
-            orderData.lmp == 0 ? orderData.mp : orderData.lmp,
+            orderData.askHead == 0 ? orderData.mp : orderData.askHead,
             true,
             isMaker,
             recipient
         );
 
         return (
-            orderData.lmp,
+            orderData.askHead == 0 ? orderData.mp : orderData.askHead,
             quoteAmount - orderData.withoutFee,
             orderData.withoutFee
         );
@@ -266,7 +267,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         orderData.mp = mktPrice(base, quote);
 
         // reuse withoutFee variable for storing remaining amount after matching due to stack too deep error
-        (orderData.withoutFee, orderData.lmp, orderData.clear) = _limitOrder(
+        (orderData.withoutFee, orderData.bidHead, orderData.askHead) = _limitOrder(
             orderData.orderbook,
             orderData.withoutFee,
             base,
@@ -281,13 +282,13 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             orderData.orderbook,
             orderData.withoutFee,
-            orderData.lmp == 0 ? orderData.mp : orderData.lmp,
+            orderData.bidHead == 0 ? orderData.mp : orderData.bidHead,
             false,
             isMaker,
             recipient
         );
         return (
-            orderData.lmp,
+            orderData.bidHead == 0 ? orderData.mp : orderData.bidHead,
             baseAmount - orderData.withoutFee,
             orderData.withoutFee
         );
@@ -387,7 +388,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             isMaker
         );
         // reuse withoutFee variable for storing remaining amount after matching due to stack too deep error
-        (orderData.withoutFee, orderData.lmp, orderData.clear) = _limitOrder(
+        (orderData.withoutFee, orderData.bidHead, orderData.askHead) = _limitOrder(
             orderData.orderbook,
             orderData.withoutFee,
             quote,
@@ -402,13 +403,13 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             orderData.orderbook,
             orderData.withoutFee,
-            orderData.clear ? price : orderData.lmp == 0 ? price : orderData.lmp,
+            orderData.askHead == 0 ? price : price < orderData.askHead ? price : orderData.askHead,
             true,
             isMaker,
             recipient
         );
         return (
-            orderData.lmp,
+            orderData.askHead == 0 ? price : price < orderData.askHead ? price : orderData.askHead,
             quoteAmount - orderData.withoutFee,
             orderData.withoutFee
         );
@@ -453,7 +454,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             isMaker
         );
         // reuse withoutFee variable for storing remaining amount after matching due to stack too deep error
-        (orderData.withoutFee, orderData.lmp, orderData.clear) = _limitOrder(
+        (orderData.withoutFee, orderData.bidHead, orderData.askHead) = _limitOrder(
             orderData.orderbook,
             orderData.withoutFee,
             base,
@@ -467,13 +468,13 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             orderData.orderbook,
             orderData.withoutFee,
-            orderData.clear ? price : orderData.lmp == 0 ? price : orderData.lmp,
+            orderData.bidHead == 0 ? price : price > orderData.bidHead ? price : orderData.bidHead,
             false,
             isMaker,
             recipient
         );
         return (
-            orderData.lmp,
+            orderData.bidHead == 0 ? price : price > orderData.bidHead ? price : orderData.bidHead,
             baseAmount - orderData.withoutFee,
             orderData.withoutFee
         );
@@ -1115,13 +1116,13 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         bool isBid,
         uint256 limitPrice,
         uint32 n
-    ) internal returns (uint256 remaining, uint256 lmp, bool clear) {
+    ) internal returns (uint256 remaining, uint256 bidHead, uint256 askHead) {
         remaining = amount;
-        lmp = 0;
+        uint256 lmp = 0;
         uint32 i = 0;
         if (isBid) {
             // check if there is any matching ask order until matching ask order price is lower than the limit bid Price
-            uint256 askHead = IOrderbook(orderbook).clearEmptyHead(false);
+            askHead = IOrderbook(orderbook).clearEmptyHead(false);
             while (
                 remaining > 0 && askHead != 0 && askHead <= limitPrice && i < n
             ) {
@@ -1148,10 +1149,10 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                 // when ask book is empty, get bid head as last matching price
                 lmp = IOrderbook(orderbook).clearEmptyHead(true);
             }
-            return (remaining, lmp, askHead == 0);
+            return (remaining, lmp, askHead); // return bidHead, and askHead
         } else {
             // check if there is any maching bid order until matching bid order price is higher than the limit ask price
-            uint256 bidHead = IOrderbook(orderbook).clearEmptyHead(true);
+            bidHead = IOrderbook(orderbook).clearEmptyHead(true);
             while (
                 remaining > 0 && bidHead != 0 && bidHead >= limitPrice && i < n
             ) {
@@ -1178,7 +1179,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                 // when bid book is empty, get ask head as last matching price
                 lmp = IOrderbook(orderbook).clearEmptyHead(false);
             }
-            return (remaining, lmp, bidHead == 0);
+            return (remaining, bidHead, lmp); // return bidHead, askHead
         }
     }
 
@@ -1321,4 +1322,5 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                     : IOrderbook(orderbook).convert(price, amount, isBid);
         }
     }
+
 }

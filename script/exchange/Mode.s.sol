@@ -59,6 +59,83 @@ contract limitBuyatZeroPrice is Deployer {
     }
 }
 
+/**
+ *Submitted for verification at Etherscan.io on 2018-10-22
+*/
+
+
+interface IERC20 {
+    function transfer(address to, uint256 value) external returns (bool);
+    function transferFrom(address from, address to, uint256 value) external returns (bool);
+    function approve(address to, uint256 value) external returns (bool);
+}
+
+
+contract Disperse {
+    function disperseEther(address[] memory recipients, uint256[] memory values) external payable {
+        for (uint256 i = 0; i < recipients.length; i++)
+            payable(recipients[i]).transfer(values[i]);
+        uint256 balance = address(this).balance;
+        if (balance > 0)
+            payable(msg.sender).transfer(balance);
+    }
+
+    function disperseToken(IERC20 token, address[] memory recipients, uint256[] memory values) external {
+        uint256 total = 0;
+        uint256 i;
+        for (i = 0; i < recipients.length; i++)
+            total += values[i];
+        require(token.transferFrom(msg.sender, address(this), total));
+        for (i = 0; i < recipients.length; i++)
+            require(token.transfer(recipients[i], values[i]));
+    }
+
+    function disperseTokenSimple(IERC20 token, address[] memory recipients, uint256[] memory values) external {
+        for (uint256 i = 0; i < recipients.length; i++)
+            require(token.transferFrom(msg.sender, recipients[i], values[i]));
+    }
+}
+
+contract DeployDisperse is Deployer {
+    Disperse public disperse;
+    function run() external {
+        _setDeployer();
+        disperse = new Disperse();
+    }
+}
+
+contract BulkTokenSend is Deployer {
+    Disperse public disperse;
+    address disperse_address = 0x1B1e8dF857C7273a6195F58A842dC07Faf4Ee829;
+    address token_address = 0xf0F161fDA2712DB8b566946122a5af183995e2eD;
+    uint256 sum = 10 * 100 * 1e6;
+    uint256[] values;
+
+    address[] public addresses;
+
+    function run() external {
+        _setDeployer();
+        IERC20 token = IERC20(token_address);
+        addresses.push(0x83C401803fFF08E491964E9457Ffe43ff8f5c602);
+        addresses.push(0x0e4e01FBEf1a828cA854623853DD6A80324cE012);
+        addresses.push(0xdAc7a91516112703448B5d1fbC8B679fcE838E8A);
+        addresses.push(0xe9255f2918F07Af51549Cb79d3FC80A313245711);
+        addresses.push(0x88398Dac284753fc651CD475b42aa507413F4Fd2);
+        addresses.push(0x33067aE72E88798be1F1ce04931E4bAfE9253edA);
+        addresses.push(0xa4ed0039c932Cca988bF50d69eD76B4a51c8e149);
+        addresses.push(0xC98e0Ac9925742b755f50Bb30868A5261DCb5FCC);
+        addresses.push(0xcb98e7B24ec94bb606F0bee79355786545532A6f);
+        addresses.push(0x4c0E052B255fFD9325aC869db3c4C718622b6c35);
+
+        for (uint256 i = 0; i < addresses.length; i++) {
+            values.push(100 * (1e6));
+        }
+        IERC20(token_address).approve(disperse_address, sum);
+        disperse = Disperse(disperse_address);
+        disperse.disperseToken(token, addresses, values);
+    }
+}
+
 contract DeploySAFEXMainnetContracts is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     /// Second per block to finalize
@@ -68,7 +145,6 @@ contract DeploySAFEXMainnetContracts is Deployer {
     address constant foundation_address =
         0x34CCCa03631830cD8296c172bf3c31e126814ce9;
     address constant weth = 0x4200000000000000000000000000000000000006;
-
     Treasury public treasury;
 
     function run() external {

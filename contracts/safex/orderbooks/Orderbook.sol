@@ -198,6 +198,8 @@ contract Orderbook is IOrderbook, Initializable {
             ? _bidOrders._getOrder(orderId)
             : _askOrders._getOrder(orderId);
         required = convert(price, order.depositAmount, !isBid);
+        // todo: 
+        uint256 dust = convert(price, 1, !isBid);
         if (required <= remaining) {
             isBid ? _bidOrders._fpop(price) : _askOrders._fpop(price);
             if (isEmpty(isBid, price)) {
@@ -206,7 +208,7 @@ contract Orderbook is IOrderbook, Initializable {
                     : priceLists.askHead = priceLists._next(isBid, price);
             }
         }
-        return (orderId, required);
+        return (orderId, required <= dust ? dust : required);
     }
 
     function _sendFunds(

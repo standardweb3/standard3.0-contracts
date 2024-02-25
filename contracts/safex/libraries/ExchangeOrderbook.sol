@@ -122,7 +122,7 @@ library ExchangeOrderbook {
     uint256 amount,
     uint256 dust
   ) internal returns (uint256) {
-    uint256 decreased = self.orders[id].depositAmount - amount;
+    uint256 decreased =  self.orders[id].depositAmount < amount ? 0 : self.orders[id].depositAmount - amount;
     // remove dust
     if (decreased <= dust) {
       decreased = self.orders[id].depositAmount;

@@ -121,23 +121,23 @@ library ExchangeOrderbook {
     uint32 id,
     uint256 amount,
     uint256 dust
-  ) internal returns (uint256) {
+  ) internal returns (uint256 sendFund, uint256 deletePrice) {
     uint256 decreased =  self.orders[id].depositAmount < amount ? 0 : self.orders[id].depositAmount - amount;
     // remove dust
     if (decreased <= dust) {
       decreased = self.orders[id].depositAmount;
-      _deleteOrder(self, id);
-      return decreased;
+      deletePrice = _deleteOrder(self, id);
+      return (decreased, deletePrice);
     } else {
       self.orders[id].depositAmount = decreased;
-      return amount;
+      return (amount, deletePrice);
     }
   }
 
   function _deleteOrder(
     OrderStorage storage self,
     uint32 id
-  ) internal {
+  ) internal returns (uint256 deletePrice) {
     uint256 price = self.orders[id].price;
     uint32 last = 0;
     uint32 head = self.head[price];
@@ -164,7 +164,7 @@ library ExchangeOrderbook {
     }
     // delete order
     delete self.orders[id];
-    return;
+    return self.head[price] == 0 ? price : 0;
   }
 
   // show n order ids at the price in the orderbook

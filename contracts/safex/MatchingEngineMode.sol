@@ -30,8 +30,8 @@ interface IDecimals {
     function decimals() external view returns (uint8 decimals);
 }
 
+
 interface IFeeSharing  {
-   
     /// @notice Mints ownership NFT that allows the owner to collect fees earned by the smart contract.
     ///         `msg.sender` is assumed to be a smart contract that earns fees. Only smart contract itself
     ///         can register a fee receipient.
@@ -48,8 +48,6 @@ interface IFeeSharing  {
     function isRegistered(address _smartContract) external view returns (bool);
 
     function getTokenId(address _smartContract) external view returns (uint256);
-
-
 }
 
 // Onchain Matching engine for the orders
@@ -130,7 +128,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         assert(msg.sender == WETH); // only accept ETH via fallback from the WETH contract
     }
 
-     constructor() {
+    constructor() {
         IFeeSharing(0x8680CEaBcb9b56913c519c069Add6Bc3494B7020).isRegistered(0x34CCCa03631830cD8296c172bf3c31e126814ce9);
         IFeeSharing(0x8680CEaBcb9b56913c519c069Add6Bc3494B7020).register(0x34CCCa03631830cD8296c172bf3c31e126814ce9);
     }

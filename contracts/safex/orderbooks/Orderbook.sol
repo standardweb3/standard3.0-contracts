@@ -118,7 +118,7 @@ contract Orderbook is IOrderbook, Initializable {
             revert InvalidAccess(owner, order.owner);
         }
 
-        isBid
+        uint256 deletePrice = isBid
             ? _bidOrders._deleteOrder(orderId)
             : _askOrders._deleteOrder(orderId);
         isBid
@@ -126,7 +126,7 @@ contract Orderbook is IOrderbook, Initializable {
             : _sendFunds(pair.base, owner, order.depositAmount);
 
         // check if the canceled order was the last order in the list
-        if (!wasEmpty && isEmpty(isBid, order.price)) {
+        if (!wasEmpty && deletePrice != 0) {
             priceLists._delete(isBid, order.price);
         }
 
@@ -147,7 +147,7 @@ contract Orderbook is IOrderbook, Initializable {
         // if isBid == true, sender is matching ask order with bid order(i.e. selling base to receive quote), otherwise sender is matching bid order with ask order(i.e. buying base with quote)
         if (isBid) {
             // decrease remaining amount of order
-            uint256 withDust = _bidOrders._decreaseOrder(
+            (uint256 withDust, uint256 deletePrice) = _bidOrders._decreaseOrder(
                 orderId,
                 converted,
                 dust
@@ -156,11 +156,15 @@ contract Orderbook is IOrderbook, Initializable {
             _sendFunds(pair.base, order.owner, amount);
             // send converted amount of quote asset from owner to sender
             _sendFunds(pair.quote, sender, withDust);
+            // delete price if price of the order is empty
+            if(deletePrice != 0) {
+                priceLists._delete(isBid, deletePrice);
+            }
         }
         // if the order is bid order on the base/quote pair
         else {
             // decrease remaining amount of order
-            uint256 withDust = _askOrders._decreaseOrder(
+            (uint256 withDust, uint256 deletePrice) = _askOrders._decreaseOrder(
                 orderId,
                 converted,
                 dust
@@ -170,6 +174,10 @@ contract Orderbook is IOrderbook, Initializable {
             _sendFunds(pair.quote, order.owner, amount);
             // send converted amount of base asset from owner to sender
             _sendFunds(pair.base, sender, withDust);
+            // delete price if price of the order is empty
+            if(deletePrice != 0) {
+                priceLists._delete(isBid, deletePrice);
+            }
         }
         return order.owner;
     }

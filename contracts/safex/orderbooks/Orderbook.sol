@@ -137,7 +137,8 @@ contract Orderbook is IOrderbook, Initializable {
         uint32 orderId,
         bool isBid,
         address sender,
-        uint256 amount
+        uint256 amount,
+        bool clear
     ) external onlyEngine returns (address owner) {
         ExchangeOrderbook.Order memory order = isBid
             ? _bidOrders._getOrder(orderId)
@@ -150,7 +151,8 @@ contract Orderbook is IOrderbook, Initializable {
             (uint256 withDust, uint256 deletePrice) = _bidOrders._decreaseOrder(
                 orderId,
                 converted,
-                dust
+                dust,
+                clear
             );
             // sender is matching ask order for base asset with quote asset
             _sendFunds(pair.base, order.owner, amount);
@@ -167,7 +169,8 @@ contract Orderbook is IOrderbook, Initializable {
             (uint256 withDust, uint256 deletePrice) = _askOrders._decreaseOrder(
                 orderId,
                 converted,
-                dust
+                dust,
+                clear
             );
             // sender is matching bid order for quote asset with base asset
             // send deposited amount of quote asset from sender to owner
@@ -200,13 +203,12 @@ contract Orderbook is IOrderbook, Initializable {
         bool isBid,
         uint256 price,
         uint256 remaining
-    ) external onlyEngine returns (uint32 orderId, uint256 required) {
+    ) external onlyEngine returns (uint32 orderId, uint256 required, bool clear) {
         orderId = isBid ? _bidOrders._head(price) : _askOrders._head(price);
         ExchangeOrderbook.Order memory order = isBid
             ? _bidOrders._getOrder(orderId)
             : _askOrders._getOrder(orderId);
         required = convert(price, order.depositAmount, !isBid);
-        // todo: 
         uint256 dust = convert(price, 1, !isBid);
         if (required <= remaining) {
             isBid ? _bidOrders._fpop(price) : _askOrders._fpop(price);
@@ -215,8 +217,9 @@ contract Orderbook is IOrderbook, Initializable {
                     ? priceLists.bidHead = priceLists._next(isBid, price)
                     : priceLists.askHead = priceLists._next(isBid, price);
             }
+            return (orderId, required, true); // clear order
         }
-        return (orderId, required <= dust ? dust : required);
+        return (orderId, required, false);
     }
 
     function _sendFunds(

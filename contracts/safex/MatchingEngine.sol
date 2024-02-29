@@ -1008,7 +1008,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             i < n
         ) {
             // fpop OrderLinkedList by price, if ask you get bid order, if bid you get ask order. Get quote asset on bid order on buy, base asset on ask order on sell
-            (uint32 orderId, uint256 required) = IOrderbook(orderbook).fpop(
+            (uint32 orderId, uint256 required, bool clear) = IOrderbook(orderbook).fpop(
                 !isBid,
                 price,
                 remaining
@@ -1023,7 +1023,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                     orderId,
                     !isBid,
                     recipient,
-                    remaining
+                    remaining,
+                    clear
                 );
                 // emit event order matched
                 emit OrderMatched(
@@ -1051,7 +1052,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                     orderId,
                     !isBid,
                     recipient,
-                    required
+                    required,
+                    clear
                 );
                 // emit event order matched
                 emit OrderMatched(

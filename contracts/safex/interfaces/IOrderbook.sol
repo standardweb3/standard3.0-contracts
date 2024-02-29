@@ -7,7 +7,7 @@ import "../libraries/ExchangeOrderbook.sol";
 interface IOrderbook {
     function initialize(uint256 id, address base_, address quote_, address engine_) external;
 
-    function fpop(bool isBid, uint256 price, uint256 remaining) external returns (uint32 orderId, uint256 required);
+    function fpop(bool isBid, uint256 price, uint256 remaining) external returns (uint32 orderId, uint256 required, bool clear);
 
     function setLmp(uint256 lmp) external;
 
@@ -31,7 +31,7 @@ interface IOrderbook {
         external
         returns (uint256 remaining);
 
-    function execute(uint32 orderId, bool isBid, address sender, uint256 amount)
+    function execute(uint32 orderId, bool isBid, address sender, uint256 amount, bool clear)
         external
         returns (address owner);
 

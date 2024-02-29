@@ -120,11 +120,12 @@ library ExchangeOrderbook {
     OrderStorage storage self,
     uint32 id,
     uint256 amount,
-    uint256 dust
+    uint256 dust,
+    bool clear
   ) internal returns (uint256 sendFund, uint256 deletePrice) {
     uint256 decreased =  self.orders[id].depositAmount < amount ? 0 : self.orders[id].depositAmount - amount;
     // remove dust
-    if (decreased <= dust) {
+    if (decreased <= dust || clear) {
       decreased = self.orders[id].depositAmount;
       deletePrice = _deleteOrder(self, id);
       return (decreased, deletePrice);

@@ -1,8 +1,8 @@
-# SAFEX
+# exchange
 
-## **Trading Digital Assets with [SAFEX](./contracts/safex/README.md)**
+## **Trading Digital Assets with [exchange](./contracts/exchange/README.md)**
 
-Standard offers the SAFEX app, which allows users to trade digital assets at their preferred prices and quantities. Whether you're a seasoned trader or new to the digital market, SAFEX offers the tools to buy and sell with precision and control.
+Standard offers the exchange app, which allows users to trade digital assets at their preferred prices and quantities. Whether you're a seasoned trader or new to the digital market, exchange offers the tools to buy and sell with precision and control.
 
 ## Table of Contents
 
@@ -52,7 +52,7 @@ forge build
 To ensure the contracts function as expected, run tests specifically for the SABT module:
 
 ```
-forge test --match-path test/safex/*
+forge test --match-path test/exchange/*
 ```
 
 ---
@@ -77,7 +77,7 @@ For developers looking to work on the contracts within a local environment, foll
 
 ## Documentation
 
-For a comprehensive understanding of SAFEX and its functionalities, visit the official [documentation](https://docs.standardweb3.com).
+For a comprehensive understanding of exchange and its functionalities, visit the official [documentation](https://docs.standardweb3.com).
 
 
 ## Licensing

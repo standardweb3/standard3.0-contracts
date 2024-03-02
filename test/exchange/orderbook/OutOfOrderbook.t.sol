@@ -6,18 +6,18 @@ import {MockQuote} from "../../../contracts/mock/MockQuote.sol";
 import {MockBTC} from "../../../contracts/mock/MockBTC.sol";
 import {ErrToken} from "../../../contracts/mock/MockTokenOver18Decimals.sol";
 import {Utils} from "../../utils/Utils.sol";
-import {MatchingEngine} from "../../../contracts/safex/MatchingEngine.sol";
-import {OrderbookFactory} from "../../../contracts/safex/orderbooks/OrderbookFactory.sol";
-import {Orderbook} from "../../../contracts/safex/orderbooks/Orderbook.sol";
-import {ExchangeOrderbook} from "../../../contracts/safex/libraries/ExchangeOrderbook.sol";
-import {IOrderbookFactory} from "../../../contracts/safex/interfaces/IOrderbookFactory.sol";
+import {MatchingEngine} from "../../../contracts/exchange/MatchingEngine.sol";
+import {OrderbookFactory} from "../../../contracts/exchange/orderbooks/OrderbookFactory.sol";
+import {Orderbook} from "../../../contracts/exchange/orderbooks/Orderbook.sol";
+import {ExchangeOrderbook} from "../../../contracts/exchange/libraries/ExchangeOrderbook.sol";
+import {IOrderbookFactory} from "../../../contracts/exchange/interfaces/IOrderbookFactory.sol";
 import {WETH9} from "../../../contracts/mock/WETH9.sol";
 import {Treasury} from "../../../contracts/sabt/Treasury.sol";
 import {BaseSetup} from "../OrderbookBaseSetup.sol";
 import {console} from "forge-std/console.sol";
 import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 
-contract OrderMatchTest is BaseSetup {
+contract OutOfOrderbookTest is BaseSetup {
     function testRemoveHeadOnMatch() public {
         super.setUp();
         vm.prank(booker);

@@ -9,12 +9,12 @@ import {BlockAccountant} from "../../contracts/sabt/BlockAccountant.sol";
 import {Membership} from "../../contracts/sabt/Membership.sol";
 import {Treasury} from "../../contracts/sabt/Treasury.sol";
 import {MockToken} from "../../contracts/mock/MockToken.sol";
-import {MatchingEngine} from "../../contracts/safex/MatchingEngine.sol";
-import {OrderbookFactory} from "../../contracts/safex/orderbooks/OrderbookFactory.sol";
-import {Orderbook} from "../../contracts/safex/orderbooks/Orderbook.sol";
+import {MatchingEngine} from "../../contracts/exchange/MatchingEngine.sol";
+import {OrderbookFactory} from "../../contracts/exchange/orderbooks/OrderbookFactory.sol";
+import {Orderbook} from "../../contracts/exchange/orderbooks/Orderbook.sol";
 import {Multicall3} from "../Multicall3.sol";
-import {TokenDispenser} from "../../contracts/safex/airdrops/TokenDispenser.sol";
-import {ExchangeOrderbook} from "../../contracts/safex/libraries/ExchangeOrderbook.sol";
+import {TokenDispenser} from "../../contracts/exchange/airdrops/TokenDispenser.sol";
+import {ExchangeOrderbook} from "../../contracts/exchange/libraries/ExchangeOrderbook.sol";
 
 contract Deployer is Script {
     function _setDeployer() internal {
@@ -47,7 +47,7 @@ contract DeployTestnetAssets is Deployer {
     }
 }
 
-contract DeploySAFEXMainnetContracts is Deployer {
+contract DeployexchangeMainnetContracts is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     /// Second per block to finalize
     uint32 constant spb = 12;
@@ -170,7 +170,7 @@ contract DeployAll is Deployer {
         membership.register(1, address(feeToken));
         membership.subscribe(1, 1000000, address(feeToken));
 
-        // SetupSAFEXInitialParameters
+        // SetupexchangeInitialParameters
         // Setup pair between stablecoin and feeToken with price
         feeToken.approve(address(matchingEngine), 100000e18);
         matchingEngine.addPair(address(feeToken), address(stablecoin));
@@ -330,7 +330,7 @@ contract SetupSABTInitialParameters is Deployer {
     }
 }
 
-contract SetupSAFEXInitialParameters is Deployer {
+contract SetupexchangeInitialParameters is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     address constant matching_engine_address =
         0x1779583579564b34232021590E6d19cAd0277973;

@@ -63,12 +63,12 @@ source .env
 
 2. **Deploy**:
    Standard has customized deployment `forge-script` for each app in each network in `script` folder.
-   For deploying an app to a specific network, let's say we deploy SAFEX in Linea Testnet(Goerli).
+   For deploying an app to a specific network, let's say we deploy exchange in Linea Testnet(Goerli).
 
    Use this command below to test results after deployment. Use declared variables from `.env` file for network connection
 
    ```bash
-   forge script script/safex/LineaTestnet.s.sol:DeployAll  --rpc-url $LINEA_TESTNET_RPC -vvvv
+   forge script script/exchange/LineaTestnet.s.sol:DeployAll  --rpc-url $LINEA_TESTNET_RPC -vvvv
    ```
 
    ***

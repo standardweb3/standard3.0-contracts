@@ -9,13 +9,13 @@ import {BlockAccountant} from "../../contracts/sabt/BlockAccountant.sol";
 import {Membership} from "../../contracts/sabt/Membership.sol";
 import {Treasury} from "../../contracts/sabt/Treasury.sol";
 import {MockToken} from "../../contracts/mock/MockToken.sol";
-//import {MatchingEngine} from "../../contracts/safex/MatchingEngine.sol";
-import {MatchingEngine} from "../../contracts/safex/MatchingEngineMode.sol";
-import {OrderbookFactory} from "../../contracts/safex/orderbooks/OrderbookFactory.sol";
-import {Orderbook} from "../../contracts/safex/orderbooks/Orderbook.sol";
+//import {MatchingEngine} from "../../contracts/exchange/MatchingEngine.sol";
+import {MatchingEngine} from "../../contracts/exchange/MatchingEngineMode.sol";
+import {OrderbookFactory} from "../../contracts/exchange/orderbooks/OrderbookFactory.sol";
+import {Orderbook} from "../../contracts/exchange/orderbooks/Orderbook.sol";
 import {Multicall3} from "../Multicall3.sol";
-import {TokenDispenser} from "../../contracts/safex/airdrops/TokenDispenser.sol";
-import {ExchangeOrderbook} from "../../contracts/safex/libraries/ExchangeOrderbook.sol";
+import {TokenDispenser} from "../../contracts/exchange/airdrops/TokenDispenser.sol";
+import {ExchangeOrderbook} from "../../contracts/exchange/libraries/ExchangeOrderbook.sol";
 
 interface IWETHMinimal {
     function WETH() external view returns (address);
@@ -136,7 +136,7 @@ contract BulkTokenSend is Deployer {
     }
 }
 
-contract DeploySAFEXMainnetContracts is Deployer {
+contract DeployexchangeMainnetContracts is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     /// Second per block to finalize
     uint32 constant spb = 12;

@@ -5,12 +5,12 @@ import {Utils} from "../utils/Utils.sol";
 import {SABT} from "../../contracts/sabt/SABT.sol";
 import {BlockAccountant} from "../../contracts/sabt/BlockAccountant.sol";
 import {Membership} from "../../contracts/sabt/Membership.sol";
-import {MatchingEngine} from "../../contracts/safex/MatchingEngine.sol";
-import {OrderbookFactory} from "../../contracts/safex/orderbooks/OrderbookFactory.sol";
+import {MatchingEngine} from "../../contracts/exchange/MatchingEngine.sol";
+import {OrderbookFactory} from "../../contracts/exchange/orderbooks/OrderbookFactory.sol";
 import {Treasury} from "../../contracts/sabt/Treasury.sol";
 import {TreasuryLib} from "../../contracts/sabt/libraries/TreasuryLib.sol";
 import {MockToken} from "../../contracts/mock/MockToken.sol";
-import {Orderbook} from "../../contracts/safex/orderbooks/Orderbook.sol";
+import {Orderbook} from "../../contracts/exchange/orderbooks/Orderbook.sol";
 import {WETH9} from "../../contracts/mock/WETH9.sol";
 
 contract MembershipBaseSetup is Test {

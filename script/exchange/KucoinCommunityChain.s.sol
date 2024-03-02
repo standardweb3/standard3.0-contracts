@@ -9,8 +9,8 @@ import {BlockAccountant} from "../../contracts/sabt/BlockAccountant.sol";
 import {Membership} from "../../contracts/sabt/Membership.sol";
 import {Treasury} from "../../contracts/sabt/Treasury.sol";
 import {MockToken} from "../../contracts/mock/MockToken.sol";
-import {MatchingEngine} from "../../contracts/safex/MatchingEngine.sol";
-import {OrderbookFactory} from "../../contracts/safex/orderbooks/OrderbookFactory.sol";
+import {MatchingEngine} from "../../contracts/exchange/MatchingEngine.sol";
+import {OrderbookFactory} from "../../contracts/exchange/orderbooks/OrderbookFactory.sol";
 import {Multicall3} from "../Multicall3.sol";
 
 contract Deployer is Script {
@@ -132,7 +132,7 @@ contract SetupSABTInitialParameters is Deployer {
     }
 }
 
-contract SetupSAFEXInitialParameters is Deployer {
+contract SetupexchangeInitialParameters is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     address constant matching_engine_address = 0xa02d713DEBba20c8f81b35576A78D66Ef4E2f868;
     address constant feeToken_address = 0xf3Db341c6001916121EB46eD669D08aDC7FF37e1;
@@ -157,7 +157,7 @@ contract SetupSAFEXInitialParameters is Deployer {
     }
 }
 
-contract SetupSAFEXSampleOrders is Deployer {
+contract SetupexchangeSampleOrders is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     address constant matching_engine_address = 0xa02d713DEBba20c8f81b35576A78D66Ef4E2f868;
     address constant feeToken_address = 0xf3Db341c6001916121EB46eD669D08aDC7FF37e1;
@@ -181,7 +181,7 @@ contract SetupSAFEXSampleOrders is Deployer {
     }
 }
 
-contract SetupSAFEXSampleOrders2 is Deployer {
+contract SetupexchangeSampleOrders2 is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     address constant matching_engine_address = 0xa02d713DEBba20c8f81b35576A78D66Ef4E2f868;
     address constant feeToken_address = 0xf3Db341c6001916121EB46eD669D08aDC7FF37e1;

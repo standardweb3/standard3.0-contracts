@@ -36,7 +36,7 @@ The **Standard super app** stands as a pinnacle in the web3.0 ecosystem, bestowi
 
 ---
 
-### 2. [SAFEX: The Digital Marketplace](./contracts/safex/README.md)
+### 2. [Standard Exchange: The Digital Marketplace](./contracts/exchange/README.md)
 
 - **Core Functionality**: A fully decentralized orderbook exchange
 - **Benefits**:
@@ -65,7 +65,7 @@ The **Standard super app** stands as a pinnacle in the web3.0 ecosystem, bestowi
 
 ---
 
-In essence, the **Standard super app** unifies **SABT** (governance & credit management), **SAFEX** (digital trading), **SAFU** (financial standardization), and **SAIL** (wealth strategy) into a cohesive ecosystem. This ensemble delivers a holistic suite of financial instruments, streamlining the intricacies of digital finance. With Standard, users are equipped, empowered, and emboldened to architect their financial destinies. It's not merely a platform but a beacon heralding the dawn of decentralized economic empowerment.
+In essence, the **Standard super app** unifies **SABT** (governance & credit management), **exchange** (digital trading), **SAFU** (financial standardization), and **SAIL** (wealth strategy) into a cohesive ecosystem. This ensemble delivers a holistic suite of financial instruments, streamlining the intricacies of digital finance. With Standard, users are equipped, empowered, and emboldened to architect their financial destinies. It's not merely a platform but a beacon heralding the dawn of decentralized economic empowerment.
 
 
 ## Deployment

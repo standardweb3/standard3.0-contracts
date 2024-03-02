@@ -77,7 +77,7 @@ For developers looking to work on the contracts within a local environment, foll
 
 ## Documentation
 
-For a comprehensive understanding of SAFEX and its functionalities, visit the official [documentation](https://docs.standardweb3.com).
+For a comprehensive understanding of exchange and its functionalities, visit the official [documentation](https://docs.standardweb3.com).
 
 
 ## Licensing

@@ -6,17 +6,17 @@ import {MockQuote} from "../../../contracts/mock/MockQuote.sol";
 import {MockBTC} from "../../../contracts/mock/MockBTC.sol";
 import {ErrToken} from "../../../contracts/mock/MockTokenOver18Decimals.sol";
 import {Utils} from "../../utils/Utils.sol";
-import {MatchingEngine} from "../../../contracts/safex/MatchingEngine.sol";
-import {OrderbookFactory} from "../../../contracts/safex/orderbooks/OrderbookFactory.sol";
-import {Orderbook} from "../../../contracts/safex/orderbooks/Orderbook.sol";
-import {ExchangeOrderbook} from "../../../contracts/safex/libraries/ExchangeOrderbook.sol";
-import {IOrderbookFactory} from "../../../contracts/safex/interfaces/IOrderbookFactory.sol";
+import {MatchingEngine} from "../../../contracts/exchange/MatchingEngine.sol";
+import {OrderbookFactory} from "../../../contracts/exchange/orderbooks/OrderbookFactory.sol";
+import {Orderbook} from "../../../contracts/exchange/orderbooks/Orderbook.sol";
+import {ExchangeOrderbook} from "../../../contracts/exchange/libraries/ExchangeOrderbook.sol";
+import {IOrderbookFactory} from "../../../contracts/exchange/interfaces/IOrderbookFactory.sol";
 import {WETH9} from "../../../contracts/mock/WETH9.sol";
 import {Treasury} from "../../../contracts/sabt/Treasury.sol";
-import {SAFEXFeeTierSetup} from "../SAFEXFeeTierSetup.sol";
-import {SAFEXFeeTierSetupWithoutRevShare} from "../SAFEXFeeTierSetup.sol";
+import {ExchangeFeeTierSetup} from "../ExchangeFeeTierSetup.sol";
+import {ExchangeFeeTierSetupWithoutRevShare} from "../ExchangeFeeTierSetup.sol";
 
-contract FeeTierTest is SAFEXFeeTierSetup {
+contract FeeTierTest is ExchangeFeeTierSetup {
     // After trading, TI and trader level can be shown
 
     function _trade() internal {
@@ -175,7 +175,7 @@ contract FeeTierTest is SAFEXFeeTierSetup {
         console.log(ti2);
     }
 }
-contract WithoutRevShareTest is SAFEXFeeTierSetupWithoutRevShare {
+contract WithoutRevShareTest is ExchangeFeeTierSetupWithoutRevShare {
     function testSettleWithoutRevShare() public {
         super.feeTierSetUp();
         membership.grantRole(membership.DEFAULT_ADMIN_ROLE(), address(trader1));

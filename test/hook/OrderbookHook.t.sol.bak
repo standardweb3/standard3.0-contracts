@@ -30,10 +30,10 @@ import {OrderbookHook} from "../../contracts/uniswapv4/OrderbookHook.sol";
 import {OrderbookStub} from "../../contracts/uniswapv4/OrderbookStub.sol";
 
 // Orderbook contracts
-import {MatchingEngine} from "../../contracts/safex/MatchingEngine.sol";
-import {OrderbookFactory} from "../../contracts/safex/orderbooks/OrderbookFactory.sol";
-import {Orderbook} from "../../contracts/safex/orderbooks/Orderbook.sol";
-import {ExchangeOrderbook} from "../../contracts/safex/libraries/ExchangeOrderbook.sol";
+import {MatchingEngine} from "../../contracts/exchange/MatchingEngine.sol";
+import {OrderbookFactory} from "../../contracts/exchange/orderbooks/OrderbookFactory.sol";
+import {Orderbook} from "../../contracts/exchange/orderbooks/Orderbook.sol";
+import {ExchangeOrderbook} from "../../contracts/exchange/libraries/ExchangeOrderbook.sol";
 import {Treasury} from "../../contracts/sabt/Treasury.sol";
 import {WETH9} from "../../contracts/mock/WETH9.sol";
 

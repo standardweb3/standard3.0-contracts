@@ -18,7 +18,7 @@
   },
   "files": [
     "contracts/sabt",
-    "contracts/safex"
+    "contracts/exchange"
   ],
   "scripts": {
     "create-local": "graph create --node http://127.0.0.1:8020 nft-auction",

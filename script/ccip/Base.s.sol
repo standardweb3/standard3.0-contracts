@@ -9,12 +9,12 @@ import {BlockAccountant} from "../../contracts/sabt/BlockAccountant.sol";
 import {Membership} from "../../contracts/sabt/Membership.sol";
 import {Treasury} from "../../contracts/sabt/Treasury.sol";
 import {MockToken} from "../../contracts/mock/MockToken.sol";
-import {MatchingEngine} from "../../contracts/safex/MatchingEngine.sol";
-import {OrderbookFactory} from "../../contracts/safex/orderbooks/OrderbookFactory.sol";
-import {Orderbook} from "../../contracts/safex/orderbooks/Orderbook.sol";
+import {MatchingEngine} from "../../contracts/exchange/MatchingEngine.sol";
+import {OrderbookFactory} from "../../contracts/exchange/orderbooks/OrderbookFactory.sol";
+import {Orderbook} from "../../contracts/exchange/orderbooks/Orderbook.sol";
 import {Multicall3} from "../Multicall3.sol";
-import {TokenDispenser} from "../../contracts/safex/airdrops/TokenDispenser.sol";
-import {ExchangeOrderbook} from "../../contracts/safex/libraries/ExchangeOrderbook.sol";
+import {TokenDispenser} from "../../contracts/exchange/airdrops/TokenDispenser.sol";
+import {ExchangeOrderbook} from "../../contracts/exchange/libraries/ExchangeOrderbook.sol";
 import {ERC20MintablePausableBurnable} from "../../contracts/stnd/ccip/STND.sol";
 
 contract Deployer is Script {

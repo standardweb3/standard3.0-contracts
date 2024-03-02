@@ -12,7 +12,7 @@ import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
 import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
-import {IEngine} from "../../contracts/safex/interfaces/IEngine.sol";
+import {IEngine} from "../../contracts/exchange/interfaces/IEngine.sol";
 
 contract OrderbookHook is BaseHook, ERC1155 {
     // Use the PoolIdLibrary for PoolKey to add the `.toId()` function on a PoolKey

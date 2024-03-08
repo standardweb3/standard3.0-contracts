@@ -264,6 +264,9 @@ contract Orderbook is IOrderbook, Initializable {
     /////////////////////////////////
     /// Price linked list methods ///
     /////////////////////////////////
+    function lmp() external view returns (uint256) {
+        return priceLists.lmp;
+    }
 
     function heads() external view returns (uint256, uint256) {
         return priceLists._heads();

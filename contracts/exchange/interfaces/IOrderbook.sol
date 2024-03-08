@@ -41,6 +41,8 @@ interface IOrderbook {
 
     function bidHead() external view returns (uint256);
 
+    function lmp() external view returns (uint256);
+
     function getPrices(bool isBid, uint32 n) external view returns (uint256[] memory);
 
     function getPricesPaginated(bool isBid, uint32 start, uint32 end) external view returns (uint256[] memory);

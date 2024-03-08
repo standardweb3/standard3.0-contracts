@@ -103,6 +103,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
     error NoOrderMade(address base, address quote);
     error InvalidPair(address base, address quote, address pair);
     error NoLastMatchedPrice(address base, address quote);
+    error BidPriceTooLow(uint256 limitPrice, uint256 lmp, uint256 minBidPrice);
+    error AskPriceTooHigh(uint256 limitPrice, uint256 lmp, uint256 maxAskPrice);
 
     receive() external payable {
         assert(msg.sender == WETH); // only accept ETH via fallback from the WETH contract
@@ -1093,9 +1095,13 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint32 n
     ) internal returns (uint256 remaining, uint256 bidHead, uint256 askHead) {
         remaining = amount;
-        uint256 lmp = 0;
+        uint256 lmp = IOrderbook(orderbook).lmp();
         uint32 i = 0;
         if (isBid) {
+            // check limit bid price is within 10% spread of last matched price
+            if (lmp != 0 && limitPrice < lmp * 9 /10) {
+                revert BidPriceTooLow(limitPrice, lmp, lmp * 9/10);
+            }
             // check if there is any matching ask order until matching ask order price is lower than the limit bid Price
             askHead = IOrderbook(orderbook).clearEmptyHead(false);
             while (
@@ -1126,6 +1132,10 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             }
             return (remaining, lmp, askHead); // return bidHead, and askHead
         } else {
+            // check limit ask price is within 10% spread of last matched price
+            if(lmp != 0 && limitPrice > lmp * 11 / 10 ) {
+                revert AskPriceTooHigh(limitPrice, lmp, lmp * 11 / 10);
+            }
             // check if there is any maching bid order until matching bid order price is higher than the limit ask price
             bidHead = IOrderbook(orderbook).clearEmptyHead(true);
             while (

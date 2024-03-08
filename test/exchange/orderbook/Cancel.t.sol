@@ -98,7 +98,7 @@ contract CancelTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(token2),
-            500000000,
+            110000000,
             10,
             true,
             2,
@@ -150,7 +150,7 @@ contract CancelTest is BaseSetup {
             matchingEngine.limitSell(
                 address(token1),
                 address(token2),
-                500000000,
+                110000000,
                 i + 100,
                 true,
                 2,
@@ -216,7 +216,7 @@ contract CancelTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(token2),
-            500000000,
+            110000000,
             1000,
             true,
             2,
@@ -268,7 +268,7 @@ contract CancelTest is BaseSetup {
             matchingEngine.limitSell(
                 address(token1),
                 address(token2),
-                500000000,
+                110000000,
                 i + 100,
                 true,
                 2,
@@ -334,7 +334,7 @@ contract CancelTest is BaseSetup {
         matchingEngine.limitSell(
             address(token1),
             address(token2),
-            500000000,
+            110000000,
             1000,
             true,
             2,
@@ -386,7 +386,7 @@ contract CancelTest is BaseSetup {
             matchingEngine.limitSell(
                 address(token1),
                 address(token2),
-                500000000,
+                110000000,
                 i + 100,
                 true,
                 2,

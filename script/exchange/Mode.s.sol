@@ -136,7 +136,7 @@ contract BulkTokenSend is Deployer {
     }
 }
 
-contract DeployexchangeMainnetContracts is Deployer {
+contract DeployExchangeMainnetContracts is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     /// Second per block to finalize
     uint32 constant spb = 12;

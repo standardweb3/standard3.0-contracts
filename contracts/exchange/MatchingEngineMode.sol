@@ -123,6 +123,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
     error NoOrderMade(address base, address quote);
     error InvalidPair(address base, address quote, address pair);
     error NoLastMatchedPrice(address base, address quote);
+    error BidPriceTooLow(uint256 limitPrice, uint256 lmp, uint256 minBidPrice);
+    error AskPriceTooHigh(uint256 limitPrice, uint256 lmp, uint256 maxAskPrice);
+
 
     receive() external payable {
         assert(msg.sender == WETH); // only accept ETH via fallback from the WETH contract
@@ -202,7 +205,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             recipient,
             true,
-            orderData.mp * 13/10,
+            orderData.mp * 11/10,
             n
         );
 
@@ -212,14 +215,14 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             orderData.orderbook,
             orderData.withoutFee,
-            orderData.askHead == 0 ? orderData.mp : orderData.askHead,
+            orderData.mp * 11/10 <= orderData.askHead ? orderData.mp * 11/10 : orderData.askHead == 0 ? orderData.mp * 11/10 : orderData.askHead,
             true,
             isMaker,
             recipient
         );
 
         return (
-            orderData.askHead == 0 ? orderData.mp : orderData.askHead,
+            orderData.mp * 11/10 <= orderData.askHead ? orderData.mp * 11/10 : orderData.askHead == 0 ? orderData.mp * 11/10 : orderData.askHead,
             quoteAmount - orderData.withoutFee,
             orderData.withoutFee
         );
@@ -271,7 +274,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             base,
             recipient,
             false,
-            orderData.mp * 7 / 10,
+            orderData.mp * 9/10,
             n
         );
 
@@ -280,13 +283,13 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             orderData.orderbook,
             orderData.withoutFee,
-            orderData.bidHead == 0 ? orderData.mp : orderData.bidHead,
+            orderData.mp * 9/10 >= orderData.bidHead ? orderData.mp * 9/10 : orderData.bidHead,
             false,
             isMaker,
             recipient
         );
         return (
-            orderData.bidHead == 0 ? orderData.mp : orderData.bidHead,
+            orderData.mp * 9/10 >= orderData.bidHead ? orderData.mp * 9/10 : orderData.bidHead,
             baseAmount - orderData.withoutFee,
             orderData.withoutFee
         );

@@ -180,7 +180,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             recipient,
             true,
-            orderData.mp * 11/10,
+            orderData.mp * 12/10,
             n
         );
 
@@ -190,14 +190,14 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             orderData.orderbook,
             orderData.withoutFee,
-            orderData.mp * 11/10 <= orderData.askHead ? orderData.mp * 11/10 : orderData.askHead == 0 ? orderData.mp * 11/10 : orderData.askHead,
+            orderData.mp * 12/10 <= orderData.askHead ? orderData.mp * 12/10 : orderData.askHead == 0 ? orderData.mp * 12/10 : orderData.askHead,
             true,
             isMaker,
             recipient
         );
 
         return (
-            orderData.mp * 11/10 <= orderData.askHead ? orderData.mp * 11/10 : orderData.askHead == 0 ? orderData.mp * 11/10 : orderData.askHead,
+            orderData.mp * 12/10 <= orderData.askHead ? orderData.mp * 12/10 : orderData.askHead == 0 ? orderData.mp * 12/10 : orderData.askHead,
             quoteAmount - orderData.withoutFee,
             orderData.withoutFee
         );
@@ -249,7 +249,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             base,
             recipient,
             false,
-            orderData.mp * 9/10,
+            orderData.mp * 8/10,
             n
         );
 
@@ -258,13 +258,13 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             orderData.orderbook,
             orderData.withoutFee,
-            orderData.mp * 9/10 >= orderData.bidHead ? orderData.mp * 9/10 : orderData.bidHead,
+            orderData.mp * 8/10 >= orderData.bidHead ? orderData.mp * 8/10 : orderData.bidHead,
             false,
             isMaker,
             recipient
         );
         return (
-            orderData.mp * 9/10 >= orderData.bidHead ? orderData.mp * 9/10 : orderData.bidHead,
+            orderData.mp * 8/10 >= orderData.bidHead ? orderData.mp * 8/10 : orderData.bidHead,
             baseAmount - orderData.withoutFee,
             orderData.withoutFee
         );
@@ -1098,10 +1098,11 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         remaining = amount;
         uint256 lmp = IOrderbook(orderbook).lmp();
         uint32 i = 0;
+        // In LimitBuy
         if (isBid) {
-            // check limit bid price is within 10% spread of last matched price
-            if (lmp != 0 && limitPrice < lmp * 9 /10) {
-                return(remaining ,IOrderbook(orderbook).clearEmptyHead(true), lmp *9/10);
+            // check limit bid price is within 20% spread of last matched price
+            if (lmp != 0 && limitPrice < lmp * 8/10) {
+                return(remaining, IOrderbook(orderbook).clearEmptyHead(true), lmp * 8/10);
             }
             // check if there is any matching ask order until matching ask order price is lower than the limit bid Price
             askHead = IOrderbook(orderbook).clearEmptyHead(false);
@@ -1132,10 +1133,12 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                 lmp = IOrderbook(orderbook).clearEmptyHead(true);
             }
             return (remaining, lmp, askHead); // return bidHead, and askHead
-        } else {
-            // check limit ask price is within 10% spread of last matched price
-            if(lmp != 0 && limitPrice > lmp * 11 / 10 ) {
-                return(remaining ,IOrderbook(orderbook).clearEmptyHead(true), lmp * 11/10);
+        } 
+        // In LimitSell
+        else {
+            // check limit ask price is within 20% spread of last matched price
+            if(lmp != 0 && limitPrice > lmp * 12/10 ) {
+                return(remaining, IOrderbook(orderbook).clearEmptyHead(true), lmp * 12/10);
             }
             // check if there is any maching bid order until matching bid order price is higher than the limit ask price
             bidHead = IOrderbook(orderbook).clearEmptyHead(true);

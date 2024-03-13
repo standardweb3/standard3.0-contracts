@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Pausable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract ERC20MintablePausableBurnable is ERC20, ERC20Burnable, ERC20Pausable, AccessControl {
+contract STNDX is ERC20, ERC20Burnable, ERC20Pausable, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     uint256 private constant MAX_SUPPLY = 20000000 * (10 ** 18); // 20 million tokens with 18 decimal places

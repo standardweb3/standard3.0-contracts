@@ -1,0 +1,53 @@
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.17;
+
+import "forge-std/Script.sol";
+import {console} from "forge-std/console.sol";
+import {MockBTC} from "../../../contracts/mock/MockBTC.sol";
+import {SABT} from "../../../contracts/sabt/SABT.sol";
+import {BlockAccountant} from "../../../contracts/sabt/BlockAccountant.sol";
+import {Membership} from "../../../contracts/sabt/Membership.sol";
+import {Treasury} from "../../../contracts/sabt/Treasury.sol";
+import {MockToken} from "../../../contracts/mock/MockToken.sol";
+import {MatchingEngine} from "../../../contracts/exchange/MatchingEngine.sol";
+import {OrderbookFactory} from "../../../contracts/exchange/orderbooks/OrderbookFactory.sol";
+import {Orderbook} from "../../../contracts/exchange/orderbooks/Orderbook.sol";
+import {Multicall3} from "../../Multicall3.sol";
+import {TokenDispenser} from "../../../contracts/exchange/airdrops/TokenDispenser.sol";
+import {ExchangeOrderbook} from "../../../contracts/exchange/libraries/ExchangeOrderbook.sol";
+import {STNDX} from "../../../contracts/stnd/ccip/STNDX.sol";
+
+contract Deployer is Script {
+    function _setDeployer() internal {
+        uint256 deployerPrivateKey = vm.envUint("LINEA_TESTNET_DEPLOYER_KEY");
+        vm.startBroadcast(deployerPrivateKey);
+    }
+}
+
+contract DeployMulticall3 is Deployer {
+    function run() external {
+        _setDeployer();
+        new Multicall3();
+        vm.stopBroadcast();
+    }
+}
+
+contract DeploySTNDX is Deployer {
+    STNDX public stnd;
+    function run() external {
+        _setDeployer();
+        stnd = new STNDX();
+        vm.stopBroadcast();
+    }
+}
+
+contract GrantMinterRole is Deployer {
+    address stnd_address = 0x7a2e3a7A1bf8FaCCAd68115DC509DB5a5af4e7e4;
+    STNDX public stnd;
+    address minter = address(0);
+    function run() external {
+        _setDeployer();
+        stnd = STNDX(stnd_address);
+        stnd.grantRole(stnd.MINTER_ROLE(), minter);
+    }
+}

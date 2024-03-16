@@ -9,7 +9,7 @@ import {BlockAccountant} from "../../contracts/sabt/BlockAccountant.sol";
 import {Membership} from "../../contracts/sabt/Membership.sol";
 import {Treasury} from "../../contracts/sabt/Treasury.sol";
 import {MockToken} from "../../contracts/mock/MockToken.sol";
-import {MatchingEngine} from "../../contracts/exchange/MatchingEngineBlast.sol";
+import {MatchingEngineBlast} from "../../contracts/exchange/MatchingEngineBlast.sol";
 import {OrderbookFactory} from "../../contracts/exchange/orderbooks/OrderbookFactory.sol";
 import {Orderbook} from "../../contracts/exchange/orderbooks/Orderbook.sol";
 import {Multicall3} from "../Multicall3.sol";
@@ -54,7 +54,7 @@ contract DeployExchangeMainnetContracts is Deployer {
     function run() external {
         _setDeployer();
         OrderbookFactory orderbookFactory = new OrderbookFactory();
-        MatchingEngine matchingEngine = new MatchingEngine();
+        MatchingEngineBlast matchingEngine = new MatchingEngineBlast();
         treasury = Treasury(0x7a2e3a7A1bf8FaCCAd68115DC509DB5a5af4e7e4);
         
         matchingEngine.initialize(
@@ -134,8 +134,8 @@ contract TestOrderbookSell is Deployer {
         0x677B1CA9ACb800f7b40C89ef9BB441f79A7363f0;
     address constant base_addr = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address constant quote_addr = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
-    MatchingEngine public matchingEngine =
-        MatchingEngine(payable(matching_engine_address));
+    MatchingEngineBlast public matchingEngine =
+        MatchingEngineBlast(payable(matching_engine_address));
     MockToken public base = MockToken(base_addr);
     MockToken public quote = MockToken(quote_addr);
     Orderbook public book;
@@ -186,8 +186,8 @@ contract TestOrderbookBuy is Deployer {
         0x677B1CA9ACb800f7b40C89ef9BB441f79A7363f0;
     address constant base_addr = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address constant quote_addr = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
-    MatchingEngine public matchingEngine =
-        MatchingEngine(payable(matching_engine_address));
+    MatchingEngineBlast public matchingEngine =
+        MatchingEngineBlast(payable(matching_engine_address));
     MockToken public base = MockToken(base_addr);
     MockToken public quote = MockToken(quote_addr);
     Orderbook public book;
@@ -241,8 +241,8 @@ contract TestGetPrices is Deployer {
         0xE57Cdf5796C2f5281EDF1B81129E1D4Ff9190815;
     address constant stablecoin_address =
         0xfB4c8b2658AB2bf32ab5Fc1627f115974B52FeA7;
-    MatchingEngine public matchingEngine =
-        MatchingEngine(payable(matching_engine_address));
+    MatchingEngineBlast public matchingEngine =
+        MatchingEngineBlast(payable(matching_engine_address));
     MockToken public feeToken = MockToken(feeToken_address);
     MockToken public stablecoin = MockToken(stablecoin_address);
 
@@ -278,11 +278,11 @@ contract TestGetPrices is Deployer {
 contract ShowOrderbook is Deployer {
     address constant token1 = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address constant token2 = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
-    MatchingEngine matchingEngine =
-        MatchingEngine(payable(0x677B1CA9ACb800f7b40C89ef9BB441f79A7363f0));
+    MatchingEngineBlast matchingEngine =
+        MatchingEngineBlast(payable(0x677B1CA9ACb800f7b40C89ef9BB441f79A7363f0));
 
     function _showOrderbook(
-        MatchingEngine matchingEngine,
+        MatchingEngineBlast matchingEngine,
         address base,
         address quote
     ) internal view {

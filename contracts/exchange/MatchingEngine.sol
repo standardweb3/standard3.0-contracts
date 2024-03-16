@@ -7,6 +7,7 @@ import {TransferHelper} from "./libraries/TransferHelper.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 interface IRevenue {
     function report(
@@ -31,7 +32,7 @@ interface IDecimals {
 }
 
 // Onchain Matching engine for the orders
-contract MatchingEngine is Initializable, ReentrancyGuard {
+contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     // fee recipient
     address private feeTo;
     // fee denominator
@@ -40,21 +41,28 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
     address public orderbookFactory;
     // WETH
     address public WETH;
+
     struct OrderData {
         uint256 withoutFee;
         address orderbook;
         uint256 bidHead;
         uint256 askHead;
         uint256 mp;
+        uint32 ls;
+        uint32 ms;
         bool clear;
     }
 
-    event OrderDeposit(
-        address sender,
-        address asset,
-        uint256 fee
-    );
-    
+    struct DefaultSpread {
+        uint32 limit;
+        uint32 market;
+    }
+
+    // Spread limit setting
+    mapping(address => DefaultSpread) public spreadLimits;
+
+    event OrderDeposit(address sender, address asset, uint256 fee);
+
     event OrderCanceled(
         address orderbook,
         uint256 id,
@@ -64,15 +72,15 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
     );
 
     /**
-    * @dev This event is emitted when an order is successfully matched with a counterparty.
-    * @param orderbook The address of the order book contract to get base and quote asset contract address.
-    * @param id The unique identifier of the canceled order in bid/ask order database.
-    * @param isBid A boolean indicating whether the matched order is a bid (true) or ask (false).
-    * @param sender The address initiating the match.
-    * @param owner The address of the order owner whose order is matched with the sender.
-    * @param price The price at which the order is matched.
-    * @param amount The matched amount of the asset being traded in the match. if isBid==true, it is base asset, if isBid==false, it is quote asset.
-    */
+     * @dev This event is emitted when an order is successfully matched with a counterparty.
+     * @param orderbook The address of the order book contract to get base and quote asset contract address.
+     * @param id The unique identifier of the canceled order in bid/ask order database.
+     * @param isBid A boolean indicating whether the matched order is a bid (true) or ask (false).
+     * @param sender The address initiating the match.
+     * @param owner The address of the order owner whose order is matched with the sender.
+     * @param price The price at which the order is matched.
+     * @param amount The matched amount of the asset being traded in the match. if isBid==true, it is base asset, if isBid==false, it is quote asset.
+     */
     event OrderMatched(
         address orderbook,
         uint256 id,
@@ -83,7 +91,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint256 amount
     );
 
-    
     event OrderPlaced(
         address orderbook,
         uint256 id,
@@ -93,7 +100,13 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint256 amount
     );
 
-    event PairAdded(address orderbook, address base, address quote, uint8 bDecimal, uint8 qDecimal);
+    event PairAdded(
+        address orderbook,
+        address base,
+        address quote,
+        uint8 bDecimal,
+        uint8 qDecimal
+    );
 
     error TooManyMatches(uint256 n);
     error InvalidFeeRate(uint256 feeNum, uint256 feeDenom);
@@ -105,9 +118,10 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
     error NoLastMatchedPrice(address base, address quote);
     error BidPriceTooLow(uint256 limitPrice, uint256 lmp, uint256 minBidPrice);
     error AskPriceTooHigh(uint256 limitPrice, uint256 lmp, uint256 maxAskPrice);
-
+    
     receive() external payable {
         assert(msg.sender == WETH); // only accept ETH via fallback from the WETH contract
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
     /**
@@ -130,9 +144,20 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         WETH = WETH_;
     }
 
+    function setSpread(
+        address base,
+        address quote,
+        uint32 market,
+        uint32 limit
+    ) external returns (bool) {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        }
+        _setSpread(base, quote, market, limit);
+    }
 
     /**
-     * @dev Executes a market buy order,
+     * @dev Executes a market buy order, with spread limit of 1% for price actions.
      * buys the base asset using the quote asset at the best available price in the orderbook up to `n` orders,
      * and make an order at the market price.
      * @param base The address of the base asset for the trading pair
@@ -159,6 +184,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         returns (uint256 makePrice, uint256 matched, uint256 placed)
     {
         OrderData memory orderData;
+        DefaultSpread memory spreads;
+        
         // reuse quoteAmount variable as minRequired from _deposit to avoid stack too deep error
         (orderData.withoutFee, orderData.orderbook) = _deposit(
             base,
@@ -170,17 +197,24 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             isMaker
         );
 
-        
+        // get spread limits
+        (orderData.ls, orderData.ms) = _getSpread(orderData.orderbook);
+
+
         orderData.mp = mktPrice(base, quote);
 
         // reuse withoutFee variable due to stack too deep error
-        (orderData.withoutFee, orderData.bidHead, orderData.askHead) = _limitOrder(
+        (
+            orderData.withoutFee,
+            orderData.bidHead,
+            orderData.askHead
+        ) = _limitOrder(
             orderData.orderbook,
             orderData.withoutFee,
             quote,
             recipient,
             true,
-            orderData.mp * 11/10,
+            (orderData.mp * (10000 + orderData.ms)) / 10000,
             n
         );
 
@@ -190,21 +224,29 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             orderData.orderbook,
             orderData.withoutFee,
-            orderData.mp * 11/10 <= orderData.askHead ? orderData.mp * 11/10 : orderData.askHead == 0 ? orderData.mp * 11/10 : orderData.askHead,
+            (orderData.mp * (10000 + orderData.ms)) / 10000 <= orderData.askHead
+                ? (orderData.mp * (10000 + orderData.ms)) / 10000
+                : orderData.askHead == 0
+                    ? (orderData.mp * (10000 + orderData.ms)) / 10000
+                    : orderData.askHead,
             true,
             isMaker,
             recipient
         );
 
         return (
-            orderData.mp * 11/10 <= orderData.askHead ? orderData.mp * 11/10 : orderData.askHead == 0 ? orderData.mp * 11/10 : orderData.askHead,
+            (orderData.mp * (10000 + orderData.ms)) / 10000 <= orderData.askHead
+                ? (orderData.mp * (10000 + orderData.ms)) / 10000
+                : orderData.askHead == 0
+                    ? (orderData.mp * (10000 + orderData.ms)) / 10000
+                    : orderData.askHead,
             quoteAmount - orderData.withoutFee,
             orderData.withoutFee
         );
     }
 
     /**
-     * @dev Executes a market sell order,
+     * @dev Executes a market sell order, with spread limit of 5% for price actions.
      * sells the base asset for the quote asset at the best available price in the orderbook up to `n` orders,
      * and make an order at the market price.
      * @param base The address of the base asset for the trading pair
@@ -240,16 +282,23 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             isMaker
         );
 
+        // get spread limits
+        (orderData.ls, orderData.ms) = _getSpread(orderData.orderbook);
+
         orderData.mp = mktPrice(base, quote);
 
         // reuse withoutFee variable for storing remaining amount after matching due to stack too deep error
-        (orderData.withoutFee, orderData.bidHead, orderData.askHead) = _limitOrder(
+        (
+            orderData.withoutFee,
+            orderData.bidHead,
+            orderData.askHead
+        ) = _limitOrder(
             orderData.orderbook,
             orderData.withoutFee,
             base,
             recipient,
             false,
-            orderData.mp * 9/10,
+            (orderData.mp * (10000 - orderData.ms)) / 10000,
             n
         );
 
@@ -258,20 +307,24 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             orderData.orderbook,
             orderData.withoutFee,
-            orderData.mp * 9/10 >= orderData.bidHead ? orderData.mp * 9/10 : orderData.bidHead,
+            (orderData.mp * (10000 - orderData.ms)) / 10000 >= orderData.bidHead
+                ? (orderData.mp * (10000 - orderData.ms)) / 10000
+                : orderData.bidHead,
             false,
             isMaker,
             recipient
         );
         return (
-            orderData.mp * 9/10 >= orderData.bidHead ? orderData.mp * 9/10 : orderData.bidHead,
+            (orderData.mp * (10000 - orderData.ms)) / 10000 >= orderData.bidHead
+                ? (orderData.mp * (10000 - orderData.ms)) / 10000
+                : orderData.bidHead,
             baseAmount - orderData.withoutFee,
             orderData.withoutFee
         );
     }
 
     /**
-     * @dev Executes a market buy order,
+     * @dev Executes a market buy order, with spread limit of 5% for price actions.
      * buys the base asset using the quote asset at the best available price in the orderbook up to `n` orders,
      * and make an order at the market price with quote asset as native Ethereum(or other network currencies).
      * @param base The address of the base asset for the trading pair
@@ -325,7 +378,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
     }
 
     /**
-     * @dev Executes a limit buy order,
+     * @dev Executes a limit buy order, with spread limit of 5% for price actions.
      * places a limit order in the orderbook for buying the base asset using the quote asset at a specified price,
      * and make an order at the limit price.
      * @param base The address of the base asset for the trading pair
@@ -363,8 +416,22 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             uid,
             isMaker
         );
+
+        // get spread limits
+        (orderData.ls, orderData.ms) = _getSpread(orderData.orderbook);
+
+        try this.mktPrice(base, quote) returns (uint256 price) {
+            orderData.mp = price;
+        } catch {
+            orderData.mp = 0;
+        }
+
         // reuse withoutFee variable for storing remaining amount after matching due to stack too deep error
-        (orderData.withoutFee, orderData.bidHead, orderData.askHead) = _limitOrder(
+        (
+            orderData.withoutFee,
+            orderData.bidHead,
+            orderData.askHead
+        ) = _limitOrder(
             orderData.orderbook,
             orderData.withoutFee,
             quote,
@@ -379,20 +446,36 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             orderData.orderbook,
             orderData.withoutFee,
-            orderData.askHead == 0 ? price : price < orderData.askHead ? price : orderData.askHead,
+            orderData.askHead == 0
+                ? (
+                    price >= orderData.bidHead
+                        ? orderData.bidHead == 0
+                            ? price
+                            : (orderData.mp * (10000 + orderData.ls)) / 10000
+                        : orderData.bidHead
+                )
+                : (price < orderData.askHead ? price : orderData.askHead),
             true,
             isMaker,
             recipient
         );
         return (
-            orderData.askHead == 0 ? price : price < orderData.askHead ? price : orderData.askHead,
+            orderData.askHead == 0
+                ? (
+                    price >= orderData.bidHead
+                        ? orderData.bidHead == 0
+                            ? price
+                            : (orderData.mp * (10000 + orderData.ls)) / 10000
+                        : orderData.bidHead
+                )
+                : (price < orderData.askHead ? price : orderData.askHead),
             quoteAmount - orderData.withoutFee,
             orderData.withoutFee
         );
     }
 
     /**
-     * @dev Executes a limit sell order,
+     * @dev Executes a limit sell order, with spread limit of 5% for price actions.
      * places a limit order in the orderbook for selling the base asset for the quote asset at a specified price,
      * and makes an order at the limit price.
      * @param base The address of the base asset for the trading pair
@@ -429,8 +512,22 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             uid,
             isMaker
         );
+
+        // get spread limit 
+        (orderData.ls, orderData.ms) = _getSpread(orderData.orderbook);
+
+        try this.mktPrice(base, quote) returns (uint256 price) {
+            orderData.mp = price;
+        } catch {
+            orderData.mp = 0;
+        }
+
         // reuse withoutFee variable for storing remaining amount after matching due to stack too deep error
-        (orderData.withoutFee, orderData.bidHead, orderData.askHead) = _limitOrder(
+        (
+            orderData.withoutFee,
+            orderData.bidHead,
+            orderData.askHead
+        ) = _limitOrder(
             orderData.orderbook,
             orderData.withoutFee,
             base,
@@ -444,20 +541,42 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             quote,
             orderData.orderbook,
             orderData.withoutFee,
-            orderData.bidHead == 0 ? price : price > orderData.bidHead ? price : orderData.bidHead,
+            orderData.bidHead == 0
+                ? (
+                    price >= orderData.askHead
+                        ? (
+                            orderData.askHead == 0
+                                ? orderData.mp == 0
+                                    ? price
+                                    : (orderData.mp * (10000 - orderData.ls)) / 10000
+                                : orderData.askHead
+                        )
+                        : price
+                )
+                : (price > orderData.bidHead ? price : orderData.bidHead),
             false,
             isMaker,
             recipient
         );
         return (
-            orderData.bidHead == 0 ? price : price > orderData.bidHead ? price : orderData.bidHead,
+            orderData.bidHead == 0
+                ? (
+                    price >= orderData.askHead
+                        ? (
+                            orderData.askHead == 0
+                                ? (orderData.mp * (10000 - orderData.ls)) / 10000
+                                : orderData.askHead
+                        )
+                        : price
+                )
+                : (price > orderData.bidHead ? price : orderData.bidHead),
             baseAmount - orderData.withoutFee,
             orderData.withoutFee
         );
     }
 
     /**
-     * @dev Executes a limit buy order,
+     * @dev Executes a limit buy order, with spread limit of 5% for price actions.
      * places a limit order in the orderbook for buying the base asset using the quote asset at a specified price,
      * and make an order at the limit price with quote asset as native Ethereum(or network currencies).
      * @param base The address of the base asset for the trading pair
@@ -486,7 +605,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
     }
 
     /**
-     * @dev Executes a limit sell order,
+     * @dev Executes a limit sell order, with spread limit of 5% for price actions.
      * places a limit order in the orderbook for selling the base asset for the quote asset at a specified price,
      * and makes an order at the limit price with base asset as native Ethereum(or network currencies).
      * @param quote The address of the quote asset for the trading pair
@@ -540,6 +659,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         );
         uint8 bDecimal = IDecimals(base).decimals();
         uint8 qDecimal = IDecimals(quote).decimals();
+        // set market spread to 2% and limit spread to 5% for default pair
+        _setSpread(base, quote, 200, 500);
         emit PairAdded(orderBook, base, quote, bDecimal, qDecimal);
         return orderBook;
     }
@@ -718,7 +839,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
     ) external view returns (address base, address quote) {
         return IOrderbookFactory(orderbookFactory).getBaseQuote(orderbook);
     }
-    
+
     /**
      * @dev returns addresses of pairs in OrderbookFactory registry
      * @return pairs list of pairs from start to end
@@ -868,7 +989,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         uint32 end
     ) external view returns (ExchangeOrderbook.Order[] memory) {
         address orderbook = getPair(base, quote);
-        return IOrderbook(orderbook).getOrdersPaginated(isBid, price, start, end);
+        return
+            IOrderbook(orderbook).getOrdersPaginated(isBid, price, start, end);
     }
 
     /**
@@ -962,6 +1084,25 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         }
     }
 
+    function _setSpread(
+        address base,
+        address quote,
+        uint32 market,
+        uint32 limit
+    ) internal returns (bool) {
+        address book = getPair(base, quote);
+        spreadLimits[book] = DefaultSpread(market, limit);
+        return true;
+    }
+
+    function _getSpread(
+        address book
+    ) internal returns (uint32 limit, uint32 market) {
+        DefaultSpread memory spread;
+        spread = spreadLimits[book];
+        return (spread.limit, spread.market);
+    }
+
     /**
      * @dev Internal function which makes an order on the orderbook.
      * @param orderbook The address of the orderbook contract for the trading pair
@@ -1011,11 +1152,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
             i < n
         ) {
             // fpop OrderLinkedList by price, if ask you get bid order, if bid you get ask order. Get quote asset on bid order on buy, base asset on ask order on sell
-            (uint32 orderId, uint256 required, bool clear) = IOrderbook(orderbook).fpop(
-                !isBid,
-                price,
-                remaining
-            );
+            (uint32 orderId, uint256 required, bool clear) = IOrderbook(
+                orderbook
+            ).fpop(!isBid, price, remaining);
             // order exists, and amount is not 0
             if (remaining <= required) {
                 // set last matching price
@@ -1101,8 +1240,12 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         // In LimitBuy
         if (isBid) {
             // check limit bid price is within 20% spread of last matched price
-            if (lmp != 0 && limitPrice < lmp * 9/10) {
-                return(remaining, IOrderbook(orderbook).clearEmptyHead(true), lmp * 9/10);
+            if (lmp != 0 && limitPrice < (lmp * 95) / 100) {
+                return (
+                    remaining,
+                    (lmp * 95) / 100,
+                    IOrderbook(orderbook).clearEmptyHead(false)
+                );
             }
             // check if there is any matching ask order until matching ask order price is lower than the limit bid Price
             askHead = IOrderbook(orderbook).clearEmptyHead(false);
@@ -1133,12 +1276,16 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                 lmp = IOrderbook(orderbook).clearEmptyHead(true);
             }
             return (remaining, lmp, askHead); // return bidHead, and askHead
-        } 
+        }
         // In LimitSell
         else {
             // check limit ask price is within 20% spread of last matched price
-            if(lmp != 0 && limitPrice > lmp * 11/10 ) {
-                return(remaining, IOrderbook(orderbook).clearEmptyHead(true), lmp * 11/10);
+            if (lmp != 0 && limitPrice > (lmp * 105) / 100) {
+                return (
+                    remaining,
+                    IOrderbook(orderbook).clearEmptyHead(true),
+                    (lmp * 105) / 100
+                );
             }
             // check if there is any maching bid order until matching bid order price is higher than the limit ask price
             bidHead = IOrderbook(orderbook).clearEmptyHead(true);
@@ -1231,6 +1378,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
         if (book == address(0)) {
             book = addPair(base, quote);
         }
+        
         // check if amount is valid in case of both market and limit
         uint256 converted = _convert(book, price, amount, !isBid);
         uint256 minRequired = _convert(book, price, 1, !isBid);
@@ -1311,5 +1459,4 @@ contract MatchingEngine is Initializable, ReentrancyGuard {
                     : IOrderbook(orderbook).convert(price, amount, isBid);
         }
     }
-
 }

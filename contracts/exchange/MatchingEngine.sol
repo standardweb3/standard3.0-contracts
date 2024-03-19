@@ -118,7 +118,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     error NoLastMatchedPrice(address base, address quote);
     error BidPriceTooLow(uint256 limitPrice, uint256 lmp, uint256 minBidPrice);
     error AskPriceTooHigh(uint256 limitPrice, uint256 lmp, uint256 maxAskPrice);
-    
+
     receive() external payable {
         assert(msg.sender == WETH); // only accept ETH via fallback from the WETH contract
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -185,7 +185,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     {
         OrderData memory orderData;
         DefaultSpread memory spreads;
-        
+
         // reuse quoteAmount variable as minRequired from _deposit to avoid stack too deep error
         (orderData.withoutFee, orderData.orderbook) = _deposit(
             base,
@@ -199,7 +199,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
 
         // get spread limits
         (orderData.ls, orderData.ms) = _getSpread(orderData.orderbook);
-
 
         orderData.mp = mktPrice(base, quote);
 
@@ -215,7 +214,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             recipient,
             true,
             (orderData.mp * (10000 + orderData.ms)) / 10000,
-            n
+            n,
+            orderData.ms
         );
 
         // add make order on market price
@@ -299,7 +299,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             recipient,
             false,
             (orderData.mp * (10000 - orderData.ms)) / 10000,
-            n
+            n,
+            orderData.ms
         );
 
         _detMake(
@@ -438,7 +439,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             recipient,
             true,
             price,
-            n
+            n,
+            orderData.ls
         );
 
         _detMake(
@@ -513,7 +515,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             isMaker
         );
 
-        // get spread limit 
+        // get spread limit
         (orderData.ls, orderData.ms) = _getSpread(orderData.orderbook);
 
         try this.mktPrice(base, quote) returns (uint256 price) {
@@ -534,7 +536,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             recipient,
             false,
             price,
-            n
+            n,
+            orderData.ls
         );
         _detMake(
             base,
@@ -548,7 +551,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
                             orderData.askHead == 0
                                 ? orderData.mp == 0
                                     ? price
-                                    : (orderData.mp * (10000 - orderData.ls)) / 10000
+                                    : (orderData.mp * (10000 - orderData.ls)) /
+                                        10000
                                 : orderData.askHead
                         )
                         : price
@@ -564,7 +568,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
                     price >= orderData.askHead
                         ? (
                             orderData.askHead == 0
-                                ? (orderData.mp * (10000 - orderData.ls)) / 10000
+                                ? (orderData.mp * (10000 - orderData.ls)) /
+                                    10000
                                 : orderData.askHead
                         )
                         : price
@@ -1223,6 +1228,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
      * @param isBid True if the order is an ask (sell) order, false if it is a bid (buy) order.
      * @param limitPrice The maximum price at which the order can be executed.
      * @param n The maximum number of matches to execute.
+     * @param spread The spread limit
      * @return remaining The remaining amount of asset that was not traded.
      */
     function _limitOrder(
@@ -1232,7 +1238,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         address recipient,
         bool isBid,
         uint256 limitPrice,
-        uint32 n
+        uint32 n,
+        uint32 spread
     ) internal returns (uint256 remaining, uint256 bidHead, uint256 askHead) {
         remaining = amount;
         uint256 lmp = IOrderbook(orderbook).lmp();
@@ -1240,10 +1247,10 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         // In LimitBuy
         if (isBid) {
             // check limit bid price is within 20% spread of last matched price
-            if (lmp != 0 && limitPrice < (lmp * 95) / 100) {
+            if (lmp != 0 && limitPrice < (10000 - spread) / 10000) {
                 return (
                     remaining,
-                    (lmp * 95) / 100,
+                    (10000 - spread) / 10000,
                     IOrderbook(orderbook).clearEmptyHead(false)
                 );
             }
@@ -1280,11 +1287,11 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         // In LimitSell
         else {
             // check limit ask price is within 20% spread of last matched price
-            if (lmp != 0 && limitPrice > (lmp * 105) / 100) {
+            if (lmp != 0 && limitPrice > (10000 + spread) / 10000) {
                 return (
                     remaining,
                     IOrderbook(orderbook).clearEmptyHead(true),
-                    (lmp * 105) / 100
+                    (10000 + spread) / 10000
                 );
             }
             // check if there is any maching bid order until matching bid order price is higher than the limit ask price
@@ -1378,7 +1385,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         if (book == address(0)) {
             book = addPair(base, quote);
         }
-        
+
         // check if amount is valid in case of both market and limit
         uint256 converted = _convert(book, price, amount, !isBid);
         uint256 minRequired = _convert(book, price, 1, !isBid);

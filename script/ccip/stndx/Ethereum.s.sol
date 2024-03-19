@@ -15,7 +15,7 @@ import {Orderbook} from "../../../contracts/exchange/orderbooks/Orderbook.sol";
 import {Multicall3} from "../../Multicall3.sol";
 import {TokenDispenser} from "../../../contracts/exchange/airdrops/TokenDispenser.sol";
 import {ExchangeOrderbook} from "../../../contracts/exchange/libraries/ExchangeOrderbook.sol";
-import {STNDX} from "../../../contracts/stnd/ccip/STNDX.sol";
+import {ERC20MintablePausableBurnable} from "../../../contracts/stnd/ccip/STNDX.sol";
 
 contract Deployer is Script {
     function _setDeployer() internal {
@@ -32,22 +32,22 @@ contract DeployMulticall3 is Deployer {
     }
 }
 
-contract DeploySTNDX is Deployer {
-    STNDX public stnd;
+contract DeployERC20MintablePausableBurnable is Deployer {
+    ERC20MintablePausableBurnable public stnd;
     function run() external {
         _setDeployer();
-        stnd = new STNDX();
+        stnd = new ERC20MintablePausableBurnable();
         vm.stopBroadcast();
     }
 }
 
 contract GrantMinterRole is Deployer {
     address stnd_address = 0x7a2e3a7A1bf8FaCCAd68115DC509DB5a5af4e7e4;
-    STNDX public stnd;
+    ERC20MintablePausableBurnable public stnd;
     address minter = address(0);
     function run() external {
         _setDeployer();
-        stnd = STNDX(stnd_address);
+        stnd = ERC20MintablePausableBurnable(stnd_address);
         stnd.grantRole(stnd.MINTER_ROLE(), minter);
     }
 }

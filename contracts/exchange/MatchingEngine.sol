@@ -167,8 +167,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
      * @param n The maximum number of orders to match in the orderbook
      * @param recipient The address of the order owner
      * @return makePrice price where the order is placed
-     * @return matched matched amount
      * @return placed placed amount
+     * @return id placed order id
      */
     function marketBuy(
         address base,
@@ -181,10 +181,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     )
         public
         nonReentrant
-        returns (uint256 makePrice, uint256 matched, uint256 placed)
+        returns (uint256 makePrice, uint256 placed, uint32 id)
     {
         OrderData memory orderData;
-        DefaultSpread memory spreads;
 
         // reuse quoteAmount variable as minRequired from _deposit to avoid stack too deep error
         (orderData.withoutFee, orderData.orderbook) = _deposit(
@@ -218,8 +217,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             orderData.ms
         );
 
-        // add make order on market price
-        _detMake(
+        // add make order on market price, reuse orderData.ls for storing placed Order id
+        orderData.ls = _detMake(
             base,
             quote,
             orderData.orderbook,
@@ -240,8 +239,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
                 : orderData.askHead == 0
                     ? (orderData.mp * (10000 + orderData.ms)) / 10000
                     : orderData.askHead,
-            quoteAmount - orderData.withoutFee,
-            orderData.withoutFee
+            orderData.withoutFee,
+            orderData.ls
         );
     }
 
@@ -255,8 +254,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
      * @param isMaker Boolean indicating if an order should be made at the market price in orderbook
      * @param n The maximum number of orders to match in the orderbook
      * @return makePrice price where the order is placed
-     * @return matched matched amount
      * @return placed placed amount
+     * @return id placed order id
      */
     function marketSell(
         address base,
@@ -269,7 +268,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     )
         public
         nonReentrant
-        returns (uint256 makePrice, uint256 matched, uint256 placed)
+        returns (uint256 makePrice, uint256 placed, uint32 id)
     {
         OrderData memory orderData;
         (orderData.withoutFee, orderData.orderbook) = _deposit(
@@ -303,7 +302,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             orderData.ms
         );
 
-        _detMake(
+        // reuse orderData.ls for storing placed order id
+        orderData.ls = _detMake(
             base,
             quote,
             orderData.orderbook,
@@ -319,8 +319,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             (orderData.mp * (10000 - orderData.ms)) / 10000 >= orderData.bidHead
                 ? (orderData.mp * (10000 - orderData.ms)) / 10000
                 : orderData.bidHead,
-            baseAmount - orderData.withoutFee,
-            orderData.withoutFee
+            orderData.withoutFee,
+            orderData.ls
         );
     }
 
@@ -333,8 +333,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
      * @param n The maximum number of orders to match in the orderbook
      * @param recipient The address of the recipient to receive traded asset and claim ownership of made order
      * @return makePrice price where the order is placed
-     * @return matched matched amount
      * @return placed placed amount
+     * @return id placed order id
      */
     function marketBuyETH(
         address base,
@@ -345,7 +345,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     )
         external
         payable
-        returns (uint256 makePrice, uint256 matched, uint256 placed)
+        returns (uint256 makePrice, uint256 placed, uint32 id)
     {
         IWETH(WETH).deposit{value: msg.value}();
         return marketBuy(base, WETH, msg.value, isMaker, n, uid, recipient);
@@ -360,8 +360,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
      * @param n The maximum number of orders to match in the orderbook
      * @param recipient The address of the recipient to receive traded asset and claim ownership of made order
      * @return makePrice price where the order is placed
-     * @return matched matched amount
      * @return placed placed amount
+     * @return id placed order id
      */
     function marketSellETH(
         address quote,
@@ -372,7 +372,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     )
         external
         payable
-        returns (uint256 makePrice, uint256 matched, uint256 placed)
+        returns (uint256 makePrice, uint256 placed, uint32 id)
     {
         IWETH(WETH).deposit{value: msg.value}();
         return marketSell(WETH, quote, msg.value, isMaker, n, uid, recipient);
@@ -390,8 +390,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
      * @param n The maximum number of orders to match in the orderbook
      * @param recipient The address of the recipient to receive traded asset and claim ownership of made order
      * @return makePrice price where the order is placed
-     * @return matched matched amount
      * @return placed placed amount
+     * @return id placed order id
      */
     function limitBuy(
         address base,
@@ -405,7 +405,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     )
         public
         nonReentrant
-        returns (uint256 makePrice, uint256 matched, uint256 placed)
+        returns (uint256 makePrice, uint256 placed, uint32 id)
     {
         OrderData memory orderData;
         (orderData.withoutFee, orderData.orderbook) = _deposit(
@@ -421,8 +421,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         // get spread limits
         (orderData.ls, orderData.ms) = _getSpread(orderData.orderbook);
 
-        try this.mktPrice(base, quote) returns (uint256 price) {
-            orderData.mp = price;
+        try this.mktPrice(base, quote) returns (uint256 p) {
+            orderData.mp = p;
         } catch {
             orderData.mp = 0;
         }
@@ -443,7 +443,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             orderData.ls
         );
 
-        _detMake(
+        // reuse orderData.ms for storing placed order id
+        orderData.ms = _detMake(
             base,
             quote,
             orderData.orderbook,
@@ -461,6 +462,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             isMaker,
             recipient
         );
+
         return (
             orderData.askHead == 0
                 ? (
@@ -471,8 +473,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
                         : orderData.bidHead
                 )
                 : (price < orderData.askHead ? price : orderData.askHead),
-            quoteAmount - orderData.withoutFee,
-            orderData.withoutFee
+            orderData.withoutFee,
+            orderData.ms
         );
     }
 
@@ -487,8 +489,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
      * @param isMaker Boolean indicating if an order should be made at the limit price
      * @param n The maximum number of orders to match in the orderbook
      * @return makePrice price where the order is placed
-     * @return matched matched amount
      * @return placed placed amount
+     * @return id placed order id
      */
     function limitSell(
         address base,
@@ -502,7 +504,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     )
         public
         nonReentrant
-        returns (uint256 makePrice, uint256 matched, uint256 placed)
+        returns (uint256 makePrice, uint256 placed, uint32 id)
     {
         OrderData memory orderData;
         (orderData.withoutFee, orderData.orderbook) = _deposit(
@@ -518,8 +520,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         // get spread limit
         (orderData.ls, orderData.ms) = _getSpread(orderData.orderbook);
 
-        try this.mktPrice(base, quote) returns (uint256 price) {
-            orderData.mp = price;
+        try this.mktPrice(base, quote) returns (uint256 p) {
+            orderData.mp = p;
         } catch {
             orderData.mp = 0;
         }
@@ -539,7 +541,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             n,
             orderData.ls
         );
-        _detMake(
+
+        // reuse orderData.ms for storing placed order id
+        orderData.ms = _detMake(
             base,
             quote,
             orderData.orderbook,
@@ -562,6 +566,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             isMaker,
             recipient
         );
+
         return (
             orderData.bidHead == 0
                 ? (
@@ -575,8 +580,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
                         : price
                 )
                 : (price > orderData.bidHead ? price : orderData.bidHead),
-            baseAmount - orderData.withoutFee,
-            orderData.withoutFee
+            orderData.withoutFee,
+            orderData.ms
         );
     }
 
@@ -589,8 +594,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
      * @param n The maximum number of orders to match in the orderbook
      * @param recipient The address of the recipient to receive traded asset and claim ownership of made order
      * @return makePrice price where the order is placed
-     * @return matched matched amount
      * @return placed placed amount
+     * @return id placed order id
      */
     function limitBuyETH(
         address base,
@@ -602,7 +607,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     )
         external
         payable
-        returns (uint256 makePrice, uint256 matched, uint256 placed)
+        returns (uint256 makePrice, uint256 placed, uint32 id)
     {
         IWETH(WETH).deposit{value: msg.value}();
         return
@@ -618,8 +623,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
      * @param n The maximum number of orders to match in the orderbook
      * @param recipient The address of the recipient to receive traded asset and claim ownership of made order
      * @return makePrice price where the order is placed
-     * @return matched matched amount
      * @return placed placed amount
+     * @return id placed order id
      */
     function limitSellETH(
         address quote,
@@ -631,7 +636,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     )
         external
         payable
-        returns (uint256 makePrice, uint256 matched, uint256 placed)
+        returns (uint256 makePrice, uint256 placed, uint32 id)
     {
         IWETH(WETH).deposit{value: msg.value}();
         return
@@ -1122,8 +1127,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         uint256 price,
         bool isBid,
         address recipient
-    ) internal {
-        uint32 id;
+    ) internal returns (uint32 id) {
         // create order
         if (isBid) {
             id = IOrderbook(orderbook).placeBid(recipient, price, withoutFee);
@@ -1132,6 +1136,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         }
 
         emit OrderPlaced(orderbook, id, recipient, isBid, price, withoutFee);
+        return id;
     }
 
     /**
@@ -1338,6 +1343,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
      * @param isBid Boolean indicating if the order was a buy (true) or a sell (false)
      * @param isMaker Boolean indicating if an order is for storing in orderbook
      * @param recipient The address to receive asset after matching a trade and making an order
+     * @return id placed order id
      */
     function _detMake(
         address base,
@@ -1348,7 +1354,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         bool isBid,
         bool isMaker,
         address recipient
-    ) internal {
+    ) internal returns (uint32 id) {
         if (remaining > 0) {
             address stopTo = isMaker ? orderbook : recipient;
             TransferHelper.safeTransfer(
@@ -1357,7 +1363,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
                 remaining
             );
             if (isMaker)
-                _makeOrder(orderbook, remaining, price, isBid, recipient);
+                return _makeOrder(orderbook, remaining, price, isBid, recipient);
         }
     }
 

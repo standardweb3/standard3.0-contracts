@@ -33,7 +33,7 @@ interface IDecimals {
 
 // Onchain Matching engine for the orders
 contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
-    // fee recipient
+    // fee recipient for point storage
     address private feeTo;
     // fee denominator
     uint32 public immutable feeDenom = 1000000;
@@ -144,6 +144,18 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         WETH = WETH_;
     }
 
+
+    // admin functions
+    
+    function setFeeTo(
+        address feeTo_
+    ) external returns (bool) {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        }
+        feeTo = feeTo_;
+    }
+
     function setSpread(
         address base,
         address quote,
@@ -155,6 +167,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         }
         _setSpread(base, quote, market, limit);
     }
+
+    // user functions
 
     /**
      * @dev Executes a market buy order, with spread limit of 1% for price actions.

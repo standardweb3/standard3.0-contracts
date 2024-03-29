@@ -175,8 +175,8 @@ library MembershipLib {
         }
     }
 
-    /// @dev offerBonus: Offer bonus blocks to the subscription by promoters
-    function _offerBonus(Member storage self, uint32 uid_, address holder_, uint256 blocks_) internal {
+    /// @dev offerBonus: Offer trial blocks to the subscription by promoters
+    function _offerTrial(Member storage self, uint32 uid_, address holder_, uint256 blocks_) internal {
         // check if the member has the ABT with input id
         if (ISABT(self.sabt).balanceOf(holder_, uid_) == 0) {
             revert MembershipNotOwned(uid_, holder_);

@@ -124,11 +124,11 @@ contract Membership is AccessControl {
         _membership._subscribe(uid_, blocks_, _membership.weth);
     }
 
-    function offerBonus(uint32 uid_, address holder_, uint256 blocks_) external {
+    function offerTrial(uint32 uid_, address holder_, uint256 blocks_) external {
         if (!hasRole(PROMOTER_ROLE, msg.sender)) {
             revert InvalidRole(PROMOTER_ROLE, msg.sender);
         }
-        _membership._offerBonus(uid_, holder_, blocks_);
+        _membership._offerTrial(uid_, holder_, blocks_);
     }
 
     /// @dev unsubscribe: Unsubscribe from the membership

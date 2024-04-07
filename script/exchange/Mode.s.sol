@@ -151,10 +151,9 @@ contract DeployExchangeMainnetContracts is Deployer {
         _setDeployer();
         OrderbookFactory orderbookFactory = new OrderbookFactory();
         MatchingEngineMode matchingEngine = new MatchingEngineMode();
-        treasury = Treasury(0xBDf1c8C3fFd6f6C8E4AC13dAA3436Eb239D3e203);
         matchingEngine.initialize(
             address(orderbookFactory),
-            address(treasury),
+            address(0x34CCCa03631830cD8296c172bf3c31e126814ce9),
             address(weth)
         );
         orderbookFactory.initialize(address(matchingEngine));
@@ -247,7 +246,7 @@ contract DeploySABTMainnetContracts is Deployer {
 contract TakeOutFees is Deployer {
     Treasury constant treasury =
         Treasury(0xBDf1c8C3fFd6f6C8E4AC13dAA3436Eb239D3e203);
-    address token_address = 0xd988097fb8612cc24eeC14542bC03424c656005f;
+    address token_address = 0xcDd475325D6F564d27247D1DddBb0DAc6fA0a5CF;
     function run() external {
         _setDeployer();
         treasury.settle(token_address, 0, 1);

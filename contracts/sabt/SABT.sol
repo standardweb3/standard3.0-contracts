@@ -23,7 +23,7 @@ contract SABT is ERC1155, AccessControl, Initializable {
     error MembershipFull(uint32 uid_);
     error InvalidRole(bytes32 role, address sender);
 
-    constructor() ERC1155("https://arts.standard.tech/") {
+    constructor() ERC1155("https://app.standardweb3.com/api/sabt") {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         index = 1;
     }
@@ -33,7 +33,7 @@ contract SABT is ERC1155, AccessControl, Initializable {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
         }
         membership = membership_;
-        baseURI = "https://raw.githubusercontent.com/standardweb3/nft-arts/main/nfts/sabt";
+        baseURI = "https://app.standardweb3.com/api/sabt";
     }
 
     function setURI(string memory uri_) public {

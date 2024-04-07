@@ -17,6 +17,16 @@ interface ISABT {
     function getLvl(uint32 uid_) external view returns (uint8);
 }
 
+interface IWETHMinimal {
+    function transfer(address to, uint256 value) external returns (bool);
+
+    function withdraw(uint256) external;
+}
+
+interface IERC20Minimal {
+    function balanceOf(address account) external view returns (uint256);
+}
+
 library MembershipLib {
     struct Member {
         /// @dev mapping of member id to subscription status
@@ -201,5 +211,111 @@ library MembershipLib {
 
     function _getLvl(Member storage self, uint32 uid_) internal view returns (uint8) {
         return ISABT(self.sabt).metaId(uid_);
+    }
+
+    function _revenueOf(Member storage self, address token) internal view returns (uint256) {
+        return IERC20Minimal(token).balanceOf(address(this));
+    }
+
+    function _sendFunds(
+        Member storage self,
+        address token,
+        address to,
+        uint256 amount
+    ) internal returns (bool) {
+        if (token == self.weth) {
+            IWETHMinimal(token).withdraw(amount);
+            return payable(to).send(amount);
+        } else {
+            TransferHelper.safeTransfer(token, to, amount);
+            return true;
+        }
+    }
+
+    function _getFeeRate(Member storage self, uint32 uid, bool isMaker)
+        internal
+        view
+        returns (uint32 feeNum)
+    {
+        uint8 level = _getLvl(self, uid);
+        // get subscribed STND tokens
+        uint64 subSTND = _getSubSTND(self, uid);
+        // Perform different aclevelons based on the level
+        if (level == 0) {
+            if (subSTND >= 10000) {
+                // 0.750% / 0.750%
+                return 7500;
+            } else {
+                // 1% / 1%
+                return 10000;
+            }
+        } else if (level == 1) {
+            if (subSTND >= 25000) {
+                // 0.675 / 0.750%
+                return isMaker ? 6750 : 7500;
+            } else {
+                // 0.9 / 0.1%
+                return isMaker ? 9000 : 10000;
+            }
+        } else if (level == 2) {
+            if (subSTND >= 100000) {
+                // 0.600% / 0.750%
+                return isMaker ? 6000 : 7500;
+            } else {
+                // 0.800% / 1.000%
+                return isMaker ? 8000 : 10000;
+            }
+        } else if (level == 3) {
+            if (subSTND >= 250000) {
+                // 0.525% / 0.750%
+                return isMaker ? 5250 : 7500;
+            } else {
+                // 0.700% / 1.000%
+                return isMaker ? 7000 : 10000;
+            }
+        } else if (level == 4) {
+            if (subSTND >= 500000) {
+                // 0.45% / 0.600%
+                return isMaker ? 4500 : 6000;
+            } else {
+                // 0.600% / 0.800%
+                return isMaker ? 6000 : 8000;
+            }
+        } else if (level == 5) {
+            if (subSTND >= 750000) {
+                // 0.375% / 0.525%
+                return isMaker ? 3750 : 5250;
+            } else {
+                // 0.500% / 0.700%
+                return isMaker ? 5000 : 7000;
+            }
+        } else if (level == 6) {
+            if (subSTND >= 1000000) {
+                // 0.3% / 0.45%
+                return isMaker ? 3000 : 4500;
+            } else {
+                // 0.400% / 0.600%
+                return isMaker ? 4000 : 6000;
+            }
+        } else if (level == 7) {
+            if (subSTND >= 1250000) {
+                // 0.225% / 0.375%
+                return isMaker ? 2250 : 3750;
+            } else {
+                // 0.300% / 0.500%
+                return isMaker ? 3000 : 5000;
+            }
+        } else if (level >= 8) {
+            if (subSTND >= 1500000) {
+                // 0.150% / 0.300%
+                return isMaker ? 1500 : 3000;
+            } else {
+                // 0.200% / 0.400%
+                return isMaker ? 2000 : 4000;
+            }
+        } else if (level >= 11) {
+            // when beta account is used, fee rate is zero
+            return 0;
+        }
     }
 }

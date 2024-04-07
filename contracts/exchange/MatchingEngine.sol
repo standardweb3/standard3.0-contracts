@@ -146,10 +146,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
 
 
     // admin functions
-    
     function setFeeTo(
         address feeTo_
-    ) external returns (bool) {
+    ) external returns (bool success) {
         if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
         }
@@ -161,7 +160,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         address quote,
         uint32 market,
         uint32 limit
-    ) external returns (bool) {
+    ) external returns (bool success) {
         if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
         }
@@ -1121,7 +1120,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
 
     function _getSpread(
         address book
-    ) internal returns (uint32 limit, uint32 market) {
+    ) internal view returns (uint32 limit, uint32 market) {
         DefaultSpread memory spread;
         spread = spreadLimits[book];
         return (spread.limit, spread.market);

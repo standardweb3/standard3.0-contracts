@@ -7,6 +7,6 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 /// @title Metadata contract for SABT
 contract Metadata is AccessControl {
     function uri(uint256 id_) public view virtual returns (string memory) {
-        return "https://arts.standard.tech/";
+        return "https://app.standardweb3.com/api/sabt/metadata";
     }
 }

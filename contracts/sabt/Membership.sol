@@ -46,6 +46,14 @@ contract Membership is AccessControl {
         _membership._setMembership(metaId_, feeToken_, regFee_, subFee_, quotas_);
     }
 
+    function collectFee(address token) external {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        }
+        uint256 amount = _membership._revenueOf(token);
+        _membership._sendFunds(token, _membership.foundation, amount);
+    }
+
     function setFoundation(address foundation_) external {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -160,4 +168,19 @@ contract Membership is AccessControl {
     function isReportable(address sender, uint32 uid_) external view returns (bool) {
         return _membership._balanceOf(sender, uid_) > 0 && _membership._isSubscribed(uid_);
     }
+
+    function feeOf(uint32 uid, bool isMaker) external view returns (uint32 feeNum) {
+        return _membership._getFeeRate(uid, isMaker);
+    }   
+
+    
+    // redundant functions until membership is updated. do not touch the code yet.
+    function report(uint32 uid, address token, uint256 amount, bool isAdd) external pure returns (bool) {
+        return true;
+    }
+
+    function refundFee(address to, address token, uint256 amount) external pure returns (bool) {
+        return true;
+    }
+
 }

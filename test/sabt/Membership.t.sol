@@ -195,7 +195,7 @@ contract MembershipTest is MembershipBaseSetup {
             keccak256(abi.encodePacked(uri)) ==
                 keccak256(
                     abi.encodePacked(
-                        "https://raw.githubusercontent.com/standardweb3/nft-arts/main/nfts/sabt/9"
+                        "https://app.standardweb3.com/api/sabt/9"
                     )
                 )
         );

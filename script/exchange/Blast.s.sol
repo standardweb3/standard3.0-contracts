@@ -55,11 +55,10 @@ contract DeployExchangeMainnetContracts is Deployer {
         _setDeployer();
         OrderbookFactory orderbookFactory = new OrderbookFactory();
         MatchingEngineBlast matchingEngine = new MatchingEngineBlast();
-        treasury = Treasury(0x7a2e3a7A1bf8FaCCAd68115DC509DB5a5af4e7e4);
         
         matchingEngine.initialize(
             address(orderbookFactory),
-            address(treasury),
+            address(0x34CCCa03631830cD8296c172bf3c31e126814ce9),
             address(weth)
         );
         
@@ -80,6 +79,7 @@ contract DeploySABTMainnetContracts is Deployer {
         0x34CCCa03631830cD8296c172bf3c31e126814ce9;
 
     function run() external {
+        _setDeployer();
         Membership membership = new Membership();
         SABT sabt = new SABT();
         membership.initialize(address(sabt), foundation_address, weth);
@@ -93,9 +93,12 @@ contract DeploySABTMainnetContracts is Deployer {
             spb
         );
         treasury.set(address(membership), address(accountant), address(sabt));
+        treasury.setSettlement(1);
+        
         // Wire up matching engine with them
-        accountant.grantRole(accountant.REPORTER_ROLE(), address(treasury));
-        treasury.grantRole(treasury.REPORTER_ROLE(), address(matchingEngine));
+        accountant.setTreasury(address(treasury));
+        membership.setMembership(10, weth, 0, 0, 1);
+        membership.register(10, weth);
     }
 }
 
@@ -345,5 +348,17 @@ contract ShowOrderbook is Deployer {
         _setDeployer();
         _showOrderbook(matchingEngine, address(token1), address(token2));
         vm.stopBroadcast();
+    }
+}
+
+
+contract TakeOutFees is Deployer {
+    Treasury constant treasury =
+        Treasury(0x7a2e3a7A1bf8FaCCAd68115DC509DB5a5af4e7e4);
+    address token_address = 0xB582Dc28968c725D2868130752aFa0c13EbF9b1a;
+    function run() external {
+        _setDeployer();
+        treasury.settle(token_address, 0, 1);
+        treasury.exchange(token_address, 0, 1, 2500);
     }
 }

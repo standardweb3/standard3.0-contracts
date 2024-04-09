@@ -121,7 +121,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
 
     receive() external payable {
         assert(msg.sender == WETH); // only accept ETH via fallback from the WETH contract
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
     /**
@@ -142,6 +141,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         orderbookFactory = orderbookFactory_;
         feeTo = treasury_;
         WETH = WETH_;
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
 
@@ -1261,15 +1261,17 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     ) internal returns (uint256 remaining, uint256 bidHead, uint256 askHead) {
         remaining = amount;
         uint256 lmp = IOrderbook(orderbook).lmp();
+        bidHead = IOrderbook(orderbook).clearEmptyHead(true);
+        askHead = IOrderbook(orderbook).clearEmptyHead(false);
         uint32 i = 0;
         // In LimitBuy
         if (isBid) {
-            // check limit bid price is within 20% spread of last matched price
-            if (lmp != 0 && limitPrice < (10000 - spread) / 10000) {
+            // if limit price is out of spread given to bidHead, set to 
+            if (lmp != 0 && limitPrice < bidHead * (10000 - spread) / 10000) {
                 return (
                     remaining,
-                    (10000 - spread) / 10000,
-                    IOrderbook(orderbook).clearEmptyHead(false)
+                    bidHead,
+                    askHead
                 );
             }
             // check if there is any matching ask order until matching ask order price is lower than the limit bid Price
@@ -1305,15 +1307,13 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         // In LimitSell
         else {
             // check limit ask price is within 20% spread of last matched price
-            if (lmp != 0 && limitPrice > (10000 + spread) / 10000) {
+            if (lmp != 0 && limitPrice > askHead * (10000 + spread) / 10000) {
                 return (
                     remaining,
-                    IOrderbook(orderbook).clearEmptyHead(true),
-                    (10000 + spread) / 10000
+                    bidHead,
+                    askHead
                 );
             }
-            // check if there is any maching bid order until matching bid order price is higher than the limit ask price
-            bidHead = IOrderbook(orderbook).clearEmptyHead(true);
             while (
                 remaining > 0 && bidHead != 0 && bidHead >= limitPrice && i < n
             ) {

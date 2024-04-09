@@ -372,6 +372,72 @@ contract TestOrderbookSell is Deployer {
     }
 }
 
+contract SetSpread is Deployer {
+    address constant matching_engine_address =
+        0xD809E819E74513C1512c582c0E08C5F1589075a8;
+    address constant quote_address = 0xf0F161fDA2712DB8b566946122a5af183995e2eD;
+    address constant base_address = 0x4200000000000000000000000000000000000006;
+
+    MatchingEngineMode public matchingEngine =
+        MatchingEngineMode(payable(matching_engine_address));
+    MockToken public base = MockToken(base_address);
+    MockToken public quote = MockToken(quote_address);
+    Orderbook public book;
+
+    function run() external {
+        _setDeployer();
+        payable(address(matchingEngine)).transfer(1);
+        matchingEngine.setSpread(address(base), address(quote), 1000, 1000);
+    }
+
+}
+
+contract TestMarketSellETH is Deployer {
+    // Change address constants on deploying to other networks from DeployAssets
+    address constant matching_engine_address =
+        0xD809E819E74513C1512c582c0E08C5F1589075a8;
+    address constant quote_address = 0xf0F161fDA2712DB8b566946122a5af183995e2eD;
+    address constant base_address = 0x4200000000000000000000000000000000000006;
+
+    MatchingEngineMode public matchingEngine =
+        MatchingEngineMode(payable(matching_engine_address));
+    MockToken public base = MockToken(base_address);
+    MockToken public quote = MockToken(quote_address);
+    Orderbook public book;
+
+    function run() external {
+        _setDeployer();
+
+        book = Orderbook(
+            payable(matchingEngine.getPair(address(base), address(quote)))
+        );
+
+        // make a price in matching engine where 1 feeToken = 1000 stablecoin with buy and sell order
+        base.approve(address(matchingEngine), 100000e18);
+        quote.approve(address(matchingEngine), 100000000e18);
+
+        matchingEngine.mktPrice(address(base), address(quote));
+        // add limit orders
+        matchingEngine.marketSellETH{value: 1e16}(address(quote), true, 2, 0, 0x34CCCa03631830cD8296c172bf3c31e126814ce9);
+        //matchingEngine.getOrders(address(base), address(quote), true, 0, 0);
+        uint256[] memory askPrices = matchingEngine.getPrices(
+            address(base),
+            address(quote),
+            false,
+            20
+        );
+        console.log("Bid prices: ");
+        for (uint256 i = 0; i < 3; i++) {
+            console.log(askPrices[i]);
+        }
+        (uint256 bidHead, uint256 askHead) = book.heads();
+        console.log("bidHead: ", bidHead);
+        console.log("askHead: ", askHead);
+        vm.stopBroadcast();
+    }
+
+}
+
 contract TestOrderbookBuy is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     address constant matching_engine_address =
@@ -469,12 +535,8 @@ contract TestGetPrices is Deployer {
 }
 
 contract ShowOrderbook is Deployer {
-    address constant matching_engine_address =
-        0x2CC505C4bc86B28503B5b8C450407D32e5E20A9f;
-    address constant base_address = 0x176211869cA2b568f2A7D4EE941E073a821EE1ff;
-    address constant quote_address = 0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f;
     MatchingEngineMode public matchingEngine =
-        MatchingEngineMode(payable(matching_engine_address));
+        MatchingEngineMode(payable(0xD809E819E74513C1512c582c0E08C5F1589075a8));
 
     function _orderbookIsEmpty(address b_addr, address q_addr, uint256 price, bool isBid) internal view returns (bool) {
         address orderbook = matchingEngine.getPair(b_addr, q_addr);
@@ -505,6 +567,7 @@ contract ShowOrderbook is Deployer {
         );
         console.log("Ask prices: ");
         for (uint256 i = 0; i < 6; i++) {
+            console.log("Ask Price: ");
             console.log(askPrices[i]);
             console.log("Ask Orders: ");
             uint32[] memory askOrderIds = matchingEngine.getOrderIds(
@@ -555,9 +618,9 @@ contract ShowOrderbook is Deployer {
     function run() external {
         _setDeployer();
         _showOrderbook(
-            MatchingEngineMode(payable(0x66a8b38D8B573Dbb6beBe163324b2DC0070d3430)),
-            0xA219439258ca9da29E9Cc4cE5596924745e12B93,
-            0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f
+            MatchingEngineMode(payable(0xD809E819E74513C1512c582c0E08C5F1589075a8)),
+            0x4200000000000000000000000000000000000006,
+            0xf0F161fDA2712DB8b566946122a5af183995e2eD
         );
         vm.stopBroadcast();
     }

@@ -1275,7 +1275,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
                 );
             }
             // check if there is any matching ask order until matching ask order price is lower than the limit bid Price
-            askHead = IOrderbook(orderbook).clearEmptyHead(false);
             while (
                 remaining > 0 && askHead != 0 && askHead <= limitPrice && i < n
             ) {

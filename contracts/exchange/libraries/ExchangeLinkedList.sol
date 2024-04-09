@@ -207,24 +207,37 @@ library ExchangeLinkedList {
                             // remove price at the end
                             self.bidPrices[last] = 0;
                             delete self.bidPrices[head];
+                            // if the price is at the foremost head, set foremost head as 0.
+                            if (self.bidHead == price) {
+                                self.bidHead = 0;
+                            }
                             return true;
                         }
                         // Price does not exist in price list
                         // revert PriceOutOfRange(head, price);
                         return false;
-                    } 
+                    }
                     // the search price is right above the next price which is not zero
                     else {
                         if (head == price) {
-                            self.bidPrices[last] = next;
-                            delete self.bidPrices[head];
-                            return true;
+                            // if last price did exist
+                            if (last != 0) {
+                                self.bidPrices[last] = next;
+                                delete self.bidPrices[head];
+                                return true;
+                            }
+                            // if current price is head
+                            else {
+                                self.bidHead = next;
+                                delete self.bidPrices[head];
+                                return true;
+                            }
                         }
                     }
                     // Price does not exist within range of prices
                     // revert PriceNoneInRange(head, price);
                     return false;
-                } 
+                }
                 // price is above lowest bid price, and the search price is next price
                 else {
                     // price is already included in the queue as it is equal to next. price exists in the orderbook
@@ -257,12 +270,16 @@ library ExchangeLinkedList {
                         if (head == price) {
                             self.askPrices[last] = 0;
                             delete self.askPrices[head];
+                            // if the price is at the foremost head, set foremost head as 0.
+                            if (self.askHead == price) {
+                                self.askHead = 0;
+                            }
                             return true;
                         }
                         // Price does not exist in price list
                         //revert PriceOutOfRange(head, price);
                         return false;
-                    } 
+                    }
                     // Keep traversing
                     head = self.askPrices[head];
                     last = next;
@@ -273,12 +290,21 @@ library ExchangeLinkedList {
                     if (head == price) {
                         // price is already included in the queue as it is equal to next
                         // End traversal as there is no need to traverse further
-                        self.askPrices[last] = self.askPrices[next];
-                        delete self.askPrices[head];
-                        return true;
+                        // if last price did exist
+                        if (last != 0) {
+                            self.askPrices[last] = self.askPrices[next];
+                            delete self.askPrices[head];
+                            return true;
+                        }
+                        // if current price is head
+                        else {
+                            self.askHead = self.askPrices[next];
+                            delete self.askPrices[head];
+                            return true;
+                        }
                     } else {
-                      // revert PriceNoneInRange(head, price);
-                      return false;
+                        // revert PriceNoneInRange(head, price);
+                        return false;
                     }
                     //return false;
                 }

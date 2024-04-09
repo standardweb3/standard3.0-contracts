@@ -18,170 +18,80 @@ import {console} from "forge-std/console.sol";
 import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 
 contract OrderSpreadTest is BaseSetup {
-    function testLimitOrderAssignedOver10PercentageSpread() public {
-        super.setUp();
-        vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(btc));
-        console.log(
-            "Base/Quote Pair: ",
-            matchingEngine.getPair(address(token1), address(btc))
-        );
-        vm.prank(trader1);
-        matchingEngine.limitBuy(
-            address(token1),
-            address(btc),
-            1e8,
-            1e8,
-            true,
-            2,
-            0,
-            trader1
-        );
-        vm.prank(trader2);
-        matchingEngine.limitSell(
-            address(token1),
-            address(btc),
-            1e8,
-            1e18,
-            true,
-            2,
-            0,
-            trader2
-        );
-    }
-
     function testLimitOrder() public {
         super.setUp();
         vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
+        address base = address(token1);
+        address quote = address(token2);
+        matchingEngine.addPair(base, quote);
         console.log(
             "Base/Quote Pair: ",
-            matchingEngine.getPair(address(token1), address(token2))
+            matchingEngine.getPair(base, quote)
         );
         vm.prank(trader1);
         matchingEngine.limitBuy(
-            address(token1),
-            address(token2),
-            1e8,
+            base,
+            quote,
+            3632e8,
             100e18,
             true,
             2,
             0,
             trader1
         );
+        book = Orderbook(payable(matchingEngine.getPair(base, quote)));
+        (uint256 bidHead, uint256 askHead) = book.heads();
+        console.log(bidHead, askHead);
         vm.prank(trader2);
         matchingEngine.limitSell(
-            address(token1),
-            address(token2),
-            1e8,
+            base,
+            quote,
+            10000e8,
             100e18,
             true,
             2,
             0,
             trader2
         );
+        console.log(matchingEngine.mktPrice(base, quote));
     }
 
-    function testLimitBuyETH() public {
+    
+    function testLimitSellSpread() public {
         super.setUp();
-        console.log("weth balance");
-        console.log(trader1.balance / 1e18);
-        vm.prank(trader1);
-        matchingEngine.limitBuyETH{value: 1e18}(
-            address(token1),
-            1e8,
-            true,
-            5,
-            0,
-            trader1
+        vm.prank(booker);
+        address base = address(token1);
+        address quote = address(token2);
+        matchingEngine.addPair(base, quote);
+        console.log(
+            "Base/Quote Pair: ",
+            matchingEngine.getPair(base, quote)
         );
-        vm.prank(trader1);
-        token1.approve(address(matchingEngine), 10e18);
         vm.prank(trader1);
         matchingEngine.limitSell(
-            address(token1),
-            address(weth),
-            1e8,
-            1e18,
+            base,
+            quote,
+            3632e8,
+            100e18,
             true,
-            5,
+            2,
             0,
             trader1
         );
-        console.log("weth balance");
-        console.log(trader1.balance / 1e18);
-    }
-
-    function testLimitSellETH() public {
-        super.setUp();
-        console.log("weth balance");
-        console.log(trader1.balance / 1e18);
-        vm.prank(trader1);
-        matchingEngine.limitSellETH{value: 1e18}(
-            address(token1),
-            1e8,
+        book = Orderbook(payable(matchingEngine.getPair(base, quote)));
+        (uint256 bidHead, uint256 askHead) = book.heads();
+        console.log(bidHead, askHead);
+        vm.prank(trader2);
+        matchingEngine.limitSell(
+            base,
+            quote,
+            0e8,
+            100e18,
             true,
-            5,
+            2,
             0,
-            trader1
+            trader2
         );
-        vm.prank(trader1);
-        matchingEngine.limitBuyETH{value: 1e18}(
-            address(token1),
-            1e8,
-            true,
-            5,
-            0,
-            trader1
-        );
-        vm.prank(trader1);
-        token1.approve(address(matchingEngine), 10e18);
-        vm.prank(trader1);
-        matchingEngine.limitBuy(
-            address(weth),
-            address(token1),
-            1e8,
-            1e18,
-            true,
-            5,
-            0,
-            trader1
-        );
-        console.log("weth balance");
-        console.log(trader1.balance / 1e18);
-    }
-
-    function testLimitBuyETHMakingNewBidHead() public {
-        super.setUp();
-        console.log("weth balance");
-        console.log(trader1.balance / 1e18);
-        vm.startPrank(trader1);
-
-        matchingEngine.limitBuy(
-            address(weth),
-            address(token1),
-            1e8,
-            1e18,
-            true,
-            5,
-            0,
-            trader1
-        );
-        console.log("weth balance");
-        console.log(trader1.balance / 1e18);
-        (uint256 bidHead, uint256 askHead) = matchingEngine.heads(address(weth), address(token1));
-        uint256 mktPrice = matchingEngine.mktPrice(address(weth), address(token1));
-        console.log(mktPrice);
-        matchingEngine.limitBuy(
-            address(weth),
-            address(token1),
-            294900000001,
-            1e18,
-            true,
-            0,
-            0,
-            trader1
-        );
-        
+        console.log(matchingEngine.mktPrice(base, quote));
     }
 }

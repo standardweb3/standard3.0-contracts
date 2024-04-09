@@ -374,7 +374,7 @@ contract TestOrderbookSell is Deployer {
 
 contract SetSpread is Deployer {
     address constant matching_engine_address =
-        0xD809E819E74513C1512c582c0E08C5F1589075a8;
+        0x9ABE2855C5DbAeBE651723de74AC536076410324;
     address constant quote_address = 0xf0F161fDA2712DB8b566946122a5af183995e2eD;
     address constant base_address = 0x4200000000000000000000000000000000000006;
 
@@ -386,8 +386,8 @@ contract SetSpread is Deployer {
 
     function run() external {
         _setDeployer();
-        payable(address(matchingEngine)).transfer(1);
-        matchingEngine.setSpread(address(base), address(quote), 1000, 1000);
+        //payable(address(matchingEngine)).transfer(1);
+        matchingEngine.setSpread(address(base), address(quote), 200, 200);
     }
 
 }

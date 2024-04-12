@@ -97,7 +97,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         address owner,
         bool isBid,
         uint256 price,
-        uint256 amount
+        uint256 amount,
+        uint256 placed
     );
 
     event PairAdded(
@@ -214,7 +215,10 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
 
         orderData.mp = mktPrice(base, quote);
 
-        // reuse withoutFee variable due to stack too deep error
+        // reuse quoteAmount for storing amount after taking fees
+        quoteAmount = orderData.withoutFee;
+
+        // reuse withoutFee variable for storing remaining amount due to stack too deep error
         (
             orderData.withoutFee,
             orderData.bidHead,
@@ -230,6 +234,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             orderData.ms
         );
 
+        // reuse orderData.bidHead argument for storing make price
+        orderData.bidHead = _detMarketBuyPrice(orderData.mp, orderData.askHead, orderData.ms);
          
         // add make order on market price, reuse orderData.ls for storing placed Order id
         orderData.ls = _detMake(
@@ -237,14 +243,16 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             quote,
             orderData.orderbook,
             orderData.withoutFee,
-            _detMarketBuyPrice(orderData.mp, orderData.askHead, orderData.ms),
+            orderData.bidHead,
             true,
             isMaker,
             recipient
         );
 
+        emit OrderPlaced(orderData.orderbook, orderData.ls, recipient, true, orderData.bidHead, quoteAmount, orderData.withoutFee);
+
         return (
-            _detMarketBuyPrice(orderData.mp, orderData.askHead, orderData.ms),
+            orderData.bidHead,
             orderData.withoutFee,
             orderData.ls
         );
@@ -310,6 +318,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
 
         orderData.mp = mktPrice(base, quote);
 
+        // reuse baseAmount for storing without fee
+        baseAmount = orderData.withoutFee;
+
         // reuse withoutFee variable for storing remaining amount after matching due to stack too deep error
         (
             orderData.withoutFee,
@@ -326,19 +337,25 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             orderData.ms
         );
 
+        // reuse orderData.askHead argument for storing make price
+        orderData.askHead = _detMarketSellPrice(orderData.mp, orderData.bidHead, orderData.ms);
+
         // reuse orderData.ls for storing placed order id
         orderData.ls = _detMake(
             base,
             quote,
             orderData.orderbook,
             orderData.withoutFee,
-            _detMarketSellPrice(orderData.mp, orderData.bidHead, orderData.ms),
+            orderData.askHead,
             false,
             isMaker,
             recipient
         );
+
+        emit OrderPlaced(orderData.orderbook, orderData.ls, recipient, false, orderData.askHead, baseAmount, orderData.withoutFee);
+
         return (
-            _detMarketSellPrice(orderData.mp, orderData.bidHead, orderData.ms),
+            orderData.askHead,
             orderData.withoutFee,
             orderData.ls
         );
@@ -451,6 +468,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         // get spread limits
         (orderData.ls, orderData.ms) = _getSpread(orderData.orderbook);
 
+        // reuse quoteAmount for storing amount without fee
+        quoteAmount = orderData.withoutFee;
+
         // reuse withoutFee variable for storing remaining amount after matching due to stack too deep error
         (
             orderData.withoutFee,
@@ -487,6 +507,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             isMaker,
             recipient
         );
+
+        emit OrderPlaced(orderData.orderbook, orderData.ms, recipient, true, price, quoteAmount, orderData.withoutFee);
 
         return (
             price,
@@ -575,6 +597,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         // get spread limit
         (orderData.ls, orderData.ms) = _getSpread(orderData.orderbook);
 
+        // reuse baseAmount for storing amount without fee
+        baseAmount = orderData.withoutFee;
+
         // reuse withoutFee variable for storing remaining amount after matching due to stack too deep error
         (
             orderData.withoutFee,
@@ -611,6 +636,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             isMaker,
             recipient
         );
+
+        emit OrderPlaced(orderData.orderbook, orderData.ms, recipient, false, price, baseAmount, orderData.withoutFee);
 
         return (
             price,
@@ -1200,8 +1227,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         } else {
             id = IOrderbook(orderbook).placeAsk(recipient, price, withoutFee);
         }
-
-        emit OrderPlaced(orderbook, id, recipient, isBid, price, withoutFee);
         return id;
     }
 

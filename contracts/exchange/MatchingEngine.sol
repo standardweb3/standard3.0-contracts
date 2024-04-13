@@ -80,6 +80,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
      * @param owner The address of the order owner whose order is matched with the sender.
      * @param price The price at which the order is matched.
      * @param amount The matched amount of the asset being traded in the match. if isBid==true, it is base asset, if isBid==false, it is quote asset.
+     * @param clear whether or not the order is cleared
      */
     event OrderMatched(
         address orderbook,
@@ -88,7 +89,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         address sender,
         address owner,
         uint256 price,
-        uint256 amount
+        uint256 amount,
+        bool clear
     );
 
     event OrderPlaced(
@@ -97,7 +99,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         address owner,
         bool isBid,
         uint256 price,
-        uint256 amount,
+        uint256 withoutFee,
         uint256 placed
     );
 
@@ -1277,7 +1279,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
                     recipient,
                     owner,
                     price,
-                    remaining
+                    remaining,
+                    clear
                 );
                 // end loop as remaining is 0
                 return (0, n);
@@ -1306,7 +1309,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
                     recipient,
                     owner,
                     price,
-                    required
+                    required,
+                    clear
                 );
                 ++i;
             }

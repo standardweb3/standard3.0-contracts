@@ -12,19 +12,29 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 interface IRevenue {
     function report(
         uint32 uid,
-        address token,
-        uint256 amount,
-        bool isAdd
+        address base,
+        address quote,
+        bool isBid,
+        address sender,
+        uint256 amount
     ) external;
 
-    function isReportable(
-        address token,
-        uint32 uid
-    ) external view returns (bool);
+    function reportCancel(
+        uint32 uid,
+        address base,
+        address quote,
+        bool isBid,
+        address sender,
+        uint256 amount
+    ) external;
+
+    function isReportable() external view returns (bool);
 
     function refundFee(address to, address token, uint256 amount) external;
 
     function feeOf(uint32 uid, bool isMaker) external returns (uint32 feeNum);
+
+    function isSubscribed(uint32 uid) external returns (bool);
 }
 
 interface IDecimals {
@@ -134,7 +144,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
      * @dev Initialize the matching engine with orderbook factory and listing requirements.
      * It can be called only once.
      * @param orderbookFactory_ address of orderbook factory
-     * @param treasury_ address of treasury contract
+     * @param feeTo_ address to receive fee
      * @param WETH_ address of wrapped ether contract
      *
      * Requirements:
@@ -142,16 +152,16 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
      */
     function initialize(
         address orderbookFactory_,
-        address treasury_,
+        address feeTo_,
         address WETH_
     ) external initializer {
         orderbookFactory = orderbookFactory_;
-        feeTo = treasury_;
+        feeTo = feeTo_;
         WETH = WETH_;
     }
 
     // admin functions
-    function setFeeTo(address feeTo_) external returns (bool success) {
+    function setFeeTo(address feeTo_) external returns (bool) {
         if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
         }
@@ -163,7 +173,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         address quote,
         uint32 market,
         uint32 limit
-    ) external returns (bool success) {
+    ) external returns (bool) {
         if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
         }
@@ -237,8 +247,12 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         );
 
         // reuse orderData.bidHead argument for storing make price
-        orderData.bidHead = _detMarketBuyPrice(orderData.mp, orderData.askHead, orderData.ms);
-         
+        orderData.bidHead = _detMarketBuyPrice(
+            orderData.mp,
+            orderData.askHead,
+            orderData.ms
+        );
+
         // add make order on market price, reuse orderData.ls for storing placed Order id
         orderData.ls = _detMake(
             base,
@@ -251,13 +265,17 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             recipient
         );
 
-        emit OrderPlaced(orderData.orderbook, orderData.ls, recipient, true, orderData.bidHead, quoteAmount, orderData.withoutFee);
-
-        return (
+        emit OrderPlaced(
+            orderData.orderbook,
+            orderData.ls,
+            recipient,
+            true,
             orderData.bidHead,
-            orderData.withoutFee,
-            orderData.ls
+            quoteAmount,
+            orderData.withoutFee
         );
+
+        return (orderData.bidHead, orderData.withoutFee, orderData.ls);
     }
 
     function _detMarketBuyPrice(
@@ -340,7 +358,11 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         );
 
         // reuse orderData.askHead argument for storing make price
-        orderData.askHead = _detMarketSellPrice(orderData.mp, orderData.bidHead, orderData.ms);
+        orderData.askHead = _detMarketSellPrice(
+            orderData.mp,
+            orderData.bidHead,
+            orderData.ms
+        );
 
         // reuse orderData.ls for storing placed order id
         orderData.ls = _detMake(
@@ -354,13 +376,17 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             recipient
         );
 
-        emit OrderPlaced(orderData.orderbook, orderData.ls, recipient, false, orderData.askHead, baseAmount, orderData.withoutFee);
-
-        return (
+        emit OrderPlaced(
+            orderData.orderbook,
+            orderData.ls,
+            recipient,
+            false,
             orderData.askHead,
-            orderData.withoutFee,
-            orderData.ls
+            baseAmount,
+            orderData.withoutFee
         );
+
+        return (orderData.askHead, orderData.withoutFee, orderData.ls);
     }
 
     function _detMarketSellPrice(
@@ -491,12 +517,12 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
 
         // reuse price variable for storing make price
         price = _detLimitBuyPrice(
-                orderData.orderbook,
-                price,
-                orderData.bidHead,
-                orderData.askHead,
-                orderData.ls
-            );
+            orderData.orderbook,
+            price,
+            orderData.bidHead,
+            orderData.askHead,
+            orderData.ls
+        );
 
         // reuse orderData.ms variable for storing placed order id
         orderData.ms = _detMake(
@@ -510,13 +536,17 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             recipient
         );
 
-        emit OrderPlaced(orderData.orderbook, orderData.ms, recipient, true, price, quoteAmount, orderData.withoutFee);
-
-        return (
+        emit OrderPlaced(
+            orderData.orderbook,
+            orderData.ms,
+            recipient,
+            true,
             price,
-            orderData.withoutFee,
-            orderData.ms
+            quoteAmount,
+            orderData.withoutFee
         );
+
+        return (price, orderData.withoutFee, orderData.ms);
     }
 
     function _detLimitBuyPrice(
@@ -528,14 +558,14 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     ) internal view returns (uint256 price) {
         uint256 up = (bidHead * (10000 + spread)) / 10000;
         uint256 down = (askHead * (10000 - spread)) / 10000;
-        if(bidHead == 0 && askHead == 0) {
+        if (bidHead == 0 && askHead == 0) {
             uint256 lmp = IOrderbook(orderbook).lmp();
-            if(lmp == 0) {
+            if (lmp == 0) {
                 return lp;
             }
             bidHead = (lmp * (10000 - spread)) / 10000;
             askHead = (lmp * (10000 + spread)) / 10000;
-            if(lp >= askHead) {
+            if (lp >= askHead) {
                 return askHead;
             } else if (lp <= bidHead) {
                 return bidHead;
@@ -547,7 +577,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         } else if (bidHead != 0 && askHead == 0) {
             return lp >= up ? up : lp;
         } else {
-            if(lp >= askHead) {
+            if (lp >= askHead) {
                 return askHead;
             } else if (lp <= bidHead) {
                 return bidHead;
@@ -618,7 +648,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             orderData.ls
         );
 
-        // reuse price variable for make price    
+        // reuse price variable for make price
         price = _detLimitSellPrice(
             orderData.orderbook,
             price,
@@ -639,13 +669,17 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             recipient
         );
 
-        emit OrderPlaced(orderData.orderbook, orderData.ms, recipient, false, price, baseAmount, orderData.withoutFee);
-
-        return (
+        emit OrderPlaced(
+            orderData.orderbook,
+            orderData.ms,
+            recipient,
+            false,
             price,
-            orderData.withoutFee,
-            orderData.ms
+            baseAmount,
+            orderData.withoutFee
         );
+
+        return (price, orderData.withoutFee, orderData.ms);
     }
 
     function _detLimitSellPrice(
@@ -659,26 +693,26 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         uint256 up = (bidHead * (10000 + spread)) / 10000;
         uint256 down = (askHead * (10000 - spread)) / 10000;
         // if askHead is 0 and bidHead is not zero
-        if(askHead == 0 && bidHead ==0) {
+        if (askHead == 0 && bidHead == 0) {
             uint256 lmp = IOrderbook(orderbook).lmp();
-            if(lmp == 0) {
+            if (lmp == 0) {
                 return lp;
             }
             bidHead = (lmp * (10000 - spread)) / 10000;
             askHead = (lmp * (10000 + spread)) / 10000;
-            if(lp >= askHead) {
+            if (lp >= askHead) {
                 return askHead;
             } else if (lp <= bidHead) {
                 return bidHead;
             } else {
                 return lp;
             }
-        } else if(askHead == 0 && bidHead !=0) {
+        } else if (askHead == 0 && bidHead != 0) {
             return lp >= up ? up : lp;
-        } else if(askHead != 0 && bidHead == 0) {
+        } else if (askHead != 0 && bidHead == 0) {
             return lp <= down ? down : lp;
         } else {
-            if(lp >= askHead) {
+            if (lp >= askHead) {
                 return askHead;
             } else if (lp <= bidHead) {
                 return bidHead;
@@ -799,15 +833,15 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             orderId,
             msg.sender
         );
-        // decrease point from orderbook
-        if (uid != 0 && IRevenue(feeTo).isReportable(msg.sender, uid)) {
-            // report cancelation to accountant
-            IRevenue(feeTo).report(uid, isBid ? quote : base, remaining, false);
-            // refund fee from treasury to sender
-            IRevenue(feeTo).refundFee(
+
+        if (_isContract(feeTo) && IRevenue(feeTo).isReportable()) {
+            IRevenue(feeTo).reportCancel(
+                uid,
+                base,
+                quote,
+                isBid,
                 msg.sender,
-                isBid ? quote : base,
-                (remaining * 100) / feeDenom
+                remaining
             );
         }
 
@@ -1462,7 +1496,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
      * @param isBid Whether it is an ask order or not.
      * If ask, the quote asset is transferred to the contract.
      * @return withoutFee The amount of asset without the fee.
-     * @return book The address of the orderbook for the given asset pair.
+     * @return pair The address of the orderbook for the given asset pair.
      */
     function _deposit(
         address base,
@@ -1472,16 +1506,16 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         bool isBid,
         uint32 uid,
         bool isMaker
-    ) internal returns (uint256 withoutFee, address book) {
+    ) internal returns (uint256 withoutFee, address pair) {
         // get orderbook address from the base and quote asset
-        book = getPair(base, quote);
-        if (book == address(0)) {
-            book = addPair(base, quote);
+        pair = getPair(base, quote);
+        if (pair == address(0)) {
+            pair = addPair(base, quote);
         }
 
         // check if amount is valid in case of both market and limit
-        uint256 converted = _convert(book, price, amount, !isBid);
-        uint256 minRequired = _convert(book, price, 1, !isBid);
+        uint256 converted = _convert(pair, price, amount, !isBid);
+        uint256 minRequired = _convert(pair, price, 1, !isBid);
 
         if (converted <= minRequired) {
             revert OrderSizeTooSmall(amount, minRequired);
@@ -1513,7 +1547,12 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             TransferHelper.safeTransfer(base, feeTo, fee);
         }
         emit OrderDeposit(msg.sender, isBid ? quote : base, fee);
-        return (withoutFee, book);
+
+        if (_isContract(feeTo) && IRevenue(feeTo).isReportable()) {
+            // report fee to accountant
+            IRevenue(feeTo).report(uid, base, quote, isBid, msg.sender, withoutFee);
+        }
+        return (withoutFee, pair);
     }
 
     function _fee(
@@ -1524,14 +1563,20 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         uint32 uid,
         bool isMaker
     ) internal returns (uint256 fee) {
-        if (uid != 0 && IRevenue(feeTo).isReportable(msg.sender, uid)) {
+        if (uid != 0 && IRevenue(feeTo).isSubscribed(uid)) {
             uint32 feeNum = IRevenue(feeTo).feeOf(uid, isMaker);
-            // report fee to accountant
-            IRevenue(feeTo).report(uid, isBid ? quote : base, amount, true);
             return (amount * feeNum) / feeDenom;
-        } else {
-            return amount / 100;
         }
+
+        return amount / 100;
+    }
+
+    function _isContract(address addr) internal view returns (bool) {
+        uint size;
+        assembly {
+            size := extcodesize(addr)
+        }
+        return size > 0;
     }
 
     /**

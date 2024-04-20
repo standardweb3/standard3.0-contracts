@@ -49,7 +49,7 @@ forge build
 
 ### 3. Test
 
-To ensure the contracts function as expected, run tests specifically for the SABT module:
+To ensure the contracts function as expected, run tests specifically for the pass module:
 
 ```
 forge test --match-path test/exchange/*

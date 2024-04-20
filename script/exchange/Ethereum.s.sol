@@ -4,10 +4,6 @@ pragma solidity ^0.8.17;
 import "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 import {MockBTC} from "../../contracts/mock/MockBTC.sol";
-import {SABT} from "../../contracts/sabt/SABT.sol";
-import {BlockAccountant} from "../../contracts/sabt/BlockAccountant.sol";
-import {Membership} from "../../contracts/sabt/Membership.sol";
-import {Treasury} from "../../contracts/sabt/Treasury.sol";
 import {MockToken} from "../../contracts/mock/MockToken.sol";
 import {MatchingEngine} from "../../contracts/exchange/MatchingEngine.sol";
 import {OrderbookFactory} from "../../contracts/exchange/orderbooks/OrderbookFactory.sol";
@@ -49,53 +45,19 @@ contract DeployexchangeMainnetContracts is Deployer {
         0x34CCCa03631830cD8296c172bf3c31e126814ce9;
     address constant weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
-    Treasury public treasury;
-
     function run() external {
         _setDeployer();
         OrderbookFactory orderbookFactory = new OrderbookFactory();
         MatchingEngine matchingEngine = new MatchingEngine();
-        treasury = new Treasury();
         
         matchingEngine.initialize(
             address(orderbookFactory),
-            address(treasury),
+            address(0x34CCCa03631830cD8296c172bf3c31e126814ce9),
             address(weth)
         );
         
         orderbookFactory.initialize(address(matchingEngine));
         vm.stopBroadcast();
-    }
-}
-
-contract DeploySABTMainnetContracts is Deployer {
-    Treasury constant treasury =
-        Treasury(0xAF70BD3B32f70206a17DfdBe66529917E2Bf8c7B);
-    uint32 constant spb = 12;
-    address constant weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // weth on mainnet
-    address constant stablecoin = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48; // usdc on mainnet
-    address constant matchingEngine =
-        0x677B1CA9ACb800f7b40C89ef9BB441f79A7363f0;
-    address constant foundation_address =
-        0x34CCCa03631830cD8296c172bf3c31e126814ce9;
-
-    function run() external {
-        Membership membership = new Membership();
-        SABT sabt = new SABT();
-        membership.initialize(address(sabt), foundation_address, weth);
-        sabt.initialize(address(membership));
-        // Setup accountant and treasury
-        BlockAccountant accountant = new BlockAccountant();
-        accountant.initialize(
-            address(membership),
-            address(matchingEngine),
-            address(stablecoin),
-            spb
-        );
-        treasury.set(address(membership), address(accountant), address(sabt));
-        // Wire up matching engine with them
-        accountant.grantRole(accountant.REPORTER_ROLE(), address(treasury));
-        treasury.grantRole(treasury.REPORTER_ROLE(), address(matchingEngine));
     }
 }
 

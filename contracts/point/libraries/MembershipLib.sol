@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import {TransferHelper} from "./TransferHelper.sol";
 
-interface ISABT {
+interface IPass {
     function mint(address to_, uint8 metaId_) external returns (uint32);
 
     function balanceOf(address owner_, uint256 uid_) external view returns (uint256);
@@ -37,8 +37,8 @@ library MembershipLib {
         mapping(uint8 => Meta) metas;
         /// @dev mapping of meta id to register fee status
         mapping(uint8 => mapping(address => Fees)) fees;
-        /// @dev address of SABT
-        address sabt;
+        /// @dev address of pass
+        address pass;
         /// @dev address of STND
         address stnd;
         /// @dev address of foundation
@@ -61,7 +61,9 @@ library MembershipLib {
 
     struct Fees {
         address feeToken;
+        // One time registration fee token amount
         uint256 regFee;
+        // fee token amount to pay per block
         uint256 subFee;
     }
 
@@ -73,14 +75,13 @@ library MembershipLib {
         Member storage self,
         uint8 metaId_,
         address feeToken_,
-        uint32 regFee_,
-        uint32 subFee_,
+        uint256 regFee_,
+        uint256 subFee_,
         uint32 quota_
     ) internal {
         self.metas[metaId_].metaId = metaId_;
-        uint8 decimals = TransferHelper.decimals(feeToken_);
-        self.fees[metaId_][feeToken_].regFee = regFee_ * 10 ** decimals;
-        self.fees[metaId_][feeToken_].subFee = subFee_ * 10 ** decimals;
+        self.fees[metaId_][feeToken_].regFee = regFee_;
+        self.fees[metaId_][feeToken_].subFee = subFee_;
         self.metas[metaId_].quota = quota_;
     }
 
@@ -89,7 +90,7 @@ library MembershipLib {
     }
 
     function _setMeta(Member storage self, uint32 uid_, uint8 metaId_) internal {
-        ISABT(self.sabt).setMeta(uid_, metaId_);
+        IPass(self.pass).setMeta(uid_, metaId_);
     }
 
     function _setSTND(Member storage self, address stnd) internal {
@@ -99,9 +100,8 @@ library MembershipLib {
     function _setFees(Member storage self, uint8 metaId_, address feeToken_, uint256 regFee_, uint256 subFee_)
         internal
     {
-        uint8 decimals = TransferHelper.decimals(feeToken_);
-        self.fees[metaId_][feeToken_].regFee = regFee_ * 10 ** decimals;
-        self.fees[metaId_][feeToken_].subFee = subFee_ * 10 ** decimals;
+        self.fees[metaId_][feeToken_].regFee = regFee_;
+        self.fees[metaId_][feeToken_].subFee = subFee_;
     }
 
     function _register(Member storage self, uint8 metaId_, address feeToken_, bool isDev) internal returns (uint32 uid) {
@@ -115,20 +115,21 @@ library MembershipLib {
             TransferHelper.safeTransferFrom(feeToken_, msg.sender, address(this), regFee);
             TransferHelper.safeTransfer(feeToken_, self.foundation, regFee);
         }
-        // issue membership from SABT and get id
-        return ISABT(self.sabt).mint(msg.sender, metaId_);
+        // issue membership from pass and get id
+        return IPass(self.pass).mint(msg.sender, metaId_);
     }
 
     /// @dev subscribe: Subscribe to the membership until certain block height
     /// @param uid_ The uid of the ABT to subscribe with
+    /// @param feeToken_ address of the token contract to pay as fee
     /// @param blocks_ The number of blocks to subscribe
-    function _subscribe(Member storage self, uint32 uid_, uint64 blocks_, address feeToken_) internal {
+    function _subscribe(Member storage self, uint32 uid_, address feeToken_, uint64 blocks_) internal returns (uint256 at, uint256 until, address with) {
         // check if the member has the ABT with input id
-        if (ISABT(self.sabt).balanceOf(msg.sender, uid_) == 0) {
+        if (IPass(self.pass).balanceOf(msg.sender, uid_) == 0) {
             revert MembershipNotOwned(uid_, msg.sender);
         }
         uint256 bh = block.number;
-        uint8 metaId = ISABT(self.sabt).metaId(uid_);
+        uint8 metaId = IPass(self.pass).metaId(uid_);
         SubStatus memory sub = self.subscriptions[uid_];
         Fees memory fees = self.fees[metaId][feeToken_];
         // check if previous subscription was done with the same token
@@ -153,17 +154,18 @@ library MembershipLib {
         if (feeToken_ == self.stnd) {
             self.subSTND[uid_] += uint64((fees.subFee * blocks_) / 1e18);
         }
+        return (self.subscriptions[uid_].at, self.subscriptions[uid_].until, self.subscriptions[uid_].with);
     }
 
     /// @dev unsubscribe: Unsubscribe from the membership
     /// @param uid_ The id of the ABT to unsubscribe with
     function _unsubscribe(Member storage self, uint32 uid_) internal {
         // check if the member has the ABT with input id
-        if (ISABT(self.sabt).balanceOf(msg.sender, uid_) == 0) {
+        if (IPass(self.pass).balanceOf(msg.sender, uid_) == 0) {
             revert MembershipNotOwned(uid_, msg.sender);
         }
         uint256 bh = block.number;
-        uint8 metaId = ISABT(self.sabt).metaId(uid_);
+        uint8 metaId = IPass(self.pass).metaId(uid_);
         SubStatus memory sub = self.subscriptions[uid_];
         Fees memory fees = self.fees[metaId][sub.with];
         if (sub.until > bh) {
@@ -188,7 +190,7 @@ library MembershipLib {
     /// @dev offerBonus: Offer trial blocks to the subscription by promoters
     function _offerTrial(Member storage self, uint32 uid_, address holder_, uint256 blocks_) internal {
         // check if the member has the ABT with input id
-        if (ISABT(self.sabt).balanceOf(holder_, uid_) == 0) {
+        if (IPass(self.pass).balanceOf(holder_, uid_) == 0) {
             revert MembershipNotOwned(uid_, holder_);
         }
         // Add the bonus blocks to the subscription
@@ -197,8 +199,12 @@ library MembershipLib {
         self.subscriptions[uid_].bonus += blocks_;
     }
 
+    function getFees(Member storage self, uint8 metaId_, address feeToken) internal view returns (MembershipLib.Fees memory fee) {
+        return self.fees[metaId_][feeToken];
+    }
+
     function _balanceOf(Member storage self, address owner_, uint32 uid_) internal view returns (uint256) {
-        return ISABT(self.sabt).balanceOf(owner_, uid_);
+        return IPass(self.pass).balanceOf(owner_, uid_);
     }
 
     function _isSubscribed(Member storage self, uint32 uid_) internal view returns (bool) {
@@ -210,7 +216,7 @@ library MembershipLib {
     }
 
     function _getLvl(Member storage self, uint32 uid_) internal view returns (uint8) {
-        return ISABT(self.sabt).metaId(uid_);
+        return IPass(self.pass).metaId(uid_);
     }
 
     function _revenueOf(Member storage self, address token) internal view returns (uint256) {

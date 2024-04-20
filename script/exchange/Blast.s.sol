@@ -4,10 +4,6 @@ pragma solidity ^0.8.17;
 import "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 import {MockBTC} from "../../contracts/mock/MockBTC.sol";
-import {SABT} from "../../contracts/sabt/SABT.sol";
-import {BlockAccountant} from "../../contracts/sabt/BlockAccountant.sol";
-import {Membership} from "../../contracts/sabt/Membership.sol";
-import {Treasury} from "../../contracts/sabt/Treasury.sol";
 import {MockToken} from "../../contracts/mock/MockToken.sol";
 import {MatchingEngineBlast} from "../../contracts/exchange/MatchingEngineBlast.sol";
 import {OrderbookFactory} from "../../contracts/exchange/orderbooks/OrderbookFactory.sol";
@@ -49,8 +45,6 @@ contract DeployExchangeMainnetContracts is Deployer {
         0x34CCCa03631830cD8296c172bf3c31e126814ce9;
     address constant weth = 0x4300000000000000000000000000000000000004;
 
-    Treasury public treasury;
-
     function run() external {
         _setDeployer();
         OrderbookFactory orderbookFactory = new OrderbookFactory();
@@ -67,40 +61,7 @@ contract DeployExchangeMainnetContracts is Deployer {
     }
 }
 
-contract DeploySABTMainnetContracts is Deployer {
-    Treasury constant treasury =
-        Treasury(0x7a2e3a7A1bf8FaCCAd68115DC509DB5a5af4e7e4);
-    uint32 constant spb = 12;
-    address constant weth = 0x4300000000000000000000000000000000000004; // weth on mainnet
-    address constant stablecoin = 0x4300000000000000000000000000000000000003; // usdb on mainnet
-    address constant matchingEngine =
-        0x2CC505C4bc86B28503B5b8C450407D32e5E20A9f;
-    address constant foundation_address =
-        0x34CCCa03631830cD8296c172bf3c31e126814ce9;
 
-    function run() external {
-        _setDeployer();
-        Membership membership = new Membership();
-        SABT sabt = new SABT();
-        membership.initialize(address(sabt), foundation_address, weth);
-        sabt.initialize(address(membership));
-        // Setup accountant and treasury
-        BlockAccountant accountant = new BlockAccountant();
-        accountant.initialize(
-            address(membership),
-            address(matchingEngine),
-            address(stablecoin),
-            spb
-        );
-        treasury.set(address(membership), address(accountant), address(sabt));
-        treasury.setSettlement(1);
-        
-        // Wire up matching engine with them
-        accountant.setTreasury(address(treasury));
-        membership.setMembership(10, weth, 0, 0, 1);
-        membership.register(10, weth);
-    }
-}
 
 contract DeployTokenDispenser is Deployer {
     function run() external {
@@ -351,14 +312,3 @@ contract ShowOrderbook is Deployer {
     }
 }
 
-
-contract TakeOutFees is Deployer {
-    Treasury constant treasury =
-        Treasury(0x7a2e3a7A1bf8FaCCAd68115DC509DB5a5af4e7e4);
-    address token_address = 0xB582Dc28968c725D2868130752aFa0c13EbF9b1a;
-    function run() external {
-        _setDeployer();
-        treasury.settle(token_address, 0, 1);
-        treasury.exchange(token_address, 0, 1, 2500);
-    }
-}

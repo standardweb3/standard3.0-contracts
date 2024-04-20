@@ -12,7 +12,6 @@ import {Orderbook} from "../../../contracts/exchange/orderbooks/Orderbook.sol";
 import {ExchangeOrderbook} from "../../../contracts/exchange/libraries/ExchangeOrderbook.sol";
 import {IOrderbookFactory} from "../../../contracts/exchange/interfaces/IOrderbookFactory.sol";
 import {WETH9} from "../../../contracts/mock/WETH9.sol";
-import {Treasury} from "../../../contracts/sabt/Treasury.sol";
 import {FutureBrawlSetup} from "../FutureBrawlSetup.sol";
 
 contract FutureBrawlTest is FutureBrawlSetup {
@@ -148,7 +147,11 @@ contract FutureBrawlTest is FutureBrawlSetup {
     function testBrawlLong() public {
        super.futureBrawlSetUp();
         _trade();
+        vm.prank(trader1);
+        stablecoin.approve(address(portal), 1e30);
+        vm.prank(trader1);
         portal.create(address(feeToken), address(stablecoin), address(stablecoin), 10000);
+        vm.prank(trader1);
         portal.long(address(feeToken), address(stablecoin), 1, address(stablecoin), 10000);
     }
 }

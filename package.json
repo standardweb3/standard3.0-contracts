@@ -17,7 +17,7 @@
     "url": "https://github.com/Uniswap/uniswap-v3-core"
   },
   "files": [
-    "contracts/sabt",
+    "contracts/pass",
     "contracts/exchange"
   ],
   "scripts": {

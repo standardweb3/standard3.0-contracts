@@ -367,13 +367,13 @@ contract Orderbook is IOrderbook, Initializable {
         bool isBid
     ) public view returns (uint256 converted) {
         if (isBid) {
-            // convert quote to base
+            // convert base to quote
             return
                 baseBquote
                     ? ((amount * price) / 1e8) / decDiff
                     : ((amount * price) / 1e8) * decDiff;
         } else {
-            // convert base to quote
+            // convert quote to base
             return
                 baseBquote
                     ? ((amount * 1e8) / price) * decDiff

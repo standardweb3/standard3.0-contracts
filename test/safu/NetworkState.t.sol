@@ -14,7 +14,6 @@ import {Orderbook} from "../../contracts/exchange/orderbooks/Orderbook.sol";
 import {ExchangeOrderbook} from "../../contracts/exchange/libraries/ExchangeOrderbook.sol";
 import {IOrderbookFactory} from "../../contracts/exchange/interfaces/IOrderbookFactory.sol";
 import {WETH9} from "../../contracts/mock/WETH9.sol";
-import {Treasury} from "../../contracts/sabt/Treasury.sol";
 import {NetworkState} from "../../contracts/safu/NetworkState.sol";
 
 contract BaseSetup is Test {
@@ -27,7 +26,6 @@ contract BaseSetup is Test {
     MockQuote public token2;
     MockBTC public btc;
     MockToken public feeToken;
-    Treasury public treasury;
     NetworkState public networkState;
     address payable[] public users;
     address public trader1;
@@ -63,11 +61,9 @@ contract BaseSetup is Test {
         matchingEngine = new MatchingEngine();
         orderbookFactory = new OrderbookFactory();
         orderbookFactory.initialize(address(matchingEngine));
-        treasury = new Treasury();
-        treasury.set(address(0), address(0), address(0));
         matchingEngine.initialize(
             address(orderbookFactory),
-            address(treasury),
+            address(booker),
             address(weth)
         );
 

@@ -8,10 +8,10 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 
 /// @author Hyungsuk Kang <hskang9@github.com>
 /// @title Standard Account Bound Token
-contract SABT is ERC1155, AccessControl, Initializable {
+contract Pass is ERC1155, AccessControl, Initializable {
     using Strings for uint256;
 
-    address public membership;
+    address public pointFarm;
     address public metadata;
     string baseURI;
 
@@ -19,21 +19,21 @@ contract SABT is ERC1155, AccessControl, Initializable {
 
     mapping(uint32 => uint8) public metaIds;
 
-    error NotMembership(address membership_, address sender);
+    error InvalidAccess(address pointFarm_, address sender);
     error MembershipFull(uint32 uid_);
     error InvalidRole(bytes32 role, address sender);
 
-    constructor() ERC1155("https://app.standardweb3.com/api/sabt") {
+    constructor() ERC1155("https://app.standardweb3.com/api/pass") {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         index = 1;
     }
 
-    function initialize(address membership_) external initializer {
+    function initialize(address pointFarm_) external initializer {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
         }
-        membership = membership_;
-        baseURI = "https://app.standardweb3.com/api/sabt";
+        pointFarm = pointFarm_;
+        baseURI = "https://app.standardweb3.com/api/pass";
     }
 
     function setURI(string memory uri_) public {
@@ -48,12 +48,12 @@ contract SABT is ERC1155, AccessControl, Initializable {
         return string(abi.encodePacked(baseURI, "/", meta.toString()));
     }
 
-    /// @dev mint: Mint a new SABT for customized membership
+    /// @dev mint: Mint a new pass for customized pointFarm
     /// @param to_ The address to mint the token to
     /// @param metaId_ The id of the token to mint
     function mint(address to_, uint8 metaId_) public returns (uint32) {
-        if (msg.sender != membership) {
-            revert NotMembership(membership, msg.sender);
+        if (msg.sender != pointFarm) {
+            revert InvalidAccess(pointFarm, msg.sender);
         }
         if (index >= 4294967295 /* 2**32 -1 */ ) {
             revert MembershipFull(index);
@@ -71,8 +71,8 @@ contract SABT is ERC1155, AccessControl, Initializable {
     }
 
     function setMetaId(uint32 uid_, uint8 metaId_) public {
-        if (msg.sender != membership) {
-            revert NotMembership(membership, msg.sender);
+        if (msg.sender != pointFarm) {
+            revert InvalidAccess(pointFarm, msg.sender);
         }
         metaIds[uid_] = metaId_;
     }

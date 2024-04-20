@@ -43,4 +43,8 @@ contract Utils is Test {
         uint256 targetBlock = block.number + numBlocks;
         vm.roll(targetBlock);
     }
+
+    function setTime(uint256 timestamp) external {
+        vm.warp(timestamp);
+    }
 }

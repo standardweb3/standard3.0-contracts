@@ -4,10 +4,6 @@ pragma solidity ^0.8.17;
 import "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 import {MockBTC} from "../../contracts/mock/MockBTC.sol";
-import {SABT} from "../../contracts/sabt/SABT.sol";
-import {BlockAccountant} from "../../contracts/sabt/BlockAccountant.sol";
-import {Membership} from "../../contracts/sabt/Membership.sol";
-import {Treasury} from "../../contracts/sabt/Treasury.sol";
 import {MockToken} from "../../contracts/mock/MockToken.sol";
 import {MatchingEngine} from "../../contracts/exchange/MatchingEngine.sol";
 import {OrderbookFactory} from "../../contracts/exchange/orderbooks/OrderbookFactory.sol";
@@ -48,8 +44,6 @@ contract DeployExchangeMainnetContracts is Deployer {
     address constant foundation_address =
         0x34CCCa03631830cD8296c172bf3c31e126814ce9;
     address constant weth = 0x69011706b3f6C6eaeD7D2Bc13801558B4fd94CBF;
-
-    Treasury public treasury;
 
     function run() external {
         _setDeployer();

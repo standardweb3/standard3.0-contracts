@@ -25,7 +25,7 @@ The **Standard super app** stands as a pinnacle in the web3.0 ecosystem, bestowi
 
 ---
 
-### 1. [SABT: Your Financial Steward](./contracts/sabt/README.md)
+### 1. [pass: Your Financial Steward](./contracts/pass/README.md)
 
 - **Core Functionality**: Acts as your self-managed account on the Standard platform.
 - **Benefits**:
@@ -65,7 +65,7 @@ The **Standard super app** stands as a pinnacle in the web3.0 ecosystem, bestowi
 
 ---
 
-In essence, the **Standard super app** unifies **SABT** (governance & credit management), **exchange** (digital trading), **SAFU** (financial standardization), and **SAIL** (wealth strategy) into a cohesive ecosystem. This ensemble delivers a holistic suite of financial instruments, streamlining the intricacies of digital finance. With Standard, users are equipped, empowered, and emboldened to architect their financial destinies. It's not merely a platform but a beacon heralding the dawn of decentralized economic empowerment.
+In essence, the **Standard super app** unifies **pass** (governance & credit management), **exchange** (digital trading), **SAFU** (financial standardization), and **SAIL** (wealth strategy) into a cohesive ecosystem. This ensemble delivers a holistic suite of financial instruments, streamlining the intricacies of digital finance. With Standard, users are equipped, empowered, and emboldened to architect their financial destinies. It's not merely a platform but a beacon heralding the dawn of decentralized economic empowerment.
 
 
 ## Deployment

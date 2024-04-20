@@ -1,8 +1,8 @@
-# SABT
+# pass
 
-## **Managing Credit and Governance with [SABT](./contracts/sabt/README.md)**
+## **Managing Credit and Governance with [pass](./contracts/pass/README.md)**
 
-The SABT app serves as a self-custodial account within the Standard platform, storing credit that revolves around other integrated apps. It allows users to manage their credit lines effectively, facilitating seamless transactions and financial operations across the ecosystem. In addition, the credits earned through SABT can be utilized in governance processes within the platform, enabling real users to influence the direction and evolution of the system. With an active subscription status, SABT credit holders can even exchange their credits with the company's revenue as part of Standard's unique revenue-sharing business model, further integrating them into the financial successes and opportunities of the platform.
+The pass app serves as a self-custodial account within the Standard platform, storing credit that revolves around other integrated apps. It allows users to manage their credit lines effectively, facilitating seamless transactions and financial operations across the ecosystem. In addition, the credits earned through pass can be utilized in governance processes within the platform, enabling real users to influence the direction and evolution of the system. With an active subscription status, pass credit holders can even exchange their credits with the company's revenue as part of Standard's unique revenue-sharing business model, further integrating them into the financial successes and opportunities of the platform.
 
 ## Table of Contents
 
@@ -49,10 +49,10 @@ forge build
 
 ### 3. Test
 
-To ensure the contracts function as expected, run tests specifically for the SABT module:
+To ensure the contracts function as expected, run tests specifically for the pass module:
 
 ```
-forge test --match-path test/sabt/*
+forge test --match-path test/pass/*
 ```
 
 ---

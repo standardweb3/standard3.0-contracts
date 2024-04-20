@@ -34,7 +34,6 @@ import {MatchingEngine} from "../../contracts/exchange/MatchingEngine.sol";
 import {OrderbookFactory} from "../../contracts/exchange/orderbooks/OrderbookFactory.sol";
 import {Orderbook} from "../../contracts/exchange/orderbooks/Orderbook.sol";
 import {ExchangeOrderbook} from "../../contracts/exchange/libraries/ExchangeOrderbook.sol";
-import {Treasury} from "../../contracts/sabt/Treasury.sol";
 import {WETH9} from "../../contracts/mock/WETH9.sol";
 
 contract OrderbookHookTest is Test, GasSnapshot {

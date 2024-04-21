@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.24;
 
 interface IAccountant {
     function convert(address base, address quote, uint256 amount, bool isBid)

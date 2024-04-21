@@ -410,7 +410,7 @@ const config = {
   },
 
   compiler: {
-    version: "0.8.17",
+    version: "0.8.24",
     settings: {
       optimizer: {
         enabled: true,
@@ -419,7 +419,7 @@ const config = {
     },
   },
   solidity: {
-    version: "0.8.17",
+    version: "0.8.24",
     settings: {
       optimizer: {
         enabled: true,

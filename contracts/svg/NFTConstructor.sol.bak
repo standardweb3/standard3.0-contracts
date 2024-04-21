@@ -1,5 +1,5 @@
 
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.24;
 
 import "../interfaces/IERC20Minimal.sol";
 import "./libraries/NFTSVG.sol";

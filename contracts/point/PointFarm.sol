@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.24;
 
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {MembershipLib} from "./libraries/MembershipLib.sol";
@@ -221,6 +221,10 @@ contract PointFarm is AccessControl {
 
     function getSubSTND(uint32 uid_) external view returns (uint64) {
         return _membership._getSubSTND(uid_);
+    }
+
+    function getSubStatus(uint32 uid_) external view returns (MembershipLib.SubStatus memory status) {
+        return _membership._getSubStatus(uid_);
     }
 
     function getMeta(

@@ -1,4 +1,4 @@
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.24;
 
 import {ITimeBrawl, ITimeBrawlFactory} from "./interfaces/ITimeBrawlFactory.sol";
 import {TransferHelper} from "./libraries/TransferHelper.sol";

@@ -5,7 +5,7 @@ contract SubscriptionTest is PointFarmSetup {
         super.setUp();
         vm.startPrank(trader1);
         feeToken.approve(address(pointFarm), 1e40);
-        pointFarm.setMembership(9, address(feeToken), 1, 1, 5);
+        pointFarm.setMembership(9, address(feeToken), 1e18, 1e18, 5);
         vm.stopPrank();
     }
 
@@ -28,12 +28,22 @@ contract SubscriptionTest is PointFarmSetup {
         pointFarm.subscribe(1,address(stablecoin), 10000);
     }
 
+    // subscription cannot be done when fee is not configured
+    function testSubscriptionWithoutConfigReverts() public {
+        subcSetUp();
+        vm.startPrank(trader1);
+        pointFarm.register(9, address(feeToken));
+        vm.expectRevert();
+        pointFarm.subscribe(1,address(stablecoin), 10000);
+    }
+
     // subscription can be done on only one token
     function testSubscriptionCanOnlyBeDoneOnOneToken() public {
         subcSetUp();
         vm.startPrank(trader1);
         pointFarm.register(9, address(feeToken));
-        pointFarm.subscribe(1,address(stablecoin), 10000);
+        pointFarm.subscribe(1,address(feeToken), 10000);
+        pointFarm.setMembership(9, address(stablecoin), 1e18, 1e18, 5);
         vm.expectRevert();
         pointFarm.subscribe(1,address(stablecoin), 10000);
     }
@@ -57,5 +67,16 @@ contract SubscriptionTest is PointFarmSetup {
         uint256 subSTND = pointFarm.getSubSTND(1);
         assert(subSTND == 10000);
         vm.stopPrank();
+    }
+
+    // subscribing stacks up on previous one
+    function testSubscriptionStacks() public {
+        subcSetUp();
+        vm.startPrank(trader1);
+        pointFarm.setSTND(address(feeToken));
+        pointFarm.register(9, address(feeToken));
+        pointFarm.subscribe(1, address(feeToken), 10000);
+        pointFarm.subscribe(1, address(feeToken), 10000);
+        assert(pointFarm.getSubStatus(1).until == 22001);
     }
 }

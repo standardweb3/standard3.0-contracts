@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.24;
 
 import {TransferHelper} from "./TransferHelper.sol";
 
@@ -69,6 +69,7 @@ library MembershipLib {
 
     error InvalidFeeToken(address feeToken_, uint8 metaId_);
     error MembershipNotOwned(uint32 uid, address owner);
+    error FeeNotConfigured(address feeToken, uint256 fee);
     error NoMultiTokenAccounting(address subscribedWith, address feeToken_);
 
     function _setMembership(
@@ -132,6 +133,10 @@ library MembershipLib {
         uint8 metaId = IPass(self.pass).metaId(uid_);
         SubStatus memory sub = self.subscriptions[uid_];
         Fees memory fees = self.fees[metaId][feeToken_];
+        // check if fee is not set
+        if(fees.subFee == 0) {
+            revert FeeNotConfigured(feeToken_, fees.subFee);
+        }
         // check if previous subscription was done with the same token
         if (sub.with != address(0) && sub.with != feeToken_) {
             // if not, Ask user to unsubscribed with the previous token subscription
@@ -143,12 +148,13 @@ library MembershipLib {
             self.foundation,
             sub.until > bh ? fees.subFee * uint256(bh - sub.at) : fees.subFee * uint256(sub.until - sub.at)
         );
-        // Transfer the tokens to this contract
+        
+        // Transfer the tokens to this contract for new subscription
         TransferHelper.safeTransferFrom(feeToken_, msg.sender, address(this), fees.subFee * uint256(blocks_));
 
         // subscribe for certain block
         self.subscriptions[uid_].at = bh;
-        self.subscriptions[uid_].until = bh + blocks_;
+        self.subscriptions[uid_].until = sub.until > bh ? bh + (sub.until - bh) + blocks_ : bh + blocks_;
         self.subscriptions[uid_].with = feeToken_;
         // if feeToken is STND, add it to the subSTND;
         if (feeToken_ == self.stnd) {
@@ -214,6 +220,10 @@ library MembershipLib {
 
     function _getSubSTND(Member storage self, uint32 uid_) internal view returns (uint64) {
         return self.subSTND[uid_];
+    }
+
+    function _getSubStatus(Member storage self, uint32 uid_) internal view returns (SubStatus memory status) {
+        return self.subscriptions[uid_];
     }
 
     function _getLvl(Member storage self, uint32 uid_) internal view returns (uint8) {

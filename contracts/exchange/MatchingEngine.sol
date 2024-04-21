@@ -1525,7 +1525,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             revert OrderSizeTooSmall(amount, minRequired);
         }
         // check if sender has uid
-        uint256 fee = _fee(base, quote, amount, isBid, uid, isMaker);
+        uint256 fee = _fee(amount, uid, isMaker);
         withoutFee = amount - fee;
         if (isBid) {
             // transfer input asset give user to this contract
@@ -1556,10 +1556,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     }
 
     function _fee(
-        address base,
-        address quote,
         uint256 amount,
-        bool isBid,
         uint32 uid,
         bool isMaker
     ) internal returns (uint256 fee) {

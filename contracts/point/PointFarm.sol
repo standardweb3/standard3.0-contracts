@@ -111,16 +111,16 @@ contract PointFarm is AccessControl {
         emit QuotaSet(metaId_, quota_);
     }
 
-    function getMetaSupply(uint8 metaId_) external {
-
-    }
-
     function setMeta(uint32 uid_, uint8 metaId_) external {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
         }
         _membership._setMeta(uid_, metaId_);
         emit MetaSet(uid_, metaId_);
+    }
+
+    function getMetaSupply(uint8 metaId_) external view returns (uint256 supply) {
+        return _membership._getMetaSupply(metaId_);
     }
 
     function setSTND(address stnd) external {

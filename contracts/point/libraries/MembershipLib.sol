@@ -10,11 +10,13 @@ interface IPass {
 
     function setRegistered(uint256 id_, bool yesOrNo) external;
 
-    function metaId(uint32 uid_) external view returns (uint8);
+    function metaId(uint256 uid_) external view returns (uint8);
 
-    function setMeta(uint32 uid_, uint8 meta_) external;
+    function setMeta(uint256 uid_, uint8 meta_) external;
 
-    function getLvl(uint32 uid_) external view returns (uint8);
+    function getLvl(uint256 uid_) external view returns (uint8);
+
+    function getMetaSupply(uint8 metaId_) external view returns (uint256);
 }
 
 interface IWETHMinimal {
@@ -148,7 +150,7 @@ library MembershipLib {
             self.foundation,
             sub.until > bh ? fees.subFee * uint256(bh - sub.at) : fees.subFee * uint256(sub.until - sub.at)
         );
-        
+
         // Transfer the tokens to this contract for new subscription
         TransferHelper.safeTransferFrom(feeToken_, msg.sender, address(this), fees.subFee * uint256(blocks_));
 
@@ -224,6 +226,10 @@ library MembershipLib {
 
     function _getSubStatus(Member storage self, uint32 uid_) internal view returns (SubStatus memory status) {
         return self.subscriptions[uid_];
+    }
+
+    function _getMetaSupply(Member storage self, uint8 metaId_) internal view returns (uint256 supply) {
+        return IPass(self.pass).getMetaSupply(metaId_);
     }
 
     function _getLvl(Member storage self, uint32 uid_) internal view returns (uint8) {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.24;
 
-import {IERC1155, ERC1155, IERC1155MetadataURI} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import {IERC1155, ERC1155, IERC1155MetadataURI} from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 import {AccessControl, IAccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
@@ -17,7 +17,8 @@ contract Pass is ERC1155, AccessControl, Initializable {
 
     uint32 public index;
 
-    mapping(uint32 => uint8) public metaIds;
+    mapping(uint256 => uint8) public metaIds;
+    mapping(uint8 => uint256) public metaSupply;
 
     error InvalidAccess(address pointFarm_, address sender);
     error MembershipFull(uint32 uid_);
@@ -60,17 +61,18 @@ contract Pass is ERC1155, AccessControl, Initializable {
         }
         metaIds[index] = metaId_;
         _mint(to_, index, 1, abi.encode(metaId_));
+        metaSupply[metaId_] += 1;
         index++;
         return index - 1;
     }
 
     /// @dev metaId: Return the metaId of the membership token
     /// @param uid_ The uid of the token to get the metaId of
-    function metaId(uint32 uid_) external view returns (uint8) {
+    function metaId(uint256 uid_) external view returns (uint8) {
         return metaIds[uid_];
     }
 
-    function setMetaId(uint32 uid_, uint8 metaId_) public {
+    function setMetaId(uint256 uid_, uint8 metaId_) public {
         if (msg.sender != pointFarm) {
             revert InvalidAccess(pointFarm, msg.sender);
         }
@@ -78,7 +80,14 @@ contract Pass is ERC1155, AccessControl, Initializable {
     }
 
     function transfer(address _to, uint256 _id) public {
+        if(_to == address(0)) {
+            metaSupply[metaIds[_id]] -= 1;
+        }
         super.safeTransferFrom(msg.sender, _to, _id, 1, "");
+    }
+
+    function getMetaSupply(uint8 metaId_) external view returns (uint256 supply) {
+        return metaSupply[metaId_];
     }
 
     function supportsInterface(bytes4 interfaceId)

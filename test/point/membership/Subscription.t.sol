@@ -23,9 +23,9 @@ contract SubscriptionTest is PointFarmSetup {
         subcSetUp();
         vm.startPrank(trader1);
         pointFarm.register(9, address(feeToken));
-        pointFarm.subscribe(1,address(stablecoin), 10000);
+        pointFarm.subscribe(1,address(feeToken), 10000);
         pointFarm.unsubscribe(1);
-        pointFarm.subscribe(1,address(stablecoin), 10000);
+        pointFarm.subscribe(1,address(feeToken), 10000);
     }
 
     // subscription cannot be done when fee is not configured

@@ -152,7 +152,8 @@ library MembershipLib {
         self.subscriptions[uid_].with = feeToken_;
         // if feeToken is STND, add it to the subSTND;
         if (feeToken_ == self.stnd) {
-            self.subSTND[uid_] += uint64((fees.subFee * blocks_) / 1e18);
+            uint8 decimals = TransferHelper.decimals(self.stnd);
+            self.subSTND[uid_] += uint64((fees.subFee * blocks_) / 10 ** decimals);
         }
         return (self.subscriptions[uid_].at, self.subscriptions[uid_].until, self.subscriptions[uid_].with);
     }

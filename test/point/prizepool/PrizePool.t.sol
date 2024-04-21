@@ -22,6 +22,17 @@ contract PrizePoolTest is PointFarmSetup {
                 1,
                 address(trader1)
             );
+        matchingEngine
+            .limitSell(
+                address(feeToken),
+                address(stablecoin),
+                1000e8,
+                100e18,
+                true,
+                2,
+                1,
+                address(trader1)
+            );
         uint256 pointBalance = point.balanceOf(trader1);
         assert(pointBalance > 0);
         vm.stopPrank();

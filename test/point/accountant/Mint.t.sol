@@ -54,8 +54,19 @@ contract MintTest is PointFarmSetup {
         pointFarm.setMultiplier(address(feeToken), address(stablecoin), false, 30000);
         pointFarm.setMultiplier(address(feeToken), address(stablecoin), true, 30000);
         vm.warp(10000);
-        (uint256 makePrice, uint256 placed, uint32 id) = matchingEngine
+        matchingEngine
             .limitBuy(
+                address(feeToken),
+                address(stablecoin),
+                1000e8,
+                100e18,
+                true,
+                2,
+                1,
+                address(trader1)
+            );
+        matchingEngine
+            .limitSell(
                 address(feeToken),
                 address(stablecoin),
                 1000e8,

@@ -19,15 +19,6 @@ interface IRevenue {
         uint256 amount
     ) external;
 
-    function reportCancel(
-        uint32 uid,
-        address base,
-        address quote,
-        bool isBid,
-        address sender,
-        uint256 amount
-    ) external;
-
     function isReportable() external view returns (bool);
 
     function refundFee(address to, address token, uint256 amount) external;
@@ -275,6 +266,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             orderData.withoutFee
         );
 
+        _report(base, quote, true, quoteAmount, orderData.withoutFee, uid);
+
         return (orderData.bidHead, orderData.withoutFee, orderData.ls);
     }
 
@@ -385,6 +378,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             baseAmount,
             orderData.withoutFee
         );
+
+
+        _report(base, quote, false, baseAmount, orderData.withoutFee, uid);
 
         return (orderData.askHead, orderData.withoutFee, orderData.ls);
     }
@@ -546,6 +542,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             orderData.withoutFee
         );
 
+        _report(base, quote, true, quoteAmount, orderData.withoutFee, uid);
+
         return (price, orderData.withoutFee, orderData.ms);
     }
 
@@ -678,6 +676,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             baseAmount,
             orderData.withoutFee
         );
+
+        _report(base, quote, false, baseAmount, orderData.withoutFee, uid);
 
         return (price, orderData.withoutFee, orderData.ms);
     }
@@ -833,17 +833,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             orderId,
             msg.sender
         );
-
-        if (_isContract(feeTo) && IRevenue(feeTo).isReportable()) {
-            IRevenue(feeTo).reportCancel(
-                uid,
-                base,
-                quote,
-                isBid,
-                msg.sender,
-                remaining
-            );
-        }
 
         emit OrderCanceled(orderbook, orderId, isBid, msg.sender, remaining);
         return remaining;
@@ -1488,6 +1477,21 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         }
     }
 
+    function _report(
+        address base,
+        address quote, 
+        bool isBid,
+        uint256 amount,
+        uint256 placed,
+        uint32 uid
+    ) internal {
+        if (_isContract(feeTo) && IRevenue(feeTo).isReportable() && amount - placed > 0) {
+            // report matched amount to accountant
+            IRevenue(feeTo).report(uid, base, quote, isBid, msg.sender, amount-placed);
+        }
+    }
+
+
     /**
      * @dev Deposit amount of asset to the contract with the given asset information and subtracts the fee.
      * @param base The address of the base asset.
@@ -1548,10 +1552,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         }
         emit OrderDeposit(msg.sender, isBid ? quote : base, fee);
 
-        if (_isContract(feeTo) && IRevenue(feeTo).isReportable()) {
-            // report fee to accountant
-            IRevenue(feeTo).report(uid, base, quote, isBid, msg.sender, withoutFee);
-        }
         return (withoutFee, pair);
     }
 

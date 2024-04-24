@@ -36,12 +36,11 @@ contract DeployWETH is Deployer {
 contract DeployTestnetAssets is Deployer {
     function run() external {
         _setDeployer();
-        MockToken feeToken = new MockToken("Standard", "STND");
-        MockToken stablecoin = new MockToken("Stablecoin", "STBC");
+        new MockToken("Standard", "STND");
+        new MockToken("Stablecoin", "STBC");
         vm.stopBroadcast();
     }
 }
-
 
 contract DistributeTestnetAssets is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
@@ -75,7 +74,6 @@ contract DistributeTestnetAssets is Deployer {
     }
 }
 
-
 contract TestOrderbookSell is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     address constant matching_engine_address =
@@ -92,8 +90,6 @@ contract TestOrderbookSell is Deployer {
 
     function run() external {
         _setDeployer();
-
-        
 
         // make a price in matching engine where 1 feeToken = 1000 stablecoin with buy and sell order
         feeToken.approve(address(matchingEngine), 100000e18);
@@ -142,7 +138,7 @@ contract TestGetPrices is Deployer {
 
     function run() external {
         _setDeployer();
-    
+
         uint256[] memory bidPrices = matchingEngine.getPrices(
             address(feeToken),
             address(stablecoin),

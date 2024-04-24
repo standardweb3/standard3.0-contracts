@@ -37,8 +37,8 @@ contract DeployWETH is Deployer {
 contract DeployTestnetAssets is Deployer {
     function run() external {
         _setDeployer();
-        MockToken feeToken = new MockToken("Standard", "STND");
-        MockToken stablecoin = new MockToken("Stablecoin", "STBC");
+        new MockToken("Standard", "STND");
+        new MockToken("Stablecoin", "STBC");
         vm.stopBroadcast();
     }
 }

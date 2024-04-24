@@ -62,15 +62,6 @@ contract DeployExchangeMainnetContracts is Deployer {
 }
 
 
-
-contract DeployTokenDispenser is Deployer {
-    function run() external {
-        _setDeployer();
-        TokenDispenser dispenser = new TokenDispenser();
-        vm.stopBroadcast();
-    }
-}
-
 contract AddAirdrop is Deployer {
     address constant airdrop_token_address =
         0xE57Cdf5796C2f5281EDF1B81129E1D4Ff9190815;

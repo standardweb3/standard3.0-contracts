@@ -15,7 +15,7 @@ contract FeeDiscountTest is PointFarmSetup {
     function testSubscribingGetsExtraFeeDiscount() public {
         fSetUp();
         vm.startPrank(trader1);
-        (uint256 makePrice, uint256 placed, uint32 id) = matchingEngine
+        matchingEngine
             .limitBuy(
                 address(feeToken),
                 address(stablecoin),
@@ -43,7 +43,7 @@ contract FeeDiscountTest is PointFarmSetup {
         fSetUp();
         vm.startPrank(trader1);
         pointFarm.unsubscribe(1);
-        (uint256 makePrice, uint256 placed, uint32 id) = matchingEngine
+        matchingEngine
             .limitBuy(
                 address(feeToken),
                 address(stablecoin),

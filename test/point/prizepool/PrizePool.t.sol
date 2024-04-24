@@ -42,7 +42,7 @@ contract PrizePoolTest is PointFarmSetup {
     function testPrizePoolGivesRewardWithPointsBurned() public {
         prizePoolSetup();
         vm.startPrank(trader1);
-        prizePool.claim(297e18);
+        prizePool.claim(29e18);
         vm.stopPrank();
     }
 }

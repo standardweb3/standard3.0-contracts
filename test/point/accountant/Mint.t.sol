@@ -13,7 +13,7 @@ contract MintTest is PointFarmSetup {
     // Trading without event will not mint points
     function testTradingWithoutEventWillNotMint() public {
         vm.startPrank(trader1);
-        (uint256 makePrice, uint256 placed, uint32 id) = matchingEngine
+        matchingEngine
             .limitBuy(
                 address(feeToken),
                 address(stablecoin),
@@ -32,7 +32,7 @@ contract MintTest is PointFarmSetup {
     function testTradingWithEventWithoutMultiplierWillNotMint() public {
         mintSetUp();
         vm.startPrank(trader1);
-        (uint256 makePrice, uint256 placed, uint32 id) = matchingEngine
+        matchingEngine
             .limitBuy(
                 address(feeToken),
                 address(stablecoin),

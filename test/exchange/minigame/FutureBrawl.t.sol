@@ -18,11 +18,6 @@ contract FutureBrawlTest is FutureBrawlSetup {
     // After trading, TI and trader level can be shown
 
     function _trade() internal {
-        Orderbook book = Orderbook(
-            payable(
-                orderbookFactory.getPair(address(feeToken), address(stablecoin))
-            )
-        );
         vm.prank(trader2);
         matchingEngine.limitSell(
             address(feeToken),
@@ -71,11 +66,6 @@ contract FutureBrawlTest is FutureBrawlSetup {
     }
 
     function _trade2() internal {
-        Orderbook book = Orderbook(
-            payable(
-                orderbookFactory.getPair(address(feeToken), address(stablecoin))
-            )
-        );
         vm.prank(trader2);
         matchingEngine.limitSell(
             address(feeToken),

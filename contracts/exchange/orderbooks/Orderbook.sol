@@ -113,7 +113,7 @@ contract Orderbook is IOrderbook, Initializable {
 
         // check before the price had an order not being empty
         bool wasEmpty = isEmpty(isBid, order.price);
-        
+
         if (order.owner != owner) {
             revert InvalidAccess(owner, order.owner);
         }
@@ -125,7 +125,7 @@ contract Orderbook is IOrderbook, Initializable {
             ? _sendFunds(pair.quote, owner, order.depositAmount)
             : _sendFunds(pair.base, owner, order.depositAmount);
 
-        // check if the canceled order was the last order in the list
+        // check if the canceled order was the only one order in the list
         if (!wasEmpty && deletePrice != 0) {
             priceLists._delete(isBid, order.price);
         }
@@ -159,7 +159,7 @@ contract Orderbook is IOrderbook, Initializable {
             // send converted amount of quote asset from owner to sender
             _sendFunds(pair.quote, sender, withDust);
             // delete price if price of the order is empty
-            if(deletePrice != 0) {
+            if (deletePrice != 0) {
                 priceLists._delete(isBid, deletePrice);
             }
         }
@@ -178,7 +178,7 @@ contract Orderbook is IOrderbook, Initializable {
             // send converted amount of base asset from owner to sender
             _sendFunds(pair.base, sender, withDust);
             // delete price if price of the order is empty
-            if(deletePrice != 0) {
+            if (deletePrice != 0) {
                 priceLists._delete(isBid, deletePrice);
             }
         }
@@ -203,7 +203,11 @@ contract Orderbook is IOrderbook, Initializable {
         bool isBid,
         uint256 price,
         uint256 remaining
-    ) external onlyEngine returns (uint32 orderId, uint256 required, bool clear) {
+    )
+        external
+        onlyEngine
+        returns (uint32 orderId, uint256 required, bool clear)
+    {
         orderId = isBid ? _bidOrders._head(price) : _askOrders._head(price);
         ExchangeOrderbook.Order memory order = isBid
             ? _bidOrders._getOrder(orderId)
@@ -278,6 +282,13 @@ contract Orderbook is IOrderbook, Initializable {
         return priceLists._bidHead();
     }
 
+    function orderHead(
+        bool isBid,
+        uint256 price
+    ) external view returns (uint32) {
+        return isBid ? _bidOrders._head(price) : _askOrders._head(price);
+    }
+
     function mktPrice() external view returns (uint256) {
         return priceLists._mktPrice();
     }
@@ -289,9 +300,40 @@ contract Orderbook is IOrderbook, Initializable {
         return priceLists._getPrices(isBid, n);
     }
 
+    function nextPrice(
+        bool isBid,
+        uint256 price
+    ) external view returns (uint256 next) {
+        return priceLists._next(isBid, price);
+    }
+
+    function nextOrder(
+        bool isBid,
+        uint256 price,
+        uint32 orderId
+    ) public view returns (uint32 next) {
+        return
+            isBid
+                ? _bidOrders._next(price, orderId)
+                : _askOrders._next(price, orderId);
+    }
+
+    function sfpop(
+        bool isBid,
+        uint256 price,
+        uint32 orderId
+    ) external view returns (uint32 id, uint256 required, bool clear) {
+        id = nextOrder(isBid, price, orderId);
+        ExchangeOrderbook.Order memory order = isBid
+            ? _bidOrders._getOrder(id)
+            : _askOrders._getOrder(id);
+        required = convert(price, order.depositAmount, !isBid);
+        return (id, required, id == 0);
+    }
+
     function getPricesPaginated(
         bool isBid,
-        uint32 start, 
+        uint32 start,
         uint32 end
     ) external view returns (uint256[] memory) {
         return priceLists._getPricesPaginated(isBid, start, end);
@@ -319,9 +361,14 @@ contract Orderbook is IOrderbook, Initializable {
                 : _askOrders._getOrders(price, n);
     }
 
-    function getOrdersPaginated(bool isBid, uint256 price, uint32 start, uint32 end) external view returns (ExchangeOrderbook.Order[] memory) {
-        return 
-            isBid 
+    function getOrdersPaginated(
+        bool isBid,
+        uint256 price,
+        uint32 start,
+        uint32 end
+    ) external view returns (ExchangeOrderbook.Order[] memory) {
+        return
+            isBid
                 ? _bidOrders._getOrdersPaginated(price, start, end)
                 : _askOrders._getOrdersPaginated(price, start, end);
     }

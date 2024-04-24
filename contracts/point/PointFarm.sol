@@ -88,6 +88,10 @@ contract PointFarm is AccessControl {
         );
     }
 
+    function setEvent(uint256 endDate) external {
+        _accountant._setEvent(endDate);
+    }
+
     function collectFee(address token) external {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);

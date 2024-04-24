@@ -41,6 +41,8 @@ interface IOrderbook {
 
     function bidHead() external view returns (uint256);
 
+    function orderHead(bool isBid, uint256 price) external view returns (uint32);
+
     function lmp() external view returns (uint256);
 
     function getPrices(bool isBid, uint32 n) external view returns (uint256[] memory);
@@ -56,4 +58,21 @@ interface IOrderbook {
     function getOrderIds(bool isBid, uint256 price, uint32 n) external view returns (uint32[] memory);
 
     function getBaseQuote() external view returns(address base, address quote);
+
+    function sfpop(
+        bool isBid,
+        uint256 price,
+        uint32 orderId
+    ) external view returns(uint32 id, uint256 required, bool clear);
+
+    function nextPrice(
+        bool isBid,
+        uint256 price
+    ) external view returns (uint256 next); 
+
+    function nextOrder(
+        bool isBid,
+        uint256 price,
+        uint32 orderId
+    ) external view returns (uint32 next);
 }

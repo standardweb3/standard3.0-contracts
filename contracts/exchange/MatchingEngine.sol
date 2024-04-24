@@ -23,9 +23,12 @@ interface IRevenue {
 
     function refundFee(address to, address token, uint256 amount) external;
 
-    function feeOf(uint32 uid, bool isMaker) external returns (uint32 feeNum);
+    function feeOf(
+        uint32 uid,
+        bool isMaker
+    ) external view returns (uint32 feeNum);
 
-    function isSubscribed(uint32 uid) external returns (bool);
+    function isSubscribed(uint32 uid) external view returns (bool);
 }
 
 interface IDecimals {
@@ -122,6 +125,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     error NoLastMatchedPrice(address base, address quote);
     error BidPriceTooLow(uint256 limitPrice, uint256 lmp, uint256 minBidPrice);
     error AskPriceTooHigh(uint256 limitPrice, uint256 lmp, uint256 maxAskPrice);
+    error PairDoesNotExist(address base, address quote, address pair);
 
     receive() external payable {
         assert(msg.sender == WETH); // only accept ETH via fallback from the WETH contract
@@ -378,7 +382,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             baseAmount,
             orderData.withoutFee
         );
-
 
         _report(base, quote, false, baseAmount, orderData.withoutFee, uid);
 
@@ -1133,7 +1136,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         address quote,
         bool isBid,
         uint32 orderId
-    ) external view returns (ExchangeOrderbook.Order memory) {
+    ) public view returns (ExchangeOrderbook.Order memory) {
         address orderbook = getPair(base, quote);
         return IOrderbook(orderbook).getOrder(isBid, orderId);
     }
@@ -1400,7 +1403,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
                 IOrderbook(orderbook).setLmp(lmp);
             } else {
                 // when ask book is empty, get bid head as last matching price
-                bidHead = IOrderbook(orderbook).clearEmptyHead(true);
+                lmp = IOrderbook(orderbook).clearEmptyHead(true);
+                IOrderbook(orderbook).setLmp(lmp);
             }
             return (remaining, lmp, askHead); // return bidHead, and askHead
         }
@@ -1435,6 +1439,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             } else {
                 // when bid book is empty, get ask head as last matching price
                 lmp = IOrderbook(orderbook).clearEmptyHead(false);
+                IOrderbook(orderbook).setLmp(lmp);
             }
             return (remaining, bidHead, lmp); // return bidHead, askHead
         }
@@ -1479,18 +1484,185 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
 
     function _report(
         address base,
-        address quote, 
+        address quote,
         bool isBid,
         uint256 amount,
         uint256 placed,
         uint32 uid
     ) internal {
-        if (_isContract(feeTo) && IRevenue(feeTo).isReportable() && amount - placed > 0) {
+        if (
+            _isContract(feeTo) &&
+            IRevenue(feeTo).isReportable() &&
+            amount - placed > 0
+        ) {
             // report matched amount to accountant
-            IRevenue(feeTo).report(uid, base, quote, isBid, msg.sender, amount-placed);
+            IRevenue(feeTo).report(
+                uid,
+                base,
+                quote,
+                isBid,
+                msg.sender,
+                amount - placed
+            );
         }
     }
 
+    function _simulateLimitOrder(
+        address orderbook,
+        uint256 amount,
+        bool isBid,
+        uint256 limitPrice,
+        uint32 n,
+        uint32 spread
+    )
+        internal view
+        returns (
+            uint256 remaining,
+            uint256 bidHead,
+            uint256 askHead,
+            uint32[] memory matchedOrders
+        )
+    {
+        remaining = amount;
+        uint256 lmp = IOrderbook(orderbook).lmp();
+        bidHead = IOrderbook(orderbook).bidHead();
+        askHead = IOrderbook(orderbook).askHead();
+        matchedOrders = new uint32[](n);
+        uint32 i = 0;
+        // In LimitBuy
+        if (isBid) {
+            // if limit price is out of spread given to bidHead, set to
+            if (
+                lmp != 0 &&
+                bidHead != 0 &&
+                limitPrice < (bidHead * (10000 - spread)) / 10000
+            ) {
+                return (remaining, bidHead, askHead, matchedOrders);
+            }
+            // check if there is any matching ask order until matching ask order price is lower than the limit bid Price
+            while (
+                remaining > 0 && askHead != 0 && askHead <= limitPrice && i < n
+            ) {
+                lmp = askHead;
+                (remaining, i, matchedOrders) = _simulateMatchAt(
+                    orderbook,
+                    isBid,
+                    remaining,
+                    askHead,
+                    i,
+                    n,
+                    matchedOrders
+                );
+                // i == 0 when orders are all empty and only head price is left
+                askHead = i == 0
+                    ? 0
+                    : IOrderbook(orderbook).nextPrice(false, askHead);
+            }
+            return (remaining, lmp, askHead, matchedOrders); // return bidHead, and askHead
+        }
+        // In LimitSell
+        else {
+            // check limit ask price is within 20% spread of last matched price
+            if (lmp != 0 && limitPrice > (askHead * (10000 + spread)) / 10000) {
+                return (remaining, bidHead, askHead, matchedOrders);
+            }
+            while (
+                remaining > 0 && bidHead != 0 && bidHead >= limitPrice && i < n
+            ) {
+                lmp = bidHead;
+                (remaining, i, matchedOrders) = _simulateMatchAt(
+                    orderbook,
+                    isBid,
+                    remaining,
+                    bidHead,
+                    i,
+                    n,
+                    matchedOrders
+                );
+                // i == 0 when orders are all empty and only head price is left
+                bidHead = i == 0
+                    ? 0
+                    : IOrderbook(orderbook).nextPrice(true, bidHead);
+            }
+            return (remaining, bidHead, lmp, matchedOrders); // return bidHead, askHead
+        }
+    }
+
+    function _simulateMatchAt(
+        address orderbook,
+        bool isBid,
+        uint256 amount,
+        uint256 price,
+        uint32 i,
+        uint32 n,
+        uint32[] memory ids
+    )
+        internal view
+        returns (uint256 remaining, uint32 k, uint32[] memory matchedOrderIds)
+    {
+        if (n > 20) {
+            revert TooManyMatches(n);
+        }
+        remaining = amount;
+        uint32 orderId;
+        uint256 required;
+        bool clearPrice;
+        while (remaining > 0 && orderId != 0 && i < n) {
+            // fpop OrderLinkedList by price, if ask you get bid order, if bid you get ask order. Get quote asset on bid order on buy, base asset on ask order on sell
+            (orderId, required, clearPrice) = IOrderbook(orderbook).sfpop(
+                !isBid,
+                price,
+                orderId
+            );
+
+            matchedOrderIds[i] = orderId;
+            // order exists, and amount is not 0
+            if (remaining <= required) {
+                // end loop as remaining is 0
+                return (0, n, matchedOrderIds);
+            }
+            // order is null
+            else if (required == 0) {
+                ++i;
+                continue;
+            }
+            // remaining >= depositAmount
+            else {
+                remaining -= required;
+                ++i;
+            }
+        }
+        k = i;
+        return (remaining, k, matchedOrderIds);
+    }
+
+    function _simulateDeposit(
+        address base,
+        address quote,
+        uint256 price,
+        uint256 amount,
+        bool isBid,
+        uint32 uid,
+        bool isMaker
+    ) internal view returns (uint256 withoutFee, address pair) {
+        // get orderbook address from the base and quote asset
+        pair = getPair(base, quote);
+        if (pair == address(0)) {
+            revert PairDoesNotExist(base, quote, pair);
+        }
+
+        // check if amount is valid in case of both market and limit
+        uint256 converted = _convert(pair, price, amount, !isBid);
+        uint256 minRequired = _convert(pair, price, 1, !isBid);
+
+        if (converted <= minRequired) {
+            revert OrderSizeTooSmall(amount, minRequired);
+        }
+        // check if sender has uid
+        uint256 fee = _fee(amount, uid, isMaker);
+        withoutFee = amount - fee;
+        return (withoutFee, pair);
+    }
 
     /**
      * @dev Deposit amount of asset to the contract with the given asset information and subtracts the fee.
@@ -1559,7 +1731,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         uint256 amount,
         uint32 uid,
         bool isMaker
-    ) internal returns (uint256 fee) {
+    ) internal view returns (uint256 fee) {
         if (uid != 0 && IRevenue(feeTo).isSubscribed(uid)) {
             uint32 feeNum = IRevenue(feeTo).feeOf(uid, isMaker);
             return (amount * feeNum) / feeDenom;
@@ -1600,5 +1772,69 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
                     ? IOrderbook(orderbook).assetValue(amount, isBid)
                     : IOrderbook(orderbook).convert(price, amount, isBid);
         }
+    }
+
+    function simulate(
+        address base,
+        address quote,
+        bool isBid,
+        uint256 price,
+        uint256 amount,
+        bool isMaker,
+        uint32 n,
+        uint32 uid
+    )
+        external
+        view
+        returns (
+            ExchangeOrderbook.Order[] memory matchedOrders,
+            uint256 matched,
+            uint256 placed
+        )
+    {
+        OrderData memory orderData;
+        orderData.mp = price == 0 ? mktPrice(base, quote) : price;
+        matchedOrders = new ExchangeOrderbook.Order[](n);
+        uint32[] memory matchedOrderIds = new uint32[](n);
+
+        // simulate deposit
+        (orderData.withoutFee, orderData.orderbook) = _simulateDeposit(
+            base,
+            quote,
+            orderData.mp,
+            amount,
+            isBid,
+            uid,
+            isMaker
+        );
+
+        (orderData.ls, orderData.ms) = _getSpread(orderData.orderbook);
+
+        // get price limit tick
+        if(price == 0) {
+            price = isBid ? (orderData.mp * (10000 + orderData.ms)) / 10000 : (orderData.mp * (10000 - orderData.ms)) / 10000;
+        } 
+
+        // simulate matching
+        (
+            orderData.withoutFee,
+            orderData.bidHead,
+            orderData.askHead,
+            matchedOrderIds
+        ) = _simulateLimitOrder(
+            orderData.orderbook,
+            orderData.withoutFee,
+            isBid,
+            price,
+            n,
+            price == 0 ? orderData.ms : orderData.ls
+        );
+
+        // get order infos
+        for(uint i=0; i<matchedOrders.length; i++) {
+            matchedOrders[i] = getOrder(base, quote, isBid, matchedOrderIds[i]);
+        }
+
+        return (matchedOrders, orderData.withoutFee, amount - orderData.withoutFee);
     }
 }

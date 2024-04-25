@@ -244,9 +244,6 @@ library ExchangeOrderbook {
         OrderStorage storage self,
         uint32 id
     ) internal view returns (Order memory) {
-        if (id == 0) {
-            revert OrderIdIsZero(id);
-        }
         return self.orders[id];
     }
 }

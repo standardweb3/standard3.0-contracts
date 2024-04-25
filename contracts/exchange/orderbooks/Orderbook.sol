@@ -321,9 +321,10 @@ contract Orderbook is IOrderbook, Initializable {
     function sfpop(
         bool isBid,
         uint256 price,
-        uint32 orderId
+        uint32 orderId,
+        bool isHead
     ) external view returns (uint32 id, uint256 required, bool clear) {
-        id = nextOrder(isBid, price, orderId);
+        id = isHead ? orderId : nextOrder(isBid, price, orderId);
         ExchangeOrderbook.Order memory order = isBid
             ? _bidOrders._getOrder(id)
             : _askOrders._getOrder(id);

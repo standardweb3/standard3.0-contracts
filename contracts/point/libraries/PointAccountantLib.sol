@@ -28,6 +28,7 @@ library PointAccountantLib {
         uint256 endDate;
     }
 
+    // multiplier decimal representing 4 decimals, 10000 = 1.0000x
     uint256 public constant DENOM = 10000;
 
     struct Multiplier {
@@ -175,7 +176,8 @@ library PointAccountantLib {
         address quote,
         bool isBid,
         address account,
-        uint256 amount
+        uint256 amount,
+        uint32 pointx
     ) internal returns (uint256 points) {
         // check uid
         // if a user just wants to save gas, set uid 0 and don't participate in event
@@ -200,7 +202,7 @@ library PointAccountantLib {
         points = (multiplier * stablecoinValue) / DENOM;
         IPoint(self.point).mint(
             account,
-            (multiplier * stablecoinValue) / DENOM
+            (multiplier * stablecoinValue * pointx) / (DENOM * DENOM)
         );
         return (points);
     }

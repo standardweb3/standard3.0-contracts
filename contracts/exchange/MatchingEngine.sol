@@ -39,7 +39,7 @@ interface IDecimals {
 contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     // fee recipient for point storage
     address private feeTo;
-    // fee denominator
+    // fee denominator representing 0.001%, 1/1000000 = 0.001%
     uint32 public immutable feeDenom = 1000000;
     // Factories
     address public orderbookFactory;
@@ -1604,22 +1604,48 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             revert TooManyMatches(n);
         }
         remaining = amount;
-        uint32 orderId;
+        // get order head of the price
+        uint32 orderId = IOrderbook(orderbook).orderHead(!isBid, price);
         uint256 required;
         bool clearPrice;
+        if(orderId != 0) {
+            ids[i] = orderId;  
+            // fpop OrderLinkedList by price, if ask you get bid order, if bid you get ask order. Get quote asset on bid order on buy, base asset on ask order on sell
+            (orderId, required, clearPrice) = IOrderbook(orderbook).sfpop(
+                !isBid,
+                price,
+                orderId,
+                true
+            );
+            // order exists, and amount is not 0
+            if (remaining <= required) {
+                // end loop as remaining is 0
+                return (0, n, ids);
+            }
+            // order is null
+            else if (required == 0) {
+                ++i;
+            }
+            // remaining >= depositAmount
+            else {
+                remaining -= required;
+                ++i;
+            }
+        }
         while (remaining > 0 && orderId != 0 && i < n) {
             // fpop OrderLinkedList by price, if ask you get bid order, if bid you get ask order. Get quote asset on bid order on buy, base asset on ask order on sell
             (orderId, required, clearPrice) = IOrderbook(orderbook).sfpop(
                 !isBid,
                 price,
-                orderId
+                orderId,
+                false
             );
 
-            matchedOrderIds[i] = orderId;
+            ids[i] = orderId;
             // order exists, and amount is not 0
             if (remaining <= required) {
                 // end loop as remaining is 0
-                return (0, n, matchedOrderIds);
+                return (0, n, ids);
             }
             // order is null
             else if (required == 0) {
@@ -1633,7 +1659,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             }
         }
         k = i;
-        return (remaining, k, matchedOrderIds);
+        return (remaining, k, ids);
     }
 
     function _simulateDeposit(
@@ -1808,6 +1834,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             isMaker
         );
 
+        // reuse amount for storing without fee amount
+        amount = orderData.withoutFee;
+
         (orderData.ls, orderData.ms) = _getSpread(orderData.orderbook);
 
         // get price limit tick
@@ -1815,7 +1844,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             price = isBid ? (orderData.mp * (10000 + orderData.ms)) / 10000 : (orderData.mp * (10000 - orderData.ms)) / 10000;
         } 
 
-        // simulate matching
+        // reuse orderData.withoutFee for string placed amount
         (
             orderData.withoutFee,
             orderData.bidHead,
@@ -1830,11 +1859,11 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             price == 0 ? orderData.ms : orderData.ls
         );
 
-        // get order infos
+        // get matched counter order infos
         for(uint i=0; i<matchedOrders.length; i++) {
-            matchedOrders[i] = getOrder(base, quote, isBid, matchedOrderIds[i]);
+            matchedOrders[i] = getOrder(base, quote, !isBid, matchedOrderIds[i]);
         }
-
-        return (matchedOrders, orderData.withoutFee, amount - orderData.withoutFee);
+        
+        return (matchedOrders, amount - orderData.withoutFee, orderData.withoutFee);
     }
 }

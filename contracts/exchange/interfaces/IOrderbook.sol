@@ -62,7 +62,8 @@ interface IOrderbook {
     function sfpop(
         bool isBid,
         uint256 price,
-        uint32 orderId
+        uint32 orderId,
+        bool isHead
     ) external view returns(uint32 id, uint256 required, bool clear);
 
     function nextPrice(

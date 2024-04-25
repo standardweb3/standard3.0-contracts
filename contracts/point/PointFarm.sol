@@ -322,7 +322,8 @@ contract PointFarm is AccessControl {
             quote,
             isBid,
             account,
-            amount
+            amount,
+            _membership._getPointX(uid)
         );
         if (point > 0) {
             emit PointReported(account, point);

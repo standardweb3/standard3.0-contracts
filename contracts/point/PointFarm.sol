@@ -58,6 +58,30 @@ contract PointFarm is AccessControl {
         _accountant.matchingEngine = matchingEngine_;
         _accountant.point = point_;
         _accountant.stablecoin = stablecoin_;
+        _accountant._setBaseMultiplier(10000);
+        _accountant._setStablecoin(stablecoin_);
+    }
+    
+    /// @dev setBaseMultiplier: Set base multiplier
+    /// @param x The base multiplier
+    /// @return x The base multiplier 
+    function setBaseMultiplier(uint32 x) external returns (uint32 x) {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        }
+        _accountant._setBaseMultiplier(x);
+        return x;
+    }
+
+    /// @dev setStablecoin: Set stablecoin
+    /// @param stablecoin The address of the stablecoin
+    /// @return stablecoin The address of the stablecoin
+    function setStablecoin(address stablecoin) external returns (address stablecoin) {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        }
+        _accountant._setStablecoin(stablecoin);
+        return stablecoin;
     }
 
     /// @dev setFees: Set fees for registration and subscription and token address

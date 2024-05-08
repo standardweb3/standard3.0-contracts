@@ -41,9 +41,14 @@ library PointAccountantLib {
     struct State {
         mapping(uint64 => Event) events;
         mapping(address => Multiplier) multipliers;
+        /// multiplier on buy order numerator with 4 decimals (e.g. 100.0000x)
+        uint32 baseMultiplier;
         address point;
         address matchingEngine;
+        /// stablecoin address
         address stablecoin;
+        /// stablecoin decimal
+        uint8 scDecimal;
         uint32 currentEvent;
     }
 
@@ -51,6 +56,22 @@ library PointAccountantLib {
     error EventOverlaps(uint256 prevEndDate, uint256 newStartDate);
     error EventAlreadyPassed(uint32 eventId, uint32 currentEventId);
     error EventStillOn(uint32 eventId, uint256 endDate);
+
+    function _setStablecoin(State storage self, address stablecoin) internal returns (bool) {
+        if (stablecoin == address(0)) {
+            revert InvalidAddress(stablecoin);
+        }
+        self.stablecoin = stablecoin;
+        self.scDecimal = IERC20(stablecoin).decimals();
+        return true;
+    }
+
+    function _setBaseMultiplier(
+        State storage self,
+        uint32 x
+    ) internal returns (uint32) {
+        self.baseMultiplier = x;
+    }
 
     function _setMultiplier(
         State storage self,
@@ -160,11 +181,12 @@ library PointAccountantLib {
             amount,
             true
         );
-        uint32 multiplier = _getMultiplier(self, pair, isBid);
-        points = (multiplier * stablecoinValue) / DENOM;
+        uint32 multipliers = self.baseMultiplier * _getMultiplier(self, pair, isBid);
+        // points = (multipliers in 4 decimals x2) * (point decimal) / (denominator x2) * (stablecoin value decimal)
+        points = (multipliers * stablecoinValue) * 1e18 / (DENOM * DENOM) * self.scDecimals;
         IPoint(self.point).fine(
             account,
-            (multiplier * stablecoinValue) / DENOM
+            points
         );
         return (points);
     }
@@ -198,11 +220,12 @@ library PointAccountantLib {
             amount,
             true
         );
-        uint32 multiplier = _getMultiplier(self, pair, isBid);
-        points = (multiplier * stablecoinValue) / DENOM;
+        uint32 multipliers = self.baseMultiplier * _getMultiplier(self, pair, isBid);
+        // points = (multipliers in 4 decimals x2) * (point decimal) / (denominator x2) * (stablecoin value decimal)
+        points = (multipliers * stablecoinValue) * 1e18 / (DENOM * DENOM) * self.scDecimals;
         IPoint(self.point).mint(
             account,
-            (multiplier * stablecoinValue * pointx) / (DENOM * DENOM)
+            points
         );
         return (points);
     }

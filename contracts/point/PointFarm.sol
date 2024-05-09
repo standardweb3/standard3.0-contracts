@@ -64,8 +64,8 @@ contract PointFarm is AccessControl {
     
     /// @dev setBaseMultiplier: Set base multiplier
     /// @param x The base multiplier
-    /// @return x The base multiplier 
-    function setBaseMultiplier(uint32 x) external returns (uint32 x) {
+    /// @return The base multiplier 
+    function setBaseMultiplier(uint32 x) external returns (uint32) {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
         }
@@ -75,8 +75,8 @@ contract PointFarm is AccessControl {
 
     /// @dev setStablecoin: Set stablecoin
     /// @param stablecoin The address of the stablecoin
-    /// @return stablecoin The address of the stablecoin
-    function setStablecoin(address stablecoin) external returns (address stablecoin) {
+    /// @return The address of the stablecoin
+    function setStablecoin(address stablecoin) external returns (address) {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
         }

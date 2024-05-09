@@ -56,13 +56,14 @@ library PointAccountantLib {
     error EventOverlaps(uint256 prevEndDate, uint256 newStartDate);
     error EventAlreadyPassed(uint32 eventId, uint32 currentEventId);
     error EventStillOn(uint32 eventId, uint256 endDate);
+    error InvalidAddress(address addr);
 
     function _setStablecoin(State storage self, address stablecoin) internal returns (bool) {
         if (stablecoin == address(0)) {
             revert InvalidAddress(stablecoin);
         }
         self.stablecoin = stablecoin;
-        self.scDecimal = IERC20(stablecoin).decimals();
+        self.scDecimal = TransferHelper.decimals(stablecoin);
         return true;
     }
 
@@ -183,7 +184,7 @@ library PointAccountantLib {
         );
         uint32 multipliers = self.baseMultiplier * _getMultiplier(self, pair, isBid);
         // points = (multipliers in 4 decimals x2) * (point decimal) / (denominator x2) * (stablecoin value decimal)
-        points = (multipliers * stablecoinValue) * 1e18 / (DENOM * DENOM) * self.scDecimals;
+        points = (multipliers * stablecoinValue) * 1e18 / (DENOM * DENOM) * self.scDecimal;
         IPoint(self.point).fine(
             account,
             points
@@ -222,7 +223,7 @@ library PointAccountantLib {
         );
         uint32 multipliers = self.baseMultiplier * _getMultiplier(self, pair, isBid);
         // points = (multipliers in 4 decimals x2) * (point decimal) / (denominator x2) * (stablecoin value decimal)
-        points = (multipliers * stablecoinValue) * 1e18 / (DENOM * DENOM) * self.scDecimals;
+        points = (multipliers * stablecoinValue) * 1e18 / (DENOM * DENOM) * self.scDecimal;
         IPoint(self.point).mint(
             account,
             points

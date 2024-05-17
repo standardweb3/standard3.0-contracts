@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Pausable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract STNDPoint is
+contract STXP is
     ERC20,
     ERC20Burnable,
     ERC20Pausable,
@@ -20,7 +20,7 @@ contract STNDPoint is
 
     error AmountExceededBalance(address account, uint256 amount, uint256 balance);
 
-    constructor() ERC20("Standard Point", "STNDPoint") {
+    constructor() ERC20("Standard(STND) Point", "STXP") {
         // Grant the contract deployer the default admin role: they can grant and revoke any roles
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
 

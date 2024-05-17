@@ -12,7 +12,7 @@ import {Multicall3} from "../Multicall3.sol";
 import {TokenDispenser} from "../../contracts/exchange/airdrops/TokenDispenser.sol";
 import {ExchangeOrderbook} from "../../contracts/exchange/libraries/ExchangeOrderbook.sol";
 import {TransferHelper} from "../../contracts/exchange/libraries/TransferHelper.sol";
-import {STNDPoint} from "../../contracts/point/STNDPoint.sol";
+import {STXP} from "../../contracts/point/STXP.sol";
 import {PointFarm} from "../../contracts/point/PointFarm.sol";
 import {Pass} from "../../contracts/point/Pass.sol";
 import {PrizePool} from "../../contracts/point/PrizePool.sol";
@@ -47,7 +47,7 @@ contract DeployExchangeMainnetContracts is Deployer {
         0x34CCCa03631830cD8296c172bf3c31e126814ce9;
     address constant foundation_address =
         0x34CCCa03631830cD8296c172bf3c31e126814ce9;
-    address constant weth = 0x4200000000000000000000000000000000000006;
+    address constant weth = 0x4200000000000000000000000000000000000001;
 
     function run() external {
         _setDeployer();
@@ -77,15 +77,15 @@ contract SetupPointMainnet is Deployer{
     address constant matchingEngine_address = 0x34CCCa03631830cD8296c172bf3c31e126814ce9;
     address constant foundation_address =
         0x34CCCa03631830cD8296c172bf3c31e126814ce9;
-    address constant weth = 0x4200000000000000000000000000000000000006;
+    address constant weth = 0x4200000000000000000000000000000000000001;
     address constant stablecoin_address = address(0);
-    STNDPoint public point;
+    STXP public point;
     Pass public pass;
     PointFarm public pointFarm;
 
     function run() external {
         _setDeployer();
-        point = new STNDPoint();
+        point = new STXP();
         pointFarm = new PointFarm();
         pass = new Pass();
         pointFarm.initialize(
@@ -135,7 +135,7 @@ contract SetEventMainnet is Deployer {
 
 contract SetupPrizePoolMainnet is Deployer {
     PrizePool public prizePool;
-    STNDPoint public point;
+    STXP public point;
     address constant point_address = address(0);
     address constant stablecoin_address = address(0);
     uint256 constant prize_amount = 0;
@@ -147,7 +147,7 @@ contract SetupPrizePoolMainnet is Deployer {
     function run() external {
         _setDeployer();
         prizePool = new PrizePool();
-        point = STNDPoint(point_address);
+        point = STXP(point_address);
         point.grantRole(BURNER_ROLE, address(prizePool));
         TransferHelper.safeTransfer(stablecoin_address, address(prizePool), prize_amount);
         prizePool.initialize(address(stablecoin_address), address(point));
@@ -174,3 +174,16 @@ contract collectFee is Deployer {
     }
 }
 
+contract setSpread is Deployer {
+    MatchingEngine public matchingEngine;
+    address public base;
+    address public quote;
+    function run() external {
+        _setDeployer();
+        address matchingEngineAddress = vm.promptAddress("Enter matching engine address: ");
+        matchingEngine = MatchingEngine(payable(matchingEngineAddress));
+        base = vm.promptAddress("Enter base token address: ");
+        quote = vm.promptAddress("Enter quote token address: ");
+        matchingEngine.setSpread(base, quote, 10, 10);
+    }
+}

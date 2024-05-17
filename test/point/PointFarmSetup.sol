@@ -9,7 +9,7 @@ import {Orderbook} from "../../contracts/exchange/orderbooks/Orderbook.sol";
 import {WETH9} from "../../contracts/mock/WETH9.sol";
 import {PointFarm} from "../../contracts/point/PointFarm.sol";
 import {Pass} from "../../contracts/point/Pass.sol";
-import {STNDPoint} from "../../contracts/point/STNDPoint.sol";
+import {STXP} from "../../contracts/point/STXP.sol";
 import {PrizePool} from "../../contracts/point/PrizePool.sol";
 
 contract PointFarmSetup is Test {
@@ -32,7 +32,7 @@ contract PointFarmSetup is Test {
     address public attacker;
     PointFarm public pointFarm;
     Pass public pass;
-    STNDPoint public point;
+    STXP public point;
     PrizePool public prizePool;
 
     function setUp() public {
@@ -63,7 +63,7 @@ contract PointFarmSetup is Test {
             address(weth)
         );
 
-        point = new STNDPoint();
+        point = new STXP();
         pointFarm = new PointFarm();
         prizePool = new PrizePool();
         pass = new Pass();

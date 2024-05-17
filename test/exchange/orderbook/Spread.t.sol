@@ -93,4 +93,32 @@ contract OrderSpreadTest is BaseSetup {
         );
         console.log(matchingEngine.mktPrice(base, quote));
     }
+
+    function testLimitSellSpreadMatchesWithExactPrice() public {
+        super.setUp();
+        vm.prank(trader1);
+        address base = address(token1);
+        address quote = address(token2);
+        matchingEngine.limitSell(
+            base,
+            quote,
+            3632e8,
+            100e18,
+            true,
+            2,
+            0,
+            trader1
+        );
+        vm.prank(trader1);
+        matchingEngine.limitBuy(
+            base,
+            quote,
+            3632e8,
+            100e18,
+            true,
+            2,
+            0,
+            trader1
+        );
+    }
 }

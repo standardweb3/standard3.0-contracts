@@ -24,6 +24,7 @@ library ExchangeOrderbook {
     }
 
     error OrderIdIsZero(uint32 id);
+    error PriceIsZero(uint256 price);
 
     // for orders, lower depositAmount are next, higher depositAmount comes first
     function _insertId(
@@ -94,12 +95,15 @@ library ExchangeOrderbook {
         uint256 price,
         uint256 depositAmount
     ) internal returns (uint32 id) {
+        if(price == 0) {
+            revert PriceIsZero(price);
+        }
         Order memory order = Order({
             owner: owner,
             price: price,
             depositAmount: depositAmount
         });
-        // prevent order overflow, order id must start from 1
+        // In order to prevent order overflow, order id must start from 1
         self.count = self.count == 0 || self.count == type(uint32).max
             ? 1
             : self.count + 1;

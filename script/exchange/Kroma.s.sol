@@ -180,10 +180,10 @@ contract setSpread is Deployer {
     address public quote;
     function run() external {
         _setDeployer();
-        address matchingEngineAddress = vm.promptAddress("Enter matching engine address: ");
+        address matchingEngineAddress = vm.prompt("Enter matching engine address: ");
         matchingEngine = MatchingEngine(payable(matchingEngineAddress));
-        base = vm.promptAddress("Enter base token address: ");
-        quote = vm.promptAddress("Enter quote token address: ");
+        base = vm.prompt("Enter base token address: ");
+        quote = vm.prompt("Enter quote token address: ");
         matchingEngine.setSpread(base, quote, 10, 10);
     }
 }

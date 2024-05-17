@@ -23,7 +23,6 @@ address-book.json
 types
 types/*
 .gas
-lib
 data
 out
 node_modules

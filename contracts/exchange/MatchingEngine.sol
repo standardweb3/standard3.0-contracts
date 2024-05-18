@@ -1547,7 +1547,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         uint256 minRequired = _convert(pair, price, 1, !isBid);
 
         if (converted <= minRequired) {
-            revert OrderSizeTooSmall(amount, minRequired);
+            revert OrderSizeTooSmall(converted, minRequired);
         }
         // check if sender has uid
         uint256 fee = _fee(amount, uid, isMaker);

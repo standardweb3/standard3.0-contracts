@@ -174,16 +174,18 @@ contract collectFee is Deployer {
     }
 }
 
-contract setSpread is Deployer {
+contract SetSpread is Deployer {
     MatchingEngine public matchingEngine;
     address public base;
     address public quote;
     function run() external {
         _setDeployer();
-        address matchingEngineAddress = vm.prompt("Enter matching engine address: ");
+        console.log("Setitng spread...");
+        address matchingEngineAddress = 0x67BdB5371a56e102d5a02318937A1c5B318b6fd2;
         matchingEngine = MatchingEngine(payable(matchingEngineAddress));
-        base = vm.prompt("Enter base token address: ");
-        quote = vm.prompt("Enter quote token address: ");
-        matchingEngine.setSpread(base, quote, 10, 10);
+        base = 0x61e0D34b5206Fa8005EC1De8000df9B9dDee23Db;
+        quote = 0x0Cf7c2A584988871b654Bd79f96899e4cd6C41C0;
+        matchingEngine.setSpread(base, quote, 200, 200);
+        vm.stopBroadcast();
     }
 }

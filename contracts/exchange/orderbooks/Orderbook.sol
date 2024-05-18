@@ -39,7 +39,6 @@ contract Orderbook is IOrderbook, Initializable {
 
     error InvalidDecimals(uint8 base, uint8 quote);
     error InvalidAccess(address sender, address allowed);
-    error OrderSizeTooSmall(uint256 amount, uint256 minRequired);
 
     function initialize(
         uint256 id_,

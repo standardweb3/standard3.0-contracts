@@ -39,6 +39,7 @@ contract Orderbook is IOrderbook, Initializable {
 
     error InvalidDecimals(uint8 base, uint8 quote);
     error InvalidAccess(address sender, address allowed);
+    error PriceIsZero(uint256 price);
 
     function initialize(
         uint256 id_,
@@ -65,6 +66,7 @@ contract Orderbook is IOrderbook, Initializable {
     }
 
     function setLmp(uint256 price) external onlyEngine {
+        if(price == 0) revert PriceIsZero(price);
         priceLists._setLmp(price);
     }
 

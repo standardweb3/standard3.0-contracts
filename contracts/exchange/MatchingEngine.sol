@@ -43,6 +43,10 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     address public orderbookFactory;
     // WETH
     address public WETH;
+    // default limit spread
+    uint32 defaultLimit = 200;
+    // default market spread
+    uint32 defaultMarket = 200;
 
     struct OrderData {
         uint256 withoutFee;
@@ -161,16 +165,27 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         feeTo = feeTo_;
     }
 
-    function setSpread(
-        address base,
-        address quote,
-        uint32 market,
-        uint32 limit
+    function setDefaultSpread(
+        uint32 limit,
+        uint32 market
     ) external returns (bool) {
         if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
         }
-        _setSpread(base, quote, market, limit);
+        defaultLimit = limit;
+        defaultMarket = market;
+    }
+
+    function setSpread(
+        address base,
+        address quote,
+        uint32 limit,
+        uint32 market
+    ) external returns (bool) {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        }
+        _setSpread(base, quote, limit, market);
     }
 
     // user functions
@@ -564,33 +579,26 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         uint256 askHead,
         uint32 spread
     ) internal view returns (uint256 price) {
-        uint256 up = (bidHead * (10000 + spread)) / 10000;
-        uint256 down = (askHead * (10000 - spread)) / 10000;
-        if (bidHead == 0 && askHead == 0) {
-            uint256 lmp = IOrderbook(orderbook).lmp();
-            if (lmp == 0) {
-                return lp;
-            }
-            bidHead = (lmp * (10000 - spread)) / 10000;
-            askHead = (lmp * (10000 + spread)) / 10000;
-            if (lp >= askHead) {
-                return askHead;
-            } else if (lp <= bidHead) {
-                return bidHead;
-            } else {
-                return lp;
-            }
-        } else if (bidHead == 0 && askHead != 0) {
-            return lp <= down ? down : lp;
-        } else if (bidHead != 0 && askHead == 0) {
+        uint256 lmp = IOrderbook(orderbook).lmp();
+        uint256 up;
+        if (lmp != 0) {
+            up = (lmp * (10000 + spread)) / 10000;
             return lp >= up ? up : lp;
         } else {
-            if (lp >= askHead) {
-                return askHead;
-            } else if (lp <= bidHead) {
-                return bidHead;
-            } else {
+            if(askHead == 0 && bidHead == 0) {
                 return lp;
+            }
+            else if(askHead == 0 && bidHead != 0) {
+                up = (bidHead * (10000 + spread)) / 10000;
+                return lp >= up ? up : lp;
+            }
+            else if(askHead != 0 && bidHead == 0) {
+                up = (askHead * (10000 + spread)) / 10000;
+                return lp >= up ? up : lp;
+            }
+            else {
+                up = (bidHead * (10000 + spread)) / 10000;
+                return lp >= up ? up : lp;
             }
         }
     }
@@ -701,35 +709,26 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         uint256 askHead,
         uint32 spread
     ) internal view returns (uint256 price) {
-        // bid order is cleared then return new floor
-        uint256 up = (bidHead * (10000 + spread)) / 10000;
-        uint256 down = (askHead * (10000 - spread)) / 10000;
-        // if askHead is 0 and bidHead is not zero
-        if (askHead == 0 && bidHead == 0) {
-            uint256 lmp = IOrderbook(orderbook).lmp();
-            if (lmp == 0) {
-                return lp;
-            }
-            bidHead = (lmp * (10000 - spread)) / 10000;
-            askHead = (lmp * (10000 + spread)) / 10000;
-            if (lp >= askHead) {
-                return askHead;
-            } else if (lp <= bidHead) {
-                return bidHead;
-            } else {
-                return lp;
-            }
-        } else if (askHead == 0 && bidHead != 0) {
-            return lp >= up ? up : lp;
-        } else if (askHead != 0 && bidHead == 0) {
+        uint256 lmp = IOrderbook(orderbook).lmp();
+        uint256 down;
+        if (lmp != 0) {
+            down = (lmp * (10000 - spread)) / 10000;
             return lp <= down ? down : lp;
         } else {
-            if (lp >= askHead) {
-                return askHead;
-            } else if (lp <= bidHead) {
-                return bidHead;
-            } else {
+            if(askHead == 0 && bidHead == 0) {
                 return lp;
+            }
+            else if(askHead == 0 && bidHead != 0) {
+                down = (bidHead * (10000 - spread)) / 10000;
+                return lp <= down ? down : lp;
+            }
+            else if(askHead != 0 && bidHead == 0) {
+                down = (askHead * (10000 - spread)) / 10000;
+                return lp <= down ? down : lp;
+            }
+            else {
+                down = (bidHead * (10000 - spread)) / 10000;
+                return lp <= down ? down : lp;
             }
         }
     }
@@ -810,8 +809,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         );
         uint8 bDecimal = IDecimals(base).decimals();
         uint8 qDecimal = IDecimals(quote).decimals();
-        // set market spread to 2% and limit spread to 5% for default pair
-        _setSpread(base, quote, 200, 500);
+        // set limit spread to 2% and market spread to 5% for default pair
+        _setSpread(base, quote, defaultLimit, defaultMarket);
         emit PairAdded(orderBook, base, quote, bDecimal, qDecimal);
         return orderBook;
     }
@@ -1227,11 +1226,11 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     function _setSpread(
         address base,
         address quote,
-        uint32 market,
-        uint32 limit
+        uint32 limit,
+        uint32 market
     ) internal returns (bool) {
         address book = getPair(base, quote);
-        spreadLimits[book] = DefaultSpread(market, limit);
+        spreadLimits[book] = DefaultSpread(limit, market);
         return true;
     }
 
@@ -1413,7 +1412,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             } else {
                 // when ask book is empty, get bid head as last matching price
                 lmp = IOrderbook(orderbook).clearEmptyHead(true);
-                IOrderbook(orderbook).setLmp(lmp);
+                if (lmp != 0) {
+                    IOrderbook(orderbook).setLmp(lmp);
+                }
             }
             return (remaining, lmp, askHead); // return bidHead, and askHead
         }
@@ -1448,7 +1449,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             } else {
                 // when bid book is empty, get ask head as last matching price
                 lmp = IOrderbook(orderbook).clearEmptyHead(false);
-                IOrderbook(orderbook).setLmp(lmp);
+                if (lmp != 0) {
+                    IOrderbook(orderbook).setLmp(lmp);
+                }
             }
             return (remaining, bidHead, lmp); // return bidHead, askHead
         }

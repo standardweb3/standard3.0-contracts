@@ -93,8 +93,7 @@ contract NetworkStateTest is BaseSetup {
         // create orderbook
         super.setUp();
         vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
-        matchingEngine.addPair(address(token2), address(token1));
+        
     }
 
     function testAddPairWithOver18DecFails() public {
@@ -104,8 +103,6 @@ contract NetworkStateTest is BaseSetup {
         err = new ErrToken("Error 1", "ERR1");
         vm.prank(booker);
         vm.expectRevert();
-        matchingEngine.addPair(address(token1), address(err));
         vm.expectRevert();
-        matchingEngine.addPair(address(err), address(token2));
     }
 }

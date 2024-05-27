@@ -49,22 +49,23 @@ library ExchangeLinkedList {
     function _mktPrice(
         PriceLinkedList storage self
     ) internal view returns (uint256) {
-        if (self.lmp == 0) {
-            if (self.bidHead == 0 && self.askHead == 0) {
+        if (self.bidHead == 0 && self.askHead == 0) {
+            if (self.lmp == 0) {
                 revert NoMatchPrice(self.bidHead, self.askHead, self.lmp);
-            } else if (self.bidHead != 0 && self.askHead != 0) {
-                return (self.bidHead + self.askHead) / 2;
-            } else {
-                return self.askHead == 0 ? self.bidHead : self.askHead;
             }
+            return self.lmp;
+        } else if (self.bidHead != 0 && self.askHead == 0) {
+            if(self.lmp != 0) {
+                return self.lmp >= self.bidHead ? self.lmp : self.bidHead;
+            }
+            return self.bidHead;
+        } else if (self.bidHead == 0 && self.askHead != 0) {
+            if(self.lmp != 0) {
+                return self.lmp <= self.askHead ? self.lmp : self.askHead;
+            }
+            return self.askHead;
         } else {
-            if (self.lmp < self.bidHead) {
-                return self.bidHead;
-            } else if (self.lmp > self.askHead && self.askHead != 0) {
-                return self.askHead;
-            } else {
-                return self.lmp;
-            }
+            return self.lmp;
         }
     }
 

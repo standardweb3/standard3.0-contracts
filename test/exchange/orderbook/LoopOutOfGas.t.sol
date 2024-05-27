@@ -20,7 +20,7 @@ contract LoopOutOfGasTest is BaseSetup {
     function testExchangeLinkedListOutOfGas() public {
         super.setUp();
         vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
+        
         book = Orderbook(
             payable(
                 orderbookFactory.getPair(address(token1), address(token2))
@@ -80,7 +80,7 @@ contract LoopOutOfGasTest is BaseSetup {
     function testExchangeLinkedListOutOfGasPlaceBid() public {
         super.setUp();
         vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
+        
         book = Orderbook(
             payable(
                 orderbookFactory.getPair(address(token1), address(token2))
@@ -139,7 +139,7 @@ contract LoopOutOfGasTest is BaseSetup {
     function testExchangeOrderbookOutOfGas() public {
         super.setUp();
         vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
+        
         book = Orderbook(
             payable(
                 orderbookFactory.getPair(address(token1), address(token2))

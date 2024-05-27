@@ -19,13 +19,8 @@ import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 contract OutOfOrderbookTest is BaseSetup {
     function testRemoveHeadOnMatch() public {
         super.setUp();
-        vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
-        book = Orderbook(
-            payable(
-                orderbookFactory.getPair(address(token1), address(token2))
-            )
-        );
+        
+        
         vm.prank(trader1);
         matchingEngine.limitSell(
             address(token1),
@@ -59,6 +54,11 @@ contract OutOfOrderbookTest is BaseSetup {
             0,
             trader1
         );
+        book = Orderbook(
+            payable(
+                orderbookFactory.getPair(address(token1), address(token2))
+            )
+        );
         (uint256 bidHead, uint256 askHead) = book.heads();
         console.log(bidHead, askHead);
         console.log("Ask Orders: ");
@@ -90,13 +90,8 @@ contract OutOfOrderbookTest is BaseSetup {
 
     function testMatchOrders() public {
         super.setUp();
-        vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
-        book = Orderbook(
-            payable(
-                orderbookFactory.getPair(address(token1), address(token2))
-            )
-        );
+        
+        
         vm.prank(trader2);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
         // because the program will enter the "if (amount > self.orders[head].depositAmount)."
@@ -172,6 +167,11 @@ contract OutOfOrderbookTest is BaseSetup {
         for (uint256 i = 0; i < 4; i++) {
             console.log(askOrders[i].owner, askOrders[i].depositAmount);
         }
+        book = Orderbook(
+            payable(
+                orderbookFactory.getPair(address(token1), address(token2))
+            )
+        );
         (uint256 bidHead, uint256 askHead) = book.heads();
         console.log(bidHead, askHead);
 
@@ -192,7 +192,7 @@ contract OutOfOrderbookTest is BaseSetup {
     function testAmountIsZero() public {
         super.setUp();
         vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
+        
         book = Orderbook(
             payable(
                 orderbookFactory.getPair(address(token1), address(token2))

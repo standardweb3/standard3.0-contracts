@@ -156,22 +156,6 @@ contract DeployExchangeMainnetContracts is Deployer {
     }
 }
 
-contract TestAddPair is Deployer {
-    address constant matching_engine_address =
-        0x99e87D3f46079CeeE33859Fb6055A912090c9683;
-    address constant base_address = 0xA219439258ca9da29E9Cc4cE5596924745e12B93;
-    address constant quote_address = 0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f;
-
-    function run() external {
-        _setDeployer();
-
-        MatchingEngineMode matchingEngine = MatchingEngineMode(
-            payable(matching_engine_address)
-        );
-        matchingEngine.addPair(address(base_address), address(quote_address));
-    }
-}
-
 contract CancelOrder is Deployer {
     address constant matching_engine_address = 0xE02351341EE61f24BdddB9b03e8b30B145Ab1c60;
     address constant base = 0x4200000000000000000000000000000000000006;

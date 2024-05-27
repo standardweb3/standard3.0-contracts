@@ -267,6 +267,8 @@ contract Orderbook is IOrderbook, Initializable {
     /////////////////////////////////
     /// Price linked list methods ///
     /////////////////////////////////
+
+    // last market price
     function lmp() external view returns (uint256) {
         return priceLists.lmp;
     }

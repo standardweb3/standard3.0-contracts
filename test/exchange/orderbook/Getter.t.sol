@@ -20,11 +20,8 @@ contract GetterTest is BaseSetup {
     function testGetPrices() public {
         super.setUp();
         vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            payable(
-                orderbookFactory.getPair(address(token1), address(token2))
-            )
+            payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
@@ -103,11 +100,8 @@ contract GetterTest is BaseSetup {
     function testGetPriceInsertion() public {
         super.setUp();
         vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
-            payable(
-                orderbookFactory.getPair(address(token1), address(token2))
-            )
+            payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
@@ -205,11 +199,9 @@ contract GetterTest is BaseSetup {
     function testGetOrders() public {
         super.setUp();
         vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
+
         book = Orderbook(
-            payable(
-                orderbookFactory.getPair(address(token1), address(token2))
-            )
+            payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
@@ -265,13 +257,7 @@ contract GetterTest is BaseSetup {
 
     function testGetAskHead() public {
         super.setUp();
-        vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
-        book = Orderbook(
-            payable(
-                orderbookFactory.getPair(address(token1), address(token2))
-            )
-        );
+
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
         // because the program will enter the "if (amount > self.orders[head].depositAmount)."
@@ -299,18 +285,28 @@ contract GetterTest is BaseSetup {
             trader1
         );
         console.log("Ask Head:");
+        book = Orderbook(
+            payable(orderbookFactory.getPair(address(token1), address(token2)))
+        );
         console.log(book.askHead());
     }
 
     function testGetPairs() public {
         super.setUp();
-        vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
-        book = Orderbook(
-            payable(
-                orderbookFactory.getPair(address(token1), address(token2))
-            )
+
+        vm.prank(trader1);
+        //vm.expectRevert("OutOfGas");
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            100000000,
+            10,
+            true,
+            2,
+            0,
+            trader1
         );
+
         IOrderbookFactory.Pair[] memory pairs = matchingEngine.getPairs(0, 20);
         console.log("Pairs:");
         console.log(pairs[0].base, pairs[0].quote);
@@ -318,13 +314,20 @@ contract GetterTest is BaseSetup {
 
     function testGetPairNames() public {
         super.setUp();
-        vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
-        book = Orderbook(
-            payable(
-                orderbookFactory.getPair(address(token1), address(token2))
-            )
+
+        vm.prank(trader1);
+        //vm.expectRevert("OutOfGas");
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            100000000,
+            10,
+            true,
+            2,
+            0,
+            trader1
         );
+
         IOrderbookFactory.Pair[] memory pairs = matchingEngine.getPairs(0, 20);
         console.log("Pairs:");
         console.log(pairs[0].base, pairs[0].quote);
@@ -334,13 +337,7 @@ contract GetterTest is BaseSetup {
 
     function testGetOrderInsertion() public {
         super.setUp();
-        vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
-        book = Orderbook(
-            payable(
-                orderbookFactory.getPair(address(token1), address(token2))
-            )
-        );
+
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
         // because the program will enter the "if (amount > self.orders[head].depositAmount)."
@@ -397,6 +394,11 @@ contract GetterTest is BaseSetup {
             100000000,
             4
         );
+
+        book = Orderbook(
+            payable(orderbookFactory.getPair(address(token1), address(token2)))
+        );
+
         console.log("Ask Orders: ");
         for (uint256 i = 0; i < 4; i++) {
             console.log(orders[i].owner, orders[i].depositAmount);

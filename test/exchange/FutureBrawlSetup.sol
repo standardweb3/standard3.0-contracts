@@ -45,8 +45,6 @@ contract FutureBrawlSetup is BaseSetup {
         // set stablecoin price
         vm.prank(booker);
         feeToken.approve(address(matchingEngine), 100000e18);
-        vm.prank(booker);
-        matchingEngine.addPair(address(feeToken), address(stablecoin));
         // Approve the matching engine to spend the trader's tokens
         vm.prank(trader1);
         stablecoin.approve(address(matchingEngine), 10000e18);

@@ -181,11 +181,106 @@ contract SetSpread is Deployer {
     function run() external {
         _setDeployer();
         console.log("Setitng spread...");
-        address matchingEngineAddress = 0x67BdB5371a56e102d5a02318937A1c5B318b6fd2;
+        address matchingEngineAddress = 0x0622C0b5F53FF7252A5F90b4031a9adaa67a2d02;
         matchingEngine = MatchingEngine(payable(matchingEngineAddress));
         base = 0x61e0D34b5206Fa8005EC1De8000df9B9dDee23Db;
-        quote = 0x0Cf7c2A584988871b654Bd79f96899e4cd6C41C0;
-        matchingEngine.setSpread(base, quote, 200, 200);
+        quote = 0x4200000000000000000000000000000000000001;
+        matchingEngine.setSpread(base, quote, 10, 10);
+        vm.stopBroadcast();
+    }
+}
+
+contract ShowOrderbook is Deployer {
+    address constant matching_engine_address =
+        0x0622C0b5F53FF7252A5F90b4031a9adaa67a2d02;
+    address constant base_address = 0x4200000000000000000000000000000000000001;
+    address constant quote_address = 0x0Cf7c2A584988871b654Bd79f96899e4cd6C41C0; 
+    MatchingEngine public matchingEngine =
+        MatchingEngine(payable(matching_engine_address));
+
+    function _orderbookIsEmpty(address b_addr, address q_addr, uint256 price, bool isBid) internal view returns (bool) {
+        address orderbook = matchingEngine.getPair(b_addr, q_addr);
+        console.log("Orderbook", orderbook);
+        return Orderbook(payable(orderbook)).isEmpty(isBid, price);
+    }
+
+    function _showOrderbook(
+        MatchingEngine matchingEngine,
+        address base,
+        address quote
+    ) internal view {
+        (uint256 bidHead, uint256 askHead) = matchingEngine.heads(base, quote);
+        console.log("Bid Head: ", bidHead);
+        console.log("Ask Head: ", askHead);
+        console.log("is empty: ", _orderbookIsEmpty(base, quote, askHead, false));
+        uint256[] memory bidPrices = matchingEngine.getPrices(
+            address(base),
+            address(quote),
+            true,
+            20
+        );
+        uint256[] memory askPrices = matchingEngine.getPrices(
+            address(base),
+            address(quote),
+            false,
+            20
+        );
+        console.log("Ask prices: ");
+        for (uint256 i = 0; i < 6; i++) {
+            console.log(askPrices[i]);
+            console.log("Ask Orders: ");
+            uint32[] memory askOrderIds = matchingEngine.getOrderIds(
+                address(base),
+                address(quote),
+                false,
+                askPrices[i],
+                10
+            );
+            ExchangeOrderbook.Order[] memory askOrders = matchingEngine
+                .getOrders(
+                    address(base),
+                    address(quote),
+                    false,
+                    askPrices[i],
+                    10
+                );
+            for (uint256 j = 0; j < 10; j++) {
+                console.log(askOrderIds[j], askOrders[j].owner, askOrders[j].depositAmount);
+            }
+        }
+
+        console.log("Bid prices: ");
+        for (uint256 i = 0; i < 6; i++) {
+            console.log(bidPrices[i]);
+            console.log("Bid Orders: ");
+            uint32[] memory bidOrderIds = matchingEngine.getOrderIds(
+                address(base),
+                address(quote),
+                false,
+                bidPrices[i],
+                10
+            );
+            ExchangeOrderbook.Order[] memory bidOrders = matchingEngine
+                .getOrders(
+                    address(base),
+                    address(quote),
+                    true,
+                    bidPrices[i],
+                    10
+                );
+            for (uint256 j = 0; j < 10; j++) {
+                console.log(bidOrderIds[j], bidOrders[j].owner, bidOrders[j].depositAmount);
+            }
+        }
+    }
+
+    function run() external {
+        _setDeployer();
+        _showOrderbook(
+            MatchingEngine(payable(matching_engine_address)),
+            base_address,
+            quote_address
+        );
         vm.stopBroadcast();
     }
 }

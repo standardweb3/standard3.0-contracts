@@ -35,7 +35,6 @@ contract EventTest is PointFarmSetup {
     // creating new event on current event will revert
     function testCreatingNewEventOnCurrentEventWillRevert() public {
         eventSetUp();
-        vm.startPrank(trader1);
         vm.warp(8000);
         vm.expectRevert();
         pointFarm.createEvent(12000, 14000);

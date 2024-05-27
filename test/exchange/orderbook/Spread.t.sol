@@ -22,7 +22,6 @@ contract OrderSpreadTest is BaseSetup {
         vm.prank(booker);
         address base = address(token1);
         address quote = address(token2);
-        matchingEngine.addPair(base, quote);
         console.log(
             "Base/Quote Pair: ",
             matchingEngine.getPair(base, quote)
@@ -61,7 +60,6 @@ contract OrderSpreadTest is BaseSetup {
         vm.prank(booker);
         address base = address(token1);
         address quote = address(token2);
-        matchingEngine.addPair(base, quote);
         console.log(
             "Base/Quote Pair: ",
             matchingEngine.getPair(base, quote)

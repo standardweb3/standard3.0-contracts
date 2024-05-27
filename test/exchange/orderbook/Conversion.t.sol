@@ -20,8 +20,7 @@ import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 contract ConversionTest is BaseSetup {
     
     function testOrderWithPriceZeroFails() public {
-        vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
+        
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
@@ -44,8 +43,7 @@ contract ConversionTest is BaseSetup {
 
     function testInvalidConversion() public {
         super.setUp();
-        vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
+        
         console.log(
             "Base/Quote Pair: ",
             matchingEngine.getPair(address(token1), address(token2))
@@ -164,11 +162,8 @@ contract ConversionTest is BaseSetup {
 
     function testConvertBuySellOnDifferentDecimalWhereBaseBQuote() public {
         super.setUp();
-        vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(btc));
-        book = Orderbook(
-            payable(orderbookFactory.getPair(address(token1), address(btc)))
-        );
+        
+        
         // before trade balances
         uint256 beforeTrader2T1Balance = token1.balanceOf(address(trader2));
         uint256 beforeTrader2BTCBalance = btc.balanceOf(address(trader2));
@@ -236,6 +231,10 @@ contract ConversionTest is BaseSetup {
         // Trader1's token1 balance should be increased by 9.99e18
         assert(diffTrader1T1Balance == 99e17);
 
+        book = Orderbook(
+            payable(orderbookFactory.getPair(address(token1), address(btc)))
+        );
+
         (uint256 bidHead, uint256 askHead) = book.heads();
         console.log("bidHead: ", bidHead);
         console.log("askHead: ", askHead);
@@ -243,11 +242,8 @@ contract ConversionTest is BaseSetup {
 
     function testConvertSellBuyOnDifferentDecimalWhereBaseBQuote() public {
         super.setUp();
-        vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(btc));
-        book = Orderbook(
-            payable(orderbookFactory.getPair(address(token1), address(btc)))
-        );
+        
+        
         // before trade balances
         uint256 beforeTrader2T1Balance = token1.balanceOf(address(trader2));
         uint256 beforeTrader2BTCBalance = btc.balanceOf(address(trader2));
@@ -316,6 +312,10 @@ contract ConversionTest is BaseSetup {
         // Trader1's token1 balance should be increased by 9.99e18
         assert(diffTrader1T1Balance == 99e17);
 
+        book = Orderbook(
+            payable(orderbookFactory.getPair(address(token1), address(btc)))
+        );
+
         (uint256 bidHead, uint256 askHead) = book.heads();
         console.log("bidHead: ", bidHead);
         console.log("askHead: ", askHead);
@@ -323,11 +323,8 @@ contract ConversionTest is BaseSetup {
 
     function testConvertBuySellOnDifferentDecimalWhereNotBaseBQuote() public {
         super.setUp();
-        vm.prank(booker);
-        matchingEngine.addPair(address(btc), address(token2));
-        book = Orderbook(
-            payable(orderbookFactory.getPair(address(btc), address(token2)))
-        );
+        
+        
         // before trade balances
         uint256 beforeTrader2T2Balance = token2.balanceOf(address(trader2));
         uint256 beforeTrader2BTCBalance = btc.balanceOf(address(trader2));
@@ -396,6 +393,10 @@ contract ConversionTest is BaseSetup {
         // Trader1's token1 balance should be increased by 9.99e8
         assert(diffTrader1BTCBalance == 99e7);
 
+        book = Orderbook(
+            payable(orderbookFactory.getPair(address(btc), address(token2)))
+        );
+
         (uint256 bidHead, uint256 askHead) = book.heads();
         console.log("bidHead: ", bidHead);
         console.log("askHead: ", askHead);
@@ -403,11 +404,8 @@ contract ConversionTest is BaseSetup {
 
     function testConvertSellBuyOnDifferentDecimalWhereNotBaseBQuote() public {
         super.setUp();
-        vm.prank(booker);
-        matchingEngine.addPair(address(btc), address(token2));
-        book = Orderbook(
-            payable(orderbookFactory.getPair(address(btc), address(token2)))
-        );
+        
+       
         // before trade balances
         uint256 beforeTrader2T2Balance = token2.balanceOf(address(trader2));
         uint256 beforeTrader2BTCBalance = btc.balanceOf(address(trader2));
@@ -476,6 +474,10 @@ contract ConversionTest is BaseSetup {
         // Trader1's token1 balance should be increased by 9.99e8
         assert(diffTrader1BTCBalance == 99e7);
 
+         book = Orderbook(
+            payable(orderbookFactory.getPair(address(btc), address(token2)))
+        );
+
         (uint256 bidHead, uint256 askHead) = book.heads();
         console.log("bidHead: ", bidHead);
         console.log("askHead: ", askHead);
@@ -483,11 +485,8 @@ contract ConversionTest is BaseSetup {
 
     function testConvertBuySellOnSameDecimal() public {
         super.setUp();
-        vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
-        book = Orderbook(
-            payable(orderbookFactory.getPair(address(token1), address(token2)))
-        );
+        
+       
         // before trade balances
         uint256 beforeTrader2T2Balance = token2.balanceOf(address(trader2));
         uint256 beforeTrader2T1Balance = token1.balanceOf(address(trader2));
@@ -556,6 +555,10 @@ contract ConversionTest is BaseSetup {
         // Trader1's token1 balance should be increased by 9.99e18
         assert(diffTrader1T1Balance == 99e17);
 
+         book = Orderbook(
+            payable(orderbookFactory.getPair(address(token1), address(token2)))
+        );
+
         (uint256 bidHead, uint256 askHead) = book.heads();
         console.log("bidHead: ", bidHead);
         console.log("askHead: ", askHead);
@@ -563,11 +566,7 @@ contract ConversionTest is BaseSetup {
 
     function testConvertSellBuyOnSameDecimal() public {
         super.setUp();
-        vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
-        book = Orderbook(
-            payable(orderbookFactory.getPair(address(token1), address(token2)))
-        );
+        
         // before trade balances
         uint256 beforeTrader2T2Balance = token2.balanceOf(address(trader2));
         uint256 beforeTrader2T1Balance = token1.balanceOf(address(trader2));

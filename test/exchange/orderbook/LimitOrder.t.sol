@@ -20,8 +20,6 @@ import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 contract LimitOrderTest is BaseSetup {
     function testLimitTradeWithDiffDecimals() public {
         super.setUp();
-        vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(btc));
         console.log(
             "Base/Quote Pair: ",
             matchingEngine.getPair(address(token1), address(btc))
@@ -52,8 +50,6 @@ contract LimitOrderTest is BaseSetup {
 
     function testLimitTrade() public {
         super.setUp();
-        vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
         console.log(
             "Base/Quote Pair: ",
             matchingEngine.getPair(address(token1), address(token2))

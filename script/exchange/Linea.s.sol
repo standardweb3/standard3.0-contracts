@@ -81,21 +81,6 @@ contract AddAirdrop is Deployer {
     }
 }
 
-contract TestAddPair is Deployer {
-    address constant matching_engine_address =
-        0x99e87D3f46079CeeE33859Fb6055A912090c9683;
-    address constant base_address = 0xA219439258ca9da29E9Cc4cE5596924745e12B93;
-    address constant quote_address = 0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f;
-
-    function run() external {
-        _setDeployer();
-
-        MatchingEngine matchingEngine = MatchingEngine(
-            payable(matching_engine_address)
-        );
-        matchingEngine.addPair(address(base_address), address(quote_address));
-    }
-}
 
 contract TestOrderbookSell is Deployer {
     // Change address constants on deploying to other networks from DeployAssets

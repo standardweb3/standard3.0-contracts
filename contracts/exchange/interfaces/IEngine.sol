@@ -62,11 +62,6 @@ interface IEngine {
         uint32 uid
     ) external;
 
-    function addPair(
-        address base,
-        address quote
-    ) external returns (address book);
-
     function getPair(
         address base,
         address quote

@@ -20,7 +20,6 @@ contract CancelTest is BaseSetup {
 
     function testCancelAtPriceZeroPasses() public {
         vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
@@ -52,7 +51,6 @@ contract CancelTest is BaseSetup {
 
     function testCancelAtPriceWhateverPasses() public {
         vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
@@ -86,7 +84,6 @@ contract CancelTest is BaseSetup {
     function testCancelEdgeCase() public {
         super.setUp();
         vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
@@ -204,7 +201,6 @@ contract CancelTest is BaseSetup {
     function testCancelEdgeCase2() public {
         super.setUp();
         vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
@@ -322,7 +318,6 @@ contract CancelTest is BaseSetup {
     function testCancelEdgeCase3() public {
         super.setUp();
         vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
@@ -441,7 +436,6 @@ contract CancelTest is BaseSetup {
     function testCancelJammingOrderbook() public {
         super.setUp();
         vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
@@ -523,7 +517,6 @@ contract CancelTest is BaseSetup {
     function testCancelAtHeadPrice() public {
         super.setUp();
         vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
@@ -593,7 +586,6 @@ contract CancelTest is BaseSetup {
     function testCancelOrderDeletion() public {
         super.setUp();
         vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
         );

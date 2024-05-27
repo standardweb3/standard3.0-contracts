@@ -104,7 +104,7 @@ contract MarketOrderTest is BaseSetup {
     function testCancelJammingOrderbook() public {
         super.setUp();
         vm.prank(booker);
-        matchingEngine.addPair(address(token1), address(token2));
+
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
         );

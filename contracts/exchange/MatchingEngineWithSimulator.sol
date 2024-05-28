@@ -242,7 +242,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         );
 
         // reuse orderData.bidHead argument for storing make price
-        orderData.bidHead = _detMarketBuyPrice(
+        orderData.bidHead = _detMarketBuyMakePrice(
             orderData.mp,
             orderData.askHead,
             orderData.ms
@@ -275,7 +275,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         return (orderData.bidHead, orderData.withoutFee, orderData.ls);
     }
 
-    function _detMarketBuyPrice(
+    function _detMarketBuyMakePrice(
         uint256 mp,
         uint256 askHead,
         uint32 spread
@@ -355,7 +355,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         );
 
         // reuse orderData.askHead argument for storing make price
-        orderData.askHead = _detMarketSellPrice(
+        orderData.askHead = _detMarketSellMakePrice(
             orderData.mp,
             orderData.bidHead,
             orderData.ms
@@ -388,7 +388,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         return (orderData.askHead, orderData.withoutFee, orderData.ls);
     }
 
-    function _detMarketSellPrice(
+    function _detMarketSellMakePrice(
         uint256 mp,
         uint256 bidHead,
         uint32 spread
@@ -515,7 +515,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         );
 
         // reuse price variable for storing make price
-        price = _detLimitBuyPrice(
+        price = _detLimitBuyMakePrice(
             orderData.orderbook,
             price,
             orderData.bidHead,
@@ -550,7 +550,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         return (price, orderData.withoutFee, orderData.ms);
     }
 
-    function _detLimitBuyPrice(
+    function _detLimitBuyMakePrice(
         address orderbook,
         uint256 lp,
         uint256 bidHead,
@@ -650,7 +650,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         );
 
         // reuse price variable for make price
-        price = _detLimitSellPrice(
+        price = _detLimitSellMakePrice(
             orderData.orderbook,
             price,
             orderData.bidHead,
@@ -685,7 +685,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         return (price, orderData.withoutFee, orderData.ms);
     }
 
-    function _detLimitSellPrice(
+    function _detLimitSellMakePrice(
         address orderbook,
         uint256 lp,
         uint256 bidHead,

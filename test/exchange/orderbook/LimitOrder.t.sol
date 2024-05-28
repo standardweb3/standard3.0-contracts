@@ -251,65 +251,67 @@ contract LimitOrderTest is BaseSetup {
         return (base, quote, book, bidHead, askHead, up, down);
     }
 
-    function _detLimitBuyPrice(
+    function _detLimitBuyMakePrice(
         address orderbook,
         uint256 lp,
         uint256 bidHead,
         uint256 askHead,
         uint32 spread
     ) internal view returns (uint256 price) {
-        uint256 lmp = IOrderbook(orderbook).lmp();
         uint256 up;
-        if (lmp != 0) {
-            up = (lmp * (10000 + spread)) / 10000;
+        if (askHead == 0 && bidHead == 0) {
+            uint256 lmp = IOrderbook(orderbook).lmp();
+            if (lmp != 0) {
+                up = (lmp * (10000 + spread)) / 10000;
+                return lp >= up ? up : lp;
+            }
+            return lp;
+        } else if (askHead == 0 && bidHead != 0) {
+            up = (bidHead * (10000 + spread)) / 10000;
             return lp >= up ? up : lp;
+        } else if (askHead != 0 && bidHead == 0) {
+            up = (askHead * (10000 + spread)) / 10000;
+            up = lp >= up ? up : lp;
+            return up >= askHead ? askHead : up;
         } else {
-            if(askHead == 0 && bidHead == 0) {
-                return lp;
-            }
-            else if(askHead == 0 && bidHead != 0) {
-                up = (bidHead * (10000 + spread)) / 10000;
-                return lp >= up ? up : lp;
-            }
-            else if(askHead != 0 && bidHead == 0) {
-                up = (askHead * (10000 + spread)) / 10000;
-                return lp >= up ? up : lp;
-            }
-            else {
-                up = (bidHead * (10000 + spread)) / 10000;
-                return lp >= up ? up : lp;
-            }
+            up = (bidHead * (10000 + spread)) / 10000;
+            // First, set upper limit on make price for market suspenstion
+            up = lp >= up ? up : lp;
+            // upper limit on make price must not go above ask price
+            return up >= askHead ? askHead : up;
         }
     }
 
-    function _detLimitSellPrice(
+    function _detLimitSellMakePrice(
         address orderbook,
         uint256 lp,
         uint256 bidHead,
         uint256 askHead,
         uint32 spread
     ) internal view returns (uint256 price) {
-        uint256 lmp = IOrderbook(orderbook).lmp();
         uint256 down;
-        if (lmp != 0) {
-            down = (lmp * (10000 - spread)) / 10000;
+        if (askHead == 0 && bidHead == 0) {
+            uint256 lmp = IOrderbook(orderbook).lmp();
+            if (lmp != 0) {
+                down = (lmp * (10000 - spread)) / 10000;
+                return lp <= down ? down : lp;
+            }
+            return lp;
+        } else if (askHead == 0 && bidHead != 0) {
+            down = (bidHead * (10000 - spread)) / 10000;
             return lp <= down ? down : lp;
+        } else if (askHead != 0 && bidHead == 0) {
+            down = (askHead * (10000 - spread)) / 10000;
+            // First, set lower limit on down price for market suspenstion
+            down = lp <= down ? down : lp;
+            // lower limit price on sell cannot be lower than bid head price
+            return down <= bidHead ? bidHead : down;
         } else {
-            if(askHead == 0 && bidHead == 0) {
-                return lp;
-            }
-            else if(askHead == 0 && bidHead != 0) {
-                down = (bidHead * (10000 - spread)) / 10000;
-                return lp <= down ? down : lp;
-            }
-            else if(askHead != 0 && bidHead == 0) {
-                down = (askHead * (10000 - spread)) / 10000;
-                return lp <= down ? down : lp;
-            }
-            else {
-                down = (bidHead * (10000 - spread)) / 10000;
-                return lp <= down ? down : lp;
-            }
+            down = (bidHead * (10000 - spread)) / 10000;
+            // First, set lower limit on down price for market suspenstion
+            down = lp <= down ? down : lp;
+            // lower limit price on sell cannot be lower than bid head price
+            return down <= bidHead ? bidHead : down;
         }
     }
 
@@ -328,7 +330,7 @@ contract LimitOrderTest is BaseSetup {
         uint256 limitPrice = (1e11 * (10000 + 1000)) / 10000;
         console.log(limitPrice, up);
         assert(limitPrice > up);
-        uint256 result = _detLimitSellPrice(
+        uint256 result = _detLimitSellMakePrice(
             address(book),
             limitPrice,
             bidHead,
@@ -366,7 +368,7 @@ contract LimitOrderTest is BaseSetup {
         uint256 limitPrice = (1e8 * (10000 - 1000)) / 10000;
         console.log(limitPrice, down);
         assert(limitPrice < down);
-        uint256 result = _detLimitSellPrice(
+        uint256 result = _detLimitSellMakePrice(
             address(book),
             limitPrice,
             bidHead,
@@ -404,7 +406,7 @@ contract LimitOrderTest is BaseSetup {
         uint256 limitPrice = (1e11 * (10000 + 1000)) / 10000;
         console.log(limitPrice, up);
         assert(limitPrice > up);
-        uint256 result = _detLimitBuyPrice(
+        uint256 result = _detLimitBuyMakePrice(
             address(book),
             limitPrice,
             bidHead,
@@ -442,7 +444,7 @@ contract LimitOrderTest is BaseSetup {
         uint256 limitPrice = (1e8 * (10000 - 1000)) / 10000;
         console.log(limitPrice, down);
         assert(limitPrice < down);
-        uint256 result = _detLimitBuyPrice(
+        uint256 result = _detLimitBuyMakePrice(
             address(book),
             limitPrice,
             bidHead,

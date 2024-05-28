@@ -202,40 +202,82 @@ contract MarketOrderTest is BaseSetup {
         );
     }
 
-    function _detMarketBuyPrice(
-        uint256 mp,
+    function _detMarketBuyMakePrice(
+        address orderbook,
+        uint256 bidHead,
         uint256 askHead,
         uint32 spread
-    ) internal pure returns (uint256 price) {
-        uint256 newFloor = (mp * (10000 + spread)) / 10000;
-        // ask order is cleared then return new floor
-        if (askHead == 0) {
-            return newFloor;
+    ) internal view returns (uint256 price) {
+        uint256 up;
+        uint256 lmp = IOrderbook(orderbook).lmp();
+        if (askHead == 0 && bidHead == 0) {
+            // lmp must exist unless there has been no order in orderbook
+            if (lmp != 0) {
+                up = (lmp * (10000 + spread)) / 10000;
+                return up;
+            }
+        } else if (askHead == 0 && bidHead != 0) {
+            if (lmp != 0) {
+                uint256 temp = (bidHead >= lmp ? bidHead : lmp);
+                up = (temp * (10000 + spread)) / 10000;
+                return up;
+            }
+            up = (bidHead * (10000 + spread)) / 10000;
+            return up;
+        } else if (askHead != 0 && bidHead == 0) {
+            if (lmp != 0) {
+                up = (lmp * (10000 + spread)) / 10000;
+                return askHead >= up ? up : askHead;
+            }
+            return askHead;
+        } else {
+            if (lmp != 0) {
+                uint256 temp = (bidHead >= lmp ? bidHead : lmp);
+                up = (temp * (10000 + spread)) / 10000;
+                return askHead >= up ? up : askHead;
+            }
+            return askHead;
         }
-        // new floor is below askHead then set newFloor as ask head
-        if (newFloor <= askHead) {
-            return newFloor;
-        }
-        // if askHead is smaller than new floor, return askHead as the floor price
-        return askHead;
     }
 
-    function _detMarketSellPrice(
-        uint256 mp,
+    function _detMarketSellMakePrice(
+        address orderbook,
         uint256 bidHead,
+        uint256 askHead,
         uint32 spread
-    ) internal pure returns (uint256 price) {
-        uint256 newFloor = (mp * (10000 - spread)) / 10000;
-        // bid order is cleared then return new floor
-        if (bidHead == 0) {
-            return newFloor;
+    ) internal view returns (uint256 price) {
+        uint256 down;
+        uint256 lmp = IOrderbook(orderbook).lmp();
+        if (askHead == 0 && bidHead == 0) {
+            // lmp must exist unless there has been no order in orderbook
+            if (lmp != 0) {
+                down = (lmp * (10000 - spread)) / 10000;
+                return down == 0 ? 1 : down;
+            }
+        } else if (askHead == 0 && bidHead != 0) {
+            if (lmp != 0) {
+                down = (lmp * (10000 - spread)) / 10000;
+                down = down <= bidHead ? bidHead : down;
+                return down == 0 ? 1 : down;
+            }
+            return bidHead;
+        } else if (askHead != 0 && bidHead == 0) {
+            if (lmp != 0) {
+                uint256 temp = lmp <= askHead ? lmp : askHead;
+                down = (temp * (10000 - spread)) / 10000;
+                return down == 0 ? 1 : down;
+            }
+            down = (askHead * (10000 - spread)) / 10000;
+            return down == 0 ? 1 : down;
+        } else {
+            if (lmp != 0) {
+                uint256 temp = lmp <= askHead ? lmp : askHead;
+                down = (temp * (10000 - spread)) / 10000;
+                down = down <= bidHead ? bidHead : down;
+                return down == 0 ? 1 : down;
+            }
+            return bidHead;
         }
-        // new floor is above bidHead then set newFloor as bid head
-        if (newFloor >= bidHead) {
-            return newFloor;
-        }
-        // if bidHead is bigger than new floor, return bidHead as the floor price
-        return bidHead;
     }
 
     function _setupVolatilityTest()
@@ -285,7 +327,7 @@ contract MarketOrderTest is BaseSetup {
     }
 
     // On market buy, if askHead is higher than lmp + ranged price, order is made with lmp + ranged price.
-    function testMarketBuyVolatilityUp() public {
+    function testMarketBuyVolatilityUp1() public {
         (
             MockBase base,
             MockQuote quote,
@@ -311,7 +353,12 @@ contract MarketOrderTest is BaseSetup {
         (uint256 bidHead, uint256 askHead) = book.heads();
         // check askHead is higher than up
         assert(askHead > up);
-        uint256 result = _detMarketBuyPrice(mp, askHead, 200);
+        uint256 result = _detMarketBuyMakePrice(
+            address(book),
+            bidHead,
+            askHead,
+            200
+        );
         console.log("result: ", result);
         // check computed result
         assert(result == up);
@@ -322,8 +369,8 @@ contract MarketOrderTest is BaseSetup {
         assert(makePrice == result);
     }
 
-    // On market sell, if bidHead is lower than lmp - ranged price, order is made with lmp - ranged price.
-    function testMarketSellVolatilityDown() public {
+    // On market buy, if bidHead is lower than lmp + ranged price, order is lmp + ranged price
+    function testMarketBuyVolatilityUp2() public {
         (
             MockBase base,
             MockQuote quote,
@@ -343,26 +390,122 @@ contract MarketOrderTest is BaseSetup {
             trader1
         );
         // get pair and price info
+        // get pair and price info
         book = Orderbook(
             payable(matchingEngine.getPair(address(base), address(quote)))
         );
         (uint256 bidHead, uint256 askHead) = book.heads();
-        // check bidHead is lower than down
-        assert(bidHead < down);
-        uint256 result = _detMarketSellPrice(mp, bidHead, 200);
+        // check bidHead is lower than up
+        assert(bidHead < up);
+        uint256 result = _detMarketBuyMakePrice(
+            address(book),
+            bidHead,
+            askHead,
+            200
+        );
         console.log("result: ", result);
         // check computed result
-        assert(result == down);
+        assert(result == up);
         (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine
-            .marketSell(
-                address(base),
-                address(quote),
-                1e8,
-                true,
-                5,
-                0,
-                trader1
-            );
+            .marketBuy(address(base), address(quote), 1e8, true, 5, 0, trader1);
+        // check make price is equal to computed result
+        console.log("make price: ", makePrice);
+        assert(makePrice == result);
+    }
+
+    // On market buy, if askHead is lower than lmp + ranged price, order is made with askHead
+    function testMarketBuyVolatilityUp3() public {
+        (
+            MockBase base,
+            MockQuote quote,
+            Orderbook book,
+            uint256 mp,
+            uint256 up,
+            uint256 down
+        ) = _setupVolatilityTest();
+        matchingEngine.limitSell(
+            address(base),
+            address(quote),
+            1e8 + 1,
+            1e18,
+            true,
+            2,
+            0,
+            trader1
+        );
+        // get pair and price info
+        // get pair and price info
+        book = Orderbook(
+            payable(matchingEngine.getPair(address(base), address(quote)))
+        );
+        (uint256 bidHead, uint256 askHead) = book.heads();
+        // check bidHead is lower than up
+        assert(askHead < up);
+        uint256 result = _detMarketBuyMakePrice(
+            address(book),
+            bidHead,
+            askHead,
+            200
+        );
+        console.log("result: ", result);
+        // check computed result
+        assert(result == askHead);
+        (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine
+            .marketBuy(address(base), address(quote), 1e8, true, 5, 0, trader1);
+        // check make price is equal to computed result
+        console.log("make price: ", makePrice);
+        assert(makePrice == result);
+    }
+
+    // On market buy, bidHead and askHead exists. if lmp + ranged price is higher than bidHead, and lmp + ranged price is lower than askHead, order is made in askHead.
+    function testMarketBuyVolatilityUp4() public {
+        (
+            MockBase base,
+            MockQuote quote,
+            Orderbook book,
+            uint256 mp,
+            uint256 up,
+            uint256 down
+        ) = _setupVolatilityTest();
+        matchingEngine.limitBuy(
+            address(base),
+            address(quote),
+            1e6,
+            1e18,
+            true,
+            2,
+            0,
+            trader1
+        );
+        matchingEngine.limitSell(
+            address(base),
+            address(quote),
+            1e8 + 1,
+            1e18,
+            true,
+            2,
+            0,
+            trader1
+        );
+        // get pair and price info
+        // get pair and price info
+        book = Orderbook(
+            payable(matchingEngine.getPair(address(base), address(quote)))
+        );
+        (uint256 bidHead, uint256 askHead) = book.heads();
+        // check bidHead is lower than up
+        assert(askHead < up);
+        uint256 result = _detMarketBuyMakePrice(
+            address(book),
+            bidHead,
+            askHead,
+            200
+        );
+        console.log("result: ", result);
+        // check computed result
+        assert(result == askHead);
+        (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine
+            .marketBuy(address(base), address(quote), 1e8, true, 5, 0, trader1);
         // check make price is equal to computed result
         console.log("make price: ", makePrice);
         assert(makePrice == result);
@@ -395,7 +538,12 @@ contract MarketOrderTest is BaseSetup {
         (uint256 bidHead, uint256 askHead) = book.heads();
         // check askHead is lower than up
         assert(askHead < up);
-        uint256 result = _detMarketBuyPrice(mp, askHead, 200);
+        uint256 result = _detMarketBuyMakePrice(
+            address(book),
+            bidHead,
+            askHead,
+            200
+        );
         console.log("result: ", result);
         // check computed result
         assert(result == askHead);
@@ -406,8 +554,110 @@ contract MarketOrderTest is BaseSetup {
         assert(makePrice == result);
     }
 
+    // On market sell, if bidHead is lower than lmp - ranged price, order is made with lmp - ranged price.
+    function testMarketSellVolatilityDown1() public {
+        (
+            MockBase base,
+            MockQuote quote,
+            Orderbook book,
+            uint256 mp,
+            uint256 up,
+            uint256 down
+        ) = _setupVolatilityTest();
+        matchingEngine.limitBuy(
+            address(base),
+            address(quote),
+            1e6,
+            1e18,
+            true,
+            2,
+            0,
+            trader1
+        );
+        // get pair and price info
+        book = Orderbook(
+            payable(matchingEngine.getPair(address(base), address(quote)))
+        );
+        (uint256 bidHead, uint256 askHead) = book.heads();
+        // check bidHead is lower than down
+        assert(bidHead < down);
+        uint256 result = _detMarketSellMakePrice(
+            address(book),
+            bidHead,
+            askHead,
+            200
+        );
+        console.log("result: ", result);
+        // check computed result
+        assert(result == down);
+        (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine
+            .marketSell(
+                address(base),
+                address(quote),
+                1e8,
+                true,
+                5,
+                0,
+                trader1
+            );
+        // check make price is equal to computed result
+        console.log("make price: ", makePrice);
+        assert(makePrice == result);
+    }
+
+    // On market sell, if bidHead is lower than lmp - ranged price, order is lmp - ranged price
+    function testMarketSellVolatilityDown2() public {
+        (
+            MockBase base,
+            MockQuote quote,
+            Orderbook book,
+            uint256 mp,
+            uint256 up,
+            uint256 down
+        ) = _setupVolatilityTest();
+        matchingEngine.limitBuy(
+            address(base),
+            address(quote),
+            1e6,
+            1e18,
+            true,
+            2,
+            0,
+            trader1
+        );
+        // get pair and price info
+        book = Orderbook(
+            payable(matchingEngine.getPair(address(base), address(quote)))
+        );
+        (uint256 bidHead, uint256 askHead) = book.heads();
+        // check bidHead is lower than up
+        assert(bidHead < down);
+        uint256 result = _detMarketSellMakePrice(
+            address(book),
+            bidHead,
+            askHead,
+            200
+        );
+        console.log("result: ", result);
+        // check computed result
+        assert(result == down);
+        (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine
+            .marketSell(
+                address(base),
+                address(quote),
+                1e8,
+                true,
+                5,
+                0,
+                trader1
+            );
+        // check make price is equal to computed result
+        console.log("make price: ", makePrice);
+        assert(makePrice == result);
+    }
+
     // On market sell, if bidHead is higher than lmp - ranged price, order is made with bidHead
-    function testMarketSellVolatilityUp() public {
+    function testMarketSellVolatilityDown3() public {
         (
             MockBase base,
             MockQuote quote,
@@ -433,7 +683,142 @@ contract MarketOrderTest is BaseSetup {
         (uint256 bidHead, uint256 askHead) = book.heads();
         // check bidHead is higher than down
         assert(bidHead > down);
-        uint256 result = _detMarketSellPrice(mp, bidHead, 200);
+        uint256 result = _detMarketSellMakePrice(
+            address(book),
+            bidHead,
+            askHead,
+            200
+        );
+        console.log("result: ", result);
+        // check computed result
+        assert(result == bidHead);
+        (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine
+            .marketSell(
+                address(base),
+                address(quote),
+                1e8,
+                true,
+                5,
+                0,
+                trader1
+            );
+        // check make price is equal to computed result
+        console.log("make price: ", makePrice);
+        assert(makePrice == result);
+    }
+
+    // Check if market sell leading to zero price is fixed
+    function testMarketSellSettingPriceToZero() public {
+        (
+            MockBase base,
+            MockQuote quote,
+            Orderbook book,
+            uint256 mp,
+            uint256 up,
+            uint256 down
+        ) = _setupVolatilityTest();
+
+        // get pair and price info
+        book = Orderbook(
+            payable(matchingEngine.getPair(address(base), address(quote)))
+        );
+        (uint256 bidHead, uint256 askHead) = book.heads();
+        uint beforeB = quote.balanceOf(address(trader1));
+        (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine
+            .marketSell(
+                address(base),
+                address(quote),
+                1e8,
+                false,
+                5,
+                0,
+                trader1
+            );
+        uint afterB = quote.balanceOf(address(trader1));
+        // check make price is equal to computed result
+        console.log("make price: ", makePrice);
+        console.log("market price: ", book.mktPrice());
+        console.log("balance before: ", beforeB);
+        console.log("balance after: ", afterB);
+    }
+
+    // Check if market buy leading to price change is fixed
+    function testMarketBuySettingPriceToUp() public {
+        (
+            MockBase base,
+            MockQuote quote,
+            Orderbook book,
+            uint256 mp,
+            uint256 up,
+            uint256 down
+        ) = _setupVolatilityTest();
+
+        // get pair and price info
+        book = Orderbook(
+            payable(matchingEngine.getPair(address(base), address(quote)))
+        );
+        (uint256 bidHead, uint256 askHead) = book.heads();
+        uint beforeB = quote.balanceOf(address(trader1));
+        (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine
+            .marketBuy(
+                address(base),
+                address(quote),
+                1e8,
+                false,
+                5,
+                0,
+                trader1
+            );
+        uint afterB = quote.balanceOf(address(trader1));
+        // check make price is equal to computed result
+        console.log("make price: ", makePrice);
+        console.log("market price: ", book.mktPrice());
+        console.log("balance before: ", beforeB);
+        console.log("balance after: ", afterB);
+    }
+
+    function testMarketSellVolatilityDown4() public {
+        (
+            MockBase base,
+            MockQuote quote,
+            Orderbook book,
+            uint256 mp,
+            uint256 up,
+            uint256 down
+        ) = _setupVolatilityTest();
+        matchingEngine.limitBuy(
+            address(base),
+            address(quote),
+            1e8 - 1,
+            1e18,
+            true,
+            2,
+            0,
+            trader1
+        );
+        matchingEngine.limitSell(
+            address(base),
+            address(quote),
+            1e10,
+            1e18,
+            true,
+            2,
+            0,
+            trader1
+        );
+        // get pair and price info
+        book = Orderbook(
+            payable(matchingEngine.getPair(address(base), address(quote)))
+        );
+        (uint256 bidHead, uint256 askHead) = book.heads();
+        // check bidHead is higher than up
+        assert(bidHead >= down);
+        uint256 result = _detMarketSellMakePrice(
+            address(book),
+            bidHead,
+            askHead,
+            200
+        );
         console.log("result: ", result);
         // check computed result
         assert(result == bidHead);

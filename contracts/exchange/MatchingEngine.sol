@@ -35,6 +35,11 @@ interface IDecimals {
 
 // Onchain Matching engine for the orders
 contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
+    // Listing coordinator role
+    bytes32 private LISTING_COORDINATOR_ROLE =
+        keccak256("LISTING_COORDINATOR_ROLE");
+    // Market maker role
+    bytes32 private MARKET_MAKER_ROLE = keccak256("MARKET_MAKER_ROLE");
     // fee recipient for point storage
     address private feeTo;
     // fee denominator representing 0.001%, 1/1000000 = 0.001%
@@ -43,25 +48,35 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     address public orderbookFactory;
     // WETH
     address public WETH;
-    // default limit spread
-    uint32 defaultLimit = 200;
-    // default market spread
-    uint32 defaultMarket = 200;
+    // default buy spread
+    uint32 defaultBuy = 200;
+    // default sell spread
+    uint32 defaultSell = 200;
 
     struct OrderData {
+        /// Amount after removing fee
         uint256 withoutFee;
+        /// Orderbook contract address
         address orderbook;
+        /// Head price on bid orderbook, the highest bid price
         uint256 bidHead;
+        /// Head price on ask orderbook, the lowest ask price
         uint256 askHead;
+        /// Market price on pair
         uint256 mp;
-        uint32 ls;
-        uint32 ms;
+        /// Spread(volatility) limit on limit/market | buy/sell for market suspensions(e.g. circuit breaker, tick)
+        uint32 spreadLimit;
+        /// Make order id
+        uint32 makeId;
+        /// Whether an order deposit has been cleared
         bool clear;
     }
 
     struct DefaultSpread {
-        uint32 limit;
-        uint32 market;
+        /// Buy spread limit
+        uint32 buy;
+        /// Sell spread limit
+        uint32 sell;
     }
 
     // Spread limit setting
@@ -136,6 +151,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
 
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(LISTING_COORDINATOR_ROLE, msg.sender);
+        _setupRole(MARKET_MAKER_ROLE, msg.sender);
     }
 
     /**
@@ -166,27 +183,24 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         feeTo = feeTo_;
     }
 
-    function setDefaultSpread(
-        uint32 limit,
-        uint32 market
-    ) external returns (bool) {
-        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
-            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
+    function setDefaultSpread(uint32 buy, uint32 sell) external returns (bool) {
+        if (!hasRole(MARKET_MAKER_ROLE, _msgSender())) {
+            revert InvalidRole(MARKET_MAKER_ROLE, _msgSender());
         }
-        defaultLimit = limit;
-        defaultMarket = market;
+        defaultBuy = buy;
+        defaultSell = sell;
     }
 
     function setSpread(
         address base,
         address quote,
-        uint32 limit,
-        uint32 market
+        uint32 buy,
+        uint32 sell
     ) external returns (bool) {
-        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
-            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        if (!hasRole(MARKET_MAKER_ROLE, _msgSender())) {
+            revert InvalidRole(MARKET_MAKER_ROLE, _msgSender());
         }
-        _setSpread(base, quote, limit, market);
+        _setSpread(base, quote, buy, sell);
     }
 
     // user functions
@@ -232,7 +246,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         );
 
         // get spread limits
-        (orderData.ls, orderData.ms) = _getSpread(orderData.orderbook);
+        orderData.spreadLimit = _getSpread(orderData.orderbook, true);
 
         orderData.mp = mktPrice(base, quote);
 
@@ -250,20 +264,21 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             quote,
             recipient,
             true,
-            (orderData.mp * (10000 + orderData.ms)) / 10000,
+            (orderData.mp * (10000 + orderData.spreadLimit)) / 10000,
             n,
-            orderData.ms
+            orderData.spreadLimit
         );
 
         // reuse orderData.bidHead argument for storing make price
-        orderData.bidHead = _detMarketBuyPrice(
-            orderData.mp,
+        orderData.bidHead = _detMarketBuyMakePrice(
+            orderData.orderbook,
+            orderData.bidHead,
             orderData.askHead,
-            orderData.ms
+            orderData.spreadLimit
         );
 
         // add make order on market price, reuse orderData.ls for storing placed Order id
-        orderData.ls = _detMake(
+        orderData.makeId = _detMake(
             base,
             quote,
             orderData.orderbook,
@@ -275,12 +290,12 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         );
 
         // check if order id is made
-        if (orderData.ls > 0) {
+        if (orderData.makeId > 0) {
             //if made, set last market price to orderData.bidHead
             IOrderbook(orderData.orderbook).setLmp(orderData.bidHead);
             emit OrderPlaced(
                 orderData.orderbook,
-                orderData.ls,
+                orderData.makeId,
                 recipient,
                 true,
                 orderData.bidHead,
@@ -291,25 +306,45 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
 
         _report(base, quote, true, quoteAmount, orderData.withoutFee, uid);
 
-        return (orderData.bidHead, orderData.withoutFee, orderData.ls);
+        return (orderData.bidHead, orderData.withoutFee, orderData.makeId);
     }
 
-    function _detMarketBuyPrice(
-        uint256 mp,
+    function _detMarketBuyMakePrice(
+        address orderbook,
+        uint256 bidHead,
         uint256 askHead,
         uint32 spread
-    ) internal pure returns (uint256 price) {
-        uint256 newFloor = (mp * (10000 + spread)) / 10000;
-        // ask order is cleared then return new floor
-        if (askHead == 0) {
-            return newFloor;
+    ) internal view returns (uint256 price) {
+        uint256 up;
+        uint256 lmp = IOrderbook(orderbook).lmp();
+        if (askHead == 0 && bidHead == 0) {
+            // lmp must exist unless there has been no order in orderbook
+            if (lmp != 0) {
+                up = (lmp * (10000 + spread)) / 10000;
+                return up;
+            }
+        } else if (askHead == 0 && bidHead != 0) {
+            if (lmp != 0) {
+                uint256 temp = (bidHead >= lmp ? bidHead : lmp);
+                up = (temp * (10000 + spread)) / 10000;
+                return up;
+            }
+            up = (bidHead * (10000 + spread)) / 10000;
+            return up;
+        } else if (askHead != 0 && bidHead == 0) {
+            if (lmp != 0) {
+                up = (lmp * (10000 + spread)) / 10000;
+                return askHead >= up ? up : askHead;
+            }
+            return askHead;
+        } else {
+            if (lmp != 0) {
+                uint256 temp = (bidHead >= lmp ? bidHead : lmp);
+                up = (temp * (10000 + spread)) / 10000;
+                return askHead >= up ? up : askHead;
+            }
+            return askHead;
         }
-        // new floor is below askHead then set newFloor as ask head
-        if (newFloor <= askHead) {
-            return newFloor;
-        }
-        // if askHead is smaller than new floor, return askHead as the floor price
-        return askHead;
     }
 
     /**
@@ -350,7 +385,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         );
 
         // get spread limits
-        (orderData.ls, orderData.ms) = _getSpread(orderData.orderbook);
+        orderData.spreadLimit = _getSpread(orderData.orderbook, false);
 
         orderData.mp = mktPrice(base, quote);
 
@@ -368,20 +403,20 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             base,
             recipient,
             false,
-            (orderData.mp * (10000 - orderData.ms)) / 10000,
+            (orderData.mp * (10000 - orderData.spreadLimit)) / 10000,
             n,
-            orderData.ms
+            orderData.spreadLimit
         );
 
         // reuse orderData.askHead argument for storing make price
-        orderData.askHead = _detMarketSellPrice(
-            orderData.mp,
+        orderData.askHead = _detMarketSellMakePrice(
+            orderData.orderbook,
             orderData.bidHead,
-            orderData.ms
+            orderData.askHead,
+            orderData.spreadLimit
         );
 
-        // reuse orderData.ls for storing placed order id
-        orderData.ls = _detMake(
+        orderData.makeId = _detMake(
             base,
             quote,
             orderData.orderbook,
@@ -393,12 +428,12 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         );
 
         // check if order id is made
-        if (orderData.ls > 0) {
+        if (orderData.makeId > 0) {
             //if made, set last market price to orderData.askHead
             IOrderbook(orderData.orderbook).setLmp(orderData.askHead);
             emit OrderPlaced(
                 orderData.orderbook,
-                orderData.ls,
+                orderData.makeId,
                 recipient,
                 false,
                 orderData.askHead,
@@ -409,25 +444,47 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
 
         _report(base, quote, false, baseAmount, orderData.withoutFee, uid);
 
-        return (orderData.askHead, orderData.withoutFee, orderData.ls);
+        return (orderData.askHead, orderData.withoutFee, orderData.makeId);
     }
 
-    function _detMarketSellPrice(
-        uint256 mp,
+    function _detMarketSellMakePrice(
+        address orderbook,
         uint256 bidHead,
+        uint256 askHead,
         uint32 spread
-    ) internal pure returns (uint256 price) {
-        uint256 newFloor = (mp * (10000 - spread)) / 10000;
-        // bid order is cleared then return new floor
-        if (bidHead == 0) {
-            return newFloor;
+    ) internal view returns (uint256 price) {
+        uint256 down;
+        uint256 lmp = IOrderbook(orderbook).lmp();
+        if (askHead == 0 && bidHead == 0) {
+            // lmp must exist unless there has been no order in orderbook
+            if (lmp != 0) {
+                down = (lmp * (10000 - spread)) / 10000;
+                return down == 0 ? 1 : down;
+            }
+        } else if (askHead == 0 && bidHead != 0) {
+            if (lmp != 0) {
+                down = (lmp * (10000 - spread)) / 10000;
+                down = down <= bidHead ? bidHead : down;
+                return down == 0 ? 1 : down;
+            }
+            return bidHead;
+        } else if (askHead != 0 && bidHead == 0) {
+            if (lmp != 0) {
+                uint256 temp = lmp <= askHead ? lmp : askHead;
+                down = (temp * (10000 - spread)) / 10000;
+                return down == 0 ? 1 : down;
+            }
+            down = (askHead * (10000 - spread)) / 10000;
+            return down == 0 ? 1 : down;
+        } else {
+            if (lmp != 0) {
+                uint256 temp = lmp <= askHead ? lmp : askHead;
+                down = (temp * (10000 - spread)) / 10000;
+                down = down <= bidHead ? bidHead : down;
+                return down == 0 ? 1 : down;
+            }
+            return bidHead;
         }
-        // new floor is above bidHead then set newFloor as bid head
-        if (newFloor >= bidHead) {
-            return newFloor;
-        }
-        // if bidHead is bigger than new floor, return bidHead as the floor price
-        return bidHead;
     }
 
     /**
@@ -517,7 +574,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         );
 
         // get spread limits
-        (orderData.ls, orderData.ms) = _getSpread(orderData.orderbook);
+        orderData.spreadLimit = _getSpread(orderData.orderbook, true);
 
         // reuse quoteAmount for storing amount without fee
         quoteAmount = orderData.withoutFee;
@@ -535,20 +592,19 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             true,
             price,
             n,
-            orderData.ls
+            orderData.spreadLimit
         );
 
         // reuse price variable for storing make price
-        price = _detLimitBuyPrice(
+        price = _detLimitBuyMakePrice(
             orderData.orderbook,
             price,
             orderData.bidHead,
             orderData.askHead,
-            orderData.ls
+            orderData.spreadLimit
         );
 
-        // reuse orderData.ms variable for storing placed order id
-        orderData.ms = _detMake(
+        orderData.makeId = _detMake(
             base,
             quote,
             orderData.orderbook,
@@ -560,10 +616,10 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         );
 
         // check if order id is made
-        if (orderData.ms > 0) {
+        if (orderData.makeId > 0) {
             emit OrderPlaced(
                 orderData.orderbook,
-                orderData.ms,
+                orderData.makeId,
                 recipient,
                 true,
                 price,
@@ -574,34 +630,37 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
 
         _report(base, quote, true, quoteAmount, orderData.withoutFee, uid);
 
-        return (price, orderData.withoutFee, orderData.ms);
+        return (price, orderData.withoutFee, orderData.makeId);
     }
 
-    function _detLimitBuyPrice(
+    function _detLimitBuyMakePrice(
         address orderbook,
         uint256 lp,
         uint256 bidHead,
         uint256 askHead,
         uint32 spread
     ) internal view returns (uint256 price) {
-        uint256 lmp = IOrderbook(orderbook).lmp();
         uint256 up;
-        if (lmp != 0) {
-            up = (lmp * (10000 + spread)) / 10000;
-            return lp >= up ? up : lp;
-        } else {
-            if (askHead == 0 && bidHead == 0) {
-                return lp;
-            } else if (askHead == 0 && bidHead != 0) {
-                up = (bidHead * (10000 + spread)) / 10000;
-                return lp >= up ? up : lp;
-            } else if (askHead != 0 && bidHead == 0) {
-                up = (askHead * (10000 + spread)) / 10000;
-                return lp >= up ? up : lp;
-            } else {
-                up = (bidHead * (10000 + spread)) / 10000;
+        if (askHead == 0 && bidHead == 0) {
+            uint256 lmp = IOrderbook(orderbook).lmp();
+            if (lmp != 0) {
+                up = (lmp * (10000 + spread)) / 10000;
                 return lp >= up ? up : lp;
             }
+            return lp;
+        } else if (askHead == 0 && bidHead != 0) {
+            up = (bidHead * (10000 + spread)) / 10000;
+            return lp >= up ? up : lp;
+        } else if (askHead != 0 && bidHead == 0) {
+            up = (askHead * (10000 + spread)) / 10000;
+            up = lp >= up ? up : lp;
+            return up >= askHead ? askHead : up;
+        } else {
+            up = (bidHead * (10000 + spread)) / 10000;
+            // First, set upper limit on make price for market suspenstion
+            up = lp >= up ? up : lp;
+            // upper limit on make price must not go above ask price
+            return up >= askHead ? askHead : up;
         }
     }
 
@@ -645,7 +704,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         );
 
         // get spread limit
-        (orderData.ls, orderData.ms) = _getSpread(orderData.orderbook);
+        orderData.spreadLimit = _getSpread(orderData.orderbook, false);
 
         // reuse baseAmount for storing amount without fee
         baseAmount = orderData.withoutFee;
@@ -663,20 +722,19 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             false,
             price,
             n,
-            orderData.ls
+            orderData.spreadLimit
         );
 
         // reuse price variable for make price
-        price = _detLimitSellPrice(
+        price = _detLimitSellMakePrice(
             orderData.orderbook,
             price,
             orderData.bidHead,
             orderData.askHead,
-            orderData.ls
+            orderData.spreadLimit
         );
 
-        // reuse orderData.ms variable for storing placed order id
-        orderData.ms = _detMake(
+        orderData.makeId = _detMake(
             base,
             quote,
             orderData.orderbook,
@@ -687,10 +745,10 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             recipient
         );
 
-        if (orderData.ms > 0) {
+        if (orderData.makeId > 0) {
             emit OrderPlaced(
                 orderData.orderbook,
-                orderData.ms,
+                orderData.makeId,
                 recipient,
                 false,
                 price,
@@ -701,34 +759,41 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
 
         _report(base, quote, false, baseAmount, orderData.withoutFee, uid);
 
-        return (price, orderData.withoutFee, orderData.ms);
+        return (price, orderData.withoutFee, orderData.makeId);
     }
 
-    function _detLimitSellPrice(
+    function _detLimitSellMakePrice(
         address orderbook,
         uint256 lp,
         uint256 bidHead,
         uint256 askHead,
         uint32 spread
     ) internal view returns (uint256 price) {
-        uint256 lmp = IOrderbook(orderbook).lmp();
         uint256 down;
-        if (lmp != 0) {
-            down = (lmp * (10000 - spread)) / 10000;
-            return lp <= down ? down : lp;
-        } else {
-            if (askHead == 0 && bidHead == 0) {
-                return lp;
-            } else if (askHead == 0 && bidHead != 0) {
-                down = (bidHead * (10000 - spread)) / 10000;
-                return lp <= down ? down : lp;
-            } else if (askHead != 0 && bidHead == 0) {
-                down = (askHead * (10000 - spread)) / 10000;
-                return lp <= down ? down : lp;
-            } else {
-                down = (bidHead * (10000 - spread)) / 10000;
+        uint256 lmp = IOrderbook(orderbook).lmp();
+        if (askHead == 0 && bidHead == 0) {
+            if (lmp != 0) {
+                down = (lmp * (10000 - spread)) / 10000;
                 return lp <= down ? down : lp;
             }
+            return lp;
+        } else if (askHead == 0 && bidHead != 0) {
+            if (lmp != 0) {
+                down = (lmp * (10000 - spread)) / 10000;
+                return lp <= down ? down : lp;
+            }
+            down = (bidHead * (10000 - spread)) / 10000;
+            return lp <= down ? down : lp;
+        } else if (askHead != 0 && bidHead == 0) {
+            down = (askHead * (10000 - spread)) / 10000;
+            down = lp <= down ? down : lp;
+            return down <= bidHead ? bidHead : down;
+        } else {
+            down = (bidHead * (10000 - spread)) / 10000;
+            // First, set lower limit on down price for market suspenstion
+            down = lp <= down ? down : lp;
+            // lower limit price on sell cannot be lower than bid head price
+            return down <= bidHead ? bidHead : down;
         }
     }
 
@@ -795,8 +860,31 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
      * @dev Creates an orderbook for a new trading pair and returns its address
      * @param base The address of the base asset for the trading pair
      * @param quote The address of the quote asset for the trading pair
+     * @param initMarketPrice The initial market price for the trading pair
      * @return book The address of the newly created orderbook
      */
+    function addPair(
+        address base,
+        address quote,
+        uint256 initMarketPrice
+    ) external returns (address book) {
+        if (!hasRole(LISTING_COORDINATOR_ROLE, _msgSender())) {
+            revert InvalidRole(LISTING_COORDINATOR_ROLE, _msgSender());
+        }
+        // create orderbook for the pair
+        address orderbook = IOrderbookFactory(orderbookFactory).createBook(
+            base,
+            quote
+        );
+        IOrderbook(orderbook).setLmp(initMarketPrice);
+        uint8 bDecimal = IDecimals(base).decimals();
+        uint8 qDecimal = IDecimals(quote).decimals();
+        // set limit spread to 2% and market spread to 5% for default pair
+        _setSpread(base, quote, defaultBuy, defaultSell);
+        emit PairAdded(orderbook, base, quote, bDecimal, qDecimal);
+        return orderbook;
+    }
+
     function _addPair(
         address base,
         address quote
@@ -809,7 +897,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         uint8 bDecimal = IDecimals(base).decimals();
         uint8 qDecimal = IDecimals(quote).decimals();
         // set limit spread to 2% and market spread to 5% for default pair
-        _setSpread(base, quote, defaultLimit, defaultMarket);
+        _setSpread(base, quote, defaultBuy, defaultSell);
         emit PairAdded(orderBook, base, quote, bDecimal, qDecimal);
         return orderBook;
     }
@@ -1136,20 +1224,25 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     function _setSpread(
         address base,
         address quote,
-        uint32 limit,
-        uint32 market
+        uint32 buy,
+        uint32 sell
     ) internal returns (bool) {
         address book = getPair(base, quote);
-        spreadLimits[book] = DefaultSpread(limit, market);
+        spreadLimits[book] = DefaultSpread(buy, sell);
         return true;
     }
 
     function _getSpread(
-        address book
-    ) internal view returns (uint32 limit, uint32 market) {
+        address book,
+        bool isBuy
+    ) internal view returns (uint32 spreadLimit) {
         DefaultSpread memory spread;
         spread = spreadLimits[book];
-        return (spread.limit, spread.market);
+        if (isBuy) {
+            return spread.buy;
+        } else {
+            return spread.sell;
+        }
     }
 
     /**

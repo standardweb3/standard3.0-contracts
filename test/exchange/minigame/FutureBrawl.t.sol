@@ -60,8 +60,7 @@ contract FutureBrawlTest is FutureBrawlSetup {
             address(feeToken),
             address(stablecoin),
             true,
-            1,
-            0
+            1
         );
     }
 
@@ -108,8 +107,7 @@ contract FutureBrawlTest is FutureBrawlSetup {
             address(feeToken),
             address(stablecoin),
             true,
-            1,
-            0
+            1
         );
         feeToken.mint(trader2, 1e40);
         vm.prank(trader2);

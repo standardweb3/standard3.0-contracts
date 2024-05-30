@@ -44,8 +44,7 @@ contract CancelTest is BaseSetup {
             address(token1),
             address(token2),
             false,
-            1,
-            0
+            1
         );
     }
 
@@ -75,8 +74,7 @@ contract CancelTest is BaseSetup {
             address(token1),
             address(token2),
             false,
-            1,
-            0
+            1
         );
     }
 
@@ -161,8 +159,7 @@ contract CancelTest is BaseSetup {
             address(token1),
             address(token2),
             false,
-            1,
-            0
+            1
         );
 
         // recheck orders
@@ -174,8 +171,7 @@ contract CancelTest is BaseSetup {
             address(token1),
             address(token2),
             false,
-            11,
-            0
+            11
         );
 
         // recheck orders
@@ -278,8 +274,7 @@ contract CancelTest is BaseSetup {
             address(token1),
             address(token2),
             false,
-            1,
-            0
+            1
         );
 
         // recheck orders
@@ -291,8 +286,7 @@ contract CancelTest is BaseSetup {
             address(token1),
             address(token2),
             false,
-            11,
-            0
+            11
         );
 
         // recheck orders
@@ -395,8 +389,7 @@ contract CancelTest is BaseSetup {
             address(token1),
             address(token2),
             false,
-            1,
-            0
+            1
         );
 
         // recheck orders
@@ -409,8 +402,7 @@ contract CancelTest is BaseSetup {
             address(token1),
             address(token2),
             false,
-            11,
-            0
+            11
         );
 
         // recheck orders
@@ -485,8 +477,7 @@ contract CancelTest is BaseSetup {
             address(token1),
             address(token2),
             false,
-            3,
-            0
+            3
         );
 
         //_showOrderbook(matchingEngine, address(token1), address(token2));
@@ -549,8 +540,7 @@ contract CancelTest is BaseSetup {
             address(token1),
             address(token2),
             true,
-            1,
-            0
+            1
         );
 
         // Make sell orer then cancel at head price
@@ -578,8 +568,7 @@ contract CancelTest is BaseSetup {
             address(token1),
             address(token2),
             false,
-            1,
-            0
+            1
         );
     }
 
@@ -661,8 +650,7 @@ contract CancelTest is BaseSetup {
             address(token1),
             address(token2),
             false,
-            3,
-            0
+            3
         );
 
         ExchangeOrderbook.Order[] memory orders2 = matchingEngine.getOrders(
@@ -676,5 +664,133 @@ contract CancelTest is BaseSetup {
         for (uint256 i = 0; i < 4; i++) {
             console.log(orders2[i].owner, orders2[i].depositAmount);
         }
+    }
+
+    function testCancelOrders() public {
+        super.setUp();
+        vm.prank(booker);
+        book = Orderbook(
+            payable(orderbookFactory.getPair(address(token1), address(token2)))
+        );
+        vm.prank(trader1);
+        // placeBid or placeAsk two of them is using the _insertId function it will revert
+        // because the program will enter the "if (amount > self.orders[head].depositAmount)."
+        // statement, and eventually, it will cause an infinite loop.
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            110000000,
+            1000,
+            true,
+            2,
+            0,
+            trader1
+        );
+
+        vm.prank(trader1);
+        //vm.expectRevert("OutOfGas");
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            100000000,
+            1000,
+            true,
+            2,
+            0,
+            trader1
+        );
+
+        vm.prank(trader1);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            90000000,
+            1000,
+            true,
+            5,
+            0,
+            trader1
+        );
+
+        vm.prank(trader1);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            500000000,
+            1000,
+            true,
+            5,
+            0,
+            trader1
+        );
+
+        _showOrderbook(matchingEngine, address(token1), address(token2));
+
+        for (uint256 i = 0; i < 10; i++) {
+            vm.prank(trader1);
+            matchingEngine.limitSell(
+                address(token1),
+                address(token2),
+                110000000,
+                i + 100,
+                true,
+                2,
+                0,
+                trader1
+            );
+        }
+
+        address[] memory baseArray = new address[](1);
+        baseArray[0] = (address(token1));
+
+        address[] memory quoteArray = new address[](1);
+        quoteArray[0] = (address(token2));
+        
+        bool[] memory isBidArray = new bool[](1);
+        isBidArray[0] = (false);
+
+        uint32[] memory orderIds = new uint32[](1);
+        orderIds[0] = (1);
+
+
+        // cancel orders
+        vm.prank(trader1);
+        matchingEngine.cancelOrders(
+            baseArray,
+            quoteArray,
+            isBidArray,
+            orderIds
+        );
+
+        // recheck orders
+        _showOrderbook(matchingEngine, address(token1), address(token2));
+
+        // cancel order
+        vm.prank(trader1);
+        matchingEngine.cancelOrder(
+            address(token1),
+            address(token2),
+            false,
+            11
+        );
+
+        // recheck orders
+        _showOrderbook(matchingEngine, address(token1), address(token2));
+
+        // limit buy to check passing cancelled order
+        vm.prank(trader1);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            500000000,
+            55,
+            true,
+            5,
+            0,
+            trader1
+        );
+
+        // recheck orders
+        _showOrderbook(matchingEngine, address(token1), address(token2));
     }
 }

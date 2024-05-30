@@ -154,16 +154,14 @@ contract MarketOrderTest is BaseSetup {
             address(token1),
             address(token2),
             false,
-            1,
-            0
+            1
         );
         vm.prank(trader1);
         matchingEngine.cancelOrder(
             address(token1),
             address(token2),
             false,
-            2,
-            0
+            2
         );
         ExchangeOrderbook.Order memory order = matchingEngine.getOrder(
             address(token1),

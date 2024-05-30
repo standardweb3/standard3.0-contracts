@@ -265,8 +265,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             recipient,
             true,
             (orderData.mp * (10000 + orderData.spreadLimit)) / 10000,
-            n,
-            orderData.spreadLimit
+            n
         );
 
         // reuse orderData.bidHead argument for storing make price
@@ -404,8 +403,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             recipient,
             false,
             (orderData.mp * (10000 - orderData.spreadLimit)) / 10000,
-            n,
-            orderData.spreadLimit
+            n
         );
 
         // reuse orderData.askHead argument for storing make price
@@ -591,8 +589,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             recipient,
             true,
             price,
-            n,
-            orderData.spreadLimit
+            n
         );
 
         // reuse price variable for storing make price
@@ -721,8 +718,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             recipient,
             false,
             price,
-            n,
-            orderData.spreadLimit
+            n
         );
 
         // reuse price variable for make price
@@ -914,8 +910,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         address base,
         address quote,
         bool isBid,
-        uint32 orderId,
-        uint32 uid
+        uint32 orderId
     ) public nonReentrant returns (uint256 refunded) {
         address orderbook = IOrderbookFactory(orderbookFactory).getPair(
             base,
@@ -940,8 +935,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         address[] memory base,
         address[] memory quote,
         bool[] memory isBid,
-        uint32[] memory orderIds,
-        uint32 uid
+        uint32[] memory orderIds
     ) external returns (uint256[] memory refunded) {
         refunded = new uint256[](orderIds.length);
         for (uint32 i = 0; i < orderIds.length; i++) {
@@ -949,8 +943,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
                 base[i],
                 quote[i],
                 isBid[i],
-                orderIds[i],
-                uid
+                orderIds[i]
             );
         }
         return refunded;
@@ -1363,7 +1356,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
      * @param isBid True if the order is an ask (sell) order, false if it is a bid (buy) order.
      * @param limitPrice The maximum price at which the order can be executed.
      * @param n The maximum number of matches to execute.
-     * @param spread The spread limit
      * @return remaining The remaining amount of asset that was not traded.
      */
     function _limitOrder(
@@ -1373,8 +1365,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         address recipient,
         bool isBid,
         uint256 limitPrice,
-        uint32 n,
-        uint32 spread
+        uint32 n
     ) internal returns (uint256 remaining, uint256 bidHead, uint256 askHead) {
         remaining = amount;
         uint256 lmp = IOrderbook(orderbook).lmp();

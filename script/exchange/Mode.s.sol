@@ -169,8 +169,7 @@ contract CancelOrder is Deployer {
             base,
             quote,
             true,
-            5,
-            0
+            5
         );
     }
 }

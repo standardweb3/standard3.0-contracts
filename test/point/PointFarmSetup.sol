@@ -62,6 +62,9 @@ contract PointFarmSetup is Test {
             address(booker),
             address(weth)
         );
+        // make a price in matching engine where 1 feeToken = 1000 stablecoin with buy and sell order
+        matchingEngine.addPair(address(feeToken), address(stablecoin), 10000e8);
+        
 
         point = new STXP();
         pointFarm = new PointFarm();
@@ -100,7 +103,6 @@ contract PointFarmSetup is Test {
         feeToken.approve(address(matchingEngine), 10000e18);
         // mine 1000 blocks
         utils.mineBlocks(1000);
-        // make a price in matching engine where 1 feeToken = 1000 stablecoin with buy and sell order
         vm.prank(trader2);
         matchingEngine.limitSell(
             address(feeToken),

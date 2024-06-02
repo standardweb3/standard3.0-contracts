@@ -19,6 +19,7 @@ import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 contract CancelTest is BaseSetup {
 
     function testCancelAtPriceZeroPasses() public {
+        matchingEngine.addPair(address(token1), address(token2), 300000000);
         vm.prank(booker);
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
@@ -49,6 +50,7 @@ contract CancelTest is BaseSetup {
     }
 
     function testCancelAtPriceWhateverPasses() public {
+        matchingEngine.addPair(address(token1), address(token2), 300000000);
         vm.prank(booker);
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
@@ -81,6 +83,8 @@ contract CancelTest is BaseSetup {
     // edge cases on cancelling orders
     function testCancelEdgeCase() public {
         super.setUp();
+        matchingEngine.addPair(address(token1), address(token2), 700000000);
+        
         vm.prank(booker);
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
@@ -137,7 +141,7 @@ contract CancelTest is BaseSetup {
             trader1
         );
 
-        _showOrderbook(matchingEngine, address(token1), address(token2));
+        _showOrderbook(address(token1), address(token2));
 
         for (uint256 i = 0; i < 10; i++) {
             vm.prank(trader1);
@@ -163,7 +167,7 @@ contract CancelTest is BaseSetup {
         );
 
         // recheck orders
-        _showOrderbook(matchingEngine, address(token1), address(token2));
+        _showOrderbook(address(token1), address(token2));
 
         // cancel order
         vm.prank(trader1);
@@ -175,7 +179,7 @@ contract CancelTest is BaseSetup {
         );
 
         // recheck orders
-        _showOrderbook(matchingEngine, address(token1), address(token2));
+        _showOrderbook(address(token1), address(token2));
 
         // limit buy to check passing cancelled order
         vm.prank(trader1);
@@ -191,11 +195,12 @@ contract CancelTest is BaseSetup {
         );
 
         // recheck orders
-        _showOrderbook(matchingEngine, address(token1), address(token2));
+        _showOrderbook(address(token1), address(token2));
     }
 
     function testCancelEdgeCase2() public {
         super.setUp();
+        matchingEngine.addPair(address(token1), address(token2), 700000000);
         vm.prank(booker);
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
@@ -252,7 +257,7 @@ contract CancelTest is BaseSetup {
             trader1
         );
 
-        _showOrderbook(matchingEngine, address(token1), address(token2));
+        _showOrderbook(address(token1), address(token2));
 
         for (uint256 i = 0; i < 10; i++) {
             vm.prank(trader1);
@@ -278,7 +283,7 @@ contract CancelTest is BaseSetup {
         );
 
         // recheck orders
-        _showOrderbook(matchingEngine, address(token1), address(token2));
+        _showOrderbook(address(token1), address(token2));
 
         // cancel order
         vm.prank(trader1);
@@ -290,7 +295,7 @@ contract CancelTest is BaseSetup {
         );
 
         // recheck orders
-        _showOrderbook(matchingEngine, address(token1), address(token2));
+        _showOrderbook(address(token1), address(token2));
 
         // limit buy to check passing cancelled order
         vm.prank(trader1);
@@ -306,11 +311,12 @@ contract CancelTest is BaseSetup {
         );
 
         // recheck orders
-        _showOrderbook(matchingEngine, address(token1), address(token2));
+        _showOrderbook(address(token1), address(token2));
     }
 
     function testCancelEdgeCase3() public {
         super.setUp();
+        matchingEngine.addPair(address(token1), address(token2), 700000000);
         vm.prank(booker);
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
@@ -367,7 +373,7 @@ contract CancelTest is BaseSetup {
             trader1
         );
 
-        _showOrderbook(matchingEngine, address(token1), address(token2));
+        _showOrderbook(address(token1), address(token2));
 
         for (uint256 i = 0; i < 10; i++) {
             vm.prank(trader1);
@@ -393,7 +399,7 @@ contract CancelTest is BaseSetup {
         );
 
         // recheck orders
-        _showOrderbook(matchingEngine, address(token1), address(token2));
+        _showOrderbook(address(token1), address(token2));
 
         // cancel order
         vm.prank(trader1);
@@ -406,7 +412,7 @@ contract CancelTest is BaseSetup {
         );
 
         // recheck orders
-        _showOrderbook(matchingEngine, address(token1), address(token2));
+        _showOrderbook(address(token1), address(token2));
 
         // limit buy to check passing cancelled order
         vm.prank(trader1);
@@ -422,11 +428,12 @@ contract CancelTest is BaseSetup {
         );
 
         // recheck orders
-        _showOrderbook(matchingEngine, address(token1), address(token2));
+        _showOrderbook(address(token1), address(token2));
     }
 
     function testCancelJammingOrderbook() public {
         super.setUp();
+        matchingEngine.addPair(address(token1), address(token2), 1000e8);
         vm.prank(booker);
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
@@ -507,6 +514,8 @@ contract CancelTest is BaseSetup {
 
     function testCancelAtHeadPrice() public {
         super.setUp();
+        matchingEngine.addPair(address(token1), address(token2), 1000e8);
+        
         vm.prank(booker);
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
@@ -574,6 +583,8 @@ contract CancelTest is BaseSetup {
 
     function testCancelOrderDeletion() public {
         super.setUp();
+        matchingEngine.addPair(address(token1), address(token2), 100000000);
+        
         vm.prank(booker);
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
@@ -668,6 +679,8 @@ contract CancelTest is BaseSetup {
 
     function testCancelOrders() public {
         super.setUp();
+        matchingEngine.addPair(address(token1), address(token2), 700000000);
+
         vm.prank(booker);
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
@@ -724,7 +737,7 @@ contract CancelTest is BaseSetup {
             trader1
         );
 
-        _showOrderbook(matchingEngine, address(token1), address(token2));
+        _showOrderbook(address(token1), address(token2));
 
         for (uint256 i = 0; i < 10; i++) {
             vm.prank(trader1);
@@ -763,7 +776,7 @@ contract CancelTest is BaseSetup {
         );
 
         // recheck orders
-        _showOrderbook(matchingEngine, address(token1), address(token2));
+        _showOrderbook(address(token1), address(token2));
 
         // cancel order
         vm.prank(trader1);
@@ -775,7 +788,7 @@ contract CancelTest is BaseSetup {
         );
 
         // recheck orders
-        _showOrderbook(matchingEngine, address(token1), address(token2));
+        _showOrderbook(address(token1), address(token2));
 
         // limit buy to check passing cancelled order
         vm.prank(trader1);
@@ -791,6 +804,6 @@ contract CancelTest is BaseSetup {
         );
 
         // recheck orders
-        _showOrderbook(matchingEngine, address(token1), address(token2));
+        _showOrderbook(address(token1), address(token2));
     }
 }

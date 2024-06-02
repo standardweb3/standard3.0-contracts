@@ -19,7 +19,7 @@ import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 contract ManipulationTest is BaseSetup {
     function testManipulateMarketPrice() public {
         super.setUp();
-        
+        matchingEngine.addPair(address(token1), address(token2), 90e8);
         vm.prank(trader1);
         matchingEngine.limitSell(
             address(token1),
@@ -43,9 +43,7 @@ contract ManipulationTest is BaseSetup {
             trader1
         );
         book = Orderbook(
-            payable(
-                orderbookFactory.getPair(address(token1), address(token2))
-            )
+            payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
         console.log("Market price before manipulation: ", book.mktPrice());
         vm.prank(attacker);

@@ -19,12 +19,13 @@ import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 contract LoopOutOfGasTest is BaseSetup {
     function testExchangeLinkedListOutOfGas() public {
         super.setUp();
+        // make a price in matching engine where 1 feeToken = 1000 stablecoin with buy and sell order
+        matchingEngine.addPair(address(token1), address(token2), 2);
+
         vm.prank(booker);
-        
+
         book = Orderbook(
-            payable(
-                orderbookFactory.getPair(address(token1), address(token2))
-            )
+            payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
         vm.prank(trader1);
 
@@ -79,12 +80,11 @@ contract LoopOutOfGasTest is BaseSetup {
 
     function testExchangeLinkedListOutOfGasPlaceBid() public {
         super.setUp();
+        matchingEngine.addPair(address(token1), address(token2), 2);
         vm.prank(booker);
-        
+
         book = Orderbook(
-            payable(
-                orderbookFactory.getPair(address(token1), address(token2))
-            )
+            payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
         // We can create the same example with placeBid function
         // This time the program will enter the while (price > last && last != 0) statement
@@ -138,12 +138,11 @@ contract LoopOutOfGasTest is BaseSetup {
 
     function testExchangeOrderbookOutOfGas() public {
         super.setUp();
+        matchingEngine.addPair(address(token1), address(token2), 5);
         vm.prank(booker);
-        
+
         book = Orderbook(
-            payable(
-                orderbookFactory.getPair(address(token1), address(token2))
-            )
+            payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert

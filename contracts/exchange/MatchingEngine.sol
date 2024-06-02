@@ -19,14 +19,14 @@ interface IRevenue {
         uint256 amount
     ) external;
 
-    function isReportable() external view returns (bool);
+    function isReportable() external view returns (bool isReportable);
 
     function feeOf(
         uint32 uid,
         bool isMaker
     ) external view returns (uint32 feeNum);
 
-    function isSubscribed(uint32 uid) external view returns (bool);
+    function isSubscribed(uint32 uid) external view returns (bool isSubscribed);
 }
 
 interface IDecimals {
@@ -176,14 +176,17 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     }
 
     // admin functions
-    function setFeeTo(address feeTo_) external returns (bool) {
+    function setFeeTo(address feeTo_) external returns (bool success) {
         if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
         }
         feeTo = feeTo_;
     }
 
-    function setDefaultSpread(uint32 buy, uint32 sell) external returns (bool) {
+    function setDefaultSpread(
+        uint32 buy,
+        uint32 sell
+    ) external returns (bool success) {
         if (!hasRole(MARKET_MAKER_ROLE, _msgSender())) {
             revert InvalidRole(MARKET_MAKER_ROLE, _msgSender());
         }
@@ -196,7 +199,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         address quote,
         uint32 buy,
         uint32 sell
-    ) external returns (bool) {
+    ) external returns (bool success) {
         if (!hasRole(MARKET_MAKER_ROLE, _msgSender())) {
             revert InvalidRole(MARKET_MAKER_ROLE, _msgSender());
         }
@@ -939,12 +942,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     ) external returns (uint256[] memory refunded) {
         refunded = new uint256[](orderIds.length);
         for (uint32 i = 0; i < orderIds.length; i++) {
-            refunded[i] = cancelOrder(
-                base[i],
-                quote[i],
-                isBid[i],
-                orderIds[i]
-            );
+            refunded[i] = cancelOrder(base[i], quote[i], isBid[i], orderIds[i]);
         }
         return refunded;
     }
@@ -1219,7 +1217,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         address quote,
         uint32 buy,
         uint32 sell
-    ) internal returns (bool) {
+    ) internal returns (bool success) {
         address book = getPair(base, quote);
         spreadLimits[book] = DefaultSpread(buy, sell);
         return true;
@@ -1374,9 +1372,12 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         uint32 i = 0;
         // In LimitBuy
         if (isBid) {
-            // if limit price is out of spread given to bidHead, set to
-            if (lmp != 0 && limitPrice < bidHead) {
-                return (remaining, bidHead, askHead);
+            if (lmp != 0) {
+                if (askHead != 0 && limitPrice < askHead) {
+                    return (remaining, bidHead, askHead);
+                } else if(askHead == 0) {
+                    return (remaining, bidHead, askHead);
+                }
             }
             // check if there is any matching ask order until matching ask order price is lower than the limit bid Price
             while (
@@ -1404,8 +1405,12 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         // In LimitSell
         else {
             // check limit ask price is within 20% spread of last matched price
-            if (lmp != 0 && limitPrice > askHead) {
-                return (remaining, bidHead, askHead);
+            if (lmp != 0) {
+                if (bidHead != 0 && limitPrice > bidHead) {
+                    return (remaining, bidHead, askHead);
+                } else if(bidHead == 0) {
+                    return (remaining, bidHead, askHead);
+                }
             }
             while (
                 remaining > 0 && bidHead != 0 && bidHead >= limitPrice && i < n
@@ -1526,7 +1531,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         // get orderbook address from the base and quote asset
         pair = getPair(base, quote);
         if (pair == address(0)) {
-            pair = _addPair(base, quote);
+            revert InvalidPair(base, quote, pair);
         }
 
         // check if amount is valid in case of both market and limit
@@ -1580,7 +1585,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         return amount / 100;
     }
 
-    function _isContract(address addr) internal view returns (bool) {
+    function _isContract(address addr) internal view returns (bool isContract) {
         uint size;
         assembly {
             size := extcodesize(addr)

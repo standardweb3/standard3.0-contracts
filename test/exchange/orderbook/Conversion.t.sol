@@ -18,14 +18,12 @@ import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 
 // test cases for orderbooks
 contract ConversionTest is BaseSetup {
-    
     function testOrderWithPriceZeroFails() public {
-        
+        matchingEngine.addPair(address(token1), address(token2), 1e8);
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
         vm.prank(trader1);
-        vm.expectRevert();
         // placeBid or placeAsk two of them is using the _insertId function it will revert
         // because the program will enter the "if (amount > self.orders[head].depositAmount)."
         // statement, and eventually, it will cause an infinite loop.
@@ -43,7 +41,8 @@ contract ConversionTest is BaseSetup {
 
     function testInvalidConversion() public {
         super.setUp();
-        
+        matchingEngine.addPair(address(token1), address(token2), 100e8);
+
         console.log(
             "Base/Quote Pair: ",
             matchingEngine.getPair(address(token1), address(token2))
@@ -162,8 +161,8 @@ contract ConversionTest is BaseSetup {
 
     function testConvertBuySellOnDifferentDecimalWhereBaseBQuote() public {
         super.setUp();
-        
-        
+        matchingEngine.addPair(address(token1), address(btc), 1000e8);
+
         // before trade balances
         uint256 beforeTrader2T1Balance = token1.balanceOf(address(trader2));
         uint256 beforeTrader2BTCBalance = btc.balanceOf(address(trader2));
@@ -242,8 +241,8 @@ contract ConversionTest is BaseSetup {
 
     function testConvertSellBuyOnDifferentDecimalWhereBaseBQuote() public {
         super.setUp();
-        
-        
+        matchingEngine.addPair(address(token1), address(btc), 1000e8);
+
         // before trade balances
         uint256 beforeTrader2T1Balance = token1.balanceOf(address(trader2));
         uint256 beforeTrader2BTCBalance = btc.balanceOf(address(trader2));
@@ -323,8 +322,8 @@ contract ConversionTest is BaseSetup {
 
     function testConvertBuySellOnDifferentDecimalWhereNotBaseBQuote() public {
         super.setUp();
-        
-        
+        matchingEngine.addPair(address(btc), address(token2), 1000e8);
+
         // before trade balances
         uint256 beforeTrader2T2Balance = token2.balanceOf(address(trader2));
         uint256 beforeTrader2BTCBalance = btc.balanceOf(address(trader2));
@@ -404,8 +403,8 @@ contract ConversionTest is BaseSetup {
 
     function testConvertSellBuyOnDifferentDecimalWhereNotBaseBQuote() public {
         super.setUp();
-        
-       
+        matchingEngine.addPair(address(btc), address(token2), 1000e8);
+
         // before trade balances
         uint256 beforeTrader2T2Balance = token2.balanceOf(address(trader2));
         uint256 beforeTrader2BTCBalance = btc.balanceOf(address(trader2));
@@ -474,7 +473,7 @@ contract ConversionTest is BaseSetup {
         // Trader1's token1 balance should be increased by 9.99e8
         assert(diffTrader1BTCBalance == 99e7);
 
-         book = Orderbook(
+        book = Orderbook(
             payable(orderbookFactory.getPair(address(btc), address(token2)))
         );
 
@@ -485,8 +484,8 @@ contract ConversionTest is BaseSetup {
 
     function testConvertBuySellOnSameDecimal() public {
         super.setUp();
-        
-       
+        matchingEngine.addPair(address(token1), address(token2), 1000e8);
+
         // before trade balances
         uint256 beforeTrader2T2Balance = token2.balanceOf(address(trader2));
         uint256 beforeTrader2T1Balance = token1.balanceOf(address(trader2));
@@ -555,7 +554,7 @@ contract ConversionTest is BaseSetup {
         // Trader1's token1 balance should be increased by 9.99e18
         assert(diffTrader1T1Balance == 99e17);
 
-         book = Orderbook(
+        book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
 
@@ -566,7 +565,8 @@ contract ConversionTest is BaseSetup {
 
     function testConvertSellBuyOnSameDecimal() public {
         super.setUp();
-        
+        matchingEngine.addPair(address(token1), address(token2), 1000e8);
+
         // before trade balances
         uint256 beforeTrader2T2Balance = token2.balanceOf(address(trader2));
         uint256 beforeTrader2T1Balance = token1.balanceOf(address(trader2));

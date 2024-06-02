@@ -18,6 +18,8 @@ contract FutureBrawlTest is FutureBrawlSetup {
     // After trading, TI and trader level can be shown
 
     function _trade() internal {
+        // make a price in matching engine where 1 feeToken = 1000 stablecoin with buy and sell order
+        matchingEngine.addPair(address(feeToken), address(stablecoin), 10000e8);
         vm.prank(trader2);
         matchingEngine.limitSell(
             address(feeToken),

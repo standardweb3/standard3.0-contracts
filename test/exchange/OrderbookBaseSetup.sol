@@ -84,7 +84,6 @@ contract BaseSetup is Test {
     }
 
     function _showOrderbook(
-        MatchingEngine matchingEngine,
         address base,
         address quote
     ) internal view {

@@ -34,6 +34,7 @@ contract MarketOrderTest is BaseSetup {
         quote = new MockQuote("Quote Token", "QUOTE");
         base.mint(trader1, type(uint256).max);
         quote.mint(trader1, type(uint256).max);
+        matchingEngine.addPair(address(base), address(quote), 1e8);
         vm.startPrank(trader1);
         base.approve(address(matchingEngine), type(uint256).max);
         quote.approve(address(matchingEngine), type(uint256).max);
@@ -58,9 +59,9 @@ contract MarketOrderTest is BaseSetup {
             0,
             trader1
         );
-        uint256 mp = matchingEngine.mktPrice(address(base), address(quote));
-        uint256 up = (mp * (10000 + 200)) / 10000;
-        uint256 down = (mp * (10000 - 200)) / 10000;
+        mp = matchingEngine.mktPrice(address(base), address(quote));
+        up = (mp * (10000 + 200)) / 10000;
+        down = (mp * (10000 - 200)) / 10000;
         return (base, quote, book, mp, up, down);
     }
 
@@ -68,10 +69,10 @@ contract MarketOrderTest is BaseSetup {
         (
             MockBase base,
             MockQuote quote,
-            Orderbook book,
-            uint256 mp,
-            uint256 up,
-            uint256 down
+            Orderbook _book,
+            uint256 _mp,
+            uint256 _up,
+            uint256 _down
         ) = _setupVolatilityTest();
         uint256 beforeB = base.balanceOf(trader1);
         matchingEngine.marketSell(
@@ -93,10 +94,10 @@ contract MarketOrderTest is BaseSetup {
         (
             MockBase base,
             MockQuote quote,
-            Orderbook book,
-            uint256 mp,
-            uint256 up,
-            uint256 down
+            Orderbook _book,
+            uint256 _mp,
+            uint256 _up,
+            uint256 _down
         ) = _setupVolatilityTest();
         uint256 beforeB = base.balanceOf(trader1);
         matchingEngine.marketBuy(
@@ -118,10 +119,10 @@ contract MarketOrderTest is BaseSetup {
         (
             MockBase base,
             MockQuote quote,
-            Orderbook book,
-            uint256 mp,
-            uint256 up,
-            uint256 down
+            Orderbook _book,
+            uint256 _mp,
+            uint256 _up,
+            uint256 _down
         ) = _setupVolatilityTest();
         uint256 beforeB = base.balanceOf(trader1);
         matchingEngine.limitBuy(
@@ -144,10 +145,10 @@ contract MarketOrderTest is BaseSetup {
         (
             MockBase base,
             MockQuote quote,
-            Orderbook book,
-            uint256 mp,
-            uint256 up,
-            uint256 down
+            Orderbook _book,
+            uint256 _mp,
+            uint256 _up,
+            uint256 _down
         ) = _setupVolatilityTest();
         uint256 beforeB = base.balanceOf(trader1);
         matchingEngine.limitSell(
@@ -173,6 +174,7 @@ contract MarketOrderTest is BaseSetup {
         MockQuote quote = new MockQuote("Quote Token", "QUOTE");
         base.mint(trader1, type(uint256).max);
         quote.mint(trader1, type(uint256).max);
+        matchingEngine.addPair(address(base), address(quote), 1e8);
         vm.startPrank(trader1);
         base.approve(address(matchingEngine), type(uint256).max);
         quote.approve(address(matchingEngine), type(uint256).max);

@@ -5,6 +5,7 @@ import "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 import {MockBTC} from "../../contracts/mock/MockBTC.sol";
 import {MockToken} from "../../contracts/mock/MockToken.sol";
+import {MatchingEngine} from "../../contracts/exchange/MatchingEngine.sol";
 import {MatchingEngineBlast} from "../../contracts/exchange/MatchingEngineBlast.sol";
 import {OrderbookFactory} from "../../contracts/exchange/orderbooks/OrderbookFactory.sol";
 import {Orderbook} from "../../contracts/exchange/orderbooks/Orderbook.sol";

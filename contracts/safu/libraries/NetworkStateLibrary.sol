@@ -166,7 +166,7 @@ library NetworkStateLibrary {
         uint128 id_,
         address collateral_, 
         uint256 amount_
-    ) public returns (bool) {
+    ) public view returns (bool) {
         address bond = _predictAddress(self, collateral_, self.currency, id_);
         //IBond(bond).borrowMore();
     }

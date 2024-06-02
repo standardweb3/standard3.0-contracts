@@ -20,6 +20,7 @@ import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 contract MarketOrderTest is BaseSetup {
     function testMarketBuyETH() public {
         super.setUp();
+        matchingEngine.addPair(address(token1), address(weth), 1e8);
         console.log("weth balance");
         console.log(trader1.balance / 1e18);
         vm.prank(trader1);
@@ -64,6 +65,7 @@ contract MarketOrderTest is BaseSetup {
 
     function testMarketSellETH() public {
         super.setUp();
+        matchingEngine.addPair(address(weth), address(token1), 1e8);
         console.log("weth balance");
         console.log(trader1.balance / 1e18);
         vm.prank(trader1);
@@ -103,6 +105,7 @@ contract MarketOrderTest is BaseSetup {
 
     function testCancelJammingOrderbook() public {
         super.setUp();
+        matchingEngine.addPair(address(token1), address(token2), 1000e8);
         vm.prank(booker);
 
         book = Orderbook(
@@ -150,19 +153,9 @@ contract MarketOrderTest is BaseSetup {
         );
 
         vm.prank(trader1);
-        matchingEngine.cancelOrder(
-            address(token1),
-            address(token2),
-            false,
-            1
-        );
+        matchingEngine.cancelOrder(address(token1), address(token2), false, 1);
         vm.prank(trader1);
-        matchingEngine.cancelOrder(
-            address(token1),
-            address(token2),
-            false,
-            2
-        );
+        matchingEngine.cancelOrder(address(token1), address(token2), false, 2);
         ExchangeOrderbook.Order memory order = matchingEngine.getOrder(
             address(token1),
             address(token2),
@@ -170,7 +163,7 @@ contract MarketOrderTest is BaseSetup {
             3
         );
         console.log("Order id 3: ", order.owner, order.depositAmount);
-        _showOrderbook(matchingEngine, address(token1), address(token2));
+        _showOrderbook(address(token1), address(token2));
 
         vm.prank(trader1);
         matchingEngine.marketBuy(
@@ -294,6 +287,8 @@ contract MarketOrderTest is BaseSetup {
         quote = new MockQuote("Quote Token", "QUOTE");
         base.mint(trader1, type(uint256).max);
         quote.mint(trader1, type(uint256).max);
+        // make a price in matching engine where 1 base = 1 quote with buy and sell order
+        matchingEngine.addPair(address(base), address(quote), 1e8);
         vm.startPrank(trader1);
         base.approve(address(matchingEngine), type(uint256).max);
         quote.approve(address(matchingEngine), type(uint256).max);
@@ -318,9 +313,9 @@ contract MarketOrderTest is BaseSetup {
             0,
             trader1
         );
-        uint256 mp = matchingEngine.mktPrice(address(base), address(quote));
-        uint256 up = (mp * (10000 + 200)) / 10000;
-        uint256 down = (mp * (10000 - 200)) / 10000;
+        mp = matchingEngine.mktPrice(address(base), address(quote));
+        up = (mp * (10000 + 200)) / 10000;
+        down = (mp * (10000 - 200)) / 10000;
         return (base, quote, book, mp, up, down);
     }
 
@@ -330,9 +325,9 @@ contract MarketOrderTest is BaseSetup {
             MockBase base,
             MockQuote quote,
             Orderbook book,
-            uint256 mp,
+            uint256 _mp, // silence warning
             uint256 up,
-            uint256 down
+            uint256 _down // silence warning
         ) = _setupVolatilityTest();
         matchingEngine.limitSell(
             address(base),
@@ -373,9 +368,9 @@ contract MarketOrderTest is BaseSetup {
             MockBase base,
             MockQuote quote,
             Orderbook book,
-            uint256 mp,
+            uint256 _mp /* silence warning */,
             uint256 up,
-            uint256 down
+            uint256 _down /* silence warning */
         ) = _setupVolatilityTest();
         matchingEngine.limitBuy(
             address(base),
@@ -417,9 +412,9 @@ contract MarketOrderTest is BaseSetup {
             MockBase base,
             MockQuote quote,
             Orderbook book,
-            uint256 mp,
+            uint256 _mp,
             uint256 up,
-            uint256 down
+            uint256 _down
         ) = _setupVolatilityTest();
         matchingEngine.limitSell(
             address(base),
@@ -461,9 +456,9 @@ contract MarketOrderTest is BaseSetup {
             MockBase base,
             MockQuote quote,
             Orderbook book,
-            uint256 mp,
+            uint256 _mp,
             uint256 up,
-            uint256 down
+            uint256 _down
         ) = _setupVolatilityTest();
         matchingEngine.limitBuy(
             address(base),
@@ -517,7 +512,7 @@ contract MarketOrderTest is BaseSetup {
             Orderbook book,
             uint256 mp,
             uint256 up,
-            uint256 down
+            uint256 _down
         ) = _setupVolatilityTest();
         matchingEngine.limitSell(
             address(base),
@@ -558,8 +553,8 @@ contract MarketOrderTest is BaseSetup {
             MockBase base,
             MockQuote quote,
             Orderbook book,
-            uint256 mp,
-            uint256 up,
+            uint256 _mp,
+            uint256 _up,
             uint256 down
         ) = _setupVolatilityTest();
         matchingEngine.limitBuy(
@@ -609,8 +604,8 @@ contract MarketOrderTest is BaseSetup {
             MockBase base,
             MockQuote quote,
             Orderbook book,
-            uint256 mp,
-            uint256 up,
+            uint256 _mp,
+            uint256 _up,
             uint256 down
         ) = _setupVolatilityTest();
         matchingEngine.limitBuy(
@@ -661,7 +656,7 @@ contract MarketOrderTest is BaseSetup {
             MockQuote quote,
             Orderbook book,
             uint256 mp,
-            uint256 up,
+            uint256 _up,
             uint256 down
         ) = _setupVolatilityTest();
         matchingEngine.limitBuy(
@@ -690,7 +685,7 @@ contract MarketOrderTest is BaseSetup {
         console.log("result: ", result);
         // check computed result
         assert(result == bidHead);
-        (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine
+        (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine // silence warning
             .marketSell(
                 address(base),
                 address(quote),
@@ -711,18 +706,18 @@ contract MarketOrderTest is BaseSetup {
             MockBase base,
             MockQuote quote,
             Orderbook book,
-            uint256 mp,
-            uint256 up,
-            uint256 down
+            uint256 _mp,
+            uint256 _up,
+            uint256 _down
         ) = _setupVolatilityTest();
 
         // get pair and price info
         book = Orderbook(
             payable(matchingEngine.getPair(address(base), address(quote)))
         );
-        (uint256 bidHead, uint256 askHead) = book.heads();
+        (uint256 _bidHead, uint256 _askHead) = book.heads();
         uint beforeB = quote.balanceOf(address(trader1));
-        (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine
+        (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine // silence warning
             .marketSell(
                 address(base),
                 address(quote),
@@ -746,18 +741,18 @@ contract MarketOrderTest is BaseSetup {
             MockBase base,
             MockQuote quote,
             Orderbook book,
-            uint256 mp,
-            uint256 up,
-            uint256 down
+            uint256 _mp, // silence warning
+            uint256 _up, // silence warning
+            uint256 _down // silence warning
         ) = _setupVolatilityTest();
 
         // get pair and price info
         book = Orderbook(
             payable(matchingEngine.getPair(address(base), address(quote)))
         );
-        (uint256 bidHead, uint256 askHead) = book.heads();
+        (uint256 _bidHead, uint256 _askHead) = book.heads(); // silence warning
         uint beforeB = quote.balanceOf(address(trader1));
-        (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine
+        (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine // silence warning
             .marketBuy(
                 address(base),
                 address(quote),
@@ -780,8 +775,8 @@ contract MarketOrderTest is BaseSetup {
             MockBase base,
             MockQuote quote,
             Orderbook book,
-            uint256 mp,
-            uint256 up,
+            uint256 _mp /* silence warning */,
+            uint256 _up /* silence warning */,
             uint256 down
         ) = _setupVolatilityTest();
         matchingEngine.limitBuy(
@@ -820,16 +815,19 @@ contract MarketOrderTest is BaseSetup {
         console.log("result: ", result);
         // check computed result
         assert(result == bidHead);
-        (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine
-            .marketSell(
-                address(base),
-                address(quote),
-                1e8,
-                true,
-                5,
-                0,
-                trader1
-            );
+        (
+            uint256 makePrice,
+            uint256 _placed /* silence warning */,
+            uint256 _matched /* silence warning */
+        ) = matchingEngine.marketSell( // silence warning
+                    address(base),
+                    address(quote),
+                    1e8,
+                    true,
+                    5,
+                    0,
+                    trader1
+                );
         // check make price is equal to computed result
         console.log("make price: ", makePrice);
         assert(makePrice == result);

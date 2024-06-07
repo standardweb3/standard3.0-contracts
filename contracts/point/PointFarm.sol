@@ -4,11 +4,12 @@ pragma solidity ^0.8.24;
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {MembershipLib} from "./libraries/MembershipLib.sol";
 import {PointAccountantLib} from "./libraries/PointAccountantLib.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 
 /// @author Hyungsuk Kang <hskang9@gmail.com>
 /// @title Standard Membership registration and subscription
-contract PointFarm is AccessControl {
+contract PointFarm is AccessControl, Initializable {
     using MembershipLib for MembershipLib.Member;
     using PointAccountantLib for PointAccountantLib.State;
 
@@ -21,11 +22,12 @@ contract PointFarm is AccessControl {
     error InvalidRole(bytes32 role, address sender);
     error InvalidAccess(address sender, address engine);
 
-    event MemberRegistered(uint32 uid, uint8 metaId, address account);
+    event MemberRegistered(uint256 uid, uint8 metaId, address account);
     event MemberSubscribed(uint256 at, uint256 until, address with);
-    event MetaSet(uint32 uid, uint8 metaId);
+    event MetaSet(uint256 uid, uint8 metaId);
     event QuotaSet(uint8 metaId, uint32 quota);
     event PointReported(address account, uint256 amount);
+    event PointMatchReported(address sender, address owner, uint256 amount);
     event PenaltyReported(address account, uint256 amount);
     event PenaltyRemoved(address account, uint256 amount);
     event MultiplierSet(
@@ -39,6 +41,7 @@ contract PointFarm is AccessControl {
 
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(PROMOTER_ROLE, msg.sender);
     }
 
     function initialize(
@@ -48,7 +51,7 @@ contract PointFarm is AccessControl {
         address matchingEngine_,
         address point_,
         address stablecoin_
-    ) external {
+    ) external initializer {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
         }
@@ -57,7 +60,6 @@ contract PointFarm is AccessControl {
         _membership.weth = weth_;
         _accountant.matchingEngine = matchingEngine_;
         _accountant.point = point_;
-        _accountant.stablecoin = stablecoin_;
         _accountant._setBaseMultiplier(10000);
         _accountant._setStablecoin(stablecoin_);
     }
@@ -139,7 +141,7 @@ contract PointFarm is AccessControl {
         emit QuotaSet(metaId_, quota_);
     }
 
-    function setMeta(uint32 uid_, uint8 metaId_) external {
+    function setMeta(uint256 uid_, uint8 metaId_) external {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
         }
@@ -174,7 +176,7 @@ contract PointFarm is AccessControl {
     function register(
         uint8 metaId_,
         address feeToken_
-    ) external returns (uint32 uid) {
+    ) external returns (uint256 uid) {
         // check if metaId is valid, meta only supports 1~11
         if (metaId_ == 0 || _membership.metas[metaId_].metaId != metaId_) {
             revert InvalidMeta(metaId_, msg.sender);
@@ -191,7 +193,7 @@ contract PointFarm is AccessControl {
         return uid;
     }
 
-    function registerETH(uint8 metaId_) external payable returns (uint32 uid) {
+    function registerETH(uint8 metaId_) external payable returns (uint256 uid) {
         require(msg.value > 0, "Membership: zero value ETH");
         IWETH(_membership.weth).deposit{value: msg.value}();
         uid = _membership._register(metaId_, _membership.weth, false);
@@ -206,7 +208,7 @@ contract PointFarm is AccessControl {
      * @param feeToken_ The address of the token to pay the fee
      */
     function subscribe(
-        uint32 uid_,
+        uint256 uid_,
         address feeToken_,
         uint64 blocks_
     ) external returns (uint256 at, uint256 until, address with) {
@@ -215,7 +217,7 @@ contract PointFarm is AccessControl {
         return (at, until, with);
     }
 
-    function subscribeETH(uint32 uid_, uint64 blocks_) external payable returns (uint256 at, uint256 until, address with) {
+    function subscribeETH(uint256 uid_, uint64 blocks_) external payable returns (uint256 at, uint256 until, address with) {
         require(msg.value > 0, "Membership: zero value");
         IWETH(_membership.weth).deposit{value: msg.value}();
         (at, until, with) = _membership._subscribe(uid_, _membership.weth, blocks_);
@@ -224,7 +226,7 @@ contract PointFarm is AccessControl {
     }
 
     function offerTrial(
-        uint32 uid_,
+        uint256 uid_,
         address holder_,
         uint256 blocks_
     ) external {
@@ -236,22 +238,22 @@ contract PointFarm is AccessControl {
 
     /// @dev unsubscribe: Unsubscribe from the membership
     /// @param uid_ The id of the ABT to unsubscribe with
-    function unsubscribe(uint32 uid_) external {
+    function unsubscribe(uint256 uid_) external {
         _membership._unsubscribe(uid_);
     }
 
     function balanceOf(
         address who,
-        uint32 uid_
+        uint256 uid_
     ) external view returns (uint256) {
         return _membership._balanceOf(who, uid_);
     }
 
-    function getSubSTND(uint32 uid_) external view returns (uint64) {
+    function getSubSTND(uint256 uid_) external view returns (uint64) {
         return _membership._getSubSTND(uid_);
     }
 
-    function getSubStatus(uint32 uid_) external view returns (MembershipLib.SubStatus memory status) {
+    function getSubStatus(uint256 uid_) external view returns (MembershipLib.SubStatus memory status) {
         return _membership._getSubStatus(uid_);
     }
 
@@ -261,12 +263,12 @@ contract PointFarm is AccessControl {
         return _membership.metas[metaId_];
     }
 
-    function getLvl(uint32 uid_) external view returns (uint8 lvl) {
+    function getLvl(uint256 uid_) external view returns (uint8 lvl) {
         return _membership._getLvl(uid_);
     }
 
-    function isSubscribed(uint32 uid_) external view returns (bool) {
-        return _membership._isSubscribed(uid_);
+    function isSubscribed(address account) external view returns (bool) {
+        return _membership._isSubscribed(account);
     }
 
     function isReportable() external view returns (bool) {
@@ -274,11 +276,11 @@ contract PointFarm is AccessControl {
     }
 
     function feeOf(
-        uint32 uid,
+        address account,
         bool isMaker
     ) external view returns (uint32 feeNum) {
-        if(_membership._isSubscribed(uid)) {
-            return _membership._getFeeRate(uid, isMaker);
+        if(_membership._isSubscribed(account)) {
+            return _membership._getFeeRate(account, isMaker);
         } else {
             return 10000;
         }
@@ -322,69 +324,36 @@ contract PointFarm is AccessControl {
 
     /**
      * Officially report trading point on matching engine.
-     * @param uid user id from membership. currently redundant for now. input 0 then report is not applied.
-     * @param base base token address
-     * @param quote quote token address
+     * @param orderbook orderbook address
+     * @param give input token address for matching orders
      * @param isBid order type: if true, buy. if false, sell.
-     * @param account account to mint point to
+     * @param sender address of sender
+     * @param owner address of owner
      * @param amount amount to mint
      */
-    function report(
-        uint32 uid,
-        address base,
-        address quote,
+    function reportMatch(
+        address orderbook,
+        address give,
         bool isBid,
-        address account,
+        address sender,
+        address owner,
         uint256 amount
     ) external returns (bool) {
         if (msg.sender != _accountant.matchingEngine) {
             revert InvalidAccess(msg.sender, _accountant.matchingEngine);
         }
         uint256 point = _accountant._report(
-            uid,
-            base,
-            quote,
+            orderbook,
+            give,
             isBid,
-            account,
+            sender,
+            owner,
             amount,
-            _membership._getPointX(uid)
+            _membership._getPointX(_membership.defaultUIDs[sender]),
+            _membership._getPointX(_membership.defaultUIDs[owner])
         );
         if (point > 0) {
-            emit PointReported(account, point);
-        }
-        return true;
-    }
-
-    /**
-     * Officially report trading penalty on matching engine.
-     * @param uid user id from membership. currently redundant for now. input 0 then report is not applied.
-     * @param base base token address
-     * @param quote quote token address
-     * @param isBid order type: if true, buy. if false, sell.
-     * @param account account to mint point to
-     * @param amount amount to mint
-     */
-    function reportCancel(
-        uint32 uid,
-        address base,
-        address quote,
-        bool isBid,
-        address account,
-        uint256 amount
-    ) external returns (bool) {
-        if (msg.sender != _accountant.matchingEngine) {
-            revert InvalidAccess(msg.sender, _accountant.matchingEngine);
-        }
-        uint256 penalty = _accountant._reportCancel(
-            uid,
-            base,
-            quote,
-            isBid,
-            account,
-            amount
-        );
-        if (penalty > 0) {
-            emit PenaltyReported(account, penalty);
+            emit PointMatchReported(sender, owner, point);
         }
         return true;
     }

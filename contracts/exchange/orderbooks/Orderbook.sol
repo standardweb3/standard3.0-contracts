@@ -412,11 +412,15 @@ contract Orderbook is IOrderbook, Initializable {
         return isBid ? _bidOrders._isEmpty(price) : _askOrders._isEmpty(price);
     }
 
+    function convertMarket(uint256 amount, bool isBid) external view returns (uint256 converted) {
+        return convert(priceLists.lmp, amount, isBid);
+    }
+
     function convert(
         uint256 price,
         uint256 amount,
         bool isBid
-    ) public view returns (uint256 converted) {
+    ) public view returns (uint256 converted) { 
         if (isBid) {
             // convert base to quote
             return

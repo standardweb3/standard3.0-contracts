@@ -15,14 +15,18 @@ contract Pass is ERC1155, AccessControl, Initializable {
     address public metadata;
     string baseURI;
 
-    uint32 public index;
+    uint256 public index;
 
     mapping(uint256 => uint8) public metaIds;
     mapping(uint8 => uint256) public metaSupply;
+    mapping(uint256 => bool) public soulbound;
 
     error InvalidAccess(address pointFarm_, address sender);
     error MembershipFull(uint32 uid_);
     error InvalidRole(bytes32 role, address sender);
+    error SoulBound(uint256 uid, bool soulbound);
+    error CannotBurn();
+    error NotUIDOwner(address user, uint256 uid);
 
     constructor() ERC1155("https://app.standardweb3.com/api/pass") {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -52,12 +56,9 @@ contract Pass is ERC1155, AccessControl, Initializable {
     /// @dev mint: Mint a new pass for customized pointFarm
     /// @param to_ The address to mint the token to
     /// @param metaId_ The id of the token to mint
-    function mint(address to_, uint8 metaId_) public returns (uint32) {
+    function mint(address to_, uint8 metaId_) public returns (uint256) {
         if (msg.sender != pointFarm) {
             revert InvalidAccess(pointFarm, msg.sender);
-        }
-        if (index >= 4294967295 /* 2**32 -1 */ ) {
-            revert MembershipFull(index);
         }
         metaIds[index] = metaId_;
         _mint(to_, index, 1, abi.encode(metaId_));
@@ -66,38 +67,51 @@ contract Pass is ERC1155, AccessControl, Initializable {
         return index - 1;
     }
 
+    function exterminate(uint256 uid_) external returns (uint32) {
+        if (msg.sender != pointFarm) {
+            revert InvalidAccess(pointFarm, msg.sender);
+        }
+        metaSupply[metaIds[uid_]] -= 1;
+        super.safeTransferFrom(msg.sender, address(0), uid_, 1, "");
+    }
+
     /// @dev metaId: Return the metaId of the membership token
     /// @param uid_ The uid of the token to get the metaId of
     function metaId(uint256 uid_) external view returns (uint8) {
         return metaIds[uid_];
     }
 
-    function setMetaId(uint256 uid_, uint8 metaId_) public {
+    function setMetaId(uint256 uid_, uint8 metaId_) public returns (bool) {
         if (msg.sender != pointFarm) {
             revert InvalidAccess(pointFarm, msg.sender);
         }
         metaIds[uid_] = metaId_;
+        return true;
     }
 
-    function transfer(address _to, uint256 _id) public {
-        if(_to == address(0)) {
-            metaSupply[metaIds[_id]] -= 1;
+    function transfer(address to_, uint256 uid_) public {
+        if (to_ == address(0)) {
+            revert CannotBurn();
         }
-        super.safeTransferFrom(msg.sender, _to, _id, 1, "");
+        if (soulbound[uid_]) {
+            revert SoulBound(uid_, soulbound[uid_]);
+        }
+        super.safeTransferFrom(msg.sender, to_, uid_, 1, "");
     }
 
-    function getMetaSupply(uint8 metaId_) external view returns (uint256 supply) {
+    function getMetaSupply(
+        uint8 metaId_
+    ) external view returns (uint256 supply) {
         return metaSupply[metaId_];
     }
 
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        virtual
-        override (AccessControl, ERC1155)
-        returns (bool)
-    {
-        return interfaceId == type(IERC1155).interfaceId || interfaceId == type(IERC1155MetadataURI).interfaceId
-            || interfaceId == type(IAccessControl).interfaceId || super.supportsInterface(interfaceId);
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override(AccessControl, ERC1155) returns (bool) {
+        return
+            interfaceId == type(IERC1155).interfaceId ||
+            interfaceId == type(IERC1155MetadataURI).interfaceId ||
+            interfaceId == type(IAccessControl).interfaceId ||
+            super.supportsInterface(interfaceId);
     }
 }

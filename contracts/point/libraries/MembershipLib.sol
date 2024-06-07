@@ -11,8 +11,6 @@ interface IPass {
         uint256 uid_
     ) external view returns (uint256);
 
-    function setRegistered(uint256 id_, bool yesOrNo) external;
-
     function metaId(uint256 uid_) external view returns (uint8);
 
     function setMeta(uint256 uid_, uint8 meta_) external;
@@ -20,6 +18,8 @@ interface IPass {
     function getLvl(uint256 uid_) external view returns (uint8);
 
     function getMetaSupply(uint8 metaId_) external view returns (uint256);
+
+    function exterminate(uint256 uid_) external returns (bool);
 }
 
 interface IWETHMinimal {
@@ -35,13 +35,15 @@ interface IERC20Minimal {
 library MembershipLib {
     struct Member {
         /// @dev mapping of member id to subscription status
-        mapping(uint32 => SubStatus) subscriptions;
+        mapping(uint256 => SubStatus) subscriptions;
         /// @dev mapping of subscribed STND of member id
-        mapping(uint32 => uint64) subSTND;
+        mapping(uint256 => uint64) subSTND;
         /// @dev mapping of meta id to register fee status
         mapping(uint8 => Meta) metas;
         /// @dev mapping of meta id to register fee status
         mapping(uint8 => mapping(address => Fees)) fees;
+        /// @dev default UID to participate in point program
+        mapping(address => uint256) defaultUIDs;
         /// @dev address of pass
         address pass;
         /// @dev address of STND
@@ -73,9 +75,10 @@ library MembershipLib {
     }
 
     error InvalidFeeToken(address feeToken_, uint8 metaId_);
-    error MembershipNotOwned(uint32 uid, address owner);
+    error MembershipNotOwned(uint256 uid, address owner);
     error FeeNotConfigured(address feeToken, uint256 fee);
     error NoMultiTokenAccounting(address subscribedWith, address feeToken_);
+    error NotUIDOwner(address user, uint256 uid);
 
     function _setMembership(
         Member storage self,
@@ -101,7 +104,7 @@ library MembershipLib {
 
     function _setMeta(
         Member storage self,
-        uint32 uid_,
+        uint256 uid_,
         uint8 metaId_
     ) internal {
         IPass(self.pass).setMeta(uid_, metaId_);
@@ -127,7 +130,7 @@ library MembershipLib {
         uint8 metaId_,
         address feeToken_,
         bool isDev
-    ) internal returns (uint32 uid) {
+    ) internal returns (uint256 uid) {
         if (!isDev) {
             uint256 regFee = self.fees[metaId_][feeToken_].regFee;
             // check if the fee token is supported
@@ -144,7 +147,28 @@ library MembershipLib {
             TransferHelper.safeTransfer(feeToken_, self.foundation, regFee);
         }
         // issue membership from pass and get id
-        return IPass(self.pass).mint(msg.sender, metaId_);
+        uid = IPass(self.pass).mint(msg.sender, metaId_);
+        // set default UID if minted first time
+        if(self.defaultUIDs[msg.sender] == 0) {
+            self.defaultUIDs[msg.sender] = uid;
+        }
+        return uid;
+    }
+
+    function _setDefaultUID(Member storage self, uint256 uid_) external returns (bool) {
+        // check if user owns the uid
+        if  (IPass(self.pass).balanceOf(msg.sender, uid_) != 1) {
+            revert NotUIDOwner(msg.sender, uid_);
+        }
+        self.defaultUIDs[msg.sender] = uid_;
+        return true;
+    }
+
+    function _exterminate(Member storage self, uint256 uid_, address owner_) external returns (uint32) {
+        if(self.defaultUIDs[owner_] == uid_) {
+            self.defaultUIDs[owner_] = 0;
+        }
+        IPass(self.pass).exterminate(uid_);
     }
 
     /// @dev subscribe: Subscribe to the membership until certain block height
@@ -153,7 +177,7 @@ library MembershipLib {
     /// @param blocks_ The number of blocks to subscribe
     function _subscribe(
         Member storage self,
-        uint32 uid_,
+        uint256 uid_,
         address feeToken_,
         uint64 blocks_
     ) internal returns (uint256 at, uint256 until, address with) {
@@ -213,7 +237,7 @@ library MembershipLib {
 
     /// @dev unsubscribe: Unsubscribe from the membership
     /// @param uid_ The id of the ABT to unsubscribe with
-    function _unsubscribe(Member storage self, uint32 uid_) internal {
+    function _unsubscribe(Member storage self, uint256 uid_) internal {
         // check if the member has the ABT with input id
         if (IPass(self.pass).balanceOf(msg.sender, uid_) == 0) {
             revert MembershipNotOwned(uid_, msg.sender);
@@ -254,7 +278,7 @@ library MembershipLib {
     /// @dev offerBonus: Offer trial blocks to the subscription by promoters
     function _offerTrial(
         Member storage self,
-        uint32 uid_,
+        uint256 uid_,
         address holder_,
         uint256 blocks_
     ) internal {
@@ -279,28 +303,32 @@ library MembershipLib {
     function _balanceOf(
         Member storage self,
         address owner_,
-        uint32 uid_
+        uint256 uid_
     ) internal view returns (uint256) {
         return IPass(self.pass).balanceOf(owner_, uid_);
     }
 
     function _isSubscribed(
         Member storage self,
-        uint32 uid_
+        address account
     ) internal view returns (bool) {
-        return self.subscriptions[uid_].until > block.number;
+        uint256 uid = self.defaultUIDs[account];
+        if(uid == 0) {
+            return false;
+        }
+        return self.subscriptions[uid].until > block.number;
     }
 
     function _getSubSTND(
         Member storage self,
-        uint32 uid_
+        uint256 uid_
     ) internal view returns (uint64) {
         return self.subSTND[uid_];
     }
 
     function _getSubStatus(
         Member storage self,
-        uint32 uid_
+        uint256 uid_
     ) internal view returns (SubStatus memory status) {
         return self.subscriptions[uid_];
     }
@@ -314,7 +342,7 @@ library MembershipLib {
 
     function _getLvl(
         Member storage self,
-        uint32 uid_
+        uint256 uid_
     ) internal view returns (uint8) {
         return IPass(self.pass).metaId(uid_);
     }
@@ -343,8 +371,11 @@ library MembershipLib {
 
     function _getPointX(
         Member storage self,
-        uint32 uid
+        uint256 uid
     ) internal view returns (uint32 feeNum) {
+        if(uid == 0) {
+            return 10000;
+        }
         uint8 level = _getLvl(self, uid);
         // get subscribed STND tokens
         uint64 subSTND = _getSubSTND(self, uid);
@@ -426,9 +457,10 @@ library MembershipLib {
 
     function _getFeeRate(
         Member storage self,
-        uint32 uid,
+        address account,
         bool isMaker
     ) internal view returns (uint32 feeNum) {
+        uint256 uid = self.defaultUIDs[account];
         uint8 level = _getLvl(self, uid);
         // get subscribed STND tokens
         uint64 subSTND = _getSubSTND(self, uid);

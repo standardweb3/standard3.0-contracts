@@ -66,11 +66,24 @@ contract MintTest is PointFarmSetup {
                 address(trader1)
             );
         matchingEngine
-            .limitSell(
+            .limitBuy(
                 address(feeToken),
                 address(stablecoin),
                 1000e8,
                 100e18,
+                true,
+                2,
+                1,
+                address(trader1)
+            );
+        vm.stopPrank();
+        vm.prank(trader2);
+        matchingEngine
+            .limitSell(
+                address(feeToken),
+                address(stablecoin),
+                1000e8,
+                200e18,
                 true,
                 2,
                 1,

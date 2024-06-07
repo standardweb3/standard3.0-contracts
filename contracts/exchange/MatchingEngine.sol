@@ -10,23 +10,23 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 interface IRevenue {
-    function report(
-        uint32 uid,
-        address base,
-        address quote,
+    function reportMatch(
+        address orderbook,
+        address give,
         bool isBid,
         address sender,
+        address owner,
         uint256 amount
     ) external;
 
     function isReportable() external view returns (bool isReportable);
 
     function feeOf(
-        uint32 uid,
+        address account,
         bool isMaker
     ) external view returns (uint32 feeNum);
 
-    function isSubscribed(uint32 uid) external view returns (bool isSubscribed);
+    function isSubscribed(address account) external view returns (bool isSubscribed);
 }
 
 interface IDecimals {
@@ -244,7 +244,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             0,
             quoteAmount,
             true,
-            uid,
             isMaker
         );
 
@@ -305,8 +304,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
                 orderData.withoutFee
             );
         }
-
-        _report(base, quote, true, quoteAmount, orderData.withoutFee, uid);
 
         return (orderData.bidHead, orderData.withoutFee, orderData.makeId);
     }
@@ -382,7 +379,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             0,
             baseAmount,
             false,
-            uid,
             isMaker
         );
 
@@ -442,8 +438,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
                 orderData.withoutFee
             );
         }
-
-        _report(base, quote, false, baseAmount, orderData.withoutFee, uid);
 
         return (orderData.askHead, orderData.withoutFee, orderData.makeId);
     }
@@ -570,7 +564,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             price,
             quoteAmount,
             true,
-            uid,
             isMaker
         );
 
@@ -627,8 +620,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
                 orderData.withoutFee
             );
         }
-
-        _report(base, quote, true, quoteAmount, orderData.withoutFee, uid);
 
         return (price, orderData.withoutFee, orderData.makeId);
     }
@@ -699,7 +690,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             price,
             baseAmount,
             false,
-            uid,
             isMaker
         );
 
@@ -755,8 +745,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
                 orderData.withoutFee
             );
         }
-
-        _report(base, quote, false, baseAmount, orderData.withoutFee, uid);
 
         return (price, orderData.withoutFee, orderData.makeId);
     }
@@ -1297,6 +1285,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
                     remaining,
                     clear
                 );
+                // report points on match
+                _report(orderbook, give, isBid, remaining, owner); 
                 // emit event order matched
                 emit OrderMatched(
                     orderbook,
@@ -1327,6 +1317,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
                     required,
                     clear
                 );
+                // report points on match
+                _report(orderbook, give, isBid, required, owner); 
                 // emit event order matched
                 emit OrderMatched(
                     orderbook,
@@ -1481,26 +1473,25 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     }
 
     function _report(
-        address base,
-        address quote,
+        address orderbook,
+        address give,
         bool isBid,
-        uint256 amount,
-        uint256 placed,
-        uint32 uid
+        uint256 matched,
+        address owner
     ) internal {
         if (
             _isContract(feeTo) &&
             IRevenue(feeTo).isReportable() &&
-            amount - placed > 0
+            matched > 0 
         ) {
-            // report matched amount to accountant
-            IRevenue(feeTo).report(
-                uid,
-                base,
-                quote,
+            // report matched amount to accountant with give token on matching order
+            IRevenue(feeTo).reportMatch(
+                orderbook,
+                give,
                 isBid,
                 msg.sender,
-                amount - placed
+                owner,
+                matched
             );
         }
     }
@@ -1521,7 +1512,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         uint256 price,
         uint256 amount,
         bool isBid,
-        uint32 uid,
         bool isMaker
     ) internal returns (uint256 withoutFee, address pair) {
         // check if amount is zero
@@ -1542,7 +1532,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             revert OrderSizeTooSmall(converted, minRequired);
         }
         // check if sender has uid
-        uint256 fee = _fee(amount, uid, isMaker);
+        uint256 fee = _fee(amount, msg.sender, isMaker);
         withoutFee = amount - fee;
         if (isBid) {
             // transfer input asset give user to this contract
@@ -1574,14 +1564,13 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
 
     function _fee(
         uint256 amount,
-        uint32 uid,
+        address account,
         bool isMaker
     ) internal view returns (uint256 fee) {
-        if (uid != 0 && IRevenue(feeTo).isSubscribed(uid)) {
-            uint32 feeNum = IRevenue(feeTo).feeOf(uid, isMaker);
+        if (_isContract(feeTo) && IRevenue(feeTo).isSubscribed(account)) {
+            uint32 feeNum = IRevenue(feeTo).feeOf(account, isMaker);
             return (amount * feeNum) / feeDenom;
         }
-
         return amount / 100;
     }
 

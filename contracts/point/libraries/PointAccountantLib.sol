@@ -3,9 +3,24 @@ pragma solidity ^0.8.24;
 import {TransferHelper} from "./TransferHelper.sol";
 
 interface IPoint {
-    function mint(address account, uint256 amount) external returns (uint256 minted);
-    function fine(address account, uint256 amount) external returns (uint256 fined);
-    function removePenalty(address account, uint256 amount) external returns (uint256 removed);
+    function mint(
+        address account,
+        uint256 amount
+    ) external returns (uint256 minted);
+    function fine(
+        address account,
+        uint256 amount
+    ) external returns (uint256 fined);
+    function removePenalty(
+        address account,
+        uint256 amount
+    ) external returns (uint256 removed);
+    function mintMatch(
+        address sender,
+        address owner,
+        uint256 sdrAmount,
+        uint256 onrAmount
+    ) external returns (uint256 sdrMinted, uint256 onrMinted);
 }
 
 interface IEngine {
@@ -47,8 +62,8 @@ library PointAccountantLib {
         address matchingEngine;
         /// stablecoin address
         address stablecoin;
-        /// stablecoin decimal
-        uint8 scDecimal;
+        /// one in stablecoin decimal
+        uint256 scOne;
         uint32 currentEvent;
     }
 
@@ -58,12 +73,15 @@ library PointAccountantLib {
     error EventStillOn(uint32 eventId, uint256 endDate);
     error InvalidAddress(address addr);
 
-    function _setStablecoin(State storage self, address stablecoin) internal returns (bool) {
+    function _setStablecoin(
+        State storage self,
+        address stablecoin
+    ) internal returns (bool) {
         if (stablecoin == address(0)) {
             revert InvalidAddress(stablecoin);
         }
         self.stablecoin = stablecoin;
-        self.scDecimal = TransferHelper.decimals(stablecoin);
+        self.scOne = 10 ** TransferHelper.decimals(stablecoin);
         return true;
     }
 
@@ -105,7 +123,7 @@ library PointAccountantLib {
         } else {
             Event memory prevEvent = self.events[self.currentEvent];
             // check if the current event passed
-            if(block.timestamp < prevEvent.endDate) {
+            if (block.timestamp < prevEvent.endDate) {
                 revert EventStillOn(self.currentEvent, prevEvent.endDate);
             }
             if (startDate < prevEvent.endDate) {
@@ -121,10 +139,7 @@ library PointAccountantLib {
         return self.currentEvent;
     }
 
-    function _setEvent(
-        State storage self,
-        uint256 endDate
-    ) internal {
+    function _setEvent(State storage self, uint256 endDate) internal {
         self.events[self.currentEvent].endDate = endDate;
     }
 
@@ -138,7 +153,7 @@ library PointAccountantLib {
     function _checkEventOn(
         State storage self
     ) internal view returns (bool isEventOn) {
-        if(self.currentEvent == 0) {
+        if (self.currentEvent == 0) {
             return false;
         }
         return
@@ -155,44 +170,6 @@ library PointAccountantLib {
     }
 
     function _reportCancel(
-        State storage self,
-        uint32 uid,
-        address base,
-        address quote,
-        bool isBid,
-        address account,
-        uint256 amount
-    ) internal returns (uint256 points) {
-         // check uid
-        // if a user just wants to save gas, set uid 0 and don't participate in event
-        if (uid == 0) {
-            return 0;
-        }
-        // check event id and end date
-        if (!_checkEventOn(self)) {
-            return 0;
-        }
-
-        // compute usdt value
-        address asset = isBid ? quote : base;
-        address pair = IEngine(self.matchingEngine).getPair(base, quote);
-        uint256 stablecoinValue = IEngine(self.matchingEngine).convert(
-            asset,
-            self.stablecoin,
-            amount,
-            true
-        );
-        uint32 multipliers = self.baseMultiplier * _getMultiplier(self, pair, isBid);
-        // points = (multipliers in 4 decimals x2) * (point decimal) / (denominator x2) * (stablecoin value decimal)
-        points = (multipliers * stablecoinValue) * 1e18 / (DENOM * DENOM) * self.scDecimal;
-        IPoint(self.point).fine(
-            account,
-            points
-        );
-        return (points);
-    }
-
-    function _report(
         State storage self,
         uint32 uid,
         address base,
@@ -221,14 +198,72 @@ library PointAccountantLib {
             amount,
             true
         );
-        uint32 multipliers = self.baseMultiplier * _getMultiplier(self, pair, isBid);
-        // points = (multipliers in 4 decimals x2) * (point decimal) / (denominator x2) * (stablecoin value decimal)
-        points = (multipliers * stablecoinValue) * 1e18 / (DENOM * DENOM) * self.scDecimal;
-        IPoint(self.point).mint(
-            account,
-            points
-        );
+        uint32 multipliers = self.baseMultiplier *
+            _getMultiplier(self, pair, isBid);
+        // points = (multipliers in 4 decimals x2) * (point decimal) / (denominator x3) * (stablecoin value decimal)
+        points =
+            (((multipliers * stablecoinValue) * 1e18 * pointx) / (1e12)) *
+            self.scOne;
+        IPoint(self.point).fine(account, points);
         return (points);
+    }
+
+    function _report(
+        State storage self,
+        address orderbook,
+        address give,
+        bool isBid,
+        address sender,
+        address owner,
+        uint256 amount,
+        uint32 sndPointx,
+        uint32 onrPointx
+    ) internal returns (uint256 points) {
+        // check uid
+        // if a user just wants to save gas, set uid 0 and don't participate in event
+        /*
+        if (saveGas) {
+            return 0;
+        }
+        */
+        // check event id and end date
+        if (!_checkEventOn(self)) {
+            return 0;
+        }
+
+        // compute usdt value
+        uint256 stablecoinValue = IEngine(self.matchingEngine).convert(
+            give,
+            self.stablecoin,
+            amount,
+            true
+        );
+
+        uint256 snd = _getPointAmount(self, orderbook, isBid, stablecoinValue, sndPointx);
+        uint256 onr = _getPointAmount(self, orderbook, isBid, stablecoinValue, onrPointx);
+
+        IPoint(self.point).mintMatch(
+            sender,
+            owner,
+            snd,
+            onr
+        );
+
+        return (points);
+    }
+
+    function _getPointAmount(
+        State storage self,
+        address orderbook,
+        bool isBid,
+        uint256 stablecoinValue,
+        uint32 pointx
+    ) internal view returns (uint256 point) {
+        uint32 multipliers = self.baseMultiplier *
+            _getMultiplier(self, orderbook, isBid);
+        uint256 numerator = multipliers * stablecoinValue * pointx * 1e18;
+        uint256 denominator = 1e12 * self.scOne;
+        return numerator / denominator;
     }
 
     function _reportBonus(

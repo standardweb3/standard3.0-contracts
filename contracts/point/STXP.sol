@@ -20,7 +20,7 @@ contract STXP is
 
     error AmountExceededBalance(address account, uint256 amount, uint256 balance);
 
-    constructor() ERC20("Standard(STND) Point", "STXP") {
+    constructor() ERC20("Standard(STND) Xperience Point", "STXP") {
         // Grant the contract deployer the default admin role: they can grant and revoke any roles
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
 
@@ -38,6 +38,12 @@ contract STXP is
             _mint(to, amount - penalties[to]);
             return amount - penalties[to];
         }
+    }
+
+    function mintMatch(address sender, address owner, uint256 sdrAmount, uint256 onrAmount) public onlyRole(MINTER_ROLE) returns (uint256 sdrMinted, uint256 onrMinted) {
+        _mint(sender, sdrAmount);
+        _mint(owner, onrAmount);
+        return (sdrAmount, onrAmount);
     }
 
     function penaltyOf(address account) external view returns (uint256 penalty) {

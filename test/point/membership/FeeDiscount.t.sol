@@ -25,7 +25,7 @@ contract FeeDiscountTest is PointFarmSetup {
             1,
             address(trader1)
         );
-        assert(pointFarm.feeOf(1, true) == 5000);
+        assert(pointFarm.feeOf(address(trader1), true) == 5000);
     }
 
     // subscribing with stnd gets extra fee discount
@@ -34,7 +34,7 @@ contract FeeDiscountTest is PointFarmSetup {
         vm.startPrank(trader1);
         pointFarm.setSTND(address(feeToken));
         pointFarm.subscribe(1, address(feeToken), 800000);
-        assert(pointFarm.feeOf(1, true) == 3750);
+        assert(pointFarm.feeOf(address(trader1), true) == 3750);
     }
 
     // unsubscribed member gets no fee discount
@@ -52,6 +52,6 @@ contract FeeDiscountTest is PointFarmSetup {
             1,
             address(trader1)
         );
-        assert(pointFarm.feeOf(1, true) == 10000);
+        assert(pointFarm.feeOf(address(trader1), true) == 10000);
     }
 }

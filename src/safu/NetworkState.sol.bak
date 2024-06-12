@@ -1,6 +1,6 @@
 pragma solidity ^0.8.24;
-import {Initializable} from "@openzeppelin/src-upgradeable/proxy/utils/Initializable.sol";
-import {ReentrancyGuard} from "@openzeppelin/src/security/ReentrancyGuard.sol";
+import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {NetworkStateLibrary} from "./libraries/NetworkStateLibrary.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 import {TransferHelper} from "./libraries/TransferHelper.sol";

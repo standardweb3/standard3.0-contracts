@@ -1,7 +1,8 @@
 pragma solidity ^0.8.24;
 
-import "base64-sol/base64.sol";
-import "@openzeppelin/src/utils/Strings.sol";
+import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+
 
 contract PureSVG {
     using Strings for uint256;

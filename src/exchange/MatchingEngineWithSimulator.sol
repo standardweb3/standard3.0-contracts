@@ -4,10 +4,10 @@ pragma solidity ^0.8.24;
 import {IOrderbookFactory} from "./interfaces/IOrderbookFactory.sol";
 import {IOrderbook, ExchangeOrderbook} from "./interfaces/IOrderbook.sol";
 import {TransferHelper} from "./libraries/TransferHelper.sol";
-import {Initializable} from "@openzeppelin/src-upgradeable/proxy/utils/Initializable.sol";
+import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
-import {ReentrancyGuard} from "@openzeppelin/src/security/ReentrancyGuard.sol";
-import {AccessControl} from "@openzeppelin/src/access/AccessControl.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 interface IRevenue {
     function report(
@@ -132,7 +132,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     }
 
     constructor() {
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
     /**

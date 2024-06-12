@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {TransferHelper} from "./libraries/TransferHelper.sol";
-import {Initializable} from "@openzeppelin/src-upgradeable/proxy/utils/Initializable.sol";
+import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 interface IPoint {
     function balanceOf(address account) external returns (uint256 balance);

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.24;
 
-import {AccessControl} from "@openzeppelin/src/access/AccessControl.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {Orderbook, IOrderbook} from "./Orderbook.sol";
 import {CloneFactory} from "../libraries/CloneFactory.sol";
 import {IOrderbookFactory} from "../interfaces/IOrderbookFactory.sol";
-import {Initializable} from "@openzeppelin/src-upgradeable/proxy/utils/Initializable.sol";
+import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 interface IERC20 {
     function symbol() external view returns (string memory);

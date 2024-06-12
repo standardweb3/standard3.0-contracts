@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import "@openzeppelin/src/access/AccessControl.sol";
-import "@openzeppelin/src/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title TokenDispenser
@@ -25,7 +25,7 @@ contract TokenDispenser is AccessControl {
      * @dev Constructor that gives the deployer the default admin role.
      */
     constructor() {
-        _setupRole(ADMIN_ROLE, msg.sender);
+        _grantRole(ADMIN_ROLE, msg.sender);
     }
 
     /**

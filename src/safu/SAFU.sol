@@ -3,9 +3,9 @@
 
 pragma solidity ^0.8.24;
 
-import {IERC20} from "@openzeppelin/src/token/ERC20/IERC20.sol";
-import {IERC20Metadata} from "@openzeppelin/src/token/ERC20/extensions/IERC20Metadata.sol";
-import {Context} from "@openzeppelin/src/utils/Context.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 interface IERC20Errors {
     /**
      * @dev Indicates an error related to the current `balance` of a `sender`. Used in transfers.

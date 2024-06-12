@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 import "./CloneFactory.sol";
 import "../interfaces/IBond.sol";
 import "../interfaces/IEngine.sol";
-import "@openzeppelin/src/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 library NetworkStateLibrary {
     struct CDP {

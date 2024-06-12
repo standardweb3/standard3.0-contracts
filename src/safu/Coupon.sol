@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/src/token/ERC721/ERC721.sol";
-import "@openzeppelin/src/access/AccessControl.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./interfaces/ICoupon.sol";
 import "./interfaces/INetworkState.sol";
 
@@ -20,11 +20,11 @@ contract Coupon is ERC721, AccessControl  {
 
     constructor(address manager_)
     ERC721("SAFU BOND COUPON", "COUPON") {
-        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
 
-        _setupRole(MINTER_ROLE, _msgSender());
-        _setupRole(MINTER_ROLE, manager);
-        _setupRole(BURNER_ROLE, _msgSender());
+        _grantRole(MINTER_ROLE, _msgSender());
+        _grantRole(MINTER_ROLE, manager);
+        _grantRole(BURNER_ROLE, _msgSender());
         manager = manager_;
     }
     
@@ -48,10 +48,6 @@ contract Coupon is ERC721, AccessControl  {
     function burnFromVault(uint vaultId_) external{
         require(INetworkState(manager).getVault(vaultId_)  == _msgSender(), "MTRV1: Caller is not vault");
         _burn(vaultId_);
-    }
-
-    function exists(uint256 tokenId_) external view  returns (bool) {
-        return _exists(tokenId_);
     }
 }
 

@@ -2,8 +2,8 @@ pragma solidity ^0.8.24;
 
 import {ITimeBrawl, ITimeBrawlFactory} from "./interfaces/ITimeBrawlFactory.sol";
 import {TransferHelper} from "./libraries/TransferHelper.sol";
-import {AccessControl} from "@openzeppelin/src/access/AccessControl.sol";
-import {Initializable} from "@openzeppelin/src-upgradeable/proxy/utils/Initializable.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 interface IEngine {
     function mktPrice(address base, address quote) external returns (uint256);
@@ -19,7 +19,7 @@ contract BrawlPortal is AccessControl, Initializable {
     error NotBet(uint256 id, address submitted, address bet);
 
     constructor() {
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         feeTo = msg.sender;
     }
 

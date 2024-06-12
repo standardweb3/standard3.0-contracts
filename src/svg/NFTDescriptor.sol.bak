@@ -5,7 +5,7 @@ import "base64-sol/base64.sol";
 import "./libraries/NFTSVG.sol";
 import "./interfaces/INFTSVG.sol";
 import "./interfaces/INFTConstructor.sol";
-import "@openzeppelin/src/utils/Strings.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 interface IERC20Metadata {
   function symbol() external view returns (string memory);

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.24;
 
-import {AccessControl} from "@openzeppelin/src/access/AccessControl.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {MembershipLib} from "./libraries/MembershipLib.sol";
 import {PointAccountantLib} from "./libraries/PointAccountantLib.sol";
-import {Initializable} from "@openzeppelin/src-upgradeable/proxy/utils/Initializable.sol";
+import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 
 /// @author Hyungsuk Kang <hskang9@gmail.com>
@@ -40,8 +40,8 @@ contract PointFarm is AccessControl, Initializable {
     event EventCreated(uint32 eventId, uint256 startDate, uint256 endDate);
 
     constructor() {
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _setupRole(PROMOTER_ROLE, msg.sender);
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(PROMOTER_ROLE, msg.sender);
     }
 
     function initialize(

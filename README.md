@@ -1,66 +1,50 @@
-## Foundry
+<div align="center">
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+<img src="./media/standard_profile.jpeg" width=100/>
 
-Foundry consists of:
+  <h1><code>Standard</code></h1>
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart src, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+  <p>
+    <strong>A monorepo for Standard Protocol contracts</strong>
+  </p>
 
-## Documentation
+  <p>
+    <a href="https://t.me/standard_protocol"><img alt="Telegram Chat" src="https://img.shields.io/badge/telegram-chat-blue?logo=telegram"></a>
+  </p>
+</div>
 
-https://book.getfoundry.sh/
+## What is Standard Protocol?
+![overview](./media/overview.png)
 
-## Usage
+Standard Protocol operates as a comprehensive, all-encompassing application designed specifically for the blockchain universe. Its primary role is to provide a foundation or starting point for newly developed blockchain spaces, ensuring they have the necessary tools and environment to establish a thriving and dynamic ecosystem. The unique aspect of Standard is its ability to function as a unified execution layer empowering its users with fully decentralized system. This unified layer is a game-changer as it bridges the gap between different blockchain systems, enabling seamless interoperability among them. In simpler terms, regardless of which blockchain you're working on or interacting with, Standard ensures they can communicate and operate with each other without complications, all on your control.
 
-### Build
+## The Standard Super App: Your Web3.0 Financial Gateway
 
-```shell
-$ forge build
-```
+The **Standard super app** stands as a pinnacle in the web3.0 ecosystem, bestowing individuals with a suite of integrated apps. Each app is meticulously designed to elevate diverse financial management and trading needs. Here's an insight into what each facet of Standard offers:
 
-### Test
+In essence, the **Standard super app** unifies **pass** (governance & credit management), **exchange** (digital trading), **SAFU** (financial standardization), and **SAIL** (wealth strategy) into a cohesive ecosystem. This ensemble delivers a holistic suite of financial instruments, streamlining the intricacies of digital finance. With Standard, users are equipped, empowered, and emboldened to architect their financial destinies. It's not merely a platform but a beacon heralding the dawn of decentralized economic empowerment.
 
-```shell
-$ forge test
-```
+## Docs
 
-### Format
+For more information on the concepts and how each app works, visit the official gitbook documentation.
 
-```shell
-$ forge fmt
-```
+<a href="https://docs.standardweb3.com" target="_blank" style="background-color:#3F3F3F; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Go to Official Documentation</a>
 
-### Gas Snapshots
 
-```shell
-$ forge snapshot
-```
+## Security
 
-### Anvil
+### Tests
+[Contract Test Directory](./test)
 
-```shell
-$ anvil
-```
+### Audits
+[Hacken in 2023](./audits/hacken-2023)
+[Defimoon in 2023](./audits/defimoon-2023)
 
-### Deploy
+## Disclaimer
 
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
+_These smart contracts and code are being provided as is. No guarantee, representation or warranty is being made, express or implied, as to the safety or correctness of the user interface or the smart contracts and code. There can be no assurance they will work as intended, and users may experience delays, failures, errors, omissions or loss of transmitted information. In addition, using these smart contracts and code should be conducted in accordance with applicable law. Nothing in this repo should be construed as investment advice or legal advice for any particular facts or circumstances and is not meant to replace competent counsel. It is strongly advised for you to contact a reputable attorney in your jurisdiction for any questions or concerns with respect thereto. Standard is not liable for any use of the foregoing and users should proceed with caution and use at their own risk._
 
-### Cast
+## License
 
-```shell
-$ cast <subcommand>
-```
+This software code is licensed with [BSL-1.1](./LICENSE).
 
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```

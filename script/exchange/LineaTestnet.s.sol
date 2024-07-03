@@ -3,14 +3,14 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
-import {MockBTC} from "../../contracts/mock/MockBTC.sol";
-import {MockToken} from "../../contracts/mock/MockToken.sol";
-import {MatchingEngine} from "../../contracts/exchange/MatchingEngine.sol";
-import {OrderbookFactory} from "../../contracts/exchange/orderbooks/OrderbookFactory.sol";
-import {Orderbook} from "../../contracts/exchange/orderbooks/Orderbook.sol";
+import {MockBTC} from "../../src/mock/MockBTC.sol";
+import {MockToken} from "../../src/mock/MockToken.sol";
+import {MatchingEngine} from "../../src/exchange/MatchingEngine.sol";
+import {OrderbookFactory} from "../../src/exchange/orderbooks/OrderbookFactory.sol";
+import {Orderbook} from "../../src/exchange/orderbooks/Orderbook.sol";
 import {Multicall3} from "../Multicall3.sol";
-import {TokenDispenser} from "../../contracts/exchange/airdrops/TokenDispenser.sol";
-import {ExchangeOrderbook} from "../../contracts/exchange/libraries/ExchangeOrderbook.sol";
+import {TokenDispenser} from "../../src/exchange/airdrops/TokenDispenser.sol";
+import {ExchangeOrderbook} from "../../src/exchange/libraries/ExchangeOrderbook.sol";
 
 contract Deployer is Script {
     function _setDeployer() internal {
@@ -43,7 +43,7 @@ contract DeployTestnetAssets is Deployer {
     }
 }
 
-contract DeployexchangeMainnetContracts is Deployer {
+contract DeployexchangeMainnetsrc is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     /// Second per block to finalize
     uint32 constant spb = 12;

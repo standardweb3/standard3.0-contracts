@@ -1,0 +1,7 @@
+name: src
+title: src
+version: 5.x
+prerelease: false
+nav:
+  - modules/ROOT/nav.adoc
+  - modules/api/nav.adoc

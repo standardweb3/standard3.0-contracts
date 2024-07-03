@@ -1,17 +1,17 @@
 pragma solidity >=0.8;
 
-import {MockToken} from "../../../contracts/mock/MockToken.sol";
-import {MockBase} from "../../../contracts/mock/MockBase.sol";
-import {MockQuote} from "../../../contracts/mock/MockQuote.sol";
-import {MockBTC} from "../../../contracts/mock/MockBTC.sol";
-import {ErrToken} from "../../../contracts/mock/MockTokenOver18Decimals.sol";
+import {MockToken} from "../../../src/mock/MockToken.sol";
+import {MockBase} from "../../../src/mock/MockBase.sol";
+import {MockQuote} from "../../../src/mock/MockQuote.sol";
+import {MockBTC} from "../../../src/mock/MockBTC.sol";
+import {ErrToken} from "../../../src/mock/MockTokenOver18Decimals.sol";
 import {Utils} from "../../utils/Utils.sol";
-import {MatchingEngine} from "../../../contracts/exchange/MatchingEngine.sol";
-import {OrderbookFactory} from "../../../contracts/exchange/orderbooks/OrderbookFactory.sol";
-import {Orderbook} from "../../../contracts/exchange/orderbooks/Orderbook.sol";
-import {ExchangeOrderbook} from "../../../contracts/exchange/libraries/ExchangeOrderbook.sol";
-import {IOrderbookFactory} from "../../../contracts/exchange/interfaces/IOrderbookFactory.sol";
-import {WETH9} from "../../../contracts/mock/WETH9.sol";
+import {MatchingEngine} from "../../../src/exchange/MatchingEngine.sol";
+import {OrderbookFactory} from "../../../src/exchange/orderbooks/OrderbookFactory.sol";
+import {Orderbook} from "../../../src/exchange/orderbooks/Orderbook.sol";
+import {ExchangeOrderbook} from "../../../src/exchange/libraries/ExchangeOrderbook.sol";
+import {IOrderbookFactory} from "../../../src/exchange/interfaces/IOrderbookFactory.sol";
+import {WETH9} from "../../../src/mock/WETH9.sol";
 import {BaseSetup} from "../OrderbookBaseSetup.sol";
 import {console} from "forge-std/console.sol";
 import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
@@ -221,14 +221,14 @@ contract ConversionTest is BaseSetup {
             diffTrader1BTCBalance
         );
 
-        // Trader2's btc balance should be increased by 9.99e11
-        assert(diffTrader2BTCBalance == 99e10);
+        // Trader2's btc balance should be increased by 9.97e11
+        assert(diffTrader2BTCBalance == 997e9);
         // Trader2's token1 balance should be decreased by 10e18
         assert(diffTrader2T1Balance == 1e19);
         // Trader1's btc balance should be decreased by 10000e8
         assert(diffTrader1BTCBalance == 1e12);
-        // Trader1's token1 balance should be increased by 9.99e18
-        assert(diffTrader1T1Balance == 99e17);
+        // Trader1's token1 balance should be increased by 9.97e18
+        assert(diffTrader1T1Balance == 997e16);
 
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(btc)))
@@ -302,14 +302,14 @@ contract ConversionTest is BaseSetup {
             diffTrader1BTCBalance
         );
 
-        // Trader2's btc balance should be increased by 9.99e11
-        assert(diffTrader2BTCBalance == 99e10);
+        // Trader2's btc balance should be increased by 9.97e11
+        assert(diffTrader2BTCBalance == 997e9);
         // Trader2's token1 balance should be decreased by 10e18
         assert(diffTrader2T1Balance == 1e19);
         // Trader1's btc balance should be decreased by 10000e8
         assert(diffTrader1BTCBalance == 10000e8);
-        // Trader1's token1 balance should be increased by 9.99e18
-        assert(diffTrader1T1Balance == 99e17);
+        // Trader1's token1 balance should be increased by 9.97e18
+        assert(diffTrader1T1Balance == 997e16);
 
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(btc)))
@@ -382,15 +382,15 @@ contract ConversionTest is BaseSetup {
             diffTrader1BTCBalance
         );
 
-        // Trader2's token2 balance should be increased by 9.99e21
-        assert(diffTrader2T2Balance == 99e20);
+        // Trader2's token2 balance should be increased by 9.97e21
+        assert(diffTrader2T2Balance == 997e19);
 
         // Trader2's token1 balance should be decreased by 10e8
         assert(diffTrader2BTCBalance == 1e9);
         // Trader1's token2 balance should be decreased by 10000e18
         assert(diffTrader1T2Balance == 10000e18);
-        // Trader1's token1 balance should be increased by 9.99e8
-        assert(diffTrader1BTCBalance == 99e7);
+        // Trader1's token1 balance should be increased by 9.97e8
+        assert(diffTrader1BTCBalance == 997e6);
 
         book = Orderbook(
             payable(orderbookFactory.getPair(address(btc), address(token2)))
@@ -463,15 +463,15 @@ contract ConversionTest is BaseSetup {
             diffTrader1BTCBalance
         );
 
-        // Trader2's token2 balance should be increased by 9.99e21
-        assert(diffTrader2T2Balance == 99e20);
+        // Trader2's token2 balance should be increased by 9.97e21
+        assert(diffTrader2T2Balance == 997e19);
 
         // Trader2's token1 balance should be decreased by 10e8
         assert(diffTrader2BTCBalance == 10e8);
         // Trader1's token2 balance should be decreased by 10000e18
         assert(diffTrader1T2Balance == 10000e18);
-        // Trader1's token1 balance should be increased by 9.99e8
-        assert(diffTrader1BTCBalance == 99e7);
+        // Trader1's token1 balance should be increased by 9.97e8
+        assert(diffTrader1BTCBalance == 997e6);
 
         book = Orderbook(
             payable(orderbookFactory.getPair(address(btc), address(token2)))
@@ -544,15 +544,15 @@ contract ConversionTest is BaseSetup {
             diffTrader1T1Balance
         );
 
-        // Trader2's token2 balance should be increased by 9.99e21
-        assert(diffTrader2T2Balance == 99e20);
+        // Trader2's token2 balance should be increased by 9.97e21
+        assert(diffTrader2T2Balance == 997e19);
         console.log("flag");
         // Trader2's token1 balance should be decreased by 10e18
         assert(diffTrader2T1Balance == 1e19);
         // Trader1's token2 balance should be decreased by 10000e18
         assert(diffTrader1T2Balance == 1e22);
-        // Trader1's token1 balance should be increased by 9.99e18
-        assert(diffTrader1T1Balance == 99e17);
+        // Trader1's token1 balance should be increased by 9.97e18
+        assert(diffTrader1T1Balance == 997e16);
 
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
@@ -625,14 +625,14 @@ contract ConversionTest is BaseSetup {
             diffTrader1T1Balance
         );
 
-        // Trader2's token2 balance should be increased by 9.99e21
-        assert(diffTrader2T2Balance == 99e20);
+        // Trader2's token2 balance should be increased by 9.97e21
+        assert(diffTrader2T2Balance == 997e19);
 
         // Trader2's token1 balance should be decreased by 10e18
         assert(diffTrader2T1Balance == 1e19);
         // Trader1's token2 balance should be decreased by 10000e18
         assert(diffTrader1T2Balance == 1e22);
-        // Trader1's token1 balance should be increased by 9.99e18
-        assert(diffTrader1T1Balance == 99e17);
+        // Trader1's token1 balance should be increased by 9.97e18
+        assert(diffTrader1T1Balance == 997e16);
     }
 }

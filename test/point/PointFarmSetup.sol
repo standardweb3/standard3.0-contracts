@@ -2,15 +2,15 @@ pragma solidity >=0.8;
 import {console} from "forge-std/console.sol";
 import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 import {Utils} from "../utils/Utils.sol";
-import {MatchingEngine} from "../../contracts/exchange/MatchingEngine.sol";
-import {OrderbookFactory} from "../../contracts/exchange/orderbooks/OrderbookFactory.sol";
-import {MockToken} from "../../contracts/mock/MockToken.sol";
-import {Orderbook} from "../../contracts/exchange/orderbooks/Orderbook.sol";
-import {WETH9} from "../../contracts/mock/WETH9.sol";
-import {PointFarm} from "../../contracts/point/PointFarm.sol";
-import {Pass} from "../../contracts/point/Pass.sol";
-import {STXP} from "../../contracts/point/STXP.sol";
-import {PrizePool} from "../../contracts/point/PrizePool.sol";
+import {MatchingEngine} from "../../src/exchange/MatchingEngine.sol";
+import {OrderbookFactory} from "../../src/exchange/orderbooks/OrderbookFactory.sol";
+import {MockToken} from "../../src/mock/MockToken.sol";
+import {Orderbook} from "../../src/exchange/orderbooks/Orderbook.sol";
+import {WETH9} from "../../src/mock/WETH9.sol";
+import {PointFarm} from "../../src/point/PointFarm.sol";
+import {Pass} from "../../src/point/Pass.sol";
+import {STNDXP} from "../../src/point/STNDXP.sol";
+import {PrizePool} from "../../src/point/PrizePool.sol";
 
 contract PointFarmSetup is Test {
 
@@ -32,7 +32,7 @@ contract PointFarmSetup is Test {
     address public attacker;
     PointFarm public pointFarm;
     Pass public pass;
-    STXP public point;
+    STNDXP public point;
     PrizePool public prizePool;
 
     function setUp() public {
@@ -66,7 +66,7 @@ contract PointFarmSetup is Test {
         matchingEngine.addPair(address(feeToken), address(stablecoin), 10000e8);
         
 
-        point = new STXP();
+        point = new STNDXP();
         pointFarm = new PointFarm();
         prizePool = new PrizePool();
         pass = new Pass();

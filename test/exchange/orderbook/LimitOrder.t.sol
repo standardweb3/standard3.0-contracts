@@ -1,18 +1,18 @@
 pragma solidity >=0.8;
 
-import {MockToken} from "../../../contracts/mock/MockToken.sol";
-import {MockBase} from "../../../contracts/mock/MockBase.sol";
-import {MockQuote} from "../../../contracts/mock/MockQuote.sol";
-import {MockBTC} from "../../../contracts/mock/MockBTC.sol";
-import {ErrToken} from "../../../contracts/mock/MockTokenOver18Decimals.sol";
+import {MockToken} from "../../../src/mock/MockToken.sol";
+import {MockBase} from "../../../src/mock/MockBase.sol";
+import {MockQuote} from "../../../src/mock/MockQuote.sol";
+import {MockBTC} from "../../../src/mock/MockBTC.sol";
+import {ErrToken} from "../../../src/mock/MockTokenOver18Decimals.sol";
 import {Utils} from "../../utils/Utils.sol";
-import {MatchingEngine} from "../../../contracts/exchange/MatchingEngine.sol";
-import {OrderbookFactory} from "../../../contracts/exchange/orderbooks/OrderbookFactory.sol";
-import {Orderbook} from "../../../contracts/exchange/orderbooks/Orderbook.sol";
-import {IOrderbook} from "../../../contracts/exchange/interfaces/IOrderbook.sol";
-import {ExchangeOrderbook} from "../../../contracts/exchange/libraries/ExchangeOrderbook.sol";
-import {IOrderbookFactory} from "../../../contracts/exchange/interfaces/IOrderbookFactory.sol";
-import {WETH9} from "../../../contracts/mock/WETH9.sol";
+import {MatchingEngine} from "../../../src/exchange/MatchingEngine.sol";
+import {OrderbookFactory} from "../../../src/exchange/orderbooks/OrderbookFactory.sol";
+import {Orderbook} from "../../../src/exchange/orderbooks/Orderbook.sol";
+import {IOrderbook} from "../../../src/exchange/interfaces/IOrderbook.sol";
+import {ExchangeOrderbook} from "../../../src/exchange/libraries/ExchangeOrderbook.sol";
+import {IOrderbookFactory} from "../../../src/exchange/interfaces/IOrderbookFactory.sol";
+import {WETH9} from "../../../src/mock/WETH9.sol";
 import {BaseSetup} from "../OrderbookBaseSetup.sol";
 import {console} from "forge-std/console.sol";
 import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
@@ -492,6 +492,130 @@ contract LimitOrderTest is BaseSetup {
             address(base),
             address(quote),
             1e8,
+            1e18,
+            true,
+            5,
+            0,
+            trader1
+        );
+    }
+
+    // On limit Buy with stop sell orders only without any bid orders to match, check if the market price only increases with spread limit
+    function testLimitBuyVolatilityUpStopSell() public {
+        (
+            MockBase base,
+            MockQuote quote,
+            Orderbook book,
+            uint256 bidHead,
+            uint256 askHead,
+            uint256 up,
+            uint256 down
+        ) = _setupVolatilityTest();
+        
+        // place stop sell order at 0.8
+        matchingEngine.stopSell(
+            address(base),
+            address(quote),
+            8e7,
+            1e18,
+            true,
+            5,
+            0,
+            trader1
+        );
+    }
+
+    // On limit buy with both stop and buy and sell orders, check if the market price only increases with spread limit
+    function testLimitBuyVolatilityUpStopBuySell() public {
+        (
+            MockBase base,
+            MockQuote quote,
+            Orderbook book,
+            uint256 bidHead,
+            uint256 askHead,
+            uint256 up,
+            uint256 down
+        ) = _setupVolatilityTest();
+
+        // place stop sell order at 0.8
+        matchingEngine.stopSell(
+            address(base),
+            address(quote),
+            8e7,
+            1e18,
+            true,
+            5,
+            0,
+            trader1
+        );
+
+        // place stop buy order at 1.2
+        matchingEngine.stopBuy(
+            address(base),
+            address(quote),
+            12e7,
+            1e18,
+            true,
+            5,
+            0,
+            trader1
+        );
+    }
+
+    // On limit sell with stop buy orders only without any ask orders to match, check if the market price only decreases with spread limit
+    function testLimitSellVolatilityDownStopBuy() public {
+        (
+            MockBase base,
+            MockQuote quote,
+            Orderbook book,
+            uint256 bidHead,
+            uint256 askHead,
+            uint256 up,
+            uint256 down
+        ) = _setupVolatilityTest();
+
+        // place stop buy order at 1.2
+        matchingEngine.stopBuy(
+            address(base),
+            address(quote),
+            12e7,
+            1e18,
+            true,
+            5,
+            0,
+            trader1
+        );
+    }
+
+    // On limit sell with both stop and buy and sell orders, check if the market price only decreases with spread limit
+    function testLimitSellVolatilityDownStopBuySell() public {
+        (
+            MockBase base,
+            MockQuote quote,
+            Orderbook book,
+            uint256 bidHead,
+            uint256 askHead,
+            uint256 up,
+            uint256 down
+        ) = _setupVolatilityTest();
+
+        // place stop buy order at 1.2
+        matchingEngine.stopBuy(
+            address(base),
+            address(quote),
+            12e7,
+            1e18,
+            true,
+            5,
+            0,
+            trader1
+        );
+
+        // place stop sell order at 0.8
+        matchingEngine.stopSell(
+            address(base),
+            address(quote),
+            8e7,
             1e18,
             true,
             5,

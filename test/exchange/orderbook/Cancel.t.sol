@@ -1,17 +1,17 @@
 pragma solidity >=0.8;
 
-import {MockToken} from "../../../contracts/mock/MockToken.sol";
-import {MockBase} from "../../../contracts/mock/MockBase.sol";
-import {MockQuote} from "../../../contracts/mock/MockQuote.sol";
-import {MockBTC} from "../../../contracts/mock/MockBTC.sol";
-import {ErrToken} from "../../../contracts/mock/MockTokenOver18Decimals.sol";
+import {MockToken} from "../../../src/mock/MockToken.sol";
+import {MockBase} from "../../../src/mock/MockBase.sol";
+import {MockQuote} from "../../../src/mock/MockQuote.sol";
+import {MockBTC} from "../../../src/mock/MockBTC.sol";
+import {ErrToken} from "../../../src/mock/MockTokenOver18Decimals.sol";
 import {Utils} from "../../utils/Utils.sol";
-import {MatchingEngine} from "../../../contracts/exchange/MatchingEngine.sol";
-import {OrderbookFactory} from "../../../contracts/exchange/orderbooks/OrderbookFactory.sol";
-import {Orderbook} from "../../../contracts/exchange/orderbooks/Orderbook.sol";
-import {ExchangeOrderbook} from "../../../contracts/exchange/libraries/ExchangeOrderbook.sol";
-import {IOrderbookFactory} from "../../../contracts/exchange/interfaces/IOrderbookFactory.sol";
-import {WETH9} from "../../../contracts/mock/WETH9.sol";
+import {MatchingEngine} from "../../../src/exchange/MatchingEngine.sol";
+import {OrderbookFactory} from "../../../src/exchange/orderbooks/OrderbookFactory.sol";
+import {Orderbook} from "../../../src/exchange/orderbooks/Orderbook.sol";
+import {ExchangeOrderbook} from "../../../src/exchange/libraries/ExchangeOrderbook.sol";
+import {IOrderbookFactory} from "../../../src/exchange/interfaces/IOrderbookFactory.sol";
+import {WETH9} from "../../../src/mock/WETH9.sol";
 import {BaseSetup} from "../OrderbookBaseSetup.sol";
 import {console} from "forge-std/console.sol";
 import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
@@ -805,5 +805,167 @@ contract CancelTest is BaseSetup {
 
         // recheck orders
         _showOrderbook(address(token1), address(token2));
+    }
+
+    function testCancelOrdersWorksWithErrors() public {
+        super.setUp();
+        matchingEngine.addPair(address(token1), address(token2), 700000000);
+
+        vm.prank(booker);
+        book = Orderbook(
+            payable(orderbookFactory.getPair(address(token1), address(token2)))
+        );
+        vm.prank(trader1);
+        // placeBid or placeAsk two of them is using the _insertId function it will revert
+        // because the program will enter the "if (amount > self.orders[head].depositAmount)."
+        // statement, and eventually, it will cause an infinite loop.
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            110000000,
+            1000,
+            true,
+            2,
+            0,
+            trader1
+        );
+
+        vm.prank(trader1);
+        //vm.expectRevert("OutOfGas");
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            100000000,
+            1000,
+            true,
+            2,
+            0,
+            trader1
+        );
+
+        vm.prank(trader1);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            90000000,
+            1000,
+            true,
+            5,
+            0,
+            trader1
+        );
+
+        vm.prank(trader1);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            500000000,
+            1000,
+            true,
+            5,
+            0,
+            trader1
+        );
+
+        _showOrderbook(address(token1), address(token2));
+
+        for (uint256 i = 0; i < 10; i++) {
+            vm.prank(trader1);
+            matchingEngine.limitSell(
+                address(token1),
+                address(token2),
+                110000000,
+                i + 100,
+                true,
+                2,
+                0,
+                trader1
+            );
+        }
+
+        address[] memory baseArray = new address[](1);
+        baseArray[0] = (address(token1));
+
+        address[] memory quoteArray = new address[](1);
+        quoteArray[0] = (address(token2));
+        
+        bool[] memory isBidArray = new bool[](1);
+        isBidArray[0] = (false);
+
+        uint32[] memory orderIds = new uint32[](1);
+        orderIds[0] = (1);
+
+
+        // cancel orders
+        vm.prank(trader1);
+        matchingEngine.cancelOrders(
+            baseArray,
+            quoteArray,
+            isBidArray,
+            orderIds
+        );
+
+        // recheck orders
+        _showOrderbook(address(token1), address(token2));
+
+        // cancel order
+        vm.prank(trader1);
+        matchingEngine.cancelOrder(
+            address(token1),
+            address(token2),
+            false,
+            11
+        );
+
+        // recheck orders
+        _showOrderbook(address(token1), address(token2));
+
+        // limit buy to check passing cancelled order
+        vm.prank(trader1);
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            500000000,
+            55,
+            true,
+            5,
+            0,
+            trader1
+        );
+
+        // recheck orders
+        _showOrderbook(address(token1), address(token2));
+
+        // error arrays
+
+        address[] memory baseErrorArray = new address[](3);
+        baseErrorArray[0] = (address(token1));
+        baseErrorArray[1] = (address(token1));
+        baseErrorArray[2] = (address(token1));
+
+        address[] memory quoteErrorArray = new address[](3);
+        quoteErrorArray[0] = (address(token2));
+        quoteErrorArray[1] = (address(token2));
+        quoteErrorArray[2] = (address(token2));
+        
+        bool[] memory isBidErrorArray = new bool[](3);
+        isBidErrorArray[0] = (false);
+        isBidErrorArray[1] = (false);
+        isBidErrorArray[2] = (false);
+
+
+        uint32[] memory orderErrorIds = new uint32[](3);
+        orderErrorIds[0] = (1);
+        orderErrorIds[1] = (1);
+        orderErrorIds[2] = (1);
+
+        // test cancel order with empty order
+        vm.prank(trader1);
+        matchingEngine.cancelOrders(
+            baseErrorArray,
+            quoteErrorArray,
+            isBidErrorArray,
+            orderErrorIds
+        );
     }
 }

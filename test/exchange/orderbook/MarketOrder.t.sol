@@ -1,18 +1,18 @@
 pragma solidity >=0.8;
 
-import {MockToken} from "../../../contracts/mock/MockToken.sol";
-import {MockBase} from "../../../contracts/mock/MockBase.sol";
-import {MockQuote} from "../../../contracts/mock/MockQuote.sol";
-import {MockBTC} from "../../../contracts/mock/MockBTC.sol";
-import {ErrToken} from "../../../contracts/mock/MockTokenOver18Decimals.sol";
+import {MockToken} from "../../../src/mock/MockToken.sol";
+import {MockBase} from "../../../src/mock/MockBase.sol";
+import {MockQuote} from "../../../src/mock/MockQuote.sol";
+import {MockBTC} from "../../../src/mock/MockBTC.sol";
+import {ErrToken} from "../../../src/mock/MockTokenOver18Decimals.sol";
 import {Utils} from "../../utils/Utils.sol";
-import {MatchingEngine} from "../../../contracts/exchange/MatchingEngine.sol";
-import {OrderbookFactory} from "../../../contracts/exchange/orderbooks/OrderbookFactory.sol";
-import {IOrderbook} from "../../../contracts/exchange/interfaces/IOrderbook.sol";
-import {Orderbook} from "../../../contracts/exchange/orderbooks/Orderbook.sol";
-import {ExchangeOrderbook} from "../../../contracts/exchange/libraries/ExchangeOrderbook.sol";
-import {IOrderbookFactory} from "../../../contracts/exchange/interfaces/IOrderbookFactory.sol";
-import {WETH9} from "../../../contracts/mock/WETH9.sol";
+import {MatchingEngine} from "../../../src/exchange/MatchingEngine.sol";
+import {OrderbookFactory} from "../../../src/exchange/orderbooks/OrderbookFactory.sol";
+import {IOrderbook} from "../../../src/exchange/interfaces/IOrderbook.sol";
+import {Orderbook} from "../../../src/exchange/orderbooks/Orderbook.sol";
+import {ExchangeOrderbook} from "../../../src/exchange/libraries/ExchangeOrderbook.sol";
+import {IOrderbookFactory} from "../../../src/exchange/interfaces/IOrderbookFactory.sol";
+import {WETH9} from "../../../src/mock/WETH9.sol";
 import {BaseSetup} from "../OrderbookBaseSetup.sol";
 import {console} from "forge-std/console.sol";
 import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
@@ -218,7 +218,12 @@ contract MarketOrderTest is BaseSetup {
         } else if (askHead != 0 && bidHead == 0) {
             if (lmp != 0) {
                 up = (lmp * (10000 + spread)) / 10000;
-                return askHead >= up ? up : askHead;
+                if (askHead >= up) {
+                    return up;
+                } else {
+                    // check stop order askHead
+                    return askHead < lmp ? up : askHead;
+                }
             }
             return askHead;
         } else {
@@ -232,13 +237,12 @@ contract MarketOrderTest is BaseSetup {
     }
 
     function _detMarketSellMakePrice(
-        address orderbook,
+        uint256 lmp,
         uint256 bidHead,
         uint256 askHead,
         uint32 spread
-    ) internal view returns (uint256 price) {
+    ) internal pure returns (uint256 price) {
         uint256 down;
-        uint256 lmp = IOrderbook(orderbook).lmp();
         if (askHead == 0 && bidHead == 0) {
             // lmp must exist unless there has been no order in orderbook
             if (lmp != 0) {
@@ -248,8 +252,11 @@ contract MarketOrderTest is BaseSetup {
         } else if (askHead == 0 && bidHead != 0) {
             if (lmp != 0) {
                 down = (lmp * (10000 - spread)) / 10000;
-                down = down <= bidHead ? bidHead : down;
-                return down == 0 ? 1 : down;
+                if (down > bidHead) {
+                    return down == 0 ? 1 : down;
+                } else {
+                    return down = down <= bidHead ? bidHead : down;
+                }
             }
             return bidHead;
         } else if (askHead != 0 && bidHead == 0) {
@@ -574,12 +581,7 @@ contract MarketOrderTest is BaseSetup {
         (uint256 bidHead, uint256 askHead) = book.heads();
         // check bidHead is lower than down
         assert(bidHead < down);
-        uint256 result = _detMarketSellMakePrice(
-            address(book),
-            bidHead,
-            askHead,
-            200
-        );
+        uint256 result = _detMarketSellMakePrice(1e8, bidHead, askHead, 200);
         console.log("result: ", result);
         // check computed result
         assert(result == down);
@@ -625,12 +627,7 @@ contract MarketOrderTest is BaseSetup {
         (uint256 bidHead, uint256 askHead) = book.heads();
         // check bidHead is lower than up
         assert(bidHead < down);
-        uint256 result = _detMarketSellMakePrice(
-            address(book),
-            bidHead,
-            askHead,
-            200
-        );
+        uint256 result = _detMarketSellMakePrice(1e8, bidHead, askHead, 200);
         console.log("result: ", result);
         // check computed result
         assert(result == down);
@@ -676,12 +673,7 @@ contract MarketOrderTest is BaseSetup {
         (uint256 bidHead, uint256 askHead) = book.heads();
         // check bidHead is higher than down
         assert(bidHead > down);
-        uint256 result = _detMarketSellMakePrice(
-            address(book),
-            bidHead,
-            askHead,
-            200
-        );
+        uint256 result = _detMarketSellMakePrice(1e8, bidHead, askHead, 200);
         console.log("result: ", result);
         // check computed result
         assert(result == bidHead);
@@ -806,19 +798,14 @@ contract MarketOrderTest is BaseSetup {
         (uint256 bidHead, uint256 askHead) = book.heads();
         // check bidHead is higher than up
         assert(bidHead >= down);
-        uint256 result = _detMarketSellMakePrice(
-            address(book),
-            bidHead,
-            askHead,
-            200
-        );
+        uint256 result = _detMarketSellMakePrice(1e8, bidHead, askHead, 200);
         console.log("result: ", result);
         // check computed result
         assert(result == bidHead);
         (
             uint256 makePrice,
-            uint256 _placed /* silence warning */,
-            uint256 _matched /* silence warning */
+            uint256 _remaining /* silence warning */,
+            uint32 _makeId /* silence warning */
         ) = matchingEngine.marketSell( // silence warning
                     address(base),
                     address(quote),
@@ -831,5 +818,249 @@ contract MarketOrderTest is BaseSetup {
         // check make price is equal to computed result
         console.log("make price: ", makePrice);
         assert(makePrice == result);
+    }
+
+    // On market Buy with stop sell orders only without any bid orders to match, check if the market price only increases with spread limit on market buy
+    function testMarketBuyVolatilityUpStopSell() public {
+        (
+            MockBase base,
+            MockQuote quote,
+            Orderbook book,
+            uint256 _mp,
+            uint256 up,
+            uint256 _down
+        ) = _setupVolatilityTest();
+        // place stop sell order at 0.8
+        matchingEngine.stopSell(
+            address(base),
+            address(quote),
+            8e7,
+            1e18,
+            true,
+            5,
+            0,
+            trader1
+        );
+        // make market buy
+        (
+            uint256 makePrice,
+            uint256 _remaining /* silence warning */,
+            uint32 _makeId /* silence warning */
+        ) = matchingEngine.marketBuy( // silence warning
+                    address(base),
+                    address(quote),
+                    1e8,
+                    true,
+                    5,
+                    0,
+                    trader1
+                );
+
+        // assert if makePrice == up
+        assert(makePrice == up);
+    }
+
+    // On market buy with both stop and buy and sell orders, check if the market price only increases with spread limit with market buy
+    function testMarketBuyVolatilityUpStopBuySell() public {
+        (
+            MockBase base,
+            MockQuote quote,
+            Orderbook book,
+            uint256 _mp,
+            uint256 up,
+            uint256 _down
+        ) = _setupVolatilityTest();
+
+        // place stop sell order at 0.8
+        matchingEngine.stopSell(
+            address(base),
+            address(quote),
+            8e7,
+            1e18,
+            true,
+            5,
+            0,
+            trader1
+        );
+
+        // place stop buy order at 1.2
+        matchingEngine.stopBuy(
+            address(base),
+            address(quote),
+            12e7,
+            1e18,
+            true,
+            5,
+            0,
+            trader1
+        );
+
+        // make market buy
+        (
+            uint256 makePrice,
+            uint256 _remaining /* silence warning */,
+            uint32 _makeId /* silence warning */
+        ) = matchingEngine.marketBuy( // silence warning
+                    address(base),
+                    address(quote),
+                    1e8,
+                    true,
+                    5,
+                    0,
+                    trader1
+                );
+
+        // assert if makePrice == up
+        assert(makePrice == up);
+    }
+
+    // On market buy with both stop and buy and sell orders, check if the market price only increases to next ask price if below spread limit with market buy
+    function testMarketBuyVolatilityUp2StopBuySell() public {
+        (
+            MockBase base,
+            MockQuote quote,
+            Orderbook book,
+            uint256 _mp,
+            uint256 up,
+            uint256 _down
+        ) = _setupVolatilityTest();
+
+        // place stop sell order at 0.8
+        matchingEngine.stopSell(
+            address(base),
+            address(quote),
+            8e7,
+            1e18,
+            true,
+            5,
+            0,
+            trader1
+        );
+
+        // place stop buy order at 1.2
+        matchingEngine.stopBuy(
+            address(base),
+            address(quote),
+            12e7,
+            1e18,
+            true,
+            5,
+            0,
+            trader1
+        );
+
+        // make market buy
+        (
+            uint256 makePrice,
+            uint256 _remaining /* silence warning */,
+            uint32 _makeId /* silence warning */
+        ) = matchingEngine.marketBuy( // silence warning
+                    address(base),
+                    address(quote),
+                    1e8,
+                    true,
+                    5,
+                    0,
+                    trader1
+                );
+
+        // assert if makePrice == up
+        assert(makePrice == up);
+    }
+
+    // On market sell with stop buy orders only without any ask orders to match, check if the market price only decreases with spread limit with market sell
+    function testMarketSellVolatilityDownStopBuy() public {
+        (
+            MockBase base,
+            MockQuote quote,
+            Orderbook book,
+            uint256 _mp,
+            uint256 _up,
+            uint256 _down
+        ) = _setupVolatilityTest();
+
+        // place stop buy order at 1.2
+        matchingEngine.stopBuy(
+            address(base),
+            address(quote),
+            12e7,
+            1e18,
+            true,
+            5,
+            0,
+            trader1
+        );
+    }
+
+    // On market sell with both stop and buy and sell orders, check if the market price only decreases with spread limit market sell
+    function testMarketSellVolatilityDownStopBuySell() public {
+        (
+            MockBase base,
+            MockQuote quote,
+            Orderbook book,
+            uint256 _mp,
+            uint256 _up,
+            uint256 _down
+        ) = _setupVolatilityTest();
+
+        // place stop buy order at 1.2
+        matchingEngine.stopBuy(
+            address(base),
+            address(quote),
+            12e7,
+            1e18,
+            true,
+            5,
+            0,
+            trader1
+        );
+
+        // place stop sell order at 0.8
+        matchingEngine.stopSell(
+            address(base),
+            address(quote),
+            8e7,
+            1e18,
+            true,
+            5,
+            0,
+            trader1
+        );
+    }
+
+    // On market sell with both stop and buy and sell orders, check if the market price only decreases to next bid price with below spread limit with market sell
+    function testMarketSellVolatilityDown2StopBuySell() public {
+        (
+            MockBase base,
+            MockQuote quote,
+            Orderbook book,
+            uint256 _mp,
+            uint256 _up,
+            uint256 _down
+        ) = _setupVolatilityTest();
+
+        // place stop buy order at 1.2
+        matchingEngine.stopBuy(
+            address(base),
+            address(quote),
+            12e7,
+            1e18,
+            true,
+            5,
+            0,
+            trader1
+        );
+
+        // place stop sell order at 0.8
+        matchingEngine.stopSell(
+            address(base),
+            address(quote),
+            8e7,
+            1e18,
+            true,
+            5,
+            0,
+            trader1
+        );
     }
 }

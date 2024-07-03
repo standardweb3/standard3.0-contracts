@@ -3,19 +3,19 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
-import {MockBTC} from "../../contracts/mock/MockBTC.sol";
-import {MockToken} from "../../contracts/mock/MockToken.sol";
-import {MatchingEngine} from "../../contracts/exchange/MatchingEngine.sol";
-import {OrderbookFactory} from "../../contracts/exchange/orderbooks/OrderbookFactory.sol";
-import {Orderbook} from "../../contracts/exchange/orderbooks/Orderbook.sol";
+import {MockBTC} from "../../src/mock/MockBTC.sol";
+import {MockToken} from "../../src/mock/MockToken.sol";
+import {MatchingEngine} from "../../src/exchange/MatchingEngine.sol";
+import {OrderbookFactory} from "../../src/exchange/orderbooks/OrderbookFactory.sol";
+import {Orderbook} from "../../src/exchange/orderbooks/Orderbook.sol";
 import {Multicall3} from "../Multicall3.sol";
-import {TokenDispenser} from "../../contracts/exchange/airdrops/TokenDispenser.sol";
-import {ExchangeOrderbook} from "../../contracts/exchange/libraries/ExchangeOrderbook.sol";
-import {TransferHelper} from "../../contracts/exchange/libraries/TransferHelper.sol";
-import {STXP} from "../../contracts/point/STXP.sol";
-import {PointFarm} from "../../contracts/point/PointFarm.sol";
-import {Pass} from "../../contracts/point/Pass.sol";
-import {PrizePool} from "../../contracts/point/PrizePool.sol";
+import {TokenDispenser} from "../../src/exchange/airdrops/TokenDispenser.sol";
+import {ExchangeOrderbook} from "../../src/exchange/libraries/ExchangeOrderbook.sol";
+import {TransferHelper} from "../../src/exchange/libraries/TransferHelper.sol";
+import {STNDXP} from "../../src/point/STNDXP.sol";
+import {PointFarm} from "../../src/point/PointFarm.sol";
+import {Pass} from "../../src/point/Pass.sol";
+import {PrizePool} from "../../src/point/PrizePool.sol";
 
 contract Deployer is Script {
     function _setDeployer() internal {
@@ -68,24 +68,24 @@ contract DeployExchangeMainnetContracts is Deployer {
     }
 }
 
-contract SetupPointMainnet is Deployer{
+contract DeployPointFarmMainnetContracts is Deployer{
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
     MatchingEngine public matchingEngine;
-    address constant matchingEngine_address = 0x34CCCa03631830cD8296c172bf3c31e126814ce9;
+    address constant matchingEngine_address = 0x0131da850DC11bD51d6A5c4a6dac00a6B0dB5815;
     address constant foundation_address =
-        0x34CCCa03631830cD8296c172bf3c31e126814ce9;
+        0xd64a0cB64B6b1DaEF59259862a936D1B1B2e0503;
     address constant weth = 0x4200000000000000000000000000000000000006;
-    address constant stablecoin_address = address(0);
-    STXP public point;
+    address constant stablecoin_address = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
+    STNDXP public point;
     Pass public pass;
     PointFarm public pointFarm;
 
     function run() external {
         _setDeployer();
-        point = new STXP();
+        point = new STNDXP();
         pointFarm = new PointFarm();
         pass = new Pass();
         pointFarm.initialize(
@@ -104,12 +104,26 @@ contract SetupPointMainnet is Deployer{
     }
 }
 
+contract CreatePairMainnet is Deployer {
+    MatchingEngine public matchingEngine = MatchingEngine(payable(address(0x0131da850DC11bD51d6A5c4a6dac00a6B0dB5815)));
+    address constant base = 0x4200000000000000000000000000000000000006;
+    address constant quote = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
+    uint256 constant initMarketPrice = 336521000000;
+
+    function run() external {
+        _setDeployer();
+        matchingEngine.addPair(base, quote, initMarketPrice);
+        vm.stopBroadcast();
+    }
+}
+
 contract CreateEventMainnet is Deployer {
     PointFarm public pointFarm;
-    address constant pointFarm_address = address(0);
-    // timestamp in seconds
-    uint256 startDate = 0;
-    uint256 endDate = 0;
+    address constant STNDXP = 0xD60E0e1bC43C287335186DE4cCB982EaaC83d4C0;
+    address constant pointFarm_address = 0x45D401A4065f4fD21cF9E40A479f41B268eA21A5;
+    // Unix Epoch time for start/end
+    uint256 startDate = 1719090093;
+    uint256 endDate = 1721719836;
 
     function run() external {
         _setDeployer();
@@ -121,7 +135,7 @@ contract CreateEventMainnet is Deployer {
 
 contract SetEventMainnet is Deployer {
     PointFarm public pointFarm;
-    address constant pointFarm_address = address(0);
+    address constant pointFarm_address = 0x45D401A4065f4fD21cF9E40A479f41B268eA21A5;
     // timestamp in seconds
     uint256 endDate = 0;
 
@@ -135,7 +149,7 @@ contract SetEventMainnet is Deployer {
 
 contract SetupPrizePoolMainnet is Deployer {
     PrizePool public prizePool;
-    STXP public point;
+    STNDXP public point;
     address constant point_address = address(0);
     address constant stablecoin_address = address(0);
     uint256 constant prize_amount = 0;
@@ -147,7 +161,7 @@ contract SetupPrizePoolMainnet is Deployer {
     function run() external {
         _setDeployer();
         prizePool = new PrizePool();
-        point = STXP(point_address);
+        point = STNDXP(point_address);
         point.grantRole(BURNER_ROLE, address(prizePool));
         TransferHelper.safeTransfer(stablecoin_address, address(prizePool), prize_amount);
         prizePool.initialize(address(stablecoin_address), address(point));

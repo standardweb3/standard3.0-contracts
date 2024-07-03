@@ -20,21 +20,21 @@ import {IHooks} from "v4-core/interfaces/IHooks.sol";
 import {IERC20Minimal} from "v4-core/interfaces/external/IERC20Minimal.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 
-// Pool Manager related contracts
+// Pool Manager related src
 import {PoolManager} from "v4-core/PoolManager.sol";
 import {PoolModifyPositionTest} from "v4-core/test/PoolModifyPositionTest.sol";
 import {PoolSwapTest} from "v4-core/test/PoolSwapTest.sol";
 
-// Our contracts
-import {OrderbookHook} from "../../contracts/uniswapv4/OrderbookHook.sol";
-import {OrderbookStub} from "../../contracts/uniswapv4/OrderbookStub.sol";
+// Our src
+import {OrderbookHook} from "../../src/uniswapv4/OrderbookHook.sol";
+import {OrderbookStub} from "../../src/uniswapv4/OrderbookStub.sol";
 
-// Orderbook contracts
-import {MatchingEngine} from "../../contracts/exchange/MatchingEngine.sol";
-import {OrderbookFactory} from "../../contracts/exchange/orderbooks/OrderbookFactory.sol";
-import {Orderbook} from "../../contracts/exchange/orderbooks/Orderbook.sol";
-import {ExchangeOrderbook} from "../../contracts/exchange/libraries/ExchangeOrderbook.sol";
-import {WETH9} from "../../contracts/mock/WETH9.sol";
+// Orderbook src
+import {MatchingEngine} from "../../src/exchange/MatchingEngine.sol";
+import {OrderbookFactory} from "../../src/exchange/orderbooks/OrderbookFactory.sol";
+import {Orderbook} from "../../src/exchange/orderbooks/Orderbook.sol";
+import {ExchangeOrderbook} from "../../src/exchange/libraries/ExchangeOrderbook.sol";
+import {WETH9} from "../../src/mock/WETH9.sol";
 
 contract OrderbookHookTest is Test, GasSnapshot {
     // Use the libraries

@@ -4,13 +4,13 @@ import {BaseSetup} from "./OrderbookBaseSetup.sol";
 
 import {console} from "forge-std/console.sol";
 import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
-import {MatchingEngine} from "../../contracts/exchange/MatchingEngine.sol";
-import {OrderbookFactory} from "../../contracts/exchange/orderbooks/OrderbookFactory.sol";
-import {MockToken} from "../../contracts/mock/MockToken.sol";
-import {Orderbook} from "../../contracts/exchange/orderbooks/Orderbook.sol";
-import {WETH9} from "../../contracts/mock/WETH9.sol";
-import {BrawlPortal} from "../../contracts/minigame/BrawlPortal.sol";
-import {TimeBrawlFactory} from "../../contracts/minigame/brawls/time/TimeBrawlFactory.sol";
+import {MatchingEngine} from "../../src/exchange/MatchingEngine.sol";
+import {OrderbookFactory} from "../../src/exchange/orderbooks/OrderbookFactory.sol";
+import {MockToken} from "../../src/mock/MockToken.sol";
+import {Orderbook} from "../../src/exchange/orderbooks/Orderbook.sol";
+import {WETH9} from "../../src/mock/WETH9.sol";
+import {BrawlPortal} from "../../src/minigame/BrawlPortal.sol";
+import {TimeBrawlFactory} from "../../src/minigame/brawls/time/TimeBrawlFactory.sol";
 
 contract FutureBrawlSetup is BaseSetup {
     BrawlPortal public portal;

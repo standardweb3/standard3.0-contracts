@@ -912,14 +912,14 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             revert InvalidPair(base, quote, orderbook);
         }
 
-        uint256 remaining = IOrderbook(orderbook).cancelOrder(
-            isBid,
-            orderId,
-            msg.sender
-        );
-
-        emit OrderCanceled(orderbook, orderId, isBid, msg.sender, remaining);
-        return remaining;
+        try
+            IOrderbook(orderbook).cancelOrder(isBid, orderId, msg.sender)
+        returns (uint256) {
+            emit OrderCanceled(orderbook, orderId, isBid, msg.sender, refunded);
+            return refunded;
+        } catch {
+            return 0;
+        }
     }
 
     function cancelOrders(

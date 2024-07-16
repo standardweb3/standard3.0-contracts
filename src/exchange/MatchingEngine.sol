@@ -26,7 +26,9 @@ interface IRevenue {
         bool isMaker
     ) external view returns (uint32 feeNum);
 
-    function isSubscribed(address account) external view returns (bool isSubscribed);
+    function isSubscribed(
+        address account
+    ) external view returns (bool isSubscribed);
 }
 
 interface IDecimals {
@@ -63,7 +65,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         /// Head price on ask orderbook, the lowest ask price
         uint256 askHead;
         /// Market price on pair
-        uint256 mp;
+        uint256 lmp;
         /// Spread(volatility) limit on limit/market | buy/sell for market suspensions(e.g. circuit breaker, tick)
         uint32 spreadLimit;
         /// Make order id
@@ -91,6 +93,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         address indexed owner,
         uint256 amount
     );
+
+    event NewMarketPrice(address orderbook, uint256 price);
 
     /**
      * @dev This event is emitted when an order is successfully matched with a counterparty.
@@ -250,7 +254,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         // get spread limits
         orderData.spreadLimit = _getSpread(orderData.orderbook, true);
 
-        orderData.mp = mktPrice(base, quote);
+        orderData.lmp = mktPrice(base, quote);
 
         // reuse quoteAmount for storing amount after taking fees
         quoteAmount = orderData.withoutFee;
@@ -266,7 +270,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             quote,
             recipient,
             true,
-            (orderData.mp * (10000 + orderData.spreadLimit)) / 10000,
+            (orderData.lmp * (10000 + orderData.spreadLimit)) / 10000,
             n
         );
 
@@ -294,6 +298,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         if (orderData.makeId > 0) {
             //if made, set last market price to orderData.bidHead
             IOrderbook(orderData.orderbook).setLmp(orderData.bidHead);
+            emit NewMarketPrice(orderData.orderbook, orderData.bidHead);
             emit OrderPlaced(
                 orderData.orderbook,
                 orderData.makeId,
@@ -385,7 +390,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         // get spread limits
         orderData.spreadLimit = _getSpread(orderData.orderbook, false);
 
-        orderData.mp = mktPrice(base, quote);
+        orderData.lmp = mktPrice(base, quote);
 
         // reuse baseAmount for storing without fee
         baseAmount = orderData.withoutFee;
@@ -401,7 +406,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             base,
             recipient,
             false,
-            (orderData.mp * (10000 - orderData.spreadLimit)) / 10000,
+            (orderData.lmp * (10000 - orderData.spreadLimit)) / 10000,
             n
         );
 
@@ -428,6 +433,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         if (orderData.makeId > 0) {
             //if made, set last market price to orderData.askHead
             IOrderbook(orderData.orderbook).setLmp(orderData.askHead);
+            emit NewMarketPrice(orderData.orderbook, orderData.askHead);
             emit OrderPlaced(
                 orderData.orderbook,
                 orderData.makeId,
@@ -589,7 +595,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         );
 
         // reuse price variable for storing make price
-        price = _detLimitBuyMakePrice(
+        (price, orderData.lmp) = _detLimitBuyMakePrice(
             orderData.orderbook,
             price,
             orderData.bidHead,
@@ -610,6 +616,12 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
 
         // check if order id is made
         if (orderData.makeId > 0) {
+            // if made, set last market price to price only if price is higher than lmp
+            if (price > orderData.lmp) {
+                IOrderbook(orderData.orderbook).setLmp(price);
+
+                emit NewMarketPrice(orderData.orderbook, price);
+            }
             emit OrderPlaced(
                 orderData.orderbook,
                 orderData.makeId,
@@ -630,28 +642,28 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         uint256 bidHead,
         uint256 askHead,
         uint32 spread
-    ) internal view returns (uint256 price) {
+    ) internal view returns (uint256 price, uint256 lmp) {
         uint256 up;
+        lmp = IOrderbook(orderbook).lmp();
         if (askHead == 0 && bidHead == 0) {
-            uint256 lmp = IOrderbook(orderbook).lmp();
             if (lmp != 0) {
                 up = (lmp * (10000 + spread)) / 10000;
-                return lp >= up ? up : lp;
+                return (lp >= up ? up : lp, lmp);
             }
-            return lp;
+            return (lp, lmp);
         } else if (askHead == 0 && bidHead != 0) {
             up = (bidHead * (10000 + spread)) / 10000;
-            return lp >= up ? up : lp;
+            return (lp >= up ? up : lp, lmp);
         } else if (askHead != 0 && bidHead == 0) {
             up = (askHead * (10000 + spread)) / 10000;
             up = lp >= up ? up : lp;
-            return up >= askHead ? askHead : up;
+            return (up >= askHead ? askHead : up, lmp);
         } else {
             up = (bidHead * (10000 + spread)) / 10000;
             // First, set upper limit on make price for market suspenstion
             up = lp >= up ? up : lp;
             // upper limit on make price must not go above ask price
-            return up >= askHead ? askHead : up;
+            return (up >= askHead ? askHead : up, lmp);
         }
     }
 
@@ -715,7 +727,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         );
 
         // reuse price variable for make price
-        price = _detLimitSellMakePrice(
+        (price, orderData.lmp) = _detLimitSellMakePrice(
             orderData.orderbook,
             price,
             orderData.bidHead,
@@ -735,6 +747,12 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         );
 
         if (orderData.makeId > 0) {
+            // if made, set last market price to price only if price is lower than lmp
+            if (price < orderData.lmp) {
+                IOrderbook(orderData.orderbook).setLmp(price);
+
+                emit NewMarketPrice(orderData.orderbook, price);
+            }
             emit OrderPlaced(
                 orderData.orderbook,
                 orderData.makeId,
@@ -755,32 +773,32 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         uint256 bidHead,
         uint256 askHead,
         uint32 spread
-    ) internal view returns (uint256 price) {
+    ) internal view returns (uint256 price, uint256 lmp) {
         uint256 down;
-        uint256 lmp = IOrderbook(orderbook).lmp();
+        lmp = IOrderbook(orderbook).lmp();
         if (askHead == 0 && bidHead == 0) {
             if (lmp != 0) {
                 down = (lmp * (10000 - spread)) / 10000;
-                return lp <= down ? down : lp;
+                return (lp <= down ? down : lp, lmp);
             }
-            return lp;
+            return (lp, lmp);
         } else if (askHead == 0 && bidHead != 0) {
             if (lmp != 0) {
                 down = (lmp * (10000 - spread)) / 10000;
-                return lp <= down ? down : lp;
+                return (lp <= down ? down : lp, lmp);
             }
             down = (bidHead * (10000 - spread)) / 10000;
-            return lp <= down ? down : lp;
+            return (lp <= down ? down : lp, lmp);
         } else if (askHead != 0 && bidHead == 0) {
             down = (askHead * (10000 - spread)) / 10000;
             down = lp <= down ? down : lp;
-            return down <= bidHead ? bidHead : down;
+            return (down <= bidHead ? bidHead : down, lmp);
         } else {
             down = (bidHead * (10000 - spread)) / 10000;
             // First, set lower limit on down price for market suspenstion
             down = lp <= down ? down : lp;
             // lower limit price on sell cannot be lower than bid head price
-            return down <= bidHead ? bidHead : down;
+            return (down <= bidHead ? bidHead : down, lmp);
         }
     }
 
@@ -864,6 +882,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             quote
         );
         IOrderbook(orderbook).setLmp(initMarketPrice);
+        emit NewMarketPrice(orderbook, initMarketPrice);
         uint8 bDecimal = IDecimals(base).decimals();
         uint8 qDecimal = IDecimals(quote).decimals();
         // set limit spread to 2% and market spread to 5% for default pair
@@ -1286,7 +1305,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
                     clear
                 );
                 // report points on match
-                _report(orderbook, give, isBid, remaining, owner); 
+                _report(orderbook, give, isBid, remaining, owner);
                 // emit event order matched
                 emit OrderMatched(
                     orderbook,
@@ -1318,7 +1337,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
                     clear
                 );
                 // report points on match
-                _report(orderbook, give, isBid, required, owner); 
+                _report(orderbook, give, isBid, required, owner);
                 // emit event order matched
                 emit OrderMatched(
                     orderbook,
@@ -1367,7 +1386,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             if (lmp != 0) {
                 if (askHead != 0 && limitPrice < askHead) {
                     return (remaining, bidHead, askHead);
-                } else if(askHead == 0) {
+                } else if (askHead == 0) {
                     return (remaining, bidHead, askHead);
                 }
             }
@@ -1400,7 +1419,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             if (lmp != 0) {
                 if (bidHead != 0 && limitPrice > bidHead) {
                     return (remaining, bidHead, askHead);
-                } else if(bidHead == 0) {
+                } else if (bidHead == 0) {
                     return (remaining, bidHead, askHead);
                 }
             }
@@ -1429,6 +1448,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         // if orderbooks are empty, set last market price for preserving asset price
         if (bidHead == 0 && askHead == 0 && lmp != 0) {
             IOrderbook(orderbook).setLmp(lmp);
+            emit NewMarketPrice(orderbook, lmp);
         }
 
         return (remaining, bidHead, askHead); // return bidHead, and askHead
@@ -1480,9 +1500,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         address owner
     ) internal {
         if (
-            _isContract(feeTo) &&
-            IRevenue(feeTo).isReportable() &&
-            matched > 0 
+            _isContract(feeTo) && IRevenue(feeTo).isReportable() && matched > 0
         ) {
             // report matched amount to accountant with give token on matching order
             IRevenue(feeTo).reportMatch(

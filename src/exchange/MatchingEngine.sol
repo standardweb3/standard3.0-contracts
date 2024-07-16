@@ -296,9 +296,11 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
 
         // check if order id is made
         if (orderData.makeId > 0) {
-            //if made, set last market price to orderData.bidHead
-            IOrderbook(orderData.orderbook).setLmp(orderData.bidHead);
-            emit NewMarketPrice(orderData.orderbook, orderData.bidHead);
+            //if made, set last market price to orderData.bidHead only if orderData.bidHead is greater than lmp
+            if (orderData.bidHead > orderData.lmp) {
+                IOrderbook(orderData.orderbook).setLmp(orderData.bidHead);
+                emit NewMarketPrice(orderData.orderbook, orderData.bidHead);
+            }
             emit OrderPlaced(
                 orderData.orderbook,
                 orderData.makeId,
@@ -431,9 +433,11 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
 
         // check if order id is made
         if (orderData.makeId > 0) {
-            //if made, set last market price to orderData.askHead
-            IOrderbook(orderData.orderbook).setLmp(orderData.askHead);
-            emit NewMarketPrice(orderData.orderbook, orderData.askHead);
+            //if made, set last market price to orderData.askHead only if askHead is smaller than lmp
+            if (orderData.askHead < orderData.lmp) {
+                IOrderbook(orderData.orderbook).setLmp(orderData.askHead);
+                emit NewMarketPrice(orderData.orderbook, orderData.askHead);
+            }
             emit OrderPlaced(
                 orderData.orderbook,
                 orderData.makeId,

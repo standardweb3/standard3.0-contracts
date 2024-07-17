@@ -16,6 +16,7 @@ import {STNDXP} from "../../src/point/STNDXP.sol";
 import {PointFarm} from "../../src/point/PointFarm.sol";
 import {Pass} from "../../src/point/Pass.sol";
 import {PrizePool} from "../../src/point/PrizePool.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 contract Deployer is Script {
     function _setDeployer() internal {
@@ -36,6 +37,41 @@ contract DeployWETH is Deployer {
     function run() external {
         _setDeployer();
         vm.stopBroadcast();
+    }
+}
+
+contract DeployProxy is Deployer {
+    address impl = 0x925826804eC6e3448edB064A832663514E3DB19E;
+    address admin = 0xd64a0cB64B6b1DaEF59259862a936D1B1B2e0503;
+
+    function run() external {
+        _setDeployer();
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(impl, admin, "0x");
+        vm.stopBroadcast();
+    }
+}
+
+contract InitializeExchangeProxy is Deployer {
+    address constant impl = 0x925826804eC6e3448edB064A832663514E3DB19E;
+    address constant proxy_addr = 0x925826804eC6e3448edB064A832663514E3DB19E;
+
+    uint32 constant spb = 2;
+    address constant deployer_address =
+        0xd64a0cB64B6b1DaEF59259862a936D1B1B2e0503;
+    address constant foundation_address =
+        0xd64a0cB64B6b1DaEF59259862a936D1B1B2e0503;
+    address constant weth = 0x4200000000000000000000000000000000000006;
+    address constant orderbookFactory = 0xd64a0cB64B6b1DaEF59259862a936D1B1B2e0503;
+
+
+    function run() external {
+        _setDeployer();
+        TransparentUpgradeableProxy proxy = TransparentUpgradeableProxy(payable(proxy_addr));
+        proxy.initialize(
+            address(orderbookFactory),
+            address(0xd64a0cB64B6b1DaEF59259862a936D1B1B2e0503),
+            address(weth)
+        );
     }
 }
 

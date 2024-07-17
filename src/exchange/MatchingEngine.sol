@@ -38,22 +38,22 @@ interface IDecimals {
 // Onchain Matching engine for the orders
 contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     // Listing coordinator role
-    bytes32 private LISTING_COORDINATOR_ROLE =
+    bytes32 private constant LISTING_COORDINATOR_ROLE =
         keccak256("LISTING_COORDINATOR_ROLE");
     // Market maker role
-    bytes32 private MARKET_MAKER_ROLE = keccak256("MARKET_MAKER_ROLE");
+    bytes32 private constant MARKET_MAKER_ROLE = keccak256("MARKET_MAKER_ROLE");
     // fee recipient for point storage
     address private feeTo;
     // fee denominator representing 0.001%, 1/1000000 = 0.001%
-    uint32 public immutable feeDenom = 1000000;
+    uint32 public constant feeDenom = 1000000;
     // Factories
     address public orderbookFactory;
     // WETH
     address public WETH;
     // default buy spread
-    uint32 defaultBuy = 200;
+    uint32 defaultBuy;
     // default sell spread
-    uint32 defaultSell = 200;
+    uint32 defaultSell;
 
     struct OrderData {
         /// Amount after removing fee
@@ -177,6 +177,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         orderbookFactory = orderbookFactory_;
         feeTo = feeTo_;
         WETH = WETH_;
+        defaultBuy = 200;
+        defaultSell = 200;
     }
 
     // admin functions
@@ -886,12 +888,12 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             quote
         );
         IOrderbook(orderbook).setLmp(initMarketPrice);
-        emit NewMarketPrice(orderbook, initMarketPrice);
         uint8 bDecimal = IDecimals(base).decimals();
         uint8 qDecimal = IDecimals(quote).decimals();
         // set limit spread to 2% and market spread to 5% for default pair
         _setSpread(base, quote, defaultBuy, defaultSell);
         emit PairAdded(orderbook, base, quote, bDecimal, qDecimal);
+        emit NewMarketPrice(orderbook, initMarketPrice);
         return orderbook;
     }
 

@@ -67,11 +67,7 @@ contract InitializeExchangeProxy is Deployer {
     function run() external {
         _setDeployer();
         TransparentUpgradeableProxy proxy = TransparentUpgradeableProxy(payable(proxy_addr));
-        proxy.initialize(
-            address(orderbookFactory),
-            address(0xd64a0cB64B6b1DaEF59259862a936D1B1B2e0503),
-            address(weth)
-        );
+        
     }
 }
 

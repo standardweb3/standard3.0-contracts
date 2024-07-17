@@ -387,6 +387,7 @@ contract LimitOrderTest is BaseSetup {
         );
         console.log("result: ", result);
         assert(result == down);
+        uint256 mp = IOrderbook(address(book)).lmp();
         (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine
             .limitSell(
                 address(base),
@@ -399,6 +400,7 @@ contract LimitOrderTest is BaseSetup {
                 trader1
             );
         assert(makePrice == result);
+        assert(makePrice < mp);
     }
 
     // on limit buy, if limit price is higher than market price + ranged price, order is made with market price + ranged price.
@@ -424,6 +426,7 @@ contract LimitOrderTest is BaseSetup {
             200
         );
         console.log("result: ", result);
+        uint256 mp = IOrderbook(address(book)).lmp();
         assert(result == up);
         (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine
             .limitBuy(
@@ -437,6 +440,7 @@ contract LimitOrderTest is BaseSetup {
                 trader1
             );
         assert(makePrice == result);
+        assert(makePrice > mp);
     }
 
     // on limit buy, if limit price is lower than market price - ranged price, order is made with limit price.

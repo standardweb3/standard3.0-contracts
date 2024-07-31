@@ -1,9 +1,12 @@
 import {PointFarmSetup} from "../PointFarmSetup.sol";
 
+
 contract MintTest is PointFarmSetup {
+
 
     function mintSetUp() internal {
         super.setUp();
+       
         // make an event
         vm.startPrank(trader1);
         pointFarm.createEvent(1000, 100000);
@@ -91,5 +94,36 @@ contract MintTest is PointFarmSetup {
             );
         uint256 pointBalance = point.balanceOf(trader1);
         assert(pointBalance > 0);
+    }
+
+    function testMarketBuyAndSellWithPoints() public {
+        mintSetUp();
+        vm.warp(10000);
+        vm.startPrank(trader1);
+        base.approve(address(matchingEngine), type(uint256).max);
+        usdc.approve(address(matchingEngine), type(uint256).max);
+
+        (uint256 _makePrice, uint256 _matched, uint32 buyId) = matchingEngine.marketBuy(
+            address(base),
+            address(usdc),
+            100000,
+            true,
+            5,
+            1,
+            trader1
+        );
+
+        matchingEngine.cancelOrder(address(base), address(usdc), true, buyId);
+
+        matchingEngine.marketSell(
+            address(base),
+            address(usdc),
+            1e14,
+            true,
+            5,
+            1,
+            trader1
+        );
+
     }
 }

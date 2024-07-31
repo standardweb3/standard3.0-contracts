@@ -42,9 +42,9 @@ contract DeployWETH is Deployer {
 }
 
 contract DeployExchangeProxy is Deployer {
-    address impl = 0x925826804eC6e3448edB064A832663514E3DB19E;
-    address admin = 0xd64a0cB64B6b1DaEF59259862a936D1B1B2e0503;
-    address orderbookFactory = 0xeE78a95F7b687c0B5202A2b61bD4b6CcBee5D6aa;
+    address impl = 0x01c2dfc35CBd8d759E968d39B56f1628F23Eaad9;
+    address admin = 0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
+    address orderbookFactory = 0xa111a06BDEbb8b1dAA79000F4B386A36E0AccE56;
     address weth = 0x4200000000000000000000000000000000000006;
    
 
@@ -67,17 +67,17 @@ contract DeployExchangeProxy is Deployer {
 }
 
 contract InitializeExchangeProxy is Deployer {
-    address constant impl = 0x925826804eC6e3448edB064A832663514E3DB19E;
-    address constant proxy_addr = 0x925826804eC6e3448edB064A832663514E3DB19E;
+    address constant impl = 0x01c2dfc35CBd8d759E968d39B56f1628F23Eaad9;
+    address constant proxy_addr = 0x01c2dfc35CBd8d759E968d39B56f1628F23Eaad9;
 
     uint32 constant spb = 2;
     address constant deployer_address =
-        0xd64a0cB64B6b1DaEF59259862a936D1B1B2e0503;
+        0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
     address constant foundation_address =
-        0xd64a0cB64B6b1DaEF59259862a936D1B1B2e0503;
+        0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
     address constant weth = 0x4200000000000000000000000000000000000006;
     address constant orderbookFactory =
-        0xeE78a95F7b687c0B5202A2b61bD4b6CcBee5D6aa;
+        0xa111a06BDEbb8b1dAA79000F4B386A36E0AccE56;
 
     function run() external {
         _setDeployer();
@@ -89,9 +89,9 @@ contract DeployExchangeMainnetContracts is Deployer {
     /// Second per block to finalize
     uint32 constant spb = 2;
     address constant deployer_address =
-        0xd64a0cB64B6b1DaEF59259862a936D1B1B2e0503;
+        0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
     address constant foundation_address =
-        0xd64a0cB64B6b1DaEF59259862a936D1B1B2e0503;
+        0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
     address constant weth = 0x4200000000000000000000000000000000000006;
 
     function run() external {
@@ -101,7 +101,7 @@ contract DeployExchangeMainnetContracts is Deployer {
 
         matchingEngine.initialize(
             address(orderbookFactory),
-            address(0xd64a0cB64B6b1DaEF59259862a936D1B1B2e0503),
+            address(deployer_address),
             address(weth)
         );
 
@@ -117,9 +117,9 @@ contract DeployPointFarmMainnetContracts is Deployer {
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
     MatchingEngine public matchingEngine;
     address constant matchingEngine_address =
-        0x925826804eC6e3448edB064A832663514E3DB19E;
+        0xd7ABA1cbAd246249be6a0de9a449FB5EDEFf1E47;
     address constant foundation_address =
-        0xd64a0cB64B6b1DaEF59259862a936D1B1B2e0503;
+        0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
     address constant weth = 0x4200000000000000000000000000000000000006;
     address constant stablecoin_address =
         0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
@@ -153,7 +153,7 @@ contract DeployPointFarmMainnetContracts is Deployer {
 contract CreatePairMainnet is Deployer {
     MatchingEngine public matchingEngine =
         MatchingEngine(
-            payable(address(0x925826804eC6e3448edB064A832663514E3DB19E))
+            payable(address(0xd7ABA1cbAd246249be6a0de9a449FB5EDEFf1E47))
         );
     address constant base = 0x4200000000000000000000000000000000000006;
     address constant quote = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
@@ -168,12 +168,11 @@ contract CreatePairMainnet is Deployer {
 
 contract CreateEventMainnet is Deployer {
     PointFarm public pointFarm;
-    address constant STNDXP = 0x2409e7fB962acd0227A60dF35DC92db39482a91E;
     address constant pointFarm_address =
-        0x6b2FCA13c5C9edFf97a035432D82A94D4A20bC47;
+        0x90Fcc35562f3E4A0bDf1dAd6B6eB0c1F13d0d62c;
     // Unix Epoch time for start/end
-    uint256 startDate = 1719090093;
-    uint256 endDate = 1721719836;
+    uint256 startDate = 0;
+    uint256 endDate = 0;
 
     function run() external {
         _setDeployer();
@@ -188,7 +187,7 @@ contract CreateEventMainnet is Deployer {
 contract SetEventMainnet is Deployer {
     PointFarm public pointFarm;
     address constant pointFarm_address =
-        0x6b2FCA13c5C9edFf97a035432D82A94D4A20bC47;
+        0x90Fcc35562f3E4A0bDf1dAd6B6eB0c1F13d0d62c;
     // timestamp in seconds
     uint256 endDate = 0;
 

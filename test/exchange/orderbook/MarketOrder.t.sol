@@ -3,6 +3,7 @@ pragma solidity >=0.8;
 import {MockToken} from "../../../src/mock/MockToken.sol";
 import {MockBase} from "../../../src/mock/MockBase.sol";
 import {MockQuote} from "../../../src/mock/MockQuote.sol";
+import {MockUSDC} from "../../../src/mock/MockUSDC.sol";
 import {MockBTC} from "../../../src/mock/MockBTC.sol";
 import {ErrToken} from "../../../src/mock/MockTokenOver18Decimals.sol";
 import {Utils} from "../../utils/Utils.sol";
@@ -831,5 +832,38 @@ contract MarketOrderTest is BaseSetup {
         // check make price is equal to computed result
         console.log("make price: ", makePrice);
         assert(makePrice == result);
+    }
+
+    function testMarketBuyAndSell() public {
+        super.setUp();
+        MockBase base = new MockBase("Base Token", "BASE");
+        MockUSDC quote = new MockUSDC("Quote Token", "QUOTE");
+        base.mint(trader1, type(uint256).max);
+        quote.mint(trader1, type(uint256).max);
+        // make a price in matching engine where 1 base = 1 quote with buy and sell order
+        matchingEngine.addPair(address(base), address(quote), 341320000000);
+        vm.startPrank(trader1);
+        base.approve(address(matchingEngine), type(uint256).max);
+        quote.approve(address(matchingEngine), type(uint256).max);
+        matchingEngine.marketBuy(
+            address(base),
+            address(quote),
+            100000,
+            true,
+            5,
+            0,
+            trader1
+        );
+
+        matchingEngine.marketSell(
+            address(base),
+            address(quote),
+            1e14,
+            true,
+            5,
+            0,
+            trader1
+        );
+
     }
 }

@@ -12,12 +12,19 @@ import {Pass} from "../../src/point/Pass.sol";
 import {STNDXP} from "../../src/point/STNDXP.sol";
 import {PrizePool} from "../../src/point/PrizePool.sol";
 
+import {MockBase} from "../../src/mock/MockBase.sol";
+import {MockQuote} from "../../src/mock/MockQuote.sol";
+import {MockUSDC} from "../../src/mock/MockUSDC.sol";
+
 contract PointFarmSetup is Test {
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
     MockToken public stablecoin;
     MockToken public feeToken;
+    MockBase public base;
+    MockQuote public quote;
+    MockUSDC public usdc;
     WETH9 public weth;
     address public foundation;
     address public reporter;
@@ -62,6 +69,13 @@ contract PointFarmSetup is Test {
             address(booker),
             address(weth)
         );
+
+        base = new MockBase("Base Token", "BASE");
+        usdc = new MockUSDC("Quote Token", "QUOTE");
+        base.mint(trader1, type(uint256).max);
+        usdc.mint(trader1, type(uint256).max);
+        // make a price in matching engine where 1 base = 1 quote with buy and sell order
+        matchingEngine.addPair(address(base), address(usdc), 341320000000);
         // make a price in matching engine where 1 feeToken = 1000 stablecoin with buy and sell order
         matchingEngine.addPair(address(feeToken), address(stablecoin), 10000e8);
         
@@ -128,5 +142,6 @@ contract PointFarmSetup is Test {
             1,
             trader1
         );
+
     }
 }

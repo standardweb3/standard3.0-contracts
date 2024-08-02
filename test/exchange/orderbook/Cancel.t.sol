@@ -72,12 +72,13 @@ contract CancelTest is BaseSetup {
 
         vm.prank(trader1);
         //vm.expectRevert();
-        matchingEngine.cancelOrder(
+        uint refunded = matchingEngine.cancelOrder(
             address(token1),
             address(token2),
             false,
             1
         );
+        assert(refunded > 0);
     }
 
     // edge cases on cancelling orders

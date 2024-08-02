@@ -927,7 +927,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         address quote,
         bool isBid,
         uint32 orderId
-    ) public nonReentrant returns (uint256 refunded) {
+    ) public nonReentrant returns (uint256) {
         address orderbook = IOrderbookFactory(orderbookFactory).getPair(
             base,
             quote
@@ -939,7 +939,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
 
         try
             IOrderbook(orderbook).cancelOrder(isBid, orderId, msg.sender)
-        returns (uint256) {
+        returns (uint256 refunded) {
             emit OrderCanceled(orderbook, orderId, isBid, msg.sender, refunded);
             return refunded;
         } catch {

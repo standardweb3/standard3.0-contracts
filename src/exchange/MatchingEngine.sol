@@ -1451,7 +1451,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             // update heads
             askHead = IOrderbook(orderbook).clearEmptyHead(false);
         }
-        // if orderbooks are empty, set last market price for preserving asset price
+        // set new market price as the orders are matched 
         if (lmp != 0) {
             IOrderbook(orderbook).setLmp(lmp);
             emit NewMarketPrice(orderbook, lmp);

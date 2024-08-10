@@ -117,7 +117,7 @@ contract DeployPointFarmMainnetContracts is Deployer {
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
     MatchingEngine public matchingEngine;
     address constant matchingEngine_address =
-        0xd7ABA1cbAd246249be6a0de9a449FB5EDEFf1E47;
+        0xEA98008F20e06636470b6a3C7ddA9caE63B668EC;
     address constant foundation_address =
         0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
     address constant weth = 0x4200000000000000000000000000000000000006;

@@ -42,9 +42,9 @@ contract DeployWETH is Deployer {
 }
 
 contract DeployExchangeProxy is Deployer {
-    address impl = 0x01c2dfc35CBd8d759E968d39B56f1628F23Eaad9;
+    address impl = 0x808D8b45B310646c7e1752C7bc3C68581533FfaA;
     address admin = 0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
-    address orderbookFactory = 0xa111a06BDEbb8b1dAA79000F4B386A36E0AccE56;
+    address orderbookFactory = 0x663f45216C8dedb3874e69d5c3f04f935e941Ae7;
     address weth = 0x4200000000000000000000000000000000000006;
    
 
@@ -67,7 +67,7 @@ contract DeployExchangeProxy is Deployer {
 }
 
 contract InitializeExchangeProxy is Deployer {
-    address constant impl = 0x01c2dfc35CBd8d759E968d39B56f1628F23Eaad9;
+    address constant impl = 0x808D8b45B310646c7e1752C7bc3C68581533FfaA;
     address constant proxy_addr = 0x01c2dfc35CBd8d759E968d39B56f1628F23Eaad9;
 
     uint32 constant spb = 2;
@@ -77,7 +77,7 @@ contract InitializeExchangeProxy is Deployer {
         0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
     address constant weth = 0x4200000000000000000000000000000000000006;
     address constant orderbookFactory =
-        0xa111a06BDEbb8b1dAA79000F4B386A36E0AccE56;
+        0x663f45216C8dedb3874e69d5c3f04f935e941Ae7;
 
     function run() external {
         _setDeployer();
@@ -117,7 +117,7 @@ contract DeployPointFarmMainnetContracts is Deployer {
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
     MatchingEngine public matchingEngine;
     address constant matchingEngine_address =
-        0xEA98008F20e06636470b6a3C7ddA9caE63B668EC;
+        0x808D8b45B310646c7e1752C7bc3C68581533FfaA;
     address constant foundation_address =
         0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
     address constant weth = 0x4200000000000000000000000000000000000006;
@@ -153,7 +153,7 @@ contract DeployPointFarmMainnetContracts is Deployer {
 contract CreatePairMainnet is Deployer {
     MatchingEngine public matchingEngine =
         MatchingEngine(
-            payable(address(0xd7ABA1cbAd246249be6a0de9a449FB5EDEFf1E47))
+            payable(address(0x808D8b45B310646c7e1752C7bc3C68581533FfaA))
         );
     address constant base = 0x4200000000000000000000000000000000000006;
     address constant quote = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;

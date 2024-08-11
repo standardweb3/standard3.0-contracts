@@ -72,7 +72,7 @@ contract SetupPointMainnet is Deployer{
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
     MatchingEngine public matchingEngine;
-    address constant matchingEngine_address = 0xd7ABA1cbAd246249be6a0de9a449FB5EDEFf1E47;
+    address constant matchingEngine_address = 0x64aa8360dcb9CA4c641D7118ccEd9B56D7546Ca8;
     address constant foundation_address =
         0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
     address constant weth = 0x4200000000000000000000000000000000000001;
@@ -195,7 +195,7 @@ contract SetSpread is Deployer {
     function run() external {
         _setDeployer();
         console.log("Setitng spread...");
-        address matchingEngineAddress = 0x0622C0b5F53FF7252A5F90b4031a9adaa67a2d02;
+        address matchingEngineAddress = 0x64aa8360dcb9CA4c641D7118ccEd9B56D7546Ca8;
         matchingEngine = MatchingEngine(payable(matchingEngineAddress));
         base = 0x61e0D34b5206Fa8005EC1De8000df9B9dDee23Db;
         quote = 0x4200000000000000000000000000000000000001;
@@ -206,7 +206,7 @@ contract SetSpread is Deployer {
 
 contract ShowOrderbook is Deployer {
     address constant matching_engine_address =
-        0x0622C0b5F53FF7252A5F90b4031a9adaa67a2d02;
+        0x64aa8360dcb9CA4c641D7118ccEd9B56D7546Ca8;
     address constant base_address = 0x4200000000000000000000000000000000000001;
     address constant quote_address = 0x0Cf7c2A584988871b654Bd79f96899e4cd6C41C0; 
     MatchingEngine public matchingEngine =

@@ -661,7 +661,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         } else {
             up = (bidHead * (10000 + spread)) / 10000;
             // First, set upper limit on make price for market suspenstion
-            up = lp >= up ? up : lp;
+            up = lp >= up ? lp : up;
             // upper limit on make price must not go above ask price
             return (up >= askHead ? askHead : up, lmp);
         }
@@ -795,7 +795,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         } else {
             down = (bidHead * (10000 - spread)) / 10000;
             // First, set lower limit on down price for market suspenstion
-            down = lp <= down ? down : lp;
+            down = lp <= down ? lp : down;
             // lower limit price on sell cannot be lower than bid head price
             return (down <= bidHead ? bidHead : down, lmp);
         }

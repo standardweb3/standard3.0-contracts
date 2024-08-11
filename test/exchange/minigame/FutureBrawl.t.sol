@@ -28,7 +28,6 @@ contract FutureBrawlTest is FutureBrawlSetup {
             10000e18,
             true,
             1,
-            0,
             trader2
         );
         // match the order to make lmp so that accountant can report
@@ -43,7 +42,6 @@ contract FutureBrawlTest is FutureBrawlSetup {
             100000e18,
             true,
             5,
-            0,
             trader1
         );
         vm.prank(trader1);
@@ -54,7 +52,6 @@ contract FutureBrawlTest is FutureBrawlSetup {
             10000000e18,
             true,
             5,
-            0,
             trader1
         );
         vm.prank(trader1);
@@ -75,7 +72,6 @@ contract FutureBrawlTest is FutureBrawlSetup {
             10000e18,
             true,
             1,
-            0,
             trader2
         );
         // match the order to make lmp so that accountant can report
@@ -90,7 +86,6 @@ contract FutureBrawlTest is FutureBrawlSetup {
             100000e18,
             true,
             5,
-            0,
             trader1
         );
         vm.prank(trader1);
@@ -101,7 +96,6 @@ contract FutureBrawlTest is FutureBrawlSetup {
             10000000e18,
             true,
             5,
-            1,
             trader1
         );
         vm.prank(trader1);
@@ -122,7 +116,6 @@ contract FutureBrawlTest is FutureBrawlSetup {
             10000e18,
             true,
             1,
-            0,
             trader2
         );
     }

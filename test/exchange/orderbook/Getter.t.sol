@@ -35,7 +35,6 @@ contract GetterTest is BaseSetup {
             10,
             true,
             2,
-            0,
             trader1
         );
 
@@ -48,7 +47,6 @@ contract GetterTest is BaseSetup {
             10,
             true,
             2,
-            0,
             trader1
         );
 
@@ -60,7 +58,6 @@ contract GetterTest is BaseSetup {
             10,
             true,
             5,
-            0,
             trader1
         );
 
@@ -72,7 +69,6 @@ contract GetterTest is BaseSetup {
             10,
             true,
             5,
-            0,
             trader1
         );
         uint256[] memory bidPrices = matchingEngine.getPrices(
@@ -116,7 +112,6 @@ contract GetterTest is BaseSetup {
             10,
             true,
             2,
-            0,
             trader1
         );
         vm.prank(trader1);
@@ -128,7 +123,6 @@ contract GetterTest is BaseSetup {
             10,
             true,
             2,
-            0,
             trader1
         );
         vm.prank(trader1);
@@ -139,7 +133,6 @@ contract GetterTest is BaseSetup {
             10,
             true,
             5,
-            0,
             trader1
         );
         vm.prank(trader1);
@@ -150,7 +143,6 @@ contract GetterTest is BaseSetup {
             998,
             true,
             5,
-            0,
             trader1
         );
         vm.prank(trader1);
@@ -161,7 +153,6 @@ contract GetterTest is BaseSetup {
             999,
             true,
             5,
-            0,
             trader1
         );
         vm.prank(trader1);
@@ -172,7 +163,6 @@ contract GetterTest is BaseSetup {
             997,
             true,
             5,
-            0,
             trader1
         );
         uint256[] memory bidPrices = matchingEngine.getPrices(
@@ -217,7 +207,6 @@ contract GetterTest is BaseSetup {
             10,
             true,
             2,
-            0,
             trader1
         );
         vm.prank(trader1);
@@ -229,7 +218,6 @@ contract GetterTest is BaseSetup {
             10,
             true,
             2,
-            0,
             trader1
         );
         vm.prank(trader1);
@@ -240,7 +228,6 @@ contract GetterTest is BaseSetup {
             10,
             true,
             5,
-            0,
             trader1
         );
 
@@ -272,7 +259,6 @@ contract GetterTest is BaseSetup {
             10,
             true,
             2,
-            0,
             trader1
         );
         vm.prank(trader1);
@@ -284,7 +270,6 @@ contract GetterTest is BaseSetup {
             10,
             true,
             2,
-            0,
             trader1
         );
         console.log("Ask Head:");
@@ -306,7 +291,6 @@ contract GetterTest is BaseSetup {
             10,
             true,
             2,
-            0,
             trader1
         );
 
@@ -327,7 +311,6 @@ contract GetterTest is BaseSetup {
             10,
             true,
             2,
-            0,
             trader1
         );
 
@@ -352,7 +335,6 @@ contract GetterTest is BaseSetup {
             10,
             true,
             2,
-            0,
             trader1
         );
         vm.prank(trader1);
@@ -363,7 +345,6 @@ contract GetterTest is BaseSetup {
             10,
             true,
             2,
-            0,
             trader1
         );
         vm.prank(trader1);
@@ -375,7 +356,6 @@ contract GetterTest is BaseSetup {
             5,
             true,
             2,
-            0,
             trader1
         );
         vm.prank(trader1);
@@ -387,7 +367,6 @@ contract GetterTest is BaseSetup {
             8,
             true,
             2,
-            0,
             trader1
         );
         ExchangeOrderbook.Order[] memory orders = matchingEngine.getOrders(

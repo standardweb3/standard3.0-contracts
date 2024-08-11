@@ -46,7 +46,6 @@ contract MarketOrderTest is BaseSetup {
             1e18,
             true,
             2,
-            0,
             trader1
         );
         matchingEngine.limitSell(
@@ -56,7 +55,6 @@ contract MarketOrderTest is BaseSetup {
             1e18,
             true,
             2,
-            0,
             trader1
         );
         mp = matchingEngine.mktPrice(address(base), address(quote));
@@ -81,7 +79,6 @@ contract MarketOrderTest is BaseSetup {
             1e18,
             false,
             2,
-            0,
             trader1
         );
         uint256 afterB = base.balanceOf(trader1);
@@ -106,7 +103,6 @@ contract MarketOrderTest is BaseSetup {
             1e18,
             false,
             2,
-            0,
             trader1
         );
         uint256 afterB = base.balanceOf(trader1);
@@ -132,7 +128,6 @@ contract MarketOrderTest is BaseSetup {
             1e18,
             false,
             2,
-            0,
             trader1
         );
         uint256 afterB = base.balanceOf(trader1);
@@ -158,7 +153,6 @@ contract MarketOrderTest is BaseSetup {
             1e18,
             false,
             2,
-            0,
             trader1
         );
         uint256 afterB = base.balanceOf(trader1);
@@ -186,7 +180,6 @@ contract MarketOrderTest is BaseSetup {
             1e18,
             true,
             2,
-            0,
             trader1
         );
         matchingEngine.cancelOrder(address(base), address(quote), true, 1);
@@ -198,7 +191,6 @@ contract MarketOrderTest is BaseSetup {
             1e18,
             false,
             2,
-            0,
             trader1
         );
         uint256 afterB = base.balanceOf(trader1);

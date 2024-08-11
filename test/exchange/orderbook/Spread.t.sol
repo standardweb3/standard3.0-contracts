@@ -35,7 +35,6 @@ contract OrderSpreadTest is BaseSetup {
             100e18,
             true,
             2,
-            0,
             trader1
         );
         book = Orderbook(payable(matchingEngine.getPair(base, quote)));
@@ -49,7 +48,6 @@ contract OrderSpreadTest is BaseSetup {
             100e18,
             true,
             2,
-            0,
             trader2
         );
         console.log(matchingEngine.mktPrice(base, quote));
@@ -74,7 +72,6 @@ contract OrderSpreadTest is BaseSetup {
             100e18,
             true,
             2,
-            0,
             trader1
         );
         book = Orderbook(payable(matchingEngine.getPair(base, quote)));
@@ -88,7 +85,6 @@ contract OrderSpreadTest is BaseSetup {
             100e18,
             true,
             2,
-            0,
             trader2
         );
         console.log(matchingEngine.mktPrice(base, quote));
@@ -107,7 +103,6 @@ contract OrderSpreadTest is BaseSetup {
             100e18,
             true,
             2,
-            0,
             trader1
         );
         vm.prank(trader1);
@@ -118,7 +113,6 @@ contract OrderSpreadTest is BaseSetup {
             100e18,
             true,
             2,
-            0,
             trader1
         );
     }

@@ -24,7 +24,6 @@ contract MintTest is PointFarmSetup {
                 100e18,
                 true,
                 2,
-                1,
                 address(trader1)
             );
         uint256 pointBalance = point.balanceOf(trader1);
@@ -43,7 +42,6 @@ contract MintTest is PointFarmSetup {
                 100e18,
                 true,
                 2,
-                1,
                 address(trader1)
             );
         uint256 pointBalance = point.balanceOf(trader1);
@@ -65,7 +63,6 @@ contract MintTest is PointFarmSetup {
                 100e18,
                 true,
                 2,
-                1,
                 address(trader1)
             );
         matchingEngine
@@ -76,7 +73,6 @@ contract MintTest is PointFarmSetup {
                 100e18,
                 true,
                 2,
-                1,
                 address(trader1)
             );
         vm.stopPrank();
@@ -89,7 +85,6 @@ contract MintTest is PointFarmSetup {
                 200e18,
                 true,
                 2,
-                1,
                 address(trader1)
             );
         uint256 pointBalance = point.balanceOf(trader1);
@@ -109,7 +104,6 @@ contract MintTest is PointFarmSetup {
             100000,
             true,
             5,
-            1,
             trader1
         );
 
@@ -121,7 +115,6 @@ contract MintTest is PointFarmSetup {
             1e14,
             true,
             5,
-            1,
             trader1
         );
 

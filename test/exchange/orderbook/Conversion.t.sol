@@ -34,7 +34,6 @@ contract ConversionTest is BaseSetup {
             10,
             true,
             2,
-            0,
             trader1
         );
     }
@@ -69,7 +68,6 @@ contract ConversionTest is BaseSetup {
             100e18,
             true,
             2,
-            0,
             trader1
         );
         vm.prank(trader2);
@@ -80,7 +78,6 @@ contract ConversionTest is BaseSetup {
             100e18,
             true,
             2,
-            0,
             trader2
         );
         uint256 trader1Token1BalanceAfterTrade = token1.balanceOf(
@@ -123,7 +120,6 @@ contract ConversionTest is BaseSetup {
             100e18,
             true,
             2,
-            0,
             trader2
         );
         vm.prank(trader1);
@@ -134,7 +130,6 @@ contract ConversionTest is BaseSetup {
             100e18,
             true,
             2,
-            0,
             trader1
         );
         trader1Token1BalanceAfterTrade = token1.balanceOf(address(trader1));
@@ -178,7 +173,6 @@ contract ConversionTest is BaseSetup {
             10000e8,
             true,
             5,
-            0,
             trader1
         );
         // deposit 10e18(9.99e18 after fee) for selling token1 for 1000 token1 * amount
@@ -190,7 +184,6 @@ contract ConversionTest is BaseSetup {
             10e18,
             true,
             5,
-            0,
             trader2
         );
 
@@ -258,7 +251,6 @@ contract ConversionTest is BaseSetup {
             10e18,
             true,
             5,
-            0,
             trader2
         );
 
@@ -271,7 +263,6 @@ contract ConversionTest is BaseSetup {
             10000e8,
             true,
             5,
-            0,
             trader1
         );
 
@@ -339,7 +330,6 @@ contract ConversionTest is BaseSetup {
             10000e18,
             true,
             5,
-            0,
             trader1
         );
         // deposit 10e8(9.99e8 after fee) for selling token1 for 1000 token1 * amount
@@ -351,7 +341,6 @@ contract ConversionTest is BaseSetup {
             10e8,
             true,
             5,
-            0,
             trader2
         );
 
@@ -420,7 +409,6 @@ contract ConversionTest is BaseSetup {
             10e8,
             true,
             5,
-            0,
             trader2
         );
         // deposit 10000e18(9990e18 after fee) for buying 10e8 token1 for 1000 token2 * amount
@@ -432,7 +420,6 @@ contract ConversionTest is BaseSetup {
             10000e18,
             true,
             5,
-            0,
             trader1
         );
 
@@ -501,7 +488,6 @@ contract ConversionTest is BaseSetup {
             10000e18,
             true,
             5,
-            0,
             trader1
         );
         // deposit 10e18(9.99e18 after fee) for selling token1 for 1000 token2 * amount
@@ -513,7 +499,6 @@ contract ConversionTest is BaseSetup {
             10e18,
             true,
             5,
-            0,
             trader2
         );
 
@@ -582,7 +567,6 @@ contract ConversionTest is BaseSetup {
             10e18,
             true,
             5,
-            0,
             trader2
         );
         // deposit 10000e18(9990e18 after fee) for buying token1 for 1000 token2 * amount
@@ -594,7 +578,6 @@ contract ConversionTest is BaseSetup {
             10000e18,
             true,
             5,
-            0,
             trader1
         );
 

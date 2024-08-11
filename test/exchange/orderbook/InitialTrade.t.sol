@@ -30,7 +30,6 @@ contract InitialTradeTest is BaseSetup {
             500000000,
             true,
             2,
-            0,
             trader1
         );
 

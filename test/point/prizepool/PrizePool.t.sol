@@ -19,7 +19,6 @@ contract PrizePoolTest is PointFarmSetup {
                 100e18,
                 true,
                 2,
-                1,
                 address(trader1)
             );
         matchingEngine
@@ -30,7 +29,6 @@ contract PrizePoolTest is PointFarmSetup {
                 100e18,
                 true,
                 2,
-                1,
                 address(trader1)
             );
         uint256 pointBalance = point.balanceOf(trader1);

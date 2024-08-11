@@ -28,7 +28,6 @@ contract OutOfOrderbookTest is BaseSetup {
             10000e18,
             true,
             2,
-            0,
             trader1
         );
         console.log("Ask Orders: ");
@@ -50,7 +49,6 @@ contract OutOfOrderbookTest is BaseSetup {
             10000e18,
             false,
             2,
-            0,
             trader1
         );
         book = Orderbook(
@@ -80,7 +78,6 @@ contract OutOfOrderbookTest is BaseSetup {
             10000e18,
             true,
             2,
-            0,
             trader1
         );
     }
@@ -99,7 +96,6 @@ contract OutOfOrderbookTest is BaseSetup {
             3000e18,
             true,
             2,
-            0,
             trader2
         );
 
@@ -136,7 +132,6 @@ contract OutOfOrderbookTest is BaseSetup {
             1e18,
             true,
             2,
-            0,
             trader1
         );
 
@@ -178,7 +173,6 @@ contract OutOfOrderbookTest is BaseSetup {
             1e18,
             true,
             2,
-            0,
             trader2
         );
     }
@@ -201,7 +195,6 @@ contract OutOfOrderbookTest is BaseSetup {
             10,
             true,
             2,
-            0,
             trader1
         );
     }

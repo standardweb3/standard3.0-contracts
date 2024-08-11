@@ -28,7 +28,6 @@ contract ManipulationTest is BaseSetup {
             100e18,
             true,
             2,
-            0,
             trader1
         );
         vm.prank(trader1);
@@ -39,7 +38,6 @@ contract ManipulationTest is BaseSetup {
             100e18,
             true,
             2,
-            0,
             trader1
         );
         book = Orderbook(

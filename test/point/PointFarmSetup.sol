@@ -125,7 +125,6 @@ contract PointFarmSetup is Test {
             1000e10,
             true,
             1,
-            1,
             trader2
         );
         // match the order to make lmp so that accountant can report
@@ -138,7 +137,6 @@ contract PointFarmSetup is Test {
             10000e8,
             1000e10,
             true,
-            1,
             1,
             trader1
         );

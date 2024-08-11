@@ -35,7 +35,6 @@ contract SimulateTest is BaseSetup {
             100e18,
             true,
             2,
-            0,
             trader1
         );
         book = Orderbook(payable(matchingEngine.getPair(base, quote)));

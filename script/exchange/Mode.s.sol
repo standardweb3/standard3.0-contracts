@@ -50,7 +50,7 @@ contract limitBuyatZeroPrice is Deployer {
         _setDeployer();
         matchingEngine = MatchingEngineMode(payable(0x8D44C188E64045b64879fc7FD9fa80d81AbF9942));
 
-        matchingEngine.limitBuy(0x4200000000000000000000000000000000000006, 0xf0F161fDA2712DB8b566946122a5af183995e2eD, 294800000002, 1000000000, false, 10, 0, 0x34CCCa03631830cD8296c172bf3c31e126814ce9);
+        matchingEngine.limitBuy(0x4200000000000000000000000000000000000006, 0xf0F161fDA2712DB8b566946122a5af183995e2eD, 294800000002, 1000000000, false, 10, 0x34CCCa03631830cD8296c172bf3c31e126814ce9);
         
     }
 }
@@ -206,7 +206,6 @@ contract TestOrderbookSell is Deployer {
             100000,
             true,
             1,
-            0,
             msg.sender
         );
         //matchingEngine.getOrders(address(base), address(quote), true, 0, 0);
@@ -273,7 +272,7 @@ contract TestMarketSellETH is Deployer {
 
         matchingEngine.mktPrice(address(base), address(quote));
         // add limit orders
-        matchingEngine.marketSellETH{value: 1e16}(address(quote), true, 2, 0, 0x34CCCa03631830cD8296c172bf3c31e126814ce9);
+        matchingEngine.marketSellETH{value: 1e16}(address(quote), true, 2, 0x34CCCa03631830cD8296c172bf3c31e126814ce9);
         //matchingEngine.getOrders(address(base), address(quote), true, 0, 0);
         uint256[] memory askPrices = matchingEngine.getPrices(
             address(base),
@@ -326,7 +325,6 @@ contract TestOrderbookBuy is Deployer {
             100000,
             true,
             1,
-            0,
             msg.sender
         );
         //matchingEngine.getOrders(address(base), address(quote), true, 0, 0);

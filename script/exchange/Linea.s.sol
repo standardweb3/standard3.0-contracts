@@ -114,7 +114,6 @@ contract TestOrderbookSell is Deployer {
             100000,
             true,
             1,
-            0,
             msg.sender
         );
         //matchingEngine.getOrders(address(base), address(quote), true, 0, 0);
@@ -168,7 +167,6 @@ contract TestOrderbookBuy is Deployer {
             100000,
             true,
             1,
-            0,
             msg.sender
         );
         //matchingEngine.getOrders(address(base), address(quote), true, 0, 0);

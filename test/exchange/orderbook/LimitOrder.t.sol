@@ -33,7 +33,6 @@ contract LimitOrderTest is BaseSetup {
             1e8,
             true,
             2,
-            0,
             trader1
         );
         vm.prank(trader2);
@@ -44,7 +43,6 @@ contract LimitOrderTest is BaseSetup {
             1e18,
             true,
             2,
-            0,
             trader2
         );
     }
@@ -64,7 +62,6 @@ contract LimitOrderTest is BaseSetup {
             100e18,
             true,
             2,
-            0,
             trader1
         );
         vm.prank(trader2);
@@ -75,7 +72,6 @@ contract LimitOrderTest is BaseSetup {
             100e18,
             true,
             2,
-            0,
             trader2
         );
     }
@@ -91,7 +87,6 @@ contract LimitOrderTest is BaseSetup {
             1e8,
             true,
             5,
-            0,
             trader1
         );
         vm.prank(trader1);
@@ -104,7 +99,6 @@ contract LimitOrderTest is BaseSetup {
             1e18,
             true,
             5,
-            0,
             trader1
         );
         console.log("weth balance");
@@ -123,7 +117,6 @@ contract LimitOrderTest is BaseSetup {
             1e8,
             true,
             5,
-            0,
             trader1
         );
         vm.prank(trader1);
@@ -132,7 +125,6 @@ contract LimitOrderTest is BaseSetup {
             1e8,
             true,
             5,
-            0,
             trader1
         );
         vm.prank(trader1);
@@ -145,7 +137,6 @@ contract LimitOrderTest is BaseSetup {
             1e18,
             true,
             5,
-            0,
             trader1
         );
         console.log("weth balance");
@@ -166,7 +157,6 @@ contract LimitOrderTest is BaseSetup {
             1e18,
             true,
             5,
-            0,
             trader1
         );
         console.log("weth balance");
@@ -182,8 +172,7 @@ contract LimitOrderTest is BaseSetup {
             294900000001,
             1e18,
             true,
-            0,
-            0,
+            5,
             trader1
         );
     }
@@ -201,7 +190,6 @@ contract LimitOrderTest is BaseSetup {
             1e18,
             true,
             5,
-            0,
             trader1
         );
     }
@@ -235,7 +223,6 @@ contract LimitOrderTest is BaseSetup {
             1e18,
             true,
             2,
-            0,
             trader1
         );
         matchingEngine.limitSell(
@@ -245,7 +232,6 @@ contract LimitOrderTest is BaseSetup {
             1e18,
             true,
             2,
-            0,
             trader1
         );
         // get pair and price info
@@ -357,7 +343,6 @@ contract LimitOrderTest is BaseSetup {
                 1e18,
                 true,
                 5,
-                0,
                 trader1
             );
         assert(makePrice == result);
@@ -396,7 +381,6 @@ contract LimitOrderTest is BaseSetup {
                 1e18,
                 true,
                 5,
-                0,
                 trader1
             );
         assert(makePrice == result);
@@ -436,7 +420,6 @@ contract LimitOrderTest is BaseSetup {
                 1e18,
                 true,
                 5,
-                0,
                 trader1
             );
         assert(makePrice == result);
@@ -475,7 +458,6 @@ contract LimitOrderTest is BaseSetup {
                 1e18,
                 true,
                 5,
-                0,
                 trader1
             );
         assert(makePrice == result);
@@ -499,7 +481,6 @@ contract LimitOrderTest is BaseSetup {
             1e18,
             true,
             5,
-            0,
             trader1
         );
     }

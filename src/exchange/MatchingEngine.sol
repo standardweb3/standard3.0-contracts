@@ -37,9 +37,6 @@ interface IDecimals {
 
 // Onchain Matching engine for the orders
 contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
-    // Listing coordinator role
-    bytes32 private constant LISTING_COORDINATOR_ROLE =
-        keccak256("LISTING_COORDINATOR_ROLE");
     // Market maker role
     bytes32 private constant MARKET_MAKER_ROLE = keccak256("MARKET_MAKER_ROLE");
     // fee recipient for point storage
@@ -155,7 +152,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
 
     constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(LISTING_COORDINATOR_ROLE, msg.sender);
         _grantRole(MARKET_MAKER_ROLE, msg.sender);
     }
 
@@ -187,6 +183,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
         }
         feeTo = feeTo_;
+        return true;
     }
 
     function setDefaultSpread(
@@ -198,6 +195,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         }
         defaultBuy = buy;
         defaultSell = sell;
+        return true;
     }
 
     function setSpread(
@@ -210,6 +208,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             revert InvalidRole(MARKET_MAKER_ROLE, _msgSender());
         }
         _setSpread(base, quote, buy, sell);
+        return true;
     }
 
     // user functions
@@ -234,7 +233,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         uint256 quoteAmount,
         bool isMaker,
         uint32 n,
-        uint32 uid,
         address recipient
     )
         public
@@ -374,7 +372,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         uint256 baseAmount,
         bool isMaker,
         uint32 n,
-        uint32 uid,
         address recipient
     )
         public
@@ -510,11 +507,10 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         address base,
         bool isMaker,
         uint32 n,
-        uint32 uid,
         address recipient
     ) external payable returns (uint256 makePrice, uint256 placed, uint32 id) {
         IWETH(WETH).deposit{value: msg.value}();
-        return marketBuy(base, WETH, msg.value, isMaker, n, uid, recipient);
+        return marketBuy(base, WETH, msg.value, isMaker, n, recipient);
     }
 
     /**
@@ -533,11 +529,10 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         address quote,
         bool isMaker,
         uint32 n,
-        uint32 uid,
         address recipient
     ) external payable returns (uint256 makePrice, uint256 placed, uint32 id) {
         IWETH(WETH).deposit{value: msg.value}();
-        return marketSell(WETH, quote, msg.value, isMaker, n, uid, recipient);
+        return marketSell(WETH, quote, msg.value, isMaker, n, recipient);
     }
 
     /**
@@ -562,7 +557,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         uint256 quoteAmount,
         bool isMaker,
         uint32 n,
-        uint32 uid,
         address recipient
     )
         public
@@ -694,7 +688,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         uint256 baseAmount,
         bool isMaker,
         uint32 n,
-        uint32 uid,
         address recipient
     )
         public
@@ -825,12 +818,11 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         uint256 price,
         bool isMaker,
         uint32 n,
-        uint32 uid,
         address recipient
     ) external payable returns (uint256 makePrice, uint256 placed, uint32 id) {
         IWETH(WETH).deposit{value: msg.value}();
         return
-            limitBuy(base, WETH, price, msg.value, isMaker, n, uid, recipient);
+            limitBuy(base, WETH, price, msg.value, isMaker, n, recipient);
     }
 
     /**
@@ -850,7 +842,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         uint256 price,
         bool isMaker,
         uint32 n,
-        uint32 uid,
         address recipient
     ) external payable returns (uint256 makePrice, uint256 placed, uint32 id) {
         IWETH(WETH).deposit{value: msg.value}();
@@ -862,7 +853,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
                 msg.value,
                 isMaker,
                 n,
-                uid,
                 recipient
             );
     }
@@ -879,9 +869,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         address quote,
         uint256 initMarketPrice
     ) external returns (address book) {
-        if (!hasRole(LISTING_COORDINATOR_ROLE, _msgSender())) {
-            revert InvalidRole(LISTING_COORDINATOR_ROLE, _msgSender());
-        }
         // create orderbook for the pair
         address orderbook = IOrderbookFactory(orderbookFactory).createBook(
             base,
@@ -1555,7 +1542,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         if (converted <= minRequired) {
             revert OrderSizeTooSmall(converted, minRequired);
         }
-        // check if sender has uid
+        // check sender's fee
         uint256 fee = _fee(amount, msg.sender, isMaker);
         withoutFee = amount - fee;
         if (isBid) {

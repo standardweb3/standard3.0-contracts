@@ -22,7 +22,6 @@ contract FeeDiscountTest is PointFarmSetup {
             100e18,
             true,
             2,
-            1,
             address(trader1)
         );
         assert(pointFarm.feeOf(address(trader1), true) == 5000);
@@ -49,7 +48,6 @@ contract FeeDiscountTest is PointFarmSetup {
             100e18,
             true,
             2,
-            1,
             address(trader1)
         );
         assert(pointFarm.feeOf(address(trader1), true) == 10000);

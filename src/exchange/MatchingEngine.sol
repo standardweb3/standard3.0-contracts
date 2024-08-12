@@ -652,9 +652,18 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             }
             return (lp, lmp);
         } else if (askHead == 0 && bidHead != 0) {
+            if (lmp != 0) {
+                up = (lmp * (10000 + spread)) / 10000;
+                return (lp >= up ? up : lp, lmp);
+            }
             up = (bidHead * (10000 + spread)) / 10000;
             return (lp >= up ? up : lp, lmp);
         } else if (askHead != 0 && bidHead == 0) {
+            if (lmp != 0) {
+                up = (lmp * (10000 + spread)) / 10000;
+                up = lp >= up ? up : lp;
+                return (up >= askHead ? askHead : up, lmp);
+            }
             up = (askHead * (10000 + spread)) / 10000;
             up = lp >= up ? up : lp;
             return (up >= askHead ? askHead : up, lmp);
@@ -783,14 +792,19 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         } else if (askHead == 0 && bidHead != 0) {
             if (lmp != 0) {
                 down = (lmp * (10000 - spread)) / 10000;
-                return (lp <= down ? down : lp, lmp);
+                down = lp <= down ? down : lp;
+                return (down <= bidHead ? bidHead : down, lmp);
             }
             down = (bidHead * (10000 - spread)) / 10000;
-            return (lp <= down ? down : lp, lmp);
-        } else if (askHead != 0 && bidHead == 0) {
-            down = (askHead * (10000 - spread)) / 10000;
             down = lp <= down ? down : lp;
             return (down <= bidHead ? bidHead : down, lmp);
+        } else if (askHead != 0 && bidHead == 0) {
+            if (lmp != 0) {
+                down = (lmp * (10000 - spread)) / 10000;
+               return (lp <= down ? down : lp, lmp);
+            }
+            down = (askHead * (10000 - spread)) / 10000;
+            return (lp <= down ? down : lp, lmp);
         } else {
             // First, set lower limit on down price for market suspenstion
             down = lp <= lmp ? lp : lmp;
@@ -819,8 +833,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         address recipient
     ) external payable returns (uint256 makePrice, uint256 placed, uint32 id) {
         IWETH(WETH).deposit{value: msg.value}();
-        return
-            limitBuy(base, WETH, price, msg.value, isMaker, n, recipient);
+        return limitBuy(base, WETH, price, msg.value, isMaker, n, recipient);
     }
 
     /**
@@ -843,16 +856,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         address recipient
     ) external payable returns (uint256 makePrice, uint256 placed, uint32 id) {
         IWETH(WETH).deposit{value: msg.value}();
-        return
-            limitSell(
-                WETH,
-                quote,
-                price,
-                msg.value,
-                isMaker,
-                n,
-                recipient
-            );
+        return limitSell(WETH, quote, price, msg.value, isMaker, n, recipient);
     }
 
     /**
@@ -1436,7 +1440,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             // update heads
             askHead = IOrderbook(orderbook).clearEmptyHead(false);
         }
-        // set new market price as the orders are matched 
+        // set new market price as the orders are matched
         if (lmp != 0) {
             IOrderbook(orderbook).setLmp(lmp);
             emit NewMarketPrice(orderbook, lmp);

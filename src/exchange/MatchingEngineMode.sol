@@ -49,8 +49,8 @@ interface IFeeSharing  {
 contract MatchingEngineMode is MatchingEngine {
     
     constructor() {
-        IFeeSharing(0x8680CEaBcb9b56913c519c069Add6Bc3494B7020).isRegistered(0x34CCCa03631830cD8296c172bf3c31e126814ce9);
-        IFeeSharing(0x8680CEaBcb9b56913c519c069Add6Bc3494B7020).register(0x34CCCa03631830cD8296c172bf3c31e126814ce9);
+        IFeeSharing(0x8680CEaBcb9b56913c519c069Add6Bc3494B7020).isRegistered(0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0);
+        IFeeSharing(0x8680CEaBcb9b56913c519c069Add6Bc3494B7020).register(0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0);
     }
 
 }

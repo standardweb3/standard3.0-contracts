@@ -42,9 +42,9 @@ contract DeployWETH is Deployer {
 }
 
 contract DeployExchangeProxy is Deployer {
-    address impl = 0x738339C9d3EaEb0e6FD552Ec4Aba18bB6BD94B40;
+    address impl = 0x2D25464C8C044b9Ab122076BE55E353fA1F9bd29;
     address admin = 0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
-    address orderbookFactory = 0x9b90F5fFcE1Db7CE09906b4c1795796B2c15f3A3;
+    address orderbookFactory = 0x0E259BC592DC0B7C38E3Ea089322d5365CEbF044;
     address weth = 0x4200000000000000000000000000000000000006;
    
 
@@ -67,7 +67,7 @@ contract DeployExchangeProxy is Deployer {
 }
 
 contract InitializeExchangeProxy is Deployer {
-    address constant impl = 0x738339C9d3EaEb0e6FD552Ec4Aba18bB6BD94B40;
+    address constant impl = 0x2D25464C8C044b9Ab122076BE55E353fA1F9bd29;
     address constant proxy_addr = 0x01c2dfc35CBd8d759E968d39B56f1628F23Eaad9;
 
     uint32 constant spb = 2;
@@ -77,7 +77,7 @@ contract InitializeExchangeProxy is Deployer {
         0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
     address constant weth = 0x4200000000000000000000000000000000000006;
     address constant orderbookFactory =
-        0x9b90F5fFcE1Db7CE09906b4c1795796B2c15f3A3;
+        0x0E259BC592DC0B7C38E3Ea089322d5365CEbF044;
 
     function run() external {
         _setDeployer();
@@ -117,7 +117,7 @@ contract DeployPointFarmMainnetContracts is Deployer {
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
     MatchingEngine public matchingEngine;
     address constant matchingEngine_address =
-        0x738339C9d3EaEb0e6FD552Ec4Aba18bB6BD94B40;
+        0x2D25464C8C044b9Ab122076BE55E353fA1F9bd29;
     address constant foundation_address =
         0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
     address constant weth = 0x4200000000000000000000000000000000000006;

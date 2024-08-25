@@ -145,6 +145,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     error AskPriceTooHigh(uint256 limitPrice, uint256 lmp, uint256 maxAskPrice);
     error PairDoesNotExist(address base, address quote, address pair);
     error AmountIsZero();
+    error PriceIsZero();
 
     receive() external payable {
         assert(msg.sender == WETH); // only accept ETH via fallback from the WETH contract
@@ -669,7 +670,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             return (up >= askHead ? askHead : up, lmp);
         } else {
             // First, set upper limit on make price for market suspenstion
-            up = lp >= lmp ? lp : lmp;
+            up = lp <= lmp ? lp : lmp;
             // upper limit on make price must not go above ask price
             return (up >= askHead ? askHead : up, lmp);
         }
@@ -807,7 +808,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             return (lp <= down ? down : lp, lmp);
         } else {
             // First, set lower limit on down price for market suspenstion
-            down = lp <= lmp ? lp : lmp;
+            down = lp >= lmp ? lp : lmp;
             // lower limit price on sell cannot be lower than bid head price
             return (down <= bidHead ? bidHead : down, lmp);
         }

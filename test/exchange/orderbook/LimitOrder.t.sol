@@ -668,4 +668,92 @@ contract LimitOrderTest is BaseSetup {
 
         assert(matchingEngine.mktPrice(address(base), address(quote)) == 98e4);
     }
+
+    function testLimitBuyAllowsBelowLMP() public {
+        (
+            MockBase base,
+            MockQuote quote,
+            Orderbook book,
+            uint256 bidHead,
+            uint256 askHead,
+            uint256 up,
+            uint256 down
+        ) = _setupVolatilityTest();
+
+        matchingEngine.limitBuy(
+            address(base),
+            address(quote),
+            1e8-1,
+            1e18,
+            true,
+            5,
+            trader1
+        );
+
+        matchingEngine.limitSell(
+            address(base),
+            address(quote),
+            1e8+1,
+            1e18,
+            true,
+            5,
+            trader1
+        );
+
+        (uint256 lp, uint256 matched, uint32 id) = matchingEngine.limitBuy(
+            address(base),
+            address(quote),
+            1e5,
+            1e18,
+            true,
+            5,
+            trader1
+        );
+
+        assert(lp == 1e5);
+    }
+
+    function testLimitSellAllowsAboveLMP() public {
+        (
+            MockBase base,
+            MockQuote quote,
+            Orderbook book,
+            uint256 bidHead,
+            uint256 askHead,
+            uint256 up,
+            uint256 down
+        ) = _setupVolatilityTest();
+
+        matchingEngine.limitBuy(
+            address(base),
+            address(quote),
+            1e8-1,
+            1e18,
+            true,
+            5,
+            trader1
+        );
+
+        matchingEngine.limitSell(
+            address(base),
+            address(quote),
+            1e8+1,
+            1e18,
+            true,
+            5,
+            trader1
+        );
+
+        (uint256 lp, uint256 matched, uint32 id) = matchingEngine.limitSell(
+            address(base),
+            address(quote),
+            1e11,
+            1e18,
+            true,
+            5,
+            trader1
+        );
+
+        assert(lp == 1e11);
+    }
 }

@@ -177,6 +177,33 @@ contract OutOfOrderbookTest is BaseSetup {
         );
     }
 
+    function testTradeWithPriceZeroDoesNotWork() public {
+        super.setUp();
+        matchingEngine.addPair(address(token1), address(token2), 1000e8);
+        vm.prank(trader1);
+        vm.expectRevert();
+        matchingEngine.limitBuy(
+            address(token1),
+            address(token2),
+            0,
+            990,
+            true,
+            2,
+            trader1
+        );
+        vm.prank(trader2);
+        vm.expectRevert();
+        matchingEngine.limitSell(
+            address(token1),
+            address(token2),
+            0,
+            990,
+            true,
+            2,
+            trader2
+        );
+    }
+
     function testAmountIsZero() public {
         super.setUp();
         matchingEngine.addPair(address(token1), address(token2), 1000e8);

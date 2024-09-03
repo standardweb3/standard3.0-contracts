@@ -42,10 +42,10 @@ contract DeployWETH is Deployer {
 }
 
 contract DeployExchangeProxy is Deployer {
-    address impl = 0xd7ABA1cbAd246249be6a0de9a449FB5EDEFf1E47;
+    address impl = 0xE0892785D00F192110A05282387fBAC21b942Aad;
     address admin = 0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
     address orderbookFactory = 0xf297cd3077dEC0f07A814999b7B282A8EA911cC0;
-    address weth = 0x202C35e517Fa803B537565c40F0a6965D7204609;
+    address weth = 0x4200000000000000000000000000000000000006;
    
 
     function run() external {
@@ -66,24 +66,22 @@ contract DeployExchangeProxy is Deployer {
     }
 }
 
-
 contract InitializeExchangeProxy is Deployer {
-    // Contract addresses
-    address private constant IMPLEMENTATION = 0xd7ABA1cbAd246249be6a0de9a449FB5EDEFf1E47;
-    address private constant PROXY = 0x01c2dfc35CBd8d759E968d39B56f1628F23Eaad9;
-    address private constant DEPLOYER = 0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
-    address private constant FOUNDATION = 0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
-    address private constant WETH = 0x202C35e517Fa803B537565c40F0a6965D7204609;
-    address private constant ORDERBOOK_FACTORY = 0xf297cd3077dEC0f07A814999b7B282A8EA911cC0;
+    address constant impl = 0xE0892785D00F192110A05282387fBAC21b942Aad;
+    address constant proxy_addr = 0x01c2dfc35CBd8d759E968d39B56f1628F23Eaad9;
 
-    // Constants
-    uint32 private constant SECONDS_PER_BLOCK = 2;
+    uint32 constant spb = 2;
+    address constant deployer_address =
+        0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
+    address constant foundation_address =
+        0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
+    address constant weth = 0x4200000000000000000000000000000000000006;
+    address constant orderbookFactory =
+        0xf297cd3077dEC0f07A814999b7B282A8EA911cC0;
 
     function run() external {
-        
+        _setDeployer();
     }
-
-    // Helper functions can be added here if needed
 }
 
 contract DeployExchangeMainnetContracts is Deployer {
@@ -94,7 +92,7 @@ contract DeployExchangeMainnetContracts is Deployer {
         0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
     address constant foundation_address =
         0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
-    address constant wneon = 0x202C35e517Fa803B537565c40F0a6965D7204609;
+    address constant weth = 0x6e990040Fd9b06F98eFb62A147201696941680b5;
 
     function run() external {
         _setDeployer();
@@ -104,7 +102,7 @@ contract DeployExchangeMainnetContracts is Deployer {
         matchingEngine.initialize(
             address(orderbookFactory),
             address(deployer_address),
-            address(wneon)
+            address(weth)
         );
 
         orderbookFactory.initialize(address(matchingEngine));
@@ -119,10 +117,10 @@ contract DeployPointFarmMainnetContracts is Deployer {
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
     MatchingEngine public matchingEngine;
     address constant matchingEngine_address =
-        0xd7ABA1cbAd246249be6a0de9a449FB5EDEFf1E47;
+        0xE0892785D00F192110A05282387fBAC21b942Aad;
     address constant foundation_address =
         0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
-    address constant weth = 0x202C35e517Fa803B537565c40F0a6965D7204609;
+    address constant weth = 0x4200000000000000000000000000000000000006;
     address constant stablecoin_address =
         0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
     STNDXP public point;
@@ -155,9 +153,9 @@ contract DeployPointFarmMainnetContracts is Deployer {
 contract CreatePairMainnet is Deployer {
     MatchingEngine public matchingEngine =
         MatchingEngine(
-            payable(address(0xd7ABA1cbAd246249be6a0de9a449FB5EDEFf1E47))
+            payable(address(0xE0892785D00F192110A05282387fBAC21b942Aad))
         );
-    address constant base = 0x202C35e517Fa803B537565c40F0a6965D7204609;
+    address constant base = 0x4200000000000000000000000000000000000006;
     address constant quote = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
     uint256 constant initMarketPrice = 341320000000;
 

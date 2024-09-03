@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@lukso/lsp7-contracts": "^0.15.0"
+  }
+}

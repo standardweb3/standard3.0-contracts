@@ -5,3 +5,6 @@ openzeppelin-contracts/=lib/openzeppelin-contracts/
 
 @openzeppelin/contracts/=lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/
 @openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/
+
+@lukso/=node_modules/@lukso/
+@erc725/=node_modules/@erc725/

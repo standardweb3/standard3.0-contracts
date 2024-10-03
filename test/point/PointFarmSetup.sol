@@ -75,9 +75,9 @@ contract PointFarmSetup is Test {
         base.mint(trader1, type(uint256).max);
         usdc.mint(trader1, type(uint256).max);
         // make a price in matching engine where 1 base = 1 quote with buy and sell order
-        matchingEngine.addPair(address(base), address(usdc), 341320000000);
+        matchingEngine.addPair(address(base), address(usdc), 341320000000, 0);
         // make a price in matching engine where 1 feeToken = 1000 stablecoin with buy and sell order
-        matchingEngine.addPair(address(feeToken), address(stablecoin), 10000e8);
+        matchingEngine.addPair(address(feeToken), address(stablecoin), 10000e8, 0);
         
 
         point = new STNDXP();

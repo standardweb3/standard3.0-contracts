@@ -21,7 +21,7 @@ import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 contract MarketOrderTest is BaseSetup {
     function testMarketBuyETH() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(weth), 1e8);
+        matchingEngine.addPair(address(token1), address(weth), 1e8, 0);
         console.log("weth balance");
         console.log(trader1.balance / 1e18);
         vm.prank(trader1);
@@ -63,7 +63,7 @@ contract MarketOrderTest is BaseSetup {
 
     function testMarketSellETH() public {
         super.setUp();
-        matchingEngine.addPair(address(weth), address(token1), 1e8);
+        matchingEngine.addPair(address(weth), address(token1), 1e8, 0);
         console.log("weth balance");
         console.log(trader1.balance / 1e18);
         vm.prank(trader1);
@@ -100,7 +100,7 @@ contract MarketOrderTest is BaseSetup {
 
     function testCancelJammingOrderbook() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(token2), 1000e8);
+        matchingEngine.addPair(address(token1), address(token2), 1000e8, 0);
         vm.prank(booker);
 
         book = Orderbook(
@@ -279,7 +279,7 @@ contract MarketOrderTest is BaseSetup {
         base.mint(trader1, type(uint256).max);
         quote.mint(trader1, type(uint256).max);
         // make a price in matching engine where 1 base = 1 quote with buy and sell order
-        matchingEngine.addPair(address(base), address(quote), 1e8);
+        matchingEngine.addPair(address(base), address(quote), 1e8, 0);
         vm.startPrank(trader1);
         base.approve(address(matchingEngine), type(uint256).max);
         quote.approve(address(matchingEngine), type(uint256).max);
@@ -812,7 +812,7 @@ contract MarketOrderTest is BaseSetup {
         base.mint(trader1, type(uint256).max);
         quote.mint(trader1, type(uint256).max);
         // make a price in matching engine where 1 base = 1 quote with buy and sell order
-        matchingEngine.addPair(address(base), address(quote), 341320000000);
+        matchingEngine.addPair(address(base), address(quote), 341320000000, 0);
         vm.startPrank(trader1);
         base.approve(address(matchingEngine), type(uint256).max);
         quote.approve(address(matchingEngine), type(uint256).max);

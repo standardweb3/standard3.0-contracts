@@ -19,7 +19,7 @@ import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 contract CancelTest is BaseSetup {
 
     function testCancelAtPriceZeroPasses() public {
-        matchingEngine.addPair(address(token1), address(token2), 300000000);
+        matchingEngine.addPair(address(token1), address(token2), 300000000, 0);
         vm.prank(booker);
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
@@ -49,7 +49,7 @@ contract CancelTest is BaseSetup {
     }
 
     function testCancelAtPriceWhateverPasses() public {
-        matchingEngine.addPair(address(token1), address(token2), 300000000);
+        matchingEngine.addPair(address(token1), address(token2), 300000000, 0);
         vm.prank(booker);
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
@@ -82,7 +82,7 @@ contract CancelTest is BaseSetup {
     // edge cases on cancelling orders
     function testCancelEdgeCase() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(token2), 700000000);
+        matchingEngine.addPair(address(token1), address(token2), 700000000, 0);
         
         vm.prank(booker);
         book = Orderbook(
@@ -193,7 +193,7 @@ contract CancelTest is BaseSetup {
 
     function testCancelEdgeCase2() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(token2), 700000000);
+        matchingEngine.addPair(address(token1), address(token2), 700000000, 0);
         vm.prank(booker);
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
@@ -303,7 +303,7 @@ contract CancelTest is BaseSetup {
 
     function testCancelEdgeCase3() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(token2), 700000000);
+        matchingEngine.addPair(address(token1), address(token2), 700000000, 0);
         vm.prank(booker);
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
@@ -414,7 +414,7 @@ contract CancelTest is BaseSetup {
 
     function testCancelJammingOrderbook() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(token2), 1000e8);
+        matchingEngine.addPair(address(token1), address(token2), 1000e8, 0);
         vm.prank(booker);
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
@@ -491,7 +491,7 @@ contract CancelTest is BaseSetup {
 
     function testCancelAtHeadPrice() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(token2), 1000e8);
+        matchingEngine.addPair(address(token1), address(token2), 1000e8, 0);
         
         vm.prank(booker);
         book = Orderbook(
@@ -558,7 +558,7 @@ contract CancelTest is BaseSetup {
 
     function testCancelOrderDeletion() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(token2), 100000000);
+        matchingEngine.addPair(address(token1), address(token2), 100000000, 0);
         
         vm.prank(booker);
         book = Orderbook(
@@ -650,7 +650,7 @@ contract CancelTest is BaseSetup {
 
     function testCancelOrders() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(token2), 700000000);
+        matchingEngine.addPair(address(token1), address(token2), 700000000, 0);
 
         vm.prank(booker);
         book = Orderbook(
@@ -774,7 +774,7 @@ contract CancelTest is BaseSetup {
 
     function testCancelOrdersWorksWithErrors() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(token2), 700000000);
+        matchingEngine.addPair(address(token1), address(token2), 700000000, 0);
 
         vm.prank(booker);
         book = Orderbook(

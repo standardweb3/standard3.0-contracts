@@ -20,7 +20,7 @@ import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 contract LimitOrderTest is BaseSetup {
     function testLimitTradeWithDiffDecimals() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(btc), 1e8);
+        matchingEngine.addPair(address(token1), address(btc), 1e8, 0);
         console.log(
             "Base/Quote Pair: ",
             matchingEngine.getPair(address(token1), address(btc))
@@ -49,7 +49,7 @@ contract LimitOrderTest is BaseSetup {
 
     function testLimitTrade() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(token2), 1e8);
+        matchingEngine.addPair(address(token1), address(token2), 1e8, 0);
         console.log(
             "Base/Quote Pair: ",
             matchingEngine.getPair(address(token1), address(token2))
@@ -78,7 +78,7 @@ contract LimitOrderTest is BaseSetup {
 
     function testLimitBuyETH() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(weth), 1e8);
+        matchingEngine.addPair(address(token1), address(weth), 1e8, 0);
         console.log("weth balance");
         console.log(trader1.balance / 1e18);
         vm.prank(trader1);
@@ -107,8 +107,8 @@ contract LimitOrderTest is BaseSetup {
 
     function testLimitSellETH() public {
         super.setUp();
-        matchingEngine.addPair(address(weth), address(token1), 1e8);
-        matchingEngine.addPair(address(token1), address(weth), 1e8);
+        matchingEngine.addPair(address(weth), address(token1), 1e8, 0);
+        matchingEngine.addPair(address(token1), address(weth), 1e8, 0);
         console.log("weth balance");
         console.log(trader1.balance / 1e18);
         vm.prank(trader1);
@@ -145,7 +145,7 @@ contract LimitOrderTest is BaseSetup {
 
     function testLimitBuyETHMakingNewBidHead() public {
         super.setUp();
-        matchingEngine.addPair(address(weth), address(token1), 1e8);
+        matchingEngine.addPair(address(weth), address(token1), 1e8, 0);
         console.log("weth balance");
         console.log(trader1.balance / 1e18);
         vm.startPrank(trader1);
@@ -180,7 +180,7 @@ contract LimitOrderTest is BaseSetup {
     // limit order is possible on out of spread range, but it is not matched
     function testLimitOrderOutOfSpreadRange() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(token2), 1e8);
+        matchingEngine.addPair(address(token1), address(token2), 1e8, 0);
         vm.prank(trader1);
         // mktprice is setup with lmp
         matchingEngine.limitBuy(
@@ -211,7 +211,7 @@ contract LimitOrderTest is BaseSetup {
         quote = new MockQuote("Quote Token", "QUOTE");
         base.mint(trader1, type(uint256).max);
         quote.mint(trader1, type(uint256).max);
-        matchingEngine.addPair(address(base), address(quote), 1e8);
+        matchingEngine.addPair(address(base), address(quote), 1e8, 0);
         vm.startPrank(trader1);
         base.approve(address(matchingEngine), type(uint256).max);
         quote.approve(address(matchingEngine), type(uint256).max);
@@ -531,7 +531,7 @@ contract LimitOrderTest is BaseSetup {
             trader1
         );
 
-        assert(matchingEngine.mktPrice(address(base), address(quote)) == 1e10);
+        assert(matchingEngine.mktPrice(address(base), address(quote)) == 102e6);
     }
 
     function testLimitBuySuspensionWhenBidAskHeadExistsAfterClearingHead() public {
@@ -621,7 +621,7 @@ contract LimitOrderTest is BaseSetup {
             trader1
         );
 
-        assert(matchingEngine.mktPrice(address(base), address(quote)) == 1e7);
+        assert(matchingEngine.mktPrice(address(base), address(quote)) == 98e6);
     }
 
     function testLimitSellSuspensionWhenBidAskHeadExistsAfterClearingHead() public {

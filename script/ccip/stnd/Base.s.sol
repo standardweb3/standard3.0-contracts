@@ -28,7 +28,7 @@ contract DeployMulticall3 is Deployer {
     }
 }
 
-contract DeployERC20MintablePausableBurnable is Deployer {
+contract DeployStandard is Deployer {
     Standard public stnd;
     function run() external {
         _setDeployer();

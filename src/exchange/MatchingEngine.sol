@@ -81,6 +81,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     // Spread limit setting
     mapping(address => DefaultSpread) public spreadLimits;
 
+    // Listing Info setting
+    mapping(address => uint256) public listingDates;
+
     event OrderDeposit(address sender, address asset, uint256 fee);
 
     event OrderCanceled(
@@ -129,23 +132,32 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         address orderbook,
         address base,
         address quote,
+        uint256 listingPrice,
+        uint256 listingDate,
         uint8 bDecimal,
         uint8 qDecimal
     );
 
+    event PairUpdated(
+        address orderbook,
+        address base,
+        address quote,
+        uint256 listingPrice,
+        uint256 listingDate
+    );
+
     error TooManyMatches(uint256 n);
     error InvalidFeeRate(uint256 feeNum, uint256 feeDenom);
-    error NotContract(address newImpl);
     error InvalidRole(bytes32 role, address sender);
     error OrderSizeTooSmall(uint256 amount, uint256 minRequired);
     error NoOrderMade(address base, address quote);
     error InvalidPair(address base, address quote, address pair);
+    error PairNotListedYet(address base, address quote, uint256 listingDate, uint256 timeNow);
     error NoLastMatchedPrice(address base, address quote);
     error BidPriceTooLow(uint256 limitPrice, uint256 lmp, uint256 minBidPrice);
     error AskPriceTooHigh(uint256 limitPrice, uint256 lmp, uint256 maxAskPrice);
     error PairDoesNotExist(address base, address quote, address pair);
     error AmountIsZero();
-    error PriceIsZero();
 
     receive() external payable {
         assert(msg.sender == WETH); // only accept ETH via fallback from the WETH contract
@@ -253,7 +265,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         );
 
         // get spread limits
-        orderData.spreadLimit = _getSpread(orderData.orderbook, true);
+        orderData.spreadLimit = getSpread(orderData.orderbook, true);
 
         orderData.lmp = mktPrice(base, quote);
 
@@ -390,7 +402,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         );
 
         // get spread limits
-        orderData.spreadLimit = _getSpread(orderData.orderbook, false);
+        orderData.spreadLimit = getSpread(orderData.orderbook, false);
 
         orderData.lmp = mktPrice(base, quote);
 
@@ -575,7 +587,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         );
 
         // get spread limits
-        orderData.spreadLimit = _getSpread(orderData.orderbook, true);
+        orderData.spreadLimit = getSpread(orderData.orderbook, true);
 
         // reuse quoteAmount for storing amount without fee
         quoteAmount = orderData.withoutFee;
@@ -595,7 +607,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             n
         );
 
-        // reuse price variable for storing make price
+        // reuse price variable for storing make price, determine 
         (price, orderData.lmp) = _detLimitBuyMakePrice(
             orderData.orderbook,
             price,
@@ -669,10 +681,13 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             up = lp >= up ? up : lp;
             return (up >= askHead ? askHead : up, lmp);
         } else {
-            // First, set upper limit on make price for market suspenstion
-            up = lp <= lmp ? lp : lmp;
+            if (lmp != 0) {
+                up = (lmp * (10000 + spread)) / 10000;
+                up = lp >= up ? up : lp;
+                return (up >= askHead ? askHead : up, lmp);
+            }
             // upper limit on make price must not go above ask price
-            return (up >= askHead ? askHead : up, lmp);
+            return (lp >= askHead ? askHead : lp, lmp);
         }
     }
 
@@ -714,7 +729,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         );
 
         // get spread limit
-        orderData.spreadLimit = _getSpread(orderData.orderbook, false);
+        orderData.spreadLimit = getSpread(orderData.orderbook, false);
 
         // reuse baseAmount for storing amount without fee
         baseAmount = orderData.withoutFee;
@@ -807,10 +822,12 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             down = (askHead * (10000 - spread)) / 10000;
             return (lp <= down ? down : lp, lmp);
         } else {
-            // First, set lower limit on down price for market suspenstion
-            down = lp >= lmp ? lp : lmp;
+            if (lmp != 0) {
+                down = (lmp * (10000 - spread)) / 10000;
+               return (lp <= down ? down : lp, lmp);
+            }
             // lower limit price on sell cannot be lower than bid head price
-            return (down <= bidHead ? bidHead : down, lmp);
+            return (down <= bidHead ? bidHead : lp, lmp);
         }
     }
 
@@ -864,44 +881,55 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
      * @dev Creates an orderbook for a new trading pair and returns its address
      * @param base The address of the base asset for the trading pair
      * @param quote The address of the quote asset for the trading pair
-     * @param initMarketPrice The initial market price for the trading pair
+     * @param listingPrice The initial market price for the trading pair
+     * @param listingDate The listing Date for the trading pair
      * @return book The address of the newly created orderbook
      */
     function addPair(
         address base,
         address quote,
-        uint256 initMarketPrice
+        uint256 listingPrice,
+        uint256 listingDate
     ) external returns (address book) {
         // create orderbook for the pair
         address orderbook = IOrderbookFactory(orderbookFactory).createBook(
             base,
             quote
         );
-        IOrderbook(orderbook).setLmp(initMarketPrice);
+        IOrderbook(orderbook).setLmp(listingPrice);
         uint8 bDecimal = IDecimals(base).decimals();
         uint8 qDecimal = IDecimals(quote).decimals();
-        // set limit spread to 2% and market spread to 5% for default pair
+        // set buy/sell spread to default suspension rate in basis point(bps)
         _setSpread(base, quote, defaultBuy, defaultSell);
-        emit PairAdded(orderbook, base, quote, bDecimal, qDecimal);
-        emit NewMarketPrice(orderbook, initMarketPrice);
+        _setListingDate(orderbook, listingDate);
+        emit PairAdded(orderbook, base, quote, listingPrice, listingDate, bDecimal, qDecimal);
+        emit NewMarketPrice(orderbook, listingPrice);
         return orderbook;
     }
 
-    function _addPair(
+    /**
+     * @dev Update the market price of a trading pair.`
+     * @param base The address of the base asset for the trading pair
+     * @param quote The address of the quote asset for the trading pair
+     * @param listingPrice The initial market price for the trading pair
+     * @param listingDate The listing Date for the trading pair
+     */
+    function updatePair(
         address base,
-        address quote
-    ) internal returns (address book) {
+        address quote,
+        uint256 listingPrice,
+        uint256 listingDate
+    ) external returns (address book) {
+        // check if the list request is done by 
+        if (!hasRole(MARKET_MAKER_ROLE, _msgSender())) {
+            revert InvalidRole(MARKET_MAKER_ROLE, _msgSender());
+        }
         // create orderbook for the pair
-        address orderBook = IOrderbookFactory(orderbookFactory).createBook(
-            base,
-            quote
-        );
-        uint8 bDecimal = IDecimals(base).decimals();
-        uint8 qDecimal = IDecimals(quote).decimals();
-        // set limit spread to 2% and market spread to 5% for default pair
-        _setSpread(base, quote, defaultBuy, defaultSell);
-        emit PairAdded(orderBook, base, quote, bDecimal, qDecimal);
-        return orderBook;
+        address orderbook = getPair(base, quote);
+        IOrderbook(orderbook).setLmp(listingPrice);
+        emit PairUpdated(orderbook, base, quote, listingPrice, listingDate);
+        emit NewMarketPrice(orderbook, listingPrice);
+        return orderbook;
     }
 
     /**
@@ -1215,6 +1243,14 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         }
     }
 
+    function _setListingDate(
+        address book,
+        uint256 listingDate
+    ) internal returns (bool success) {
+        listingDates[book] = listingDate;
+        return true;
+    }
+
     function _setSpread(
         address base,
         address quote,
@@ -1226,10 +1262,10 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         return true;
     }
 
-    function _getSpread(
+    function getSpread(
         address book,
         bool isBuy
-    ) internal view returns (uint32 spreadLimit) {
+    ) public view returns (uint32 spreadLimit) {
         DefaultSpread memory spread;
         spread = spreadLimits[book];
         if (isBuy) {
@@ -1534,8 +1570,14 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         }
         // get orderbook address from the base and quote asset
         pair = getPair(base, quote);
+        // check infalid pair
+        
         if (pair == address(0)) {
             revert InvalidPair(base, quote, pair);
+        }
+        // check if the pair is listed
+        if (listingDates[pair] > block.timestamp) {
+            revert PairNotListedYet(base, quote, listingDates[pair], block.timestamp);
         }
 
         // check if amount is valid in case of both market and limit

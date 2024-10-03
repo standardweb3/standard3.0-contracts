@@ -11,7 +11,7 @@ import {Orderbook} from "../../src/exchange/orderbooks/Orderbook.sol";
 import {Multicall3} from "../Multicall3.sol";
 import {TokenDispenser} from "../../src/exchange/airdrops/TokenDispenser.sol";
 import {ExchangeOrderbook} from "../../src/exchange/libraries/ExchangeOrderbook.sol";
-import {ERC20MintablePausableBurnable} from "../../src/stnd/ccip/STND.sol";
+import {Standard} from "../../src/stnd/ccip/STND.sol";
 
 contract Deployer is Script {
     function _setDeployer() internal {
@@ -29,21 +29,21 @@ contract DeployMulticall3 is Deployer {
 }
 
 contract DeploySTND is Deployer {
-    ERC20MintablePausableBurnable public stnd;
+    Standard public stnd;
     function run() external {
         _setDeployer();
-        stnd = new ERC20MintablePausableBurnable("Standard (CCIP)", "STND");
+        stnd = new Standard();
         vm.stopBroadcast();
     }
 }
 
 contract GrantMinterRole is Deployer {
     address stnd_address = 0xAd117e349e05c7B718B9AfbFde88EA60376bCE14;
-    ERC20MintablePausableBurnable public stnd;
+    Standard public stnd;
     address minter = address(0);
     function run() external {
         _setDeployer();
-        stnd = ERC20MintablePausableBurnable(stnd_address);
+        stnd = Standard(stnd_address);
         stnd.grantRole(stnd.MINTER_ROLE(), minter);
     }
 }

@@ -19,7 +19,7 @@ import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 // test cases for orderbooks
 contract ConversionTest is BaseSetup {
     function testOrderWithPriceZeroFails() public {
-        matchingEngine.addPair(address(token1), address(token2), 1e8);
+        matchingEngine.addPair(address(token1), address(token2), 1e8, 0);
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
@@ -40,7 +40,7 @@ contract ConversionTest is BaseSetup {
 
     function testInvalidConversion() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(token2), 100e8);
+        matchingEngine.addPair(address(token1), address(token2), 100e8, 0);
 
         console.log(
             "Base/Quote Pair: ",
@@ -156,7 +156,7 @@ contract ConversionTest is BaseSetup {
 
     function testConvertBuySellOnDifferentDecimalWhereBaseBQuote() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(btc), 1000e8);
+        matchingEngine.addPair(address(token1), address(btc), 1000e8, 0);
 
         // before trade balances
         uint256 beforeTrader2T1Balance = token1.balanceOf(address(trader2));
@@ -234,7 +234,7 @@ contract ConversionTest is BaseSetup {
 
     function testConvertSellBuyOnDifferentDecimalWhereBaseBQuote() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(btc), 1000e8);
+        matchingEngine.addPair(address(token1), address(btc), 1000e8, 0);
 
         // before trade balances
         uint256 beforeTrader2T1Balance = token1.balanceOf(address(trader2));
@@ -313,7 +313,7 @@ contract ConversionTest is BaseSetup {
 
     function testConvertBuySellOnDifferentDecimalWhereNotBaseBQuote() public {
         super.setUp();
-        matchingEngine.addPair(address(btc), address(token2), 1000e8);
+        matchingEngine.addPair(address(btc), address(token2), 1000e8, 0);
 
         // before trade balances
         uint256 beforeTrader2T2Balance = token2.balanceOf(address(trader2));
@@ -392,7 +392,7 @@ contract ConversionTest is BaseSetup {
 
     function testConvertSellBuyOnDifferentDecimalWhereNotBaseBQuote() public {
         super.setUp();
-        matchingEngine.addPair(address(btc), address(token2), 1000e8);
+        matchingEngine.addPair(address(btc), address(token2), 1000e8, 0);
 
         // before trade balances
         uint256 beforeTrader2T2Balance = token2.balanceOf(address(trader2));
@@ -471,7 +471,7 @@ contract ConversionTest is BaseSetup {
 
     function testConvertBuySellOnSameDecimal() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(token2), 1000e8);
+        matchingEngine.addPair(address(token1), address(token2), 1000e8, 0);
 
         // before trade balances
         uint256 beforeTrader2T2Balance = token2.balanceOf(address(trader2));
@@ -550,7 +550,7 @@ contract ConversionTest is BaseSetup {
 
     function testConvertSellBuyOnSameDecimal() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(token2), 1000e8);
+        matchingEngine.addPair(address(token1), address(token2), 1000e8, 0);
 
         // before trade balances
         uint256 beforeTrader2T2Balance = token2.balanceOf(address(trader2));

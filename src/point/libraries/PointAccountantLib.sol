@@ -23,7 +23,7 @@ interface IPoint {
     ) external returns (uint256 sdrMinted, uint256 onrMinted);
 }
 
-interface IEngine {
+interface IMatchingEngine {
     function convert(
         address base,
         address quote,
@@ -99,7 +99,7 @@ library PointAccountantLib {
         bool isBid,
         uint32 x
     ) internal returns (address pair) {
-        pair = IEngine(self.matchingEngine).getPair(base, quote);
+        pair = IMatchingEngine(self.matchingEngine).getPair(base, quote);
         if (isBid) {
             self.multipliers[pair].buy = x;
         } else {
@@ -191,8 +191,8 @@ library PointAccountantLib {
 
         // compute usdt value
         address asset = isBid ? quote : base;
-        address pair = IEngine(self.matchingEngine).getPair(base, quote);
-        uint256 stablecoinValue = IEngine(self.matchingEngine).convert(
+        address pair = IMatchingEngine(self.matchingEngine).getPair(base, quote);
+        uint256 stablecoinValue = IMatchingEngine(self.matchingEngine).convert(
             asset,
             self.stablecoin,
             amount,
@@ -232,7 +232,7 @@ library PointAccountantLib {
         }
 
         // compute usdt value
-        uint256 stablecoinValue = IEngine(self.matchingEngine).convert(
+        uint256 stablecoinValue = IMatchingEngine(self.matchingEngine).convert(
             give,
             self.stablecoin,
             amount,

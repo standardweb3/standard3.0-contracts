@@ -5,7 +5,7 @@ import {TransferHelper} from "./libraries/TransferHelper.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
-interface IEngine {
+interface IMatchingEngine {
     function mktPrice(address base, address quote) external returns (uint256);
 }
 
@@ -44,7 +44,7 @@ contract BrawlPortal is AccessControl, Initializable {
         address bet,
         uint256 duration
     ) external returns (address brawl) {
-        uint256 startPrice = IEngine(engine).mktPrice(base, quote);
+        uint256 startPrice = IMatchingEngine(engine).mktPrice(base, quote);
         return
             ITimeBrawlFactory(factory).createBrawl(
                 base,
@@ -111,7 +111,7 @@ contract BrawlPortal is AccessControl, Initializable {
 
     function exit(address base, address quote, uint256 id) external {
         address brawl = getBrawl(base, quote, id);
-        uint256 endPrice = IEngine(engine).mktPrice(base, quote);
+        uint256 endPrice = IMatchingEngine(engine).mktPrice(base, quote);
         ITimeBrawl(brawl).exit(endPrice);
     }
 

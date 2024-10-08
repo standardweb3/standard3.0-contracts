@@ -9,7 +9,7 @@ import "./interfaces/INetworkState.sol";
 import "./interfaces/IERC721Minimal.sol";
 import "./interfaces/ICoupon.sol";
 import "./interfaces/IWETH.sol";
-import "./interfaces/IEngine.sol";
+import "./interfaces/IMatchingEngine.sol";
 import "./interfaces/ISAFU.sol";
 
 contract Bond {
@@ -79,14 +79,14 @@ contract Bond {
         );
         // check the pair if it exists
         address market = INetworkState(state).market();
-        address pair = IEngine(market).getPair(collateral, debt);
+        address pair = IMatchingEngine(market).getPair(collateral, debt);
         require(pair != address(0), "Vault: Liquidating pair not supported");
         uint256 balance = IERC20Minimal(collateral).balanceOf(address(this));
         uint256 lfr = INetworkState(state).getLFR(collateral);
         uint256 liquidationFee = (lfr * balance) / 100;
         uint256 left = _sendFee(collateral, balance, liquidationFee);
         // Distribute collaterals
-        IEngine(market).marketSell(collateral, debt, left, true, 10, 0);
+        IMatchingEngine(market).marketSell(collateral, debt, left, true, 10, address(this));
         // burn vault nft
         _burnV1FromVault();
         //emit Liquidated(address(this), collateral, balance);

@@ -2,7 +2,7 @@ pragma solidity ^0.8.24;
 
 import "./CloneFactory.sol";
 import "../interfaces/IBond.sol";
-import "../interfaces/IEngine.sol";
+import "../interfaces/IMatchingEngine.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 library NetworkStateLibrary {
@@ -237,7 +237,7 @@ library NetworkStateLibrary {
         State storage self,
         address asset_
     ) public view returns (uint) {
-        uint price = IEngine(self.market).mktPrice(asset_, self.currency);
+        uint price = IMatchingEngine(self.market).mktPrice(asset_, self.currency);
         if (price == 0) {
             revert MktPriceIsZero(asset_, self.currency);
         }

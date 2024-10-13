@@ -146,6 +146,11 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         uint256 listingDate
     );
 
+    event PairCreate2(
+        address deployer,
+        address impl
+    );
+
     error TooManyMatches(uint256 n);
     error InvalidFeeRate(uint256 feeNum, uint256 feeDenom);
     error InvalidRole(bytes32 role, address sender);
@@ -188,6 +193,9 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         WETH = WETH_;
         defaultBuy = 200;
         defaultSell = 200;
+        // get impl address of orderbook contract to predict address
+        address impl = IOrderbookFactory(orderbookFactory_).impl();
+        emit PairCreate2(orderbookFactory, impl);
     }
 
     // admin functions

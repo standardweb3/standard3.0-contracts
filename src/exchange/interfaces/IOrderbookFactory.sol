@@ -9,6 +9,8 @@ interface IOrderbookFactory {
 
     function engine() external view returns (address);
 
+    function impl() external view returns (address);
+
     function createBook(
         address base_,
         address quote_

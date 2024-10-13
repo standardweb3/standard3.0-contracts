@@ -148,10 +148,12 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
     /**
      * @dev Initialize orderbook factory contract with engine address, reinitialize if engine is reset.
      * @param engine_ The address of the engine contract
+     * @return address of pair implementation contract
      */
-    function initialize(address engine_) public initializer {
+    function initialize(address engine_) public initializer returns (address) {
         engine = engine_;
         _createImpl();
+        return impl;
     }
 
     function allPairsLength() public view returns (uint256) {

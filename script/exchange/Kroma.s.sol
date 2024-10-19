@@ -54,25 +54,24 @@ contract DeployExchangeMainnetContracts is Deployer {
         OrderbookFactory orderbookFactory = new OrderbookFactory();
         MatchingEngine matchingEngine = new MatchingEngine();
 
+        orderbookFactory.initialize(address(matchingEngine));
         matchingEngine.initialize(
             address(orderbookFactory),
             address(deployer_address),
             address(weth)
         );
 
-        orderbookFactory.initialize(address(matchingEngine));
-
         vm.stopBroadcast();
     }
 }
 
-contract SetupPointMainnet is Deployer{
-
+contract SetupPointMainnet is Deployer {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
     MatchingEngine public matchingEngine;
-    address constant matchingEngine_address = 0x41f21E381a70E404854D1f95788208BBc6A8Cd72;
+    address constant matchingEngine_address =
+        0x41f21E381a70E404854D1f95788208BBc6A8Cd72;
     address constant foundation_address =
         0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
     address constant weth = 0x4200000000000000000000000000000000000001;
@@ -95,7 +94,9 @@ contract SetupPointMainnet is Deployer{
             address(stablecoin_address)
         );
         pass.initialize(address(pointFarm));
-        matchingEngine = MatchingEngine(payable(address(matchingEngine_address)));
+        matchingEngine = MatchingEngine(
+            payable(address(matchingEngine_address))
+        );
         matchingEngine.setFeeTo(address(pointFarm));
         point.grantRole(MINTER_ROLE, address(pointFarm));
         vm.stopBroadcast();
@@ -163,7 +164,11 @@ contract SetupPrizePoolMainnet is Deployer {
         prizePool = new PrizePool();
         point = STNDXP(point_address);
         point.grantRole(BURNER_ROLE, address(prizePool));
-        TransferHelper.safeTransfer(stablecoin_address, address(prizePool), prize_amount);
+        TransferHelper.safeTransfer(
+            stablecoin_address,
+            address(prizePool),
+            prize_amount
+        );
         prizePool.initialize(address(stablecoin_address), address(point));
         vm.stopBroadcast();
     }
@@ -179,8 +184,6 @@ contract collectFee is Deployer {
     PointFarm public pointFarm;
     address constant pointFarm_address = address(0);
     address constant token_address = address(0);
-
-
 
     function run() external {
         pointFarm = PointFarm(pointFarm_address);
@@ -208,11 +211,16 @@ contract ShowOrderbook is Deployer {
     address constant matching_engine_address =
         0x41f21E381a70E404854D1f95788208BBc6A8Cd72;
     address constant base_address = 0x4200000000000000000000000000000000000001;
-    address constant quote_address = 0x0Cf7c2A584988871b654Bd79f96899e4cd6C41C0; 
+    address constant quote_address = 0x0Cf7c2A584988871b654Bd79f96899e4cd6C41C0;
     MatchingEngine public matchingEngine =
         MatchingEngine(payable(matching_engine_address));
 
-    function _orderbookIsEmpty(address b_addr, address q_addr, uint256 price, bool isBid) internal view returns (bool) {
+    function _orderbookIsEmpty(
+        address b_addr,
+        address q_addr,
+        uint256 price,
+        bool isBid
+    ) internal view returns (bool) {
         address orderbook = matchingEngine.getPair(b_addr, q_addr);
         console.log("Orderbook", orderbook);
         return Orderbook(payable(orderbook)).isEmpty(isBid, price);
@@ -226,7 +234,10 @@ contract ShowOrderbook is Deployer {
         (uint256 bidHead, uint256 askHead) = matchingEngine.heads(base, quote);
         console.log("Bid Head: ", bidHead);
         console.log("Ask Head: ", askHead);
-        console.log("is empty: ", _orderbookIsEmpty(base, quote, askHead, false));
+        console.log(
+            "is empty: ",
+            _orderbookIsEmpty(base, quote, askHead, false)
+        );
         uint256[] memory bidPrices = matchingEngine.getPrices(
             address(base),
             address(quote),
@@ -259,7 +270,11 @@ contract ShowOrderbook is Deployer {
                     10
                 );
             for (uint256 j = 0; j < 10; j++) {
-                console.log(askOrderIds[j], askOrders[j].owner, askOrders[j].depositAmount);
+                console.log(
+                    askOrderIds[j],
+                    askOrders[j].owner,
+                    askOrders[j].depositAmount
+                );
             }
         }
 
@@ -283,7 +298,11 @@ contract ShowOrderbook is Deployer {
                     10
                 );
             for (uint256 j = 0; j < 10; j++) {
-                console.log(bidOrderIds[j], bidOrders[j].owner, bidOrders[j].depositAmount);
+                console.log(
+                    bidOrderIds[j],
+                    bidOrders[j].owner,
+                    bidOrders[j].depositAmount
+                );
             }
         }
     }

@@ -118,25 +118,31 @@ library CloneFactory {
         }
     }
 
-    function predictAddressWithSalt(address deployer, address target, bytes32 salt) internal pure returns (address) {
-    // Create the expected bytecode of the minimal proxy
-    bytes memory bytecode = abi.encodePacked(
-        hex"3d602d80600a3d3981f3363d3d373d3d3d363d73",
-        target,
-        hex"5af43d82803e903d91602b57fd5bf3"
-    );
-    
-    bytes32 bytecodeHash = keccak256(bytecode);
+    function predictAddressWithSalt(
+        address deployer,
+        address target,
+        bytes32 salt
+    ) internal pure returns (address) {
+        // Create the expected bytecode of the minimal proxy
+        bytes memory bytecode = abi.encodePacked(
+            hex"3d602d80600a3d3981f3363d3d373d3d3d363d73",
+            target,
+            hex"5af43d82803e903d91602b57fd5bf3"
+        );
 
-    bytes32 _data = keccak256(
-        abi.encodePacked(
-            bytes1(0xff),
-            deployer,
-            salt,
-            bytecodeHash
-        )
-    );
-    return address(uint160(uint256(_data)));
-}
+        bytes32 bytecodeHash = keccak256(bytecode);
 
+        bytes32 _data = keccak256(
+            abi.encodePacked(bytes1(0xff), deployer, salt, bytecodeHash)
+        );
+        return address(uint160(uint256(_data)));
+    }
+
+    function getBytecode(address target) internal pure returns (bytes memory bytecode) {
+        return  abi.encodePacked(
+            hex"3d602d80600a3d3981f3363d3d373d3d3d363d73",
+            target,
+            hex"5af43d82803e903d91602b57fd5bf3"
+        );
+    }
 }

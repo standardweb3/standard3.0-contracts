@@ -99,13 +99,12 @@ contract DeployExchangeMainnetContracts is Deployer {
         OrderbookFactory orderbookFactory = new OrderbookFactory();
         MatchingEngine matchingEngine = new MatchingEngine();
 
+        orderbookFactory.initialize(address(matchingEngine));
         matchingEngine.initialize(
             address(orderbookFactory),
             address(deployer_address),
             address(weth)
         );
-
-        orderbookFactory.initialize(address(matchingEngine));
 
         vm.stopBroadcast();
     }

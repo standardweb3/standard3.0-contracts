@@ -146,10 +146,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         uint256 listingDate
     );
 
-    event PairCreate2(
-        address deployer,
-        address impl
-    );
+    event PairCreate2(address deployer, bytes bytecode);
 
     error TooManyMatches(uint256 n);
     error InvalidFeeRate(uint256 feeNum, uint256 feeDenom);
@@ -157,12 +154,18 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     error OrderSizeTooSmall(uint256 amount, uint256 minRequired);
     error NoOrderMade(address base, address quote);
     error InvalidPair(address base, address quote, address pair);
-    error PairNotListedYet(address base, address quote, uint256 listingDate, uint256 timeNow);
+    error PairNotListedYet(
+        address base,
+        address quote,
+        uint256 listingDate,
+        uint256 timeNow
+    );
     error NoLastMatchedPrice(address base, address quote);
     error BidPriceTooLow(uint256 limitPrice, uint256 lmp, uint256 minBidPrice);
     error AskPriceTooHigh(uint256 limitPrice, uint256 lmp, uint256 maxAskPrice);
     error PairDoesNotExist(address base, address quote, address pair);
     error AmountIsZero();
+    error FactoryNotInitialized(address factory);
 
     receive() external payable {
         assert(msg.sender == WETH); // only accept ETH via fallback from the WETH contract
@@ -195,7 +198,13 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         defaultSell = 200;
         // get impl address of orderbook contract to predict address
         address impl = IOrderbookFactory(orderbookFactory_).impl();
-        emit PairCreate2(orderbookFactory, impl);
+        // Orderbook factory must be initialized first to locate pairs
+        if (impl == address(0)) {
+            revert FactoryNotInitialized(orderbookFactory_);
+        }
+        bytes memory bytecode = IOrderbookFactory(orderbookFactory_)
+            .getByteCode();
+        emit PairCreate2(orderbookFactory, bytecode);
     }
 
     // admin functions
@@ -615,7 +624,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             n
         );
 
-        // reuse price variable for storing make price, determine 
+        // reuse price variable for storing make price, determine
         (price, orderData.lmp) = _detLimitBuyMakePrice(
             orderData.orderbook,
             price,
@@ -825,14 +834,14 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         } else if (askHead != 0 && bidHead == 0) {
             if (lmp != 0) {
                 down = (lmp * (10000 - spread)) / 10000;
-               return (lp <= down ? down : lp, lmp);
+                return (lp <= down ? down : lp, lmp);
             }
             down = (askHead * (10000 - spread)) / 10000;
             return (lp <= down ? down : lp, lmp);
         } else {
             if (lmp != 0) {
                 down = (lmp * (10000 - spread)) / 10000;
-               return (lp <= down ? down : lp, lmp);
+                return (lp <= down ? down : lp, lmp);
             }
             // lower limit price on sell cannot be lower than bid head price
             return (down <= bidHead ? bidHead : lp, lmp);
@@ -910,7 +919,15 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         // set buy/sell spread to default suspension rate in basis point(bps)
         _setSpread(base, quote, defaultBuy, defaultSell);
         _setListingDate(orderbook, listingDate);
-        emit PairAdded(orderbook, base, quote, listingPrice, listingDate, bDecimal, qDecimal);
+        emit PairAdded(
+            orderbook,
+            base,
+            quote,
+            listingPrice,
+            listingDate,
+            bDecimal,
+            qDecimal
+        );
         emit NewMarketPrice(orderbook, listingPrice);
         return orderbook;
     }
@@ -928,7 +945,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         uint256 listingPrice,
         uint256 listingDate
     ) external returns (address book) {
-        // check if the list request is done by 
+        // check if the list request is done by
         if (!hasRole(MARKET_MAKER_ROLE, _msgSender())) {
             revert InvalidRole(MARKET_MAKER_ROLE, _msgSender());
         }
@@ -970,6 +987,26 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             return refunded;
         } catch {
             return 0;
+        }
+    }
+
+    function rematchOrder(
+        address base,
+        address quote,
+        bool isBid,
+        uint32 orderId,
+        uint256 price,
+        uint256 amount,
+        uint32 n
+    ) external returns (uint256 makePrice, uint256 placed, uint32 id) {
+        cancelOrder(base, quote, isBid, orderId);
+        // adjust amount from input
+        _deposit(base, quote, price, amount, isBid, true);
+        // make new limit buy or sell order
+        if (isBid) {
+            return limitBuy(base, quote, price, amount, true, n, msg.sender);
+        } else {
+            return limitSell(base, quote, price, amount, true, n, msg.sender);
         }
     }
 
@@ -1579,13 +1616,18 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         // get orderbook address from the base and quote asset
         pair = getPair(base, quote);
         // check infalid pair
-        
+
         if (pair == address(0)) {
             revert InvalidPair(base, quote, pair);
         }
         // check if the pair is listed
         if (listingDates[pair] > block.timestamp) {
-            revert PairNotListedYet(base, quote, listingDates[pair], block.timestamp);
+            revert PairNotListedYet(
+                base,
+                quote,
+                listingDates[pair],
+                block.timestamp
+            );
         }
 
         // check if amount is valid in case of both market and limit

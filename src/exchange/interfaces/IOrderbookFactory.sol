@@ -31,4 +31,6 @@ interface IOrderbookFactory {
     function getPairNamesWithIds(uint256[] memory ids) external view returns (string[] memory names);
 
     function getBaseQuote(address orderbook) external view returns (address base, address quote);
+
+    function getByteCode() external view returns (bytes memory bytecode);
 }

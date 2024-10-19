@@ -46,7 +46,6 @@ contract DeployExchangeProxy is Deployer {
     address admin = 0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
     address orderbookFactory = 0xa111a06BDEbb8b1dAA79000F4B386A36E0AccE56;
     address weth = 0x4200000000000000000000000000000000000006;
-   
 
     function run() external {
         _setDeployer();
@@ -57,11 +56,7 @@ contract DeployExchangeProxy is Deployer {
             data
         );
         MatchingEngine matchingEngine = MatchingEngine(payable(address(proxy)));
-        matchingEngine.initialize(
-            orderbookFactory,
-            admin,
-            weth
-        );
+        matchingEngine.initialize(orderbookFactory, admin, weth);
         vm.stopBroadcast();
     }
 }
@@ -99,13 +94,12 @@ contract DeployExchangeMainnetContracts is Deployer {
         OrderbookFactory orderbookFactory = new OrderbookFactory();
         MatchingEngine matchingEngine = new MatchingEngine();
 
+        orderbookFactory.initialize(address(matchingEngine));
         matchingEngine.initialize(
             address(orderbookFactory),
             address(deployer_address),
             address(weth)
         );
-
-        orderbookFactory.initialize(address(matchingEngine));
 
         vm.stopBroadcast();
     }

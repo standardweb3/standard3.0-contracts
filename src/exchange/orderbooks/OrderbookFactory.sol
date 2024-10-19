@@ -188,4 +188,8 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
     ) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked(base_, quote_));
     }
+
+    function getByteCode() external view returns (bytes memory bytecode) {
+        return CloneFactory.getBytecode(impl);
+    }
 }

@@ -253,6 +253,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
      * @param isMaker Boolean indicating if a order should be made at the market price in orderbook
      * @param n The maximum number of orders to match in the orderbook
      * @param recipient The address of the order owner
+     * @param slippageLimit Slippage limit in basis points
      * @return makePrice price where the order is placed
      * @return placed placed amount
      * @return id placed order id
@@ -263,7 +264,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         uint256 quoteAmount,
         bool isMaker,
         uint32 n,
-        address recipient
+        address recipient,
+        uint32 slippageLimit
     )
         public
         nonReentrant
@@ -282,7 +284,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         );
 
         // get spread limits
-        orderData.spreadLimit = getSpread(orderData.orderbook, true);
+        orderData.spreadLimit = slippageLimit <= getSpread(orderData.orderbook, true) ? slippageLimit : getSpread(orderData.orderbook, true);
 
         orderData.lmp = mktPrice(base, quote);
 
@@ -392,6 +394,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
      * @param baseAmount The amount of base asset to be sold in the market sell order
      * @param isMaker Boolean indicating if an order should be made at the market price in orderbook
      * @param n The maximum number of orders to match in the orderbook
+     * @param recipient recipient of order for trading
+     * @param slippageLimit slippage limit from market order in basis point
      * @return makePrice price where the order is placed
      * @return placed placed amount
      * @return id placed order id
@@ -402,7 +406,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         uint256 baseAmount,
         bool isMaker,
         uint32 n,
-        address recipient
+        address recipient,
+        uint32 slippageLimit
     )
         public
         nonReentrant
@@ -419,7 +424,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         );
 
         // get spread limits
-        orderData.spreadLimit = getSpread(orderData.orderbook, false);
+        orderData.spreadLimit = slippageLimit <= getSpread(orderData.orderbook, false) ? slippageLimit : getSpread(orderData.orderbook, false);
 
         orderData.lmp = mktPrice(base, quote);
 
@@ -540,7 +545,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         address recipient
     ) external payable returns (uint256 makePrice, uint256 placed, uint32 id) {
         IWETH(WETH).deposit{value: msg.value}();
-        return marketBuy(base, WETH, msg.value, isMaker, n, recipient);
+        return marketBuy(base, WETH, msg.value, isMaker, n, recipient, 200);
     }
 
     /**
@@ -562,7 +567,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         address recipient
     ) external payable returns (uint256 makePrice, uint256 placed, uint32 id) {
         IWETH(WETH).deposit{value: msg.value}();
-        return marketSell(WETH, quote, msg.value, isMaker, n, recipient);
+        return marketSell(WETH, quote, msg.value, isMaker, n, recipient, 200);
     }
 
     /**

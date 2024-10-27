@@ -55,7 +55,8 @@ contract MarketOrderTest is BaseSetup {
             1e18,
             true,
             5,
-            trader1
+            trader1,
+            200
         );
         console.log("weth balance");
         console.log(trader1.balance / 1e18);
@@ -92,7 +93,8 @@ contract MarketOrderTest is BaseSetup {
             1e18,
             true,
             5,
-            trader1
+            trader1,
+            200
         );
         console.log("weth balance");
         console.log(trader1.balance / 1e18);
@@ -165,7 +167,8 @@ contract MarketOrderTest is BaseSetup {
             3400000e18,
             true,
             5,
-            trader1
+            trader1,
+            200
         );
 
         console.log(
@@ -344,7 +347,7 @@ contract MarketOrderTest is BaseSetup {
         // check computed result
         assert(result == up);
         (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine
-            .marketBuy(address(base), address(quote), 1e8, true, 5, trader1);
+            .marketBuy(address(base), address(quote), 1e8, true, 5, trader1, 200);
         // check make price is equal to computed result
         console.log("make price: ", makePrice);
         assert(makePrice == result);
@@ -387,7 +390,7 @@ contract MarketOrderTest is BaseSetup {
         // check computed result
         assert(result == up);
         (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine
-            .marketBuy(address(base), address(quote), 1e8, true, 5,  trader1);
+            .marketBuy(address(base), address(quote), 1e8, true, 5,  trader1, 200);
         // check make price is equal to computed result
         console.log("make price: ", makePrice);
         assert(makePrice == result);
@@ -430,7 +433,7 @@ contract MarketOrderTest is BaseSetup {
         // check computed result
         assert(result == askHead);
         (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine
-            .marketBuy(address(base), address(quote), 1e8, true, 5,  trader1);
+            .marketBuy(address(base), address(quote), 1e8, true, 5,  trader1, 200);
         // check make price is equal to computed result
         console.log("make price: ", makePrice);
         assert(makePrice == result);
@@ -482,7 +485,7 @@ contract MarketOrderTest is BaseSetup {
         // check computed result
         assert(result == askHead);
         (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine
-            .marketBuy(address(base), address(quote), 1e8, true, 5, trader1);
+            .marketBuy(address(base), address(quote), 1e8, true, 5, trader1, 200);
         // check make price is equal to computed result
         console.log("make price: ", makePrice);
         assert(makePrice == result);
@@ -524,7 +527,7 @@ contract MarketOrderTest is BaseSetup {
         // check computed result
         assert(result == askHead);
         (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine
-            .marketBuy(address(base), address(quote), 1e8, true, 5, trader1);
+            .marketBuy(address(base), address(quote), 1e8, true, 5, trader1, 200);
         // check make price is equal to computed result
         console.log("make price: ", makePrice);
         assert(makePrice == result);
@@ -572,7 +575,8 @@ contract MarketOrderTest is BaseSetup {
                 1e8,
                 true,
                 5,
-                trader1
+                trader1,
+                200
             );
         // check make price is equal to computed result
         console.log("make price: ", makePrice);
@@ -621,7 +625,8 @@ contract MarketOrderTest is BaseSetup {
                 1e8,
                 true,
                 5,
-                trader1
+                trader1,
+                200
             );
         // check make price is equal to computed result
         console.log("make price: ", makePrice);
@@ -670,7 +675,8 @@ contract MarketOrderTest is BaseSetup {
                 1e8,
                 true,
                 5,
-                trader1
+                trader1,
+                200
             );
         // check make price is equal to computed result
         console.log("make price: ", makePrice);
@@ -701,7 +707,8 @@ contract MarketOrderTest is BaseSetup {
                 1e8,
                 false,
                 5,
-                trader1
+                trader1,
+                200
             );
         uint afterB = quote.balanceOf(address(trader1));
         // check make price is equal to computed result
@@ -735,7 +742,8 @@ contract MarketOrderTest is BaseSetup {
                 1e8,
                 false,
                 5,
-                trader1
+                trader1,
+                200
             );
         uint afterB = quote.balanceOf(address(trader1));
         // check make price is equal to computed result
@@ -798,7 +806,8 @@ contract MarketOrderTest is BaseSetup {
                     1e8,
                     true,
                     5,
-                    trader1
+                    trader1,
+                    200
                 );
         // check make price is equal to computed result
         console.log("make price: ", makePrice);
@@ -822,7 +831,8 @@ contract MarketOrderTest is BaseSetup {
             100000,
             true,
             5,
-            trader1
+            trader1,
+            200
         );
 
         matchingEngine.marketSell(
@@ -831,7 +841,8 @@ contract MarketOrderTest is BaseSetup {
             1e14,
             true,
             5,
-            trader1
+            trader1,
+            200
         );
     }
 }

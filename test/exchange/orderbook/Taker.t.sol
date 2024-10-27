@@ -79,7 +79,8 @@ contract MarketOrderTest is BaseSetup {
             1e18,
             false,
             2,
-            trader1
+            trader1,
+            200
         );
         uint256 afterB = base.balanceOf(trader1);
         console.log("before balance: ", beforeB);
@@ -103,7 +104,8 @@ contract MarketOrderTest is BaseSetup {
             1e18,
             false,
             2,
-            trader1
+            trader1,
+            200
         );
         uint256 afterB = base.balanceOf(trader1);
         console.log("before balance: ", beforeB);

@@ -104,7 +104,8 @@ contract MintTest is PointFarmSetup {
             100000,
             true,
             5,
-            trader1
+            trader1,
+            200
         );
 
         matchingEngine.cancelOrder(address(base), address(usdc), true, buyId);
@@ -115,7 +116,8 @@ contract MintTest is PointFarmSetup {
             1e14,
             true,
             5,
-            trader1
+            trader1,
+            200
         );
 
     }

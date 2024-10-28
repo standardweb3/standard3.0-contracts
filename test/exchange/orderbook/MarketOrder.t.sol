@@ -491,6 +491,90 @@ contract MarketOrderTest is BaseSetup {
         assert(makePrice == result);
     }
 
+    function testMarketBuyVolatilityOnSlippageLimit() public {
+        (
+            MockBase base,
+            MockQuote quote,
+            Orderbook book,
+            uint256 _mp /* silence warning */,
+            uint256 up,
+            uint256 _down /* silence warning */
+        ) = _setupVolatilityTest();
+        matchingEngine.limitBuy(
+            address(base),
+            address(quote),
+            1e6,
+            1e18,
+            true,
+            2,
+            trader1
+        );
+        // get pair and price info
+        // get pair and price info
+        book = Orderbook(
+            payable(matchingEngine.getPair(address(base), address(quote)))
+        );
+        (uint256 bidHead, uint256 askHead) = book.heads();
+        // check bidHead is lower than up
+        assert(bidHead < up);
+        uint256 result = _detMarketBuyMakePrice(
+            address(book),
+            bidHead,
+            askHead,
+            50
+        );
+        console.log("result: ", result);
+        // check computed result
+        assert(result == 100500000);
+        (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine
+            .marketBuy(address(base), address(quote), 1e8, true, 5,  trader1, 50);
+        // check make price is equal to computed result
+        console.log("make price: ", makePrice);
+        assert(makePrice == result);
+    }
+
+    function testMarketBuyVolatilityOnSlippageLimit2() public {
+        (
+            MockBase base,
+            MockQuote quote,
+            Orderbook book,
+            uint256 _mp /* silence warning */,
+            uint256 up,
+            uint256 _down /* silence warning */
+        ) = _setupVolatilityTest();
+        matchingEngine.limitBuy(
+            address(base),
+            address(quote),
+            1e6,
+            1e18,
+            true,
+            2,
+            trader1
+        );
+        // get pair and price info
+        // get pair and price info
+        book = Orderbook(
+            payable(matchingEngine.getPair(address(base), address(quote)))
+        );
+        (uint256 bidHead, uint256 askHead) = book.heads();
+        // check bidHead is lower than up
+        assert(bidHead < up);
+        uint256 result = _detMarketBuyMakePrice(
+            address(book),
+            bidHead,
+            askHead,
+            200
+        );
+        console.log("result: ", result);
+        // check computed result
+        assert(result == up);
+        (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine
+            .marketBuy(address(base), address(quote), 1e8, true, 5,  trader1, 300);
+        // check make price is equal to computed result
+        console.log("make price: ", makePrice);
+        assert(makePrice == result);
+    }
+
     // On market buy, if askHead is lower than lmp + ranged price, order is made with askHead
     function testMarketBuyVolatilityDown() public {
         (
@@ -677,6 +761,104 @@ contract MarketOrderTest is BaseSetup {
                 5,
                 trader1,
                 200
+            );
+        // check make price is equal to computed result
+        console.log("make price: ", makePrice);
+        assert(makePrice == result);
+    }
+
+    function testMarketSellVolatilityDownOnSlippageLimit() public {
+        (
+            MockBase base,
+            MockQuote quote,
+            Orderbook book,
+            uint256 _mp,
+            uint256 _up,
+            uint256 down
+        ) = _setupVolatilityTest();
+        matchingEngine.limitBuy(
+            address(base),
+            address(quote),
+            1e6,
+            1e18,
+            true,
+            2,
+            trader1
+        );
+        // get pair and price info
+        book = Orderbook(
+            payable(matchingEngine.getPair(address(base), address(quote)))
+        );
+        (uint256 bidHead, uint256 askHead) = book.heads();
+        // check bidHead is lower than down
+        assert(bidHead < down);
+        uint256 result = _detMarketSellMakePrice(
+            address(book),
+            bidHead,
+            askHead,
+            50
+        );
+        console.log("result: ", result);
+        // check computed result with user input with 50bps down
+        assert(result == 99500000);
+        (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine
+            .marketSell(
+                address(base),
+                address(quote),
+                1e8,
+                true,
+                5,
+                trader1,
+                50
+            );
+        // check make price is equal to computed result
+        console.log("make price: ", makePrice);
+        assert(makePrice == result);
+    }
+
+     function testMarketSellVolatilityDownOnSlippageLimit2() public {
+        (
+            MockBase base,
+            MockQuote quote,
+            Orderbook book,
+            uint256 _mp,
+            uint256 _up,
+            uint256 down
+        ) = _setupVolatilityTest();
+        matchingEngine.limitBuy(
+            address(base),
+            address(quote),
+            1e6,
+            1e18,
+            true,
+            2,
+            trader1
+        );
+        // get pair and price info
+        book = Orderbook(
+            payable(matchingEngine.getPair(address(base), address(quote)))
+        );
+        (uint256 bidHead, uint256 askHead) = book.heads();
+        // check bidHead is lower than down
+        assert(bidHead < down);
+        uint256 result = _detMarketSellMakePrice(
+            address(book),
+            bidHead,
+            askHead,
+            200
+        );
+        console.log("result: ", result);
+        // check computed result with user input with 50bps down
+        assert(result == down);
+        (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine
+            .marketSell(
+                address(base),
+                address(quote),
+                1e8,
+                true,
+                5,
+                trader1,
+                300
             );
         // check make price is equal to computed result
         console.log("make price: ", makePrice);

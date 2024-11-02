@@ -1682,7 +1682,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             uint32 feeNum = IRevenue(feeTo).feeOf(account, isMaker);
             return (amount * feeNum) / feeDenom;
         }
-        return amount / 100;
+        return amount * 3 / 1000;
     }
 
     function _isContract(address addr) internal view returns (bool isContract) {

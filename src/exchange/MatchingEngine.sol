@@ -130,12 +130,10 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
 
     event PairAdded(
         address orderbook,
-        address base,
-        address quote,
+        TransferHelper.TokenInfo base,
+        TransferHelper.TokenInfo quote,
         uint256 listingPrice,
-        uint256 listingDate,
-        uint8 bDecimal,
-        uint8 qDecimal
+        uint256 listingDate
     );
 
     event PairUpdated(
@@ -923,19 +921,18 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             quote
         );
         IOrderbook(orderbook).setLmp(listingPrice);
-        uint8 bDecimal = IDecimals(base).decimals();
-        uint8 qDecimal = IDecimals(quote).decimals();
         // set buy/sell spread to default suspension rate in basis point(bps)
         _setSpread(base, quote, defaultBuy, defaultSell);
         _setListingDate(orderbook, listingDate);
+
+        TransferHelper.TokenInfo memory baseInfo = TransferHelper.getTokenInfo(base);
+        TransferHelper.TokenInfo memory quoteInfo = TransferHelper.getTokenInfo(quote);
         emit PairAdded(
             orderbook,
-            base,
-            quote,
+            baseInfo,
+            quoteInfo,
             listingPrice,
-            listingDate,
-            bDecimal,
-            qDecimal
+            listingDate
         );
         emit NewMarketPrice(orderbook, listingPrice);
         return orderbook;

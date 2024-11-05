@@ -44,7 +44,8 @@ contract MarketOrderTest is BaseSetup {
             address(token1),
             true,
             5,
-            trader1
+            trader1,
+            200
         );
         vm.prank(trader1);
         token1.approve(address(matchingEngine), 10e18);
@@ -82,7 +83,8 @@ contract MarketOrderTest is BaseSetup {
             address(token1),
             true,
             5,
-            trader1
+            trader1,
+            200
         );
         vm.prank(trader1);
         token1.approve(address(matchingEngine), 10e18);

@@ -164,7 +164,7 @@ contract ConversionTest is BaseSetup {
         uint256 beforeTrader1T1Balance = token1.balanceOf(address(trader1));
         uint256 beforeTrader1BTCBalance = btc.balanceOf(address(trader1));
 
-        // deposit 10000e8(9990e8 after fee) for buying 10e18 token1 for 1000 token2 * amount
+        // deposit 10000e8(9997e8 after fee) for buying 10e18 token1 for 1000 token2 * amount
         vm.prank(trader1);
         matchingEngine.limitBuy(
             address(token1),
@@ -175,7 +175,7 @@ contract ConversionTest is BaseSetup {
             5,
             trader1
         );
-        // deposit 10e18(9.99e18 after fee) for selling token1 for 1000 token1 * amount
+        // deposit 10e18(9.997e18 after fee) for selling token1 for 1000 token1 * amount
         vm.prank(trader2);
         matchingEngine.limitSell(
             address(token1),
@@ -214,14 +214,14 @@ contract ConversionTest is BaseSetup {
             diffTrader1BTCBalance
         );
 
-        // Trader2's btc balance should be increased by 9.99e11
-        assert(diffTrader2BTCBalance == 99e10);
+        // Trader2's btc balance should be increased by 9.97e11
+        assert(diffTrader2BTCBalance == 997e9);
         // Trader2's token1 balance should be decreased by 10e18
         assert(diffTrader2T1Balance == 1e19);
         // Trader1's btc balance should be decreased by 10000e8
         assert(diffTrader1BTCBalance == 1e12);
-        // Trader1's token1 balance should be increased by 9.99e18
-        assert(diffTrader1T1Balance == 99e17);
+        // Trader1's token1 balance should be increased by 9.97e18
+        assert(diffTrader1T1Balance == 997e16);
 
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(btc)))
@@ -242,7 +242,7 @@ contract ConversionTest is BaseSetup {
         uint256 beforeTrader1T1Balance = token1.balanceOf(address(trader1));
         uint256 beforeTrader1BTCBalance = btc.balanceOf(address(trader1));
 
-        // deposit 10e18(9.99e18 after fee) for selling token1 for 1000 token1 * amount
+        // deposit 10e18(9.997e18 after fee) for selling token1 for 1000 token1 * amount
         vm.prank(trader2);
         matchingEngine.limitSell(
             address(token1),
@@ -254,7 +254,7 @@ contract ConversionTest is BaseSetup {
             trader2
         );
 
-        // deposit 10000e8(9990e8 after fee) for buying 10e18 token1 for 1000 token2 * amount
+        // deposit 10000e8(9997e8 after fee) for buying 10e18 token1 for 1000 token2 * amount
         vm.prank(trader1);
         matchingEngine.limitBuy(
             address(token1),
@@ -293,14 +293,14 @@ contract ConversionTest is BaseSetup {
             diffTrader1BTCBalance
         );
 
-        // Trader2's btc balance should be increased by 9.99e11
-        assert(diffTrader2BTCBalance == 99e10);
+        // Trader2's btc balance should be increased by 9.997e11
+        assert(diffTrader2BTCBalance == 997e9);
         // Trader2's token1 balance should be decreased by 10e18
         assert(diffTrader2T1Balance == 1e19);
         // Trader1's btc balance should be decreased by 10000e8
-        assert(diffTrader1BTCBalance == 10000e8);
-        // Trader1's token1 balance should be increased by 9.99e18
-        assert(diffTrader1T1Balance == 99e17);
+        assert(diffTrader1BTCBalance == 1e12);
+        // Trader1's token1 balance should be increased by 9.97e18
+        assert(diffTrader1T1Balance == 997e16);
 
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(btc)))
@@ -321,7 +321,7 @@ contract ConversionTest is BaseSetup {
         uint256 beforeTrader1T2Balance = token2.balanceOf(address(trader1));
         uint256 beforeTrader1BTCBalance = btc.balanceOf(address(trader1));
 
-        // deposit 10000e18(9990e18 after fee) for buying 10e8 token1 for 1000 token2 * amount
+        // deposit 10000e18(9997e18 after fee) for buying 10e8 token1 for 1000 token2 * amount
         vm.prank(trader1);
         matchingEngine.limitBuy(
             address(btc),
@@ -332,7 +332,7 @@ contract ConversionTest is BaseSetup {
             5,
             trader1
         );
-        // deposit 10e8(9.99e8 after fee) for selling token1 for 1000 token1 * amount
+        // deposit 10e8(9.997e8 after fee) for selling token1 for 1000 token1 * amount
         vm.prank(trader2);
         matchingEngine.limitSell(
             address(btc),
@@ -371,15 +371,15 @@ contract ConversionTest is BaseSetup {
             diffTrader1BTCBalance
         );
 
-        // Trader2's token2 balance should be increased by 9.99e21
-        assert(diffTrader2T2Balance == 99e20);
+        // Trader2's token2 balance should be increased by 9.97e21
+        assert(diffTrader2T2Balance == 997e19);
 
         // Trader2's token1 balance should be decreased by 10e8
         assert(diffTrader2BTCBalance == 1e9);
         // Trader1's token2 balance should be decreased by 10000e18
         assert(diffTrader1T2Balance == 10000e18);
-        // Trader1's token1 balance should be increased by 9.99e8
-        assert(diffTrader1BTCBalance == 99e7);
+        // Trader1's token1 balance should be increased by 9.97e8
+        assert(diffTrader1BTCBalance == 997e6);
 
         book = Orderbook(
             payable(orderbookFactory.getPair(address(btc), address(token2)))
@@ -400,7 +400,7 @@ contract ConversionTest is BaseSetup {
         uint256 beforeTrader1T2Balance = token2.balanceOf(address(trader1));
         uint256 beforeTrader1BTCBalance = btc.balanceOf(address(trader1));
 
-        // deposit 10e8(9.99e8 after fee) for selling token1 for 1000 token1 * amount
+        // deposit 10e8(9.997e8 after fee) for selling token1 for 1000 token1 * amount
         vm.prank(trader2);
         matchingEngine.limitSell(
             address(btc),
@@ -411,7 +411,7 @@ contract ConversionTest is BaseSetup {
             5,
             trader2
         );
-        // deposit 10000e18(9990e18 after fee) for buying 10e8 token1 for 1000 token2 * amount
+        // deposit 10000e18(9997e18 after fee) for buying 10e8 token1 for 1000 token2 * amount
         vm.prank(trader1);
         matchingEngine.limitBuy(
             address(btc),
@@ -450,15 +450,15 @@ contract ConversionTest is BaseSetup {
             diffTrader1BTCBalance
         );
 
-        // Trader2's token2 balance should be increased by 9.99e21
-        assert(diffTrader2T2Balance == 99e20);
+        // Trader2's token2 balance should be increased by 9.97e21
+        assert(diffTrader2T2Balance == 997e19);
 
         // Trader2's token1 balance should be decreased by 10e8
         assert(diffTrader2BTCBalance == 10e8);
         // Trader1's token2 balance should be decreased by 10000e18
         assert(diffTrader1T2Balance == 10000e18);
-        // Trader1's token1 balance should be increased by 9.99e8
-        assert(diffTrader1BTCBalance == 99e7);
+        // Trader1's token1 balance should be increased by 9.97e8
+        assert(diffTrader1BTCBalance == 997e6);
 
         book = Orderbook(
             payable(orderbookFactory.getPair(address(btc), address(token2)))
@@ -479,7 +479,7 @@ contract ConversionTest is BaseSetup {
         uint256 beforeTrader1T2Balance = token2.balanceOf(address(trader1));
         uint256 beforeTrader1T1Balance = token1.balanceOf(address(trader1));
 
-        // deposit 10000e18(9990e18 after fee) for buying token1 for 1000 token2 * amount
+        // deposit 10000e18(9997e18 after fee) for buying token1 for 1000 token2 * amount
         vm.prank(trader1);
         matchingEngine.limitBuy(
             address(token1),
@@ -490,7 +490,7 @@ contract ConversionTest is BaseSetup {
             5,
             trader1
         );
-        // deposit 10e18(9.99e18 after fee) for selling token1 for 1000 token2 * amount
+        // deposit 10e18(9.997e18 after fee) for selling token1 for 1000 token2 * amount
         vm.prank(trader2);
         matchingEngine.limitSell(
             address(token1),
@@ -529,15 +529,15 @@ contract ConversionTest is BaseSetup {
             diffTrader1T1Balance
         );
 
-        // Trader2's token2 balance should be increased by 9.99e21
-        assert(diffTrader2T2Balance == 99e20);
+        // Trader2's token2 balance should be increased by 9.997e21
+        assert(diffTrader2T2Balance == 997e19);
         console.log("flag");
         // Trader2's token1 balance should be decreased by 10e18
         assert(diffTrader2T1Balance == 1e19);
         // Trader1's token2 balance should be decreased by 10000e18
         assert(diffTrader1T2Balance == 1e22);
-        // Trader1's token1 balance should be increased by 9.99e18
-        assert(diffTrader1T1Balance == 99e17);
+        // Trader1's token1 balance should be increased by 9.997e18
+        assert(diffTrader1T1Balance == 997e16);
 
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
@@ -558,7 +558,7 @@ contract ConversionTest is BaseSetup {
         uint256 beforeTrader1T2Balance = token2.balanceOf(address(trader1));
         uint256 beforeTrader1T1Balance = token1.balanceOf(address(trader1));
 
-        // deposit 10e18(9.99e18 after fee) for selling token1 for 1000 token2 * amount
+        // deposit 10e18(9.997e18 after fee) for selling token1 for 1000 token2 * amount
         vm.prank(trader2);
         matchingEngine.limitSell(
             address(token1),
@@ -569,7 +569,7 @@ contract ConversionTest is BaseSetup {
             5,
             trader2
         );
-        // deposit 10000e18(9990e18 after fee) for buying token1 for 1000 token2 * amount
+        // deposit 10000e18(9997e18 after fee) for buying token1 for 1000 token2 * amount
         vm.prank(trader1);
         matchingEngine.limitBuy(
             address(token1),
@@ -608,14 +608,14 @@ contract ConversionTest is BaseSetup {
             diffTrader1T1Balance
         );
 
-        // Trader2's token2 balance should be increased by 9.99e21
-        assert(diffTrader2T2Balance == 99e20);
+        // Trader2's token2 balance should be increased by 9.97e21
+        assert(diffTrader2T2Balance == 997e19);
 
         // Trader2's token1 balance should be decreased by 10e18
         assert(diffTrader2T1Balance == 1e19);
         // Trader1's token2 balance should be decreased by 10000e18
         assert(diffTrader1T2Balance == 1e22);
-        // Trader1's token1 balance should be increased by 9.99e18
-        assert(diffTrader1T1Balance == 99e17);
+        // Trader1's token1 balance should be increased by 9.97e18
+        assert(diffTrader1T1Balance == 997e16);
     }
 }

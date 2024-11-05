@@ -534,6 +534,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
      * @param isMaker Boolean indicating if a order should be made at the market price in orderbook
      * @param n The maximum number of orders to match in the orderbook
      * @param recipient The address of the recipient to receive traded asset and claim ownership of made order
+     * @param slippageLimit Slippage limit in basis points
      * @return makePrice price where the order is placed
      * @return placed placed amount
      * @return id placed order id
@@ -542,10 +543,11 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         address base,
         bool isMaker,
         uint32 n,
-        address recipient
+        address recipient,
+        uint32 slippageLimit
     ) external payable returns (uint256 makePrice, uint256 placed, uint32 id) {
         IWETH(WETH).deposit{value: msg.value}();
-        return marketBuy(base, WETH, msg.value, isMaker, n, recipient, 200);
+        return marketBuy(base, WETH, msg.value, isMaker, n, recipient, slippageLimit);
     }
 
     /**
@@ -556,6 +558,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
      * @param isMaker Boolean indicating if an order should be made at the market price in orderbook
      * @param n The maximum number of orders to match in the orderbook
      * @param recipient The address of the recipient to receive traded asset and claim ownership of made order
+     * @param slippageLimit Slippage limit in basis points
      * @return makePrice price where the order is placed
      * @return placed placed amount
      * @return id placed order id
@@ -564,10 +567,11 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         address quote,
         bool isMaker,
         uint32 n,
-        address recipient
+        address recipient,
+        uint32 slippageLimit
     ) external payable returns (uint256 makePrice, uint256 placed, uint32 id) {
         IWETH(WETH).deposit{value: msg.value}();
-        return marketSell(WETH, quote, msg.value, isMaker, n, recipient, 200);
+        return marketSell(WETH, quote, msg.value, isMaker, n, recipient, slippageLimit);
     }
 
     /**

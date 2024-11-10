@@ -92,7 +92,7 @@ contract DeployExchangeMainnetContracts is Deployer {
         0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
     address constant foundation_address =
         0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
-    address constant weth = 0x6e990040Fd9b06F98eFb62A147201696941680b5;
+    address constant weth = 0xe8CabF9d1FFB6CE23cF0a86641849543ec7BD7d5;
 
     function run() external {
         _setDeployer();
@@ -119,7 +119,7 @@ contract DeployPointFarmMainnetContracts is Deployer {
         0xE0892785D00F192110A05282387fBAC21b942Aad;
     address constant foundation_address =
         0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
-    address constant weth = 0x4200000000000000000000000000000000000006;
+    address constant weth = 0xe8CabF9d1FFB6CE23cF0a86641849543ec7BD7d5;
     address constant stablecoin_address =
         0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
     STNDXP public point;

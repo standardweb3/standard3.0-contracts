@@ -80,8 +80,9 @@ interface IMatchingEngine {
     function addPair(
         address base,
         address quote,
-        uint256 initMarketPrice
-    ) external returns (address book);
+        uint256 listingPrice,
+        uint256 listingDate
+    ) external returns (address pair);
 
     function cancelOrder(
         address base,

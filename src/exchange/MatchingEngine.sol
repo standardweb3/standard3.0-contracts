@@ -4,7 +4,6 @@ pragma solidity ^0.8.24;
 import {IOrderbookFactory} from "./interfaces/IOrderbookFactory.sol";
 import {IOrderbook, ExchangeOrderbook} from "./interfaces/IOrderbook.sol";
 import {TransferHelper} from "./libraries/TransferHelper.sol";
-import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
@@ -36,7 +35,7 @@ interface IDecimals {
 }
 
 // Onchain Matching engine for the orders
-contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
+contract MatchingEngine is ReentrancyGuard, AccessControl {
     // Market maker role
     bytes32 private constant MARKET_MAKER_ROLE = keccak256("MARKET_MAKER_ROLE");
     // fee recipient for point storage
@@ -51,6 +50,8 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     uint32 defaultBuy;
     // default sell spread
     uint32 defaultSell;
+    // bool on initialization
+    bool init;
 
     struct OrderData {
         /// Amount after removing fee
@@ -164,6 +165,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     error PairDoesNotExist(address base, address quote, address pair);
     error AmountIsZero();
     error FactoryNotInitialized(address factory);
+    error AlreadyInitialized(bool init);
 
     receive() external payable {
         assert(msg.sender == WETH); // only accept ETH via fallback from the WETH contract
@@ -188,7 +190,10 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         address orderbookFactory_,
         address feeTo_,
         address WETH_
-    ) external initializer {
+    ) external {
+        if(init) {
+            revert AlreadyInitialized(init);
+        }
         orderbookFactory = orderbookFactory_;
         feeTo = feeTo_;
         WETH = WETH_;
@@ -202,6 +207,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         }
         bytes memory bytecode = IOrderbookFactory(orderbookFactory_)
             .getByteCode();
+        init = true;
         emit PairCreate2(orderbookFactory, bytecode);
     }
 
@@ -282,7 +288,10 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         );
 
         // get spread limits
-        orderData.spreadLimit = slippageLimit <= getSpread(orderData.orderbook, true) ? slippageLimit : getSpread(orderData.orderbook, true);
+        orderData.spreadLimit = slippageLimit <=
+            getSpread(orderData.orderbook, true)
+            ? slippageLimit
+            : getSpread(orderData.orderbook, true);
 
         orderData.lmp = mktPrice(base, quote);
 
@@ -422,7 +431,10 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         );
 
         // get spread limits
-        orderData.spreadLimit = slippageLimit <= getSpread(orderData.orderbook, false) ? slippageLimit : getSpread(orderData.orderbook, false);
+        orderData.spreadLimit = slippageLimit <=
+            getSpread(orderData.orderbook, false)
+            ? slippageLimit
+            : getSpread(orderData.orderbook, false);
 
         orderData.lmp = mktPrice(base, quote);
 
@@ -545,7 +557,16 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         uint32 slippageLimit
     ) external payable returns (uint256 makePrice, uint256 placed, uint32 id) {
         IWETH(WETH).deposit{value: msg.value}();
-        return marketBuy(base, WETH, msg.value, isMaker, n, recipient, slippageLimit);
+        return
+            marketBuy(
+                base,
+                WETH,
+                msg.value,
+                isMaker,
+                n,
+                recipient,
+                slippageLimit
+            );
     }
 
     /**
@@ -569,7 +590,16 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         uint32 slippageLimit
     ) external payable returns (uint256 makePrice, uint256 placed, uint32 id) {
         IWETH(WETH).deposit{value: msg.value}();
-        return marketSell(WETH, quote, msg.value, isMaker, n, recipient, slippageLimit);
+        return
+            marketSell(
+                WETH,
+                quote,
+                msg.value,
+                isMaker,
+                n,
+                recipient,
+                slippageLimit
+            );
     }
 
     /**
@@ -909,12 +939,32 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
      * @param listingDate The listing Date for the trading pair
      * @return book The address of the newly created orderbook
      */
-    function addPair(
+    function addPairETH(
         address base,
         address quote,
         uint256 listingPrice,
         uint256 listingDate
-    ) external returns (address book) {
+    ) external payable returns (address book) {
+        IWETH(WETH).deposit{value: msg.value}();
+        return addPair(base, quote, listingPrice, listingDate, WETH);
+    }
+
+    /**
+     * @dev Creates an orderbook for a new trading pair and returns its address
+     * @param base The address of the base asset for the trading pair
+     * @param quote The address of the quote asset for the trading pair
+     * @param listingPrice The initial market price for the trading pair
+     * @param listingDate The listing Date for the trading pair
+     * @return book The address of the newly created orderbook
+     */
+    function addPair(
+        address base,
+        address quote,
+        uint256 listingPrice,
+        uint256 listingDate,
+        address payment
+    ) public returns (address book) {
+        _listingDeposit(payment, msg.sender);
         // create orderbook for the pair
         address orderbook = IOrderbookFactory(orderbookFactory).createBook(
             base,
@@ -925,8 +975,12 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         _setSpread(base, quote, defaultBuy, defaultSell);
         _setListingDate(orderbook, listingDate);
 
-        TransferHelper.TokenInfo memory baseInfo = TransferHelper.getTokenInfo(base);
-        TransferHelper.TokenInfo memory quoteInfo = TransferHelper.getTokenInfo(quote);
+        TransferHelper.TokenInfo memory baseInfo = TransferHelper.getTokenInfo(
+            base
+        );
+        TransferHelper.TokenInfo memory quoteInfo = TransferHelper.getTokenInfo(
+            quote
+        );
         emit PairAdded(
             orderbook,
             baseInfo,
@@ -1674,6 +1728,35 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
         return (withoutFee, pair);
     }
 
+    /**
+     * @dev Deposit amount of asset to the contract with the given asset information and subtracts the fee.
+     * @param payment The address of the payment asset.
+     * @param sender The address of the sender.
+     */
+    function _listingDeposit(
+        address payment,
+        address sender
+    ) internal {
+        // check if the sender is admin
+        if (hasRole(MARKET_MAKER_ROLE, sender)) {
+            return;
+        }
+        uint256 amount = IOrderbookFactory(orderbookFactory).getListingCost(payment);
+        // check if amount is zero
+        if (amount == 0) {
+            revert AmountIsZero();
+        }
+        if (payment != WETH) {
+            TransferHelper.safeTransferFrom(
+                payment,
+                msg.sender,
+                address(this),
+                amount
+            );
+        }
+        TransferHelper.safeTransfer(payment, feeTo, amount);
+    }
+
     function _fee(
         uint256 amount,
         address account,
@@ -1683,7 +1766,7 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
             uint32 feeNum = IRevenue(feeTo).feeOf(account, isMaker);
             return (amount * feeNum) / feeDenom;
         }
-        return amount * 3 / 1000;
+        return (amount * 3) / 1000;
     }
 
     function _isContract(address addr) internal view returns (bool isContract) {

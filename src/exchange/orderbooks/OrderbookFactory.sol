@@ -20,13 +20,16 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
     uint32 public version;
     /// address of order impl
     address public impl;
+    /// listing cost of pair, for each fee token.
+    mapping(address => uint256) public listingCosts;
 
     error InvalidAccess(address sender, address allowed);
     error PairAlreadyExists(address base, address quote, address pair);
     error SameBaseQuote(address base, address quote);
 
-    constructor() {
-    }
+    event ListingCostSet(address indexed payment, uint256 amount);  
+
+    constructor() {}
 
     function createBook(
         address base_,
@@ -57,12 +60,7 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
             impl,
             _getSalt(base_, quote_)
         );
-        IOrderbook(proxy).initialize(
-            allPairsLength(),
-            base_,
-            quote_,
-            engine
-        );
+        IOrderbook(proxy).initialize(allPairsLength(), base_, quote_, engine);
         allPairs.push(proxy);
         return (proxy);
     }
@@ -191,5 +189,16 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
 
     function getByteCode() external view returns (bytes memory bytecode) {
         return CloneFactory.getBytecode(impl);
+    }
+
+    function getListingCost(address token) external view returns (uint256) {
+        return listingCosts[token];
+    }
+
+    //  Set up listing cost for each token, each pair creates 2GB of data in a month, costing 0.1 ETH
+    function setListingCost(address payment, uint256 amount) external returns (uint256) {
+        listingCosts[payment] = amount;
+        emit ListingCostSet(payment, amount);
+        return amount;
     }
 }

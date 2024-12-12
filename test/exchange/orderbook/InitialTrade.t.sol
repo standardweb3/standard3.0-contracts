@@ -20,7 +20,7 @@ contract InitialTradeTest is BaseSetup {
     // edge cases on cancelling orders
     function testInitialSell() public {
         super.setUp();
-        matchingEngine.addPair(address(weth), address(token2), 500000000, 0);
+        matchingEngine.addPair(address(weth), address(token2), 500000000, 0, address(weth));
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
         // because the program will enter the "if (amount > self.orders[head].depositAmount)."

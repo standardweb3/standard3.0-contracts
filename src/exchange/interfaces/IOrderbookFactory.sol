@@ -33,4 +33,6 @@ interface IOrderbookFactory {
     function getBaseQuote(address orderbook) external view returns (address base, address quote);
 
     function getByteCode() external view returns (bytes memory bytecode);
+
+    function getListingCost(address payment) external view returns (uint256 amount);
 }

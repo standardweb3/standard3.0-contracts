@@ -20,7 +20,7 @@ contract LoopOutOfGasTest is BaseSetup {
     function testExchangeLinkedListOutOfGas() public {
         super.setUp();
         // make a price in matching engine where 1 feeToken = 1000 stablecoin with buy and sell order
-        matchingEngine.addPair(address(token1), address(token2), 2, 0);
+        matchingEngine.addPair(address(token1), address(token2), 2, 0, address(token1));
 
         vm.prank(booker);
 
@@ -76,7 +76,7 @@ contract LoopOutOfGasTest is BaseSetup {
 
     function testExchangeLinkedListOutOfGasPlaceBid() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(token2), 2, 0);
+        matchingEngine.addPair(address(token1), address(token2), 2, 0, address(token1));
         vm.prank(booker);
 
         book = Orderbook(
@@ -130,7 +130,7 @@ contract LoopOutOfGasTest is BaseSetup {
 
     function testExchangeOrderbookOutOfGas() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(token2), 5, 0);
+        matchingEngine.addPair(address(token1), address(token2), 5, 0, address(token1));
         vm.prank(booker);
 
         book = Orderbook(

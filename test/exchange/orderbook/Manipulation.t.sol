@@ -19,7 +19,7 @@ import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 contract ManipulationTest is BaseSetup {
     function testManipulateMarketPrice() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(token2), 90e8, 0);
+        matchingEngine.addPair(address(token1), address(token2), 90e8, 0, address(token1));
         vm.prank(trader1);
         matchingEngine.limitSell(
             address(token1),

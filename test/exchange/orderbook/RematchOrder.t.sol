@@ -21,7 +21,7 @@ contract LimitOrderTest is BaseSetup {
     // rematch order so that amount is changed from the exact order
     function testRematchOrderAmountIncrease() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(btc), 1e8, 0);
+        matchingEngine.addPair(address(token1), address(btc), 1e8, 0, address(token1));
         console.log(
             "Base/Quote Pair: ",
             matchingEngine.getPair(address(token1), address(btc))
@@ -52,7 +52,7 @@ contract LimitOrderTest is BaseSetup {
 
     function testRematchOrderAmountDecrease() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(btc), 1e8, 0);
+        matchingEngine.addPair(address(token1), address(btc), 1e8, 0, address(token1));
         console.log(
             "Base/Quote Pair: ",
             matchingEngine.getPair(address(token1), address(btc))
@@ -84,7 +84,7 @@ contract LimitOrderTest is BaseSetup {
     // rematch order so that price is changed from the exact order
     function testRematchOrderPrice() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(btc), 1e8, 0);
+        matchingEngine.addPair(address(token1), address(btc), 1e8, 0, address(token1));
         console.log(
             "Base/Quote Pair: ",
             matchingEngine.getPair(address(token1), address(btc))

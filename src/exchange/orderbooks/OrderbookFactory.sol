@@ -11,7 +11,7 @@ interface IERC20 {
     function symbol() external view returns (string memory);
 }
 
-contract OrderbookFactory is IOrderbookFactory, Initializable {
+contract OrderbookFactory is IOrderbookFactory, Initializable, AccessControl {
     // Orderbooks
     address[] public allPairs;
     /// Address of manager
@@ -23,13 +23,16 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
     /// listing cost of pair, for each fee token.
     mapping(address => uint256) public listingCosts;
 
+    error InvalidRole(bytes32 role, address sender);
     error InvalidAccess(address sender, address allowed);
     error PairAlreadyExists(address base, address quote, address pair);
     error SameBaseQuote(address base, address quote);
 
-    event ListingCostSet(address indexed payment, uint256 amount);  
+    event ListingCostSet(address indexed payment, uint256 amount);
 
-    constructor() {}
+    constructor() {
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
 
     function createBook(
         address base_,
@@ -196,7 +199,13 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
     }
 
     //  Set up listing cost for each token, each pair creates 2GB of data in a month, costing 0.1 ETH
-    function setListingCost(address payment, uint256 amount) external returns (uint256) {
+    function setListingCost(
+        address payment,
+        uint256 amount
+    ) external returns (uint256) {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        }
         listingCosts[payment] = amount;
         emit ListingCostSet(payment, amount);
         return amount;

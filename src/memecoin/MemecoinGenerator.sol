@@ -65,10 +65,10 @@ contract MemecoinGenerator is AccessControl {
             // set price to 0.01 to start with
         } else {
             // add pair to Standard
-            IMatchingEngine(matchingEngine).addPair(address(memecoin), WETH, 1, 0);
+            IMatchingEngine(matchingEngine).addPair(address(memecoin), WETH, 1, 0, address(memecoin));
         }
 
         // add pair to Standard
-        IMatchingEngine(matchingEngine).addPair(address(memecoin), WETH, 1,0);
+        IMatchingEngine(matchingEngine).addPair(address(memecoin), WETH, 1,0, address(memecoin));
     }
 }

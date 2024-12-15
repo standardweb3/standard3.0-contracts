@@ -279,48 +279,6 @@ contract GetterTest is BaseSetup {
         console.log(book.askHead());
     }
 
-    function testGetPairs() public {
-        super.setUp();
-        matchingEngine.addPair(address(token1), address(token2), 100000000, 0, address(token1));
-        vm.prank(trader1);
-        //vm.expectRevert("OutOfGas");
-        matchingEngine.limitSell(
-            address(token1),
-            address(token2),
-            100000000,
-            10,
-            true,
-            2,
-            trader1
-        );
-
-        IOrderbookFactory.Pair[] memory pairs = matchingEngine.getPairs(0, 20);
-        console.log("Pairs:");
-        console.log(pairs[0].base, pairs[0].quote);
-    }
-
-    function testGetPairNames() public {
-        super.setUp();
-        matchingEngine.addPair(address(token1), address(token2), 100000000, 0, address(token1));
-        vm.prank(trader1);
-        //vm.expectRevert("OutOfGas");
-        matchingEngine.limitSell(
-            address(token1),
-            address(token2),
-            100000000,
-            10,
-            true,
-            2,
-            trader1
-        );
-
-        IOrderbookFactory.Pair[] memory pairs = matchingEngine.getPairs(0, 20);
-        console.log("Pairs:");
-        console.log(pairs[0].base, pairs[0].quote);
-        string[] memory names = matchingEngine.getPairNames(0, 20);
-        console.log(names[0]);
-    }
-
     function testGetOrderInsertion() public {
         super.setUp();
         matchingEngine.addPair(address(token1), address(token2), 100000000, 0, address(token1));

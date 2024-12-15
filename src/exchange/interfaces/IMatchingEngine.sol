@@ -81,6 +81,14 @@ interface IMatchingEngine {
         address base,
         address quote,
         uint256 listingPrice,
+        uint256 listingDate,
+        address payment
+    ) external returns (address pair);
+
+    function addPairETH(
+        address base,
+        address quote,
+        uint256 listingPrice,
         uint256 listingDate
     ) external returns (address pair);
 

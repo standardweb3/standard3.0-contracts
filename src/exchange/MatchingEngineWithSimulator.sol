@@ -951,15 +951,6 @@ contract MatchingEngine is Initializable, ReentrancyGuard, AccessControl {
     }
 
     /**
-     * @dev Returns the address of the orderbook with the given ID.
-     * @param id The ID of the orderbook to retrieve.
-     * @return The address of the orderbook.
-     */
-    function getOrderbookById(uint256 id) external view returns (address) {
-        return IOrderbookFactory(orderbookFactory).getBook(id);
-    }
-
-    /**
      * @dev Returns the base and quote asset addresses for the given orderbook.
      * @param orderbook The address of the orderbook to retrieve the base and quote asset addresses for.
      * @return base The address of the base asset.

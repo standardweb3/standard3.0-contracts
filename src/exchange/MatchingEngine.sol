@@ -96,6 +96,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
     );
 
     event NewMarketPrice(address orderbook, uint256 price);
+    event ListingCostSet(address payment, uint256 amount);
 
     /**
      * @dev This event is emitted when an order is successfully matched with a counterparty.
@@ -133,7 +134,6 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         address orderbook,
         TransferHelper.TokenInfo base,
         TransferHelper.TokenInfo quote,
-        uint256 listingPrice,
         uint256 listingDate
     );
 
@@ -141,14 +141,12 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         address orderbook,
         address base,
         address quote,
-        uint256 listingPrice,
         uint256 listingDate
     );
 
     event PairCreate2(address deployer, bytes bytecode);
 
     error TooManyMatches(uint256 n);
-    error InvalidFeeRate(uint256 feeNum, uint256 feeDenom);
     error InvalidRole(bytes32 role, address sender);
     error OrderSizeTooSmall(uint256 amount, uint256 minRequired);
     error NoOrderMade(address base, address quote);
@@ -218,6 +216,26 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         }
         feeTo = feeTo_;
         return true;
+    }
+
+    /**
+     * @dev Set the listing cost for a token. Each pair costs minimum 2GB of data storage in a month, costing 0.1 ETH.
+     * @param payment address of payment token
+     * @param amount amount of token
+     *
+     * Requirements:
+     * - `msg.sender` must have the default admin role.
+     */
+    function setListingCost(
+        address payment,
+        uint256 amount
+    ) external returns (uint256) {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        }
+        IOrderbookFactory(orderbookFactory).setListingCost(payment, amount);
+        emit ListingCostSet(payment, amount);
+        return amount;
     }
 
     function setDefaultSpread(
@@ -985,7 +1003,6 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             orderbook,
             baseInfo,
             quoteInfo,
-            listingPrice,
             listingDate
         );
         emit NewMarketPrice(orderbook, listingPrice);
@@ -1012,7 +1029,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         // create orderbook for the pair
         address orderbook = getPair(base, quote);
         IOrderbook(orderbook).setLmp(listingPrice);
-        emit PairUpdated(orderbook, base, quote, listingPrice, listingDate);
+        emit PairUpdated(orderbook, base, quote, listingDate);
         emit NewMarketPrice(orderbook, listingPrice);
         return orderbook;
     }
@@ -1084,120 +1101,6 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
     }
 
     /**
-     * @dev Returns the address of the orderbook with the given ID.
-     * @param id The ID of the orderbook to retrieve.
-     * @return The address of the orderbook.
-     */
-    function getOrderbookById(uint256 id) external view returns (address) {
-        return IOrderbookFactory(orderbookFactory).getBook(id);
-    }
-
-    /**
-     * @dev Returns the base and quote asset addresses for the given orderbook.
-     * @param orderbook The address of the orderbook to retrieve the base and quote asset addresses for.
-     * @return base The address of the base asset.
-     * @return quote The address of the quote asset.
-     */
-    function getBaseQuote(
-        address orderbook
-    ) external view returns (address base, address quote) {
-        return IOrderbookFactory(orderbookFactory).getBaseQuote(orderbook);
-    }
-
-    /**
-     * @dev returns addresses of pairs in OrderbookFactory registry
-     * @return pairs list of pairs from start to end
-     */
-    function getPairs(
-        uint256 start,
-        uint256 end
-    ) external view returns (IOrderbookFactory.Pair[] memory pairs) {
-        return IOrderbookFactory(orderbookFactory).getPairs(start, end);
-    }
-
-    /**
-     * @dev returns addresses of pairs in OrderbookFactory registry
-     * @return pairs list of pairs from start to end
-     */
-    function getPairsWithIds(
-        uint256[] memory ids
-    ) external view returns (IOrderbookFactory.Pair[] memory pairs) {
-        return IOrderbookFactory(orderbookFactory).getPairsWithIds(ids);
-    }
-
-    /**
-     * @dev returns addresses of pairs in OrderbookFactory registry
-     * @return names list of pair names from start to end
-     */
-    function getPairNames(
-        uint256 start,
-        uint256 end
-    ) external view returns (string[] memory names) {
-        return IOrderbookFactory(orderbookFactory).getPairNames(start, end);
-    }
-
-    /**
-     * @dev returns addresses of pairs in OrderbookFactory registry
-     * @return names list of pair names from start to end
-     */
-    function getPairNamesWithIds(
-        uint256[] memory ids
-    ) external view returns (string[] memory names) {
-        return IOrderbookFactory(orderbookFactory).getPairNamesWithIds(ids);
-    }
-
-    /**
-     * @dev returns addresses of pairs in OrderbookFactory registry
-     * @return mktPrices list of mktPrices from start to end
-     */
-    function getMktPrices(
-        uint256 start,
-        uint256 end
-    ) external view returns (uint256[] memory mktPrices) {
-        IOrderbookFactory.Pair[] memory pairs = IOrderbookFactory(
-            orderbookFactory
-        ).getPairs(start, end);
-        mktPrices = new uint256[](pairs.length);
-        for (uint256 i = 0; i < pairs.length; i++) {
-            try this.mktPrice(pairs[i].base, pairs[i].quote) returns (
-                uint256 price
-            ) {
-                uint256 p = price;
-                mktPrices[i] = p;
-            } catch {
-                uint256 p = 0;
-                mktPrices[i] = p;
-            }
-        }
-        return mktPrices;
-    }
-
-    /**
-     * @dev returns addresses of pairs in OrderbookFactory registry
-     * @return mktPrices list of mktPrices from start to end
-     */
-    function getMktPricesWithIds(
-        uint256[] memory ids
-    ) external view returns (uint256[] memory mktPrices) {
-        IOrderbookFactory.Pair[] memory pairs = IOrderbookFactory(
-            orderbookFactory
-        ).getPairsWithIds(ids);
-        mktPrices = new uint256[](pairs.length);
-        for (uint256 i = 0; i < pairs.length; i++) {
-            try this.mktPrice(pairs[i].base, pairs[i].quote) returns (
-                uint256 price
-            ) {
-                uint256 p = price;
-                mktPrices[i] = p;
-            } catch {
-                uint256 p = 0;
-                mktPrices[i] = p;
-            }
-        }
-        return mktPrices;
-    }
-
-    /**
      * @dev Returns prices in the ask/bid orderbook for the given trading pair.
      * @param base The address of the base asset for the trading pair.
      * @param quote The address of the quote asset for the trading pair.
@@ -1212,17 +1115,6 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
     ) external view returns (uint256[] memory) {
         address orderbook = getPair(base, quote);
         return IOrderbook(orderbook).getPrices(isBid, n);
-    }
-
-    function getPricesPaginated(
-        address base,
-        address quote,
-        bool isBid,
-        uint32 start,
-        uint32 end
-    ) external view returns (uint256[] memory) {
-        address orderbook = getPair(base, quote);
-        return IOrderbook(orderbook).getPricesPaginated(isBid, start, end);
     }
 
     /**
@@ -1242,19 +1134,6 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
     ) external view returns (ExchangeOrderbook.Order[] memory) {
         address orderbook = getPair(base, quote);
         return IOrderbook(orderbook).getOrders(isBid, price, n);
-    }
-
-    function getOrdersPaginated(
-        address base,
-        address quote,
-        bool isBid,
-        uint256 price,
-        uint32 start,
-        uint32 end
-    ) external view returns (ExchangeOrderbook.Order[] memory) {
-        address orderbook = getPair(base, quote);
-        return
-            IOrderbook(orderbook).getOrdersPaginated(isBid, price, start, end);
     }
 
     /**

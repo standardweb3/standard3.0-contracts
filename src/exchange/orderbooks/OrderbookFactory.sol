@@ -11,7 +11,7 @@ interface IERC20 {
     function symbol() external view returns (string memory);
 }
 
-contract OrderbookFactory is IOrderbookFactory, Initializable, AccessControl {
+contract OrderbookFactory is IOrderbookFactory, Initializable {
     // Orderbooks
     address[] public allPairs;
     /// Address of manager
@@ -23,15 +23,11 @@ contract OrderbookFactory is IOrderbookFactory, Initializable, AccessControl {
     /// listing cost of pair, for each fee token.
     mapping(address => uint256) public listingCosts;
 
-    error InvalidRole(bytes32 role, address sender);
     error InvalidAccess(address sender, address allowed);
     error PairAlreadyExists(address base, address quote, address pair);
     error SameBaseQuote(address base, address quote);
 
-    event ListingCostSet(address indexed payment, uint256 amount);
-
     constructor() {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
     function createBook(
@@ -70,10 +66,6 @@ contract OrderbookFactory is IOrderbookFactory, Initializable, AccessControl {
 
     function isClone(address vault) external view returns (bool cloned) {
         cloned = CloneFactory._isClone(impl, vault);
-    }
-
-    function getBook(uint256 bookId_) external view override returns (address) {
-        return allPairs[bookId_];
     }
 
     function getPair(
@@ -203,11 +195,10 @@ contract OrderbookFactory is IOrderbookFactory, Initializable, AccessControl {
         address payment,
         uint256 amount
     ) external returns (uint256) {
-        if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
-            revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        if (msg.sender != engine) {
+            revert InvalidAccess(msg.sender, engine);
         }
         listingCosts[payment] = amount;
-        emit ListingCostSet(payment, amount);
         return amount;
     }
 }

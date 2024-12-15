@@ -16,9 +16,12 @@ interface IOrderbookFactory {
         address quote_
     ) external returns (address orderbook);
 
-    function isClone(address vault) external view returns (bool cloned);
+    function setListingCost(
+        address payment,
+        uint256 amount
+    ) external returns (uint256);
 
-    function getBook(uint256 bookId_) external view returns (address);
+    function isClone(address vault) external view returns (bool cloned);
 
     function getPair(address base, address quote) external view returns (address book);
 

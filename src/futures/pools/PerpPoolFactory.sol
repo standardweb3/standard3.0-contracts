@@ -37,8 +37,8 @@ contract PerpPoolFactory is IPerpPoolFactory, Initializable {
         address quote_,
         address collateral_
     ) external override returns (address orderbook) {
-        if (msg.sender != engine) {
-            revert InvalidAccess(msg.sender, engine);
+        if (msg.sender != perp) {
+            revert InvalidAccess(msg.sender, perp);
         }
 
         if (base_ == quote_) {
@@ -144,8 +144,8 @@ contract PerpPoolFactory is IPerpPoolFactory, Initializable {
         address payment,
         uint256 amount
     ) external returns (uint256) {
-        if (msg.sender != engine) {
-            revert InvalidAccess(msg.sender, engine);
+        if (msg.sender != perp) {
+            revert InvalidAccess(msg.sender, perp);
         }
         listingCosts[payment] = amount;
         return amount;

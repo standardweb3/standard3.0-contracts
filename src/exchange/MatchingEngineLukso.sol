@@ -1312,7 +1312,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             // order exists, and amount is not 0
             if (remaining <= required) {
                 // execute order
-                TransferHelper.safeTransfer(give, orderbook, remaining);
+                TransferHelper.lsp7Transfer(give, address(this), orderbook, remaining);
                 address owner = IOrderbook(orderbook).execute(
                     orderId,
                     !isBid,
@@ -1344,7 +1344,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             // remaining >= depositAmount
             else {
                 remaining -= required;
-                TransferHelper.safeTransfer(give, orderbook, required);
+                TransferHelper.lsp7Transfer(give, address(this), orderbook, required);
                 address owner = IOrderbook(orderbook).execute(
                     orderId,
                     !isBid,
@@ -1496,8 +1496,9 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
     ) internal returns (uint32 id) {
         if (remaining > 0) {
             address stopTo = isMaker ? orderbook : recipient;
-            TransferHelper.safeTransfer(
+            TransferHelper.lsp7Transfer(
                 isBid ? quote : base,
+                address(this),
                 stopTo,
                 remaining
             );
@@ -1582,25 +1583,25 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         if (isBid) {
             // transfer input asset give user to this contract
             if (quote != WETH) {
-                TransferHelper.safeTransferFrom(
+                TransferHelper.lsp7Transfer(
                     quote,
                     msg.sender,
                     address(this),
                     amount
                 );
             }
-            TransferHelper.safeTransfer(quote, feeTo, fee);
+            TransferHelper.lsp7Transfer(quote, address(this), feeTo, fee);
         } else {
             // transfer input asset give user to this contract
             if (base != WETH) {
-                TransferHelper.safeTransferFrom(
+                TransferHelper.lsp7Transfer(
                     base,
                     msg.sender,
                     address(this),
                     amount
                 );
             }
-            TransferHelper.safeTransfer(base, feeTo, fee);
+            TransferHelper.lsp7Transfer(base, address(this), feeTo, fee);
         }
         emit OrderDeposit(msg.sender, isBid ? quote : base, fee);
 
@@ -1626,14 +1627,14 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             revert AmountIsZero();
         }
         if (payment != WETH) {
-            TransferHelper.safeTransferFrom(
+            TransferHelper.lsp7Transfer(
                 payment,
                 msg.sender,
                 address(this),
                 amount
             );
         }
-        TransferHelper.safeTransfer(payment, feeTo, amount);
+        TransferHelper.lsp7Transfer(payment, address(this), feeTo, amount);
     }
 
     function _fee(

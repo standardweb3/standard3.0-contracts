@@ -10,7 +10,7 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 interface IRevenue {
     function reportMatch(
-        address orderbook,
+        address positionbook,
         address give,
         bool isBid,
         address sender,
@@ -34,7 +34,7 @@ interface IDecimals {
     function decimals() external view returns (uint8 decimals);
 }
 
-// Onchain Matching engine for the orders
+// Onchain Matching engine for the positions
 contract PerpFutures is ReentrancyGuard, AccessControl {
     // Market maker role
     bytes32 private constant MARKET_MAKER_ROLE = keccak256("MARKET_MAKER_ROLE");
@@ -57,18 +57,18 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
         /// Amount after removing fee
         uint256 withoutFee;
         /// Orderbook contract address
-        address orderbook;
-        /// Head price on bid orderbook, the highest bid price
+        address positionbook;
+        /// Head price on bid positionbook, the highest bid price
         uint256 bidHead;
-        /// Head price on ask orderbook, the lowest ask price
+        /// Head price on ask positionbook, the lowest ask price
         uint256 askHead;
         /// Market price on pair
         uint256 lmp;
         /// Spread(volatility) limit on limit/market | long/short for market suspensions(e.g. circuit breaker, tick)
         uint32 spreadLimit;
-        /// Make order id
+        /// Make position id
         uint32 makeId;
-        /// Whether an order deposit has been cleared
+        /// Whether an position deposit has been cleared
         bool clear;
     }
 
@@ -105,7 +105,7 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
     event PositionDeposit(address sender, address asset, uint256 fee);
 
     event PositionCanceled(
-        address orderbook,
+        address positionbook,
         uint256 id,
         bool isBid,
         address indexed owner,
@@ -141,7 +141,7 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
     event ListingCostSet(address payment, uint256 amount);
 
     event PoolAdded(
-        address orderbook,
+        address positionbook,
         TransferHelper.TokenInfo base,
         TransferHelper.TokenInfo quote,
         TransferHelper.TokenInfo collateral,
@@ -149,7 +149,7 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
     );
 
     event PoolUpdated(
-        address orderbook,
+        address positionbook,
         address base,
         address quote,
         address collateral,
@@ -166,6 +166,7 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
         uint32 leverage,
         uint256 minDeposit
     );
+    error LeverageLimitExcceeded(uint32 leverage, uint32 leverageLimit);
 
     error InvalidFeeRate(uint256 feeNum, uint256 feeDenom);
     error InvalidRole(bytes32 role, address sender);
@@ -222,9 +223,9 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
         perpPoolFactory = perpPoolFactory_;
         feeTo = feeTo_;
         WETH = WETH_;
-        defaultLong = 200;
-        defaultShort = 200;
-        // get impl address of orderbook contract to predict address
+        defaultLong = 100;
+        defaultShort = 100;
+        // get impl address of positionbook contract to predict address
         address impl = IPerpPoolFactory(perpPoolFactory_).impl();
         // Orderbook factory must be initialized first to locate pairs
         if (impl == address(0)) {
@@ -277,7 +278,7 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
         return true;
     }
 
-    function setLeverage(
+    function setLeverageLimit(
         address base,
         address quote,
         address collateral,
@@ -295,12 +296,12 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
 
 
     /**
-     * @dev Creates an orderbook for a new trading pair and returns its address
+     * @dev Creates an positionbook for a new trading pair and returns its address
      * @param base The address of the base asset for the trading pair
      * @param quote The address of the quote asset for the trading pair
      * @param collateral The address of the collateral asset for the trading pair
      * @param listingDate The listing Date for the trading pair
-     * @return book The address of the newly created orderbook
+     * @return book The address of the newly created positionbook
      */
     function addPoolETH(
         address base,
@@ -313,13 +314,13 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
     }
 
     /**
-     * @dev Creates an orderbook for a new trading pair and returns its address
+     * @dev Creates an positionbook for a new trading pair and returns its address
      * @param base The address of the base asset for the trading pair
      * @param quote The address of the quote asset for the trading pair
      * @param collateral The address of the collateral asset for the trading pair
      * @param listingDate The listing Date for the trading pair
      * @param payment The address of the payment asset for the listing fee
-     * @return pool The address of the newly created orderbook
+     * @return pool The address of the newly created positionbook
      */
     function addPool(
         address base,
@@ -329,7 +330,7 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
         address payment
     ) public returns (address pool) {
         _listingDeposit(payment, msg.sender);
-        // create orderbook for the pair
+        // create positionbook for the pair
         pool = IPerpPoolFactory(perpPoolFactory).createPerpPool(
             base,
             quote,
@@ -373,20 +374,56 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
         if (!hasRole(MARKET_MAKER_ROLE, _msgSender())) {
             revert InvalidRole(MARKET_MAKER_ROLE, _msgSender());
         }
-        // create orderbook for the pair
+        // create positionbook for the pair
         pool = getPool(base, quote, collateral);
         emit PoolUpdated(pool, base, quote, collateral, listingDate);
         return pool;
     }
 
+    /** 
+    * @dev Opens an position in an positionbook by the given asset information and amount.
+    * @param base The address of the base asset for the trading pair
+    * @param quote The address of the quote asset for the trading pair
+    * @param collateral The address of the collateral asset for the trading pair
+    * @param leverage The leverage for the position
+    * @param amount The amount of asset to deposit
+    * @param isLong Boolean indicating if the position to open is an ask position
+    * @return positionId The ID of the position opened
+    */
+   function openPosition(
+       address base,
+       address quote,
+       address collateral,
+       uint32 leverage,
+       uint256 amount,
+       bool isLong
+   ) external returns (uint256 positionId) {
+         (uint256 withoutFee, address pool) = _deposit(
+              base,
+              quote,
+              collateral,
+              leverage,
+              amount,
+              isLong
+         );
+         try
+              IPerpPool(pool).openPosition(isLong, leverage, withoutFee, msg.sender)
+         returns (uint256 id) {
+              emit PositionOpened(pool, 0, FuturesPool.Position(id, msg.sender, withoutFee, leverage, isLong));
+              return id;
+         } catch {
+              return 0;
+         }
+   }
+
     /**
-     * @dev Cancels an order in an orderbook by the given order ID and order type.
+     * @dev Closes an position in an positionbook by the given position ID and position type.
      * @param base The address of the base asset for the trading pair
      * @param quote The address of the quote asset for the trading pair
      * @param collateral The address of the collateral asset for the trading pair
-     * @param isLong Boolean indicating if the order to cancel is an ask order
-     * @param positionId The ID of the order to cancel
-     * @return refunded Refunded amount from order
+     * @param isLong Boolean indicating if the position to cancel is an ask position
+     * @param positionId The ID of the position to cancel
+     * @return closed Closed amount from position
      */
     function closePosition(
         address base,
@@ -431,12 +468,12 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
     }    
 
     /**
-     * @dev Returns an order in the ask/bid orderbook for the given trading pair with order id.
+     * @dev Returns an position in the ask/bid positionbook for the given trading pair with position id.
      * @param base The address of the base asset for the futures pool.
      * @param quote The address of the quote asset for the futures pool.
      * @param collateral The address of the collateral asset for the futures pool.
-     * @param isLong Boolean indicating if the orderbook to retrieve orders from is an ask orderbook.
-     * @param positionId The order id to retrieve.
+     * @param isLong Boolean indicating if the positionbook to retrieve positions from is an ask positionbook.
+     * @param positionId The position id to retrieve.
      */
     function getPosition(
         address base,
@@ -450,10 +487,10 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
     }
 
     /**
-     * @dev Returns the address of the orderbook for the given base and quote asset addresses.
+     * @dev Returns the address of the positionbook for the given base and quote asset addresses.
      * @param base The address of the base asset for the futures pool.
      * @param quote The address of the quote asset for the futures pool.
-     * @return book The address of the orderbook.
+     * @return book The address of the positionbook.
      */
     function getPool(
         address base,
@@ -497,7 +534,7 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
     }
 
     function _report(
-        address orderbook,
+        address positionbook,
         address give,
         bool isBid,
         uint256 matched,
@@ -506,9 +543,9 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
         if (
             _isContract(feeTo) && IRevenue(feeTo).isReportable() && matched > 0
         ) {
-            // report matched amount to accountant with give token on matching order
+            // report matched amount to accountant with give token on matching position
             IRevenue(feeTo).reportMatch(
-                orderbook,
+                positionbook,
                 give,
                 isBid,
                 msg.sender,
@@ -524,15 +561,16 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
      * @param quote The address of the quote asset.
      * @param collateral The address of the collateral asset.
      * @param amount The amount of asset to deposit.
-     * @param isLong Whether it is an ask order or not.
+     * @param isLong Whether it is an ask position or not.
      * If ask, the quote asset is transferred to the contract.
      * @return withoutFee The amount of asset without the fee.
-     * @return pool The address of the orderbook for the given asset pair.
+     * @return pool The address of the positionbook for the given asset pair.
      */
     function _deposit(
         address base,
         address quote,
         address collateral,
+        uint32 leverage,
         uint256 amount,
         bool isLong
     ) internal returns (uint256 withoutFee, address pool) {
@@ -540,10 +578,9 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
         if (amount == 0) {
             revert AmountIsZero();
         }
-        // get orderbook address from the base and quote asset
+        // get positionbook address from the base and quote asset
         pool = getPool(base, quote, collateral);
-        // check infalid pair
-
+        // check infalid pool
         if (pool == address(0)) {
             revert InvalidPool(base, quote, collateral, pool);
         }
@@ -558,9 +595,14 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
             );
         }
 
-        // check if amount is valid in case of both long and short
+        // check if leverage is valid in case of both long and short
+        uint32 leverageLimit = getLeverage(pool, isLong);
+        if (leverage > leverageLimit) {
+            revert LeverageLimitExcceeded(leverage, leverageLimit);
+        }
         
         // check sender's fee
+        uint256 fee = _fee(amount, msg.sender, isLong);
         
         emit PositionDeposit(msg.sender, isLong ? quote : base, 0);
 
@@ -604,7 +646,7 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
             uint32 feeNum = IRevenue(feeTo).feeOf(account, isMaker);
             return (amount * feeNum) / feeDenom;
         }
-        return (amount * 3) / 1000;
+        return (amount * 1) / 1000;
     }
 
     function _isContract(address addr) internal view returns (bool isContract) {

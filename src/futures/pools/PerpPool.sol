@@ -184,12 +184,19 @@ contract PerpPool is IPerpPool, Initializable {
         uint256 price,
         uint256 amount,
         bool autoUpdate
-    ) external override returns (uint32 id) {}
+    ) external override returns (uint256 id) {}
 
     function placeLong(
         address owner,
         uint256 price,
         uint256 amount,
         bool autoUpdate
-    ) external override returns (uint32 id) {}
+    ) external override returns (uint256 id) {}
+
+    function openPosition(
+        bool isLong,
+        uint256 price,
+        uint256 amount,
+        address owner
+    ) external override returns (uint256 id) {}
 }

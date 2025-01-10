@@ -3,8 +3,9 @@
 pragma solidity ^0.8.24;
 
 import "../libraries/FuturesPool.sol";
+
 interface IPerpPool {
-   function initialize(
+    function initialize(
         uint256 id_,
         address base_,
         address quote_,
@@ -18,14 +19,21 @@ interface IPerpPool {
         uint256 price,
         uint256 amount,
         bool autoUpdate
-    ) external returns (uint32 id);
+    ) external returns (uint256 id);
 
     function placeLong(
         address owner,
         uint256 price,
         uint256 amount,
         bool autoUpdate
-    ) external returns (uint32 id);
+    ) external returns (uint256 id);
+
+    function openPosition(
+        bool isLong,
+        uint256 price,
+        uint256 amount,
+        address owner
+    ) external returns (uint256 id);
 
     function closePosition(
         bool isLong,

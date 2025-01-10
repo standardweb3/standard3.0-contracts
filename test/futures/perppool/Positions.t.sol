@@ -12,9 +12,9 @@ contract PositionsTest is PerpFuturesBaseSetup {
             address(feeToken),
             address(stablecoin),
             address(stablecoin),
-            0,
-            address(feeToken),
-        )
+            1,
+            1
+        );
     }
 
     // test short position

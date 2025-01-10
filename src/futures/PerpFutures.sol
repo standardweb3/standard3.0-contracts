@@ -74,7 +74,7 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
 
     struct PositionData {
         /// Position id
-        uint32 id;
+        uint256 id;
         /// Position entry price
         uint256 entryPrice;
         /// Position liquidation price
@@ -294,7 +294,6 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
 
     // user functions
 
-
     /**
      * @dev Creates an positionbook for a new trading pair and returns its address
      * @param base The address of the base asset for the trading pair
@@ -346,14 +345,9 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
         TransferHelper.TokenInfo memory quoteInfo = TransferHelper.getTokenInfo(
             quote
         );
-        TransferHelper.TokenInfo memory collateralInfo = TransferHelper.getTokenInfo(collateral);
-        emit PoolAdded(
-            pool,
-            baseInfo,
-            quoteInfo,
-            collateralInfo,
-            listingDate
-        );
+        TransferHelper.TokenInfo memory collateralInfo = TransferHelper
+            .getTokenInfo(collateral);
+        emit PoolAdded(pool, baseInfo, quoteInfo, collateralInfo, listingDate);
         return pool;
     }
 
@@ -380,41 +374,114 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
         return pool;
     }
 
-    /** 
-    * @dev Opens an position in an positionbook by the given asset information and amount.
-    * @param base The address of the base asset for the trading pair
-    * @param quote The address of the quote asset for the trading pair
-    * @param collateral The address of the collateral asset for the trading pair
-    * @param leverage The leverage for the position
-    * @param amount The amount of asset to deposit
-    * @param isLong Boolean indicating if the position to open is an ask position
-    * @return positionId The ID of the position opened
-    */
-   function openPosition(
-       address base,
-       address quote,
-       address collateral,
-       uint32 leverage,
-       uint256 amount,
-       bool isLong
-   ) external returns (uint256 positionId) {
-         (uint256 withoutFee, address pool) = _deposit(
-              base,
-              quote,
-              collateral,
-              leverage,
-              amount,
-              isLong
-         );
-         try
-              IPerpPool(pool).openPosition(isLong, leverage, withoutFee, msg.sender)
-         returns (uint256 id) {
-              emit PositionOpened(pool, 0, FuturesPool.Position(id, msg.sender, withoutFee, leverage, isLong));
-              return id;
-         } catch {
-              return 0;
-         }
-   }
+    /**
+     * @dev Opens a long position in an perp pool by the given asset information and amount.
+     * @param base The address of the base asset for the trading pair
+     * @param quote The address of the quote asset for the trading pair
+     * @param collateral The address of the collateral asset for the trading pair
+     * @param leverage The leverage for the position
+     * @param amount The amount of asset to deposit
+     * @return positionId The ID of the position opened
+     */
+    function long(
+        address base,
+        address quote,
+        address collateral,
+        uint32 leverage,
+        uint256 amount
+    ) external returns (uint256 positionId) {
+        (uint256 withoutFee, address pool) = _deposit(
+            base,
+            quote,
+            collateral,
+            leverage,
+            amount,
+            true
+        );
+        try
+            IPerpPool(pool).openPosition(true, leverage, withoutFee, msg.sender)
+        returns (uint256 id) {
+            PositionData memory position = PositionData({
+                /// Position id
+                id: id,
+                /// Position entry price
+                entryPrice: 0,
+                /// Position liquidation price
+                liqPrice: 0,
+                /// Position deposit
+                deposit: amount,
+                /// Position leverage
+                leverage: leverage,
+                /// Position owner
+                owner: msg.sender,
+                /// Position is long
+                isLong: true
+            });
+            emit PositionOpened(pool, 0, position);
+            return id;
+        } catch {
+            return 0;
+        }
+    }
+
+    /**
+     * @dev Opens a short position in an perp pool by the given asset information and amount.
+     * @param base The address of the base asset for the trading pair
+     * @param quote The address of the quote asset for the trading pair
+     * @param collateral The address of the collateral asset for the trading pair
+     * @param leverage The leverage for the position
+     * @param amount The amount of asset to deposit
+     * @return positionId The ID of the position opened
+     */
+    function short(
+        address base,
+        address quote,
+        address collateral,
+        uint32 leverage,
+        uint256 amount
+    ) external returns (uint256 positionId) {
+        (uint256 withoutFee, address pool) = _deposit(
+            base,
+            quote,
+            collateral,
+            leverage,
+            amount,
+            false
+        );
+        try
+            IPerpPool(pool).openPosition(
+                false,
+                leverage,
+                withoutFee,
+                msg.sender
+            )
+        returns (uint256 id) {
+            PositionData memory position = PositionData({
+                /// Position id
+                id: id,
+                /// Position entry price
+                entryPrice: 0,
+                /// Position liquidation price
+                liqPrice: 0,
+                /// Position deposit
+                deposit: amount,
+                /// Position leverage
+                leverage: leverage,
+                /// Position owner
+                owner: msg.sender,
+                /// Position is long
+                isLong: false
+            });
+            emit PositionOpened(
+                pool,
+                0,
+                position
+            );
+            return id;
+        } catch {
+            return 0;
+        }
+    }
 
     /**
      * @dev Closes an position in an positionbook by the given position ID and position type.
@@ -445,13 +512,18 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
         try
             IPerpPool(pool).closePosition(isLong, positionId, msg.sender)
         returns (uint256 refunded) {
-            emit PositionCanceled(pool, positionId, isLong, msg.sender, refunded);
+            emit PositionCanceled(
+                pool,
+                positionId,
+                isLong,
+                msg.sender,
+                refunded
+            );
             return refunded;
         } catch {
             return 0;
         }
     }
-
 
     function closePositions(
         address[] memory base,
@@ -462,10 +534,16 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
     ) external returns (uint256[] memory refunded) {
         refunded = new uint256[](positionIds.length);
         for (uint32 i = 0; i < positionIds.length; i++) {
-            refunded[i] = closePosition(base[i], quote[i], collateral[i], isLong[i], positionIds[i]);
+            refunded[i] = closePosition(
+                base[i],
+                quote[i],
+                collateral[i],
+                isLong[i],
+                positionIds[i]
+            );
         }
         return refunded;
-    }    
+    }
 
     /**
      * @dev Returns an position in the ask/bid positionbook for the given trading pair with position id.
@@ -497,7 +575,8 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
         address quote,
         address collateral
     ) public view returns (address book) {
-        return IPerpPoolFactory(perpPoolFactory).getPool(base, quote, collateral);
+        return
+            IPerpPoolFactory(perpPoolFactory).getPool(base, quote, collateral);
     }
 
     function _setListingDate(
@@ -512,11 +591,11 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
         address base,
         address quote,
         address collateral,
-        uint32 long,
-        uint32 short
+        uint32 _long,
+        uint32 _short
     ) internal returns (bool success) {
         address pool = getPool(base, quote, collateral);
-        leverageLimits[pool] = DefaultLeverage(long, short);
+        leverageLimits[pool] = DefaultLeverage(_long, _short);
         return true;
     }
 
@@ -600,10 +679,10 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
         if (leverage > leverageLimit) {
             revert LeverageLimitExcceeded(leverage, leverageLimit);
         }
-        
+
         // check sender's fee
         uint256 fee = _fee(amount, msg.sender, isLong);
-        
+
         emit PositionDeposit(msg.sender, isLong ? quote : base, 0);
 
         return (withoutFee, pool);

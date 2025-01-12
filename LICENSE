@@ -7,16 +7,15 @@ License text copyright (c) 2017 MariaDB Corporation Ab, All Rights Reserved.
 
 Parameters
 
-Licensor:             Hyungsuk Kang
+Licensor:             Digital Native Standard Ltd.
 
 Licensed Work:        Standard Protocol 3.0 
-                      The Licensed Work is (c) 2022 Hyungsuk Kang
+                      The Licensed Work is (c) 2025 Digital Native Standard Ltd.
 
 Additional Use Grant: Any uses listed and defined at
-                      license-grants.stnd.eth
+                      license.stndgov.eth
 
-Change Date:          The earlier of 2033-03-01 or a date specified at
-                      license-date.stnd.eth
+Change Date:          The earlier of 2033-03-01 
 
 Change License:       GNU General Public License v3.0 or later
 
@@ -85,7 +84,7 @@ other recipients of the licensed work to be provided by Licensor:
 
 2. To either: (a) specify an additional grant of rights to use that does not
    impose any additional restriction on the right granted in this License, as
-   the Additional Use Grant; or (b) insert the text "None".
+   the Additional Use Grant; or (b) None.
 
 3. To specify a Change Date.
 

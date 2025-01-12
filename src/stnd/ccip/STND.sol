@@ -12,7 +12,7 @@ contract Standard is
     AccessControl
 {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    uint256 private constant MAX_SUPPLY = 20_000_000 * 10**18; // 20 million tokens with 18 decimals
+    uint256 private constant MAX_SUPPLY = 500_000_000 * 10**18; // 500 million tokens with 18 decimals
     error MaxSupplyReached(uint256 currentSupply, uint256 newSupply);
 
 

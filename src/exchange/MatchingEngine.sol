@@ -40,8 +40,10 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
     bytes32 private constant MARKET_MAKER_ROLE = keccak256("MARKET_MAKER_ROLE");
     // fee recipient for point storage
     address private feeTo;
-    // fee denominator representing 0.001%, 1/1000000 = 0.001%
-    uint32 public constant feeDenom = 1000000;
+    // base fee in numerator for DENOM
+    uint32 private baseFee;
+    // Denominator for fraction calculation overall
+    uint32 public constant DENOM = 100000000;
     // Factories
     address public orderbookFactory;
     // WETH
@@ -134,6 +136,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         address orderbook,
         TransferHelper.TokenInfo base,
         TransferHelper.TokenInfo quote,
+        uint256 listingPrice,
         uint256 listingDate
     );
 
@@ -195,8 +198,8 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         orderbookFactory = orderbookFactory_;
         feeTo = feeTo_;
         WETH = WETH_;
-        defaultBuy = 200;
-        defaultSell = 200;
+        defaultBuy = 2000000;
+        defaultSell = 2000000;
         // get impl address of orderbook contract to predict address
         address impl = IOrderbookFactory(orderbookFactory_).impl();
         // Orderbook factory must be initialized first to locate pairs
@@ -215,6 +218,14 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
         }
         feeTo = feeTo_;
+        return true;
+    }
+
+    function setBaseFee(uint32 baseFee_) external returns (bool success) {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        }
+        baseFee = baseFee_;
         return true;
     }
 
@@ -327,7 +338,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             quote,
             recipient,
             true,
-            (orderData.lmp * (10000 + orderData.spreadLimit)) / 10000,
+            (orderData.lmp * (DENOM + orderData.spreadLimit)) / DENOM,
             n
         );
 
@@ -383,27 +394,27 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         if (askHead == 0 && bidHead == 0) {
             // lmp must exist unless there has been no order in orderbook
             if (lmp != 0) {
-                up = (lmp * (10000 + spread)) / 10000;
+                up = (lmp * (DENOM + spread)) / DENOM;
                 return up;
             }
         } else if (askHead == 0 && bidHead != 0) {
             if (lmp != 0) {
                 uint256 temp = (bidHead >= lmp ? bidHead : lmp);
-                up = (temp * (10000 + spread)) / 10000;
+                up = (temp * (DENOM + spread)) / DENOM;
                 return up;
             }
-            up = (bidHead * (10000 + spread)) / 10000;
+            up = (bidHead * (DENOM + spread)) / DENOM;
             return up;
         } else if (askHead != 0 && bidHead == 0) {
             if (lmp != 0) {
-                up = (lmp * (10000 + spread)) / 10000;
+                up = (lmp * (DENOM + spread)) / DENOM;
                 return askHead >= up ? up : askHead;
             }
             return askHead;
         } else {
             if (lmp != 0) {
                 uint256 temp = (bidHead >= lmp ? bidHead : lmp);
-                up = (temp * (10000 + spread)) / 10000;
+                up = (temp * (DENOM + spread)) / DENOM;
                 return askHead >= up ? up : askHead;
             }
             return askHead;
@@ -470,7 +481,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             base,
             recipient,
             false,
-            (orderData.lmp * (10000 - orderData.spreadLimit)) / 10000,
+            (orderData.lmp * (DENOM - orderData.spreadLimit)) / DENOM,
             n
         );
 
@@ -525,12 +536,12 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         if (askHead == 0 && bidHead == 0) {
             // lmp must exist unless there has been no order in orderbook
             if (lmp != 0) {
-                down = (lmp * (10000 - spread)) / 10000;
+                down = (lmp * (DENOM - spread)) / DENOM;
                 return down == 0 ? 1 : down;
             }
         } else if (askHead == 0 && bidHead != 0) {
             if (lmp != 0) {
-                down = (lmp * (10000 - spread)) / 10000;
+                down = (lmp * (DENOM - spread)) / DENOM;
                 down = down <= bidHead ? bidHead : down;
                 return down == 0 ? 1 : down;
             }
@@ -538,15 +549,15 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         } else if (askHead != 0 && bidHead == 0) {
             if (lmp != 0) {
                 uint256 temp = lmp <= askHead ? lmp : askHead;
-                down = (temp * (10000 - spread)) / 10000;
+                down = (temp * (DENOM - spread)) / DENOM;
                 return down == 0 ? 1 : down;
             }
-            down = (askHead * (10000 - spread)) / 10000;
+            down = (askHead * (DENOM - spread)) / DENOM;
             return down == 0 ? 1 : down;
         } else {
             if (lmp != 0) {
                 uint256 temp = lmp <= askHead ? lmp : askHead;
-                down = (temp * (10000 - spread)) / 10000;
+                down = (temp * (DENOM - spread)) / DENOM;
                 down = down <= bidHead ? bidHead : down;
                 return down == 0 ? 1 : down;
             }
@@ -732,29 +743,29 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         lmp = IOrderbook(orderbook).lmp();
         if (askHead == 0 && bidHead == 0) {
             if (lmp != 0) {
-                up = (lmp * (10000 + spread)) / 10000;
+                up = (lmp * (DENOM + spread)) / DENOM;
                 return (lp >= up ? up : lp, lmp);
             }
             return (lp, lmp);
         } else if (askHead == 0 && bidHead != 0) {
             if (lmp != 0) {
-                up = (lmp * (10000 + spread)) / 10000;
+                up = (lmp * (DENOM + spread)) / DENOM;
                 return (lp >= up ? up : lp, lmp);
             }
-            up = (bidHead * (10000 + spread)) / 10000;
+            up = (bidHead * (DENOM + spread)) / DENOM;
             return (lp >= up ? up : lp, lmp);
         } else if (askHead != 0 && bidHead == 0) {
             if (lmp != 0) {
-                up = (lmp * (10000 + spread)) / 10000;
+                up = (lmp * (DENOM + spread)) / DENOM;
                 up = lp >= up ? up : lp;
                 return (up >= askHead ? askHead : up, lmp);
             }
-            up = (askHead * (10000 + spread)) / 10000;
+            up = (askHead * (DENOM + spread)) / DENOM;
             up = lp >= up ? up : lp;
             return (up >= askHead ? askHead : up, lmp);
         } else {
             if (lmp != 0) {
-                up = (lmp * (10000 + spread)) / 10000;
+                up = (lmp * (DENOM + spread)) / DENOM;
                 up = lp >= up ? up : lp;
                 return (up >= askHead ? askHead : up, lmp);
             }
@@ -873,29 +884,29 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         lmp = IOrderbook(orderbook).lmp();
         if (askHead == 0 && bidHead == 0) {
             if (lmp != 0) {
-                down = (lmp * (10000 - spread)) / 10000;
+                down = (lmp * (DENOM - spread)) / DENOM;
                 return (lp <= down ? down : lp, lmp);
             }
             return (lp, lmp);
         } else if (askHead == 0 && bidHead != 0) {
             if (lmp != 0) {
-                down = (lmp * (10000 - spread)) / 10000;
+                down = (lmp * (DENOM - spread)) / DENOM;
                 down = lp <= down ? down : lp;
                 return (down <= bidHead ? bidHead : down, lmp);
             }
-            down = (bidHead * (10000 - spread)) / 10000;
+            down = (bidHead * (DENOM - spread)) / DENOM;
             down = lp <= down ? down : lp;
             return (down <= bidHead ? bidHead : down, lmp);
         } else if (askHead != 0 && bidHead == 0) {
             if (lmp != 0) {
-                down = (lmp * (10000 - spread)) / 10000;
+                down = (lmp * (DENOM - spread)) / DENOM;
                 return (lp <= down ? down : lp, lmp);
             }
-            down = (askHead * (10000 - spread)) / 10000;
+            down = (askHead * (DENOM - spread)) / DENOM;
             return (lp <= down ? down : lp, lmp);
         } else {
             if (lmp != 0) {
-                down = (lmp * (10000 - spread)) / 10000;
+                down = (lmp * (DENOM - spread)) / DENOM;
                 return (lp <= down ? down : lp, lmp);
             }
             // lower limit price on sell cannot be lower than bid head price
@@ -1003,6 +1014,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             orderbook,
             baseInfo,
             quoteInfo,
+            listingPrice,
             listingDate
         );
         emit NewMarketPrice(orderbook, listingPrice);
@@ -1643,9 +1655,13 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
     ) internal view returns (uint256 fee) {
         if (_isContract(feeTo) && IRevenue(feeTo).isSubscribed(account)) {
             uint32 feeNum = IRevenue(feeTo).feeOf(account, isMaker);
-            return (amount * feeNum) / feeDenom;
+            return (amount * feeNum) / DENOM;
         }
-        return (amount * 1) / 1000;
+        return (amount * baseFee) / DENOM;
+    }
+
+    function _baseFee() internal view returns (uint32) {
+        return baseFee;
     }
 
     function _isContract(address addr) internal view returns (bool isContract) {

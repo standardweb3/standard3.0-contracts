@@ -152,7 +152,7 @@ contract DeployPointFarmMainnetContracts is Deployer {
 contract CreatePairMainnet is Deployer {
     MatchingEngine public matchingEngine =
         MatchingEngine(
-            payable(address(0xE0892785D00F192110A05282387fBAC21b942Aad))
+            payable(address(0x615a19aDE5C452DCb0DA995989bf74Ca86092c76))
         );
     address constant base = 0x4200000000000000000000000000000000000006;
     address constant quote = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;

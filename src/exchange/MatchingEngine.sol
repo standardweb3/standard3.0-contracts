@@ -19,10 +19,6 @@ interface IRevenue {
     ) external view returns (bool isSubscribed);
 }
 
-interface IDecimals {
-    function decimals() external view returns (uint8 decimals);
-}
-
 // Onchain Matching engine for the orders
 contract MatchingEngine is ReentrancyGuard, AccessControl {
     // Market maker role

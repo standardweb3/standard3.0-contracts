@@ -9,17 +9,6 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 interface IRevenue {
-    function reportMatch(
-        address orderbook,
-        address give,
-        bool isBid,
-        address sender,
-        address owner,
-        uint256 amount
-    ) external;
-
-    function isReportable() external view returns (bool isReportable);
-
     function feeOf(
         address account,
         bool isMaker
@@ -1332,8 +1321,6 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
                     remaining,
                     clear
                 );
-                // report points on match
-                _report(orderbook, give, isBid, remaining, owner);
                 // emit event order matched
                 emit OrderMatched(
                     orderbook,
@@ -1364,8 +1351,6 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
                     required,
                     clear
                 );
-                // report points on match
-                _report(orderbook, give, isBid, required, owner);
                 // emit event order matched
                 emit OrderMatched(
                     orderbook,
@@ -1517,28 +1502,6 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
                 id = _makeOrder(orderbook, remaining, price, isBid, recipient);
                 return id;
             }
-        }
-    }
-
-    function _report(
-        address orderbook,
-        address give,
-        bool isBid,
-        uint256 matched,
-        address owner
-    ) internal {
-        if (
-            _isContract(feeTo) && IRevenue(feeTo).isReportable() && matched > 0
-        ) {
-            // report matched amount to accountant with give token on matching order
-            IRevenue(feeTo).reportMatch(
-                orderbook,
-                give,
-                isBid,
-                msg.sender,
-                owner,
-                matched
-            );
         }
     }
 

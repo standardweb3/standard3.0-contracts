@@ -35,12 +35,4 @@ contract PrizePoolTest is PointFarmSetup {
         assert(pointBalance > 0);
         vm.stopPrank();
     }
-
-    // prize pool gives reward with points burned
-    function testPrizePoolGivesRewardWithPointsBurned() public {
-        prizePoolSetup();
-        vm.startPrank(trader1);
-        prizePool.claim(29e18);
-        vm.stopPrank();
-    }
 }

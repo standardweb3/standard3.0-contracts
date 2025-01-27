@@ -242,8 +242,8 @@ contract LimitOrderTest is BaseSetup {
         uint256 lmp = IOrderbook(
             matchingEngine.getPair(address(base), address(quote))
         ).lmp();
-        up = (lmp * (10000 + 200)) / 10000;
-        down = (lmp * (10000 - 200)) / 10000;
+        up = (lmp * (1e8 + 2000000)) / 1e8;
+        down = (lmp * (1e8 - 2000000)) / 1e8;
         return (base, quote, book, bidHead, askHead, up, down);
     }
 
@@ -258,20 +258,20 @@ contract LimitOrderTest is BaseSetup {
         lmp = IOrderbook(orderbook).lmp();
         if (askHead == 0 && bidHead == 0) {
             if (lmp != 0) {
-                up = (lmp * (10000 + spread)) / 10000;
+                up = (lmp * (1e8 + spread)) / 1e8;
                 return (lp >= up ? up : lp, lmp);
             }
             return (lp, lmp);
         } else if (askHead == 0 && bidHead != 0) {
-            up = (bidHead * (10000 + spread)) / 10000;
+            up = (bidHead * (1e8 + spread)) / 1e8;
             return (lp >= up ? up : lp, lmp);
         } else if (askHead != 0 && bidHead == 0) {
             if (lmp != 0) {
-                up = (lmp * (10000 + spread)) / 10000;
+                up = (lmp * (1e8 + spread)) / 1e8;
                 up = lp >= up ? up : lp;
                 return (up >= askHead ? askHead : up, lmp);
             }
-            up = (askHead * (10000 + spread)) / 10000;
+            up = (askHead * (1e8 + spread)) / 1e8;
             up = lp >= up ? up : lp;
             return (up >= askHead ? askHead : up, lmp);
         } else {
@@ -293,19 +293,19 @@ contract LimitOrderTest is BaseSetup {
         lmp = IOrderbook(orderbook).lmp();
         if (askHead == 0 && bidHead == 0) {
             if (lmp != 0) {
-                down = (lmp * (10000 - spread)) / 10000;
+                down = (lmp * (1e8 - spread)) / 1e8;
                 return (lp <= down ? down : lp, lmp);
             }
             return (lp, lmp);
         } else if (askHead == 0 && bidHead != 0) {
             if (lmp != 0) {
-                down = (lmp * (10000 - spread)) / 10000;
+                down = (lmp * (1e8 - spread)) / 1e8;
                 return (lp <= down ? down : lp, lmp);
             }
-            down = (bidHead * (10000 - spread)) / 10000;
+            down = (bidHead * (1e8 - spread)) / 1e8;
             return (lp <= down ? down : lp, lmp);
         } else if (askHead != 0 && bidHead == 0) {
-            down = (askHead * (10000 - spread)) / 10000;
+            down = (askHead * (1e8 - spread)) / 1e8;
             down = lp <= down ? down : lp;
             return (down <= bidHead ? bidHead : down, lmp);
         } else {
@@ -328,7 +328,7 @@ contract LimitOrderTest is BaseSetup {
             uint256 down
         ) = _setupVolatilityTest();
         // check limit price is higher than up
-        uint256 limitPrice = (1e11 * (10000 + 1000)) / 10000;
+        uint256 limitPrice = (1e11 * (1e8 + 1000)) / 1e8;
         console.log(limitPrice, up);
         assert(limitPrice > up);
         (uint256 result, uint lmp) = _detLimitSellMakePrice(
@@ -336,7 +336,7 @@ contract LimitOrderTest is BaseSetup {
             limitPrice,
             bidHead,
             askHead,
-            200
+            2000000
         );
         console.log("result: ", result);
         assert(result == limitPrice);
@@ -365,7 +365,7 @@ contract LimitOrderTest is BaseSetup {
             uint256 down
         ) = _setupVolatilityTest();
         // check limit price is higher than up
-        uint256 limitPrice = (1e8 * (10000 - 1000)) / 10000;
+        uint256 limitPrice = (1e8 * (1e8 - 10000000)) / 1e8;
         console.log(limitPrice, down);
         assert(limitPrice < down);
         (uint256 result, uint lmp) = _detLimitSellMakePrice(
@@ -373,7 +373,7 @@ contract LimitOrderTest is BaseSetup {
             limitPrice,
             bidHead,
             askHead,
-            200
+            2000000
         );
         console.log("result: ", result);
         assert(result == down);
@@ -404,7 +404,7 @@ contract LimitOrderTest is BaseSetup {
             uint256 down
         ) = _setupVolatilityTest();
         // check limit price is higher than up
-        uint256 limitPrice = (1e11 * (10000 + 1000)) / 10000;
+        uint256 limitPrice = (1e11 * (1e8 + 10000000)) / 1e8;
         console.log(limitPrice, up);
         assert(limitPrice > up);
         (uint256 result, uint lmp) = _detLimitBuyMakePrice(
@@ -412,7 +412,7 @@ contract LimitOrderTest is BaseSetup {
             limitPrice,
             bidHead,
             askHead,
-            200
+            2000000
         );
         console.log("result: ", result);
         uint256 mp = IOrderbook(address(book)).lmp();
@@ -443,7 +443,7 @@ contract LimitOrderTest is BaseSetup {
             uint256 down
         ) = _setupVolatilityTest();
         // check limit price is higher than up
-        uint256 limitPrice = (1e8 * (10000 - 1000)) / 10000;
+        uint256 limitPrice = (1e8 * (1e8 - 10000000)) / 1e8;
         console.log(limitPrice, down);
         assert(limitPrice < down);
         (uint256 result, uint lmp) = _detLimitBuyMakePrice(
@@ -451,7 +451,7 @@ contract LimitOrderTest is BaseSetup {
             limitPrice,
             bidHead,
             askHead,
-            200
+            2000000
         );
         console.log("result: ", result);
         assert(result == limitPrice);

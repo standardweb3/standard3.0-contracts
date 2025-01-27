@@ -41,7 +41,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
     // fee recipient for point storage
     address private feeTo;
     // base fee in numerator for DENOM
-    uint32 private baseFee;
+    uint32 public baseFee = 100000;
     // Denominator for fraction calculation overall
     uint32 public constant DENOM = 100000000;
     // Factories

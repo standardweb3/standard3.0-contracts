@@ -65,7 +65,8 @@ contract BaseSetup is Test {
         );
 
         // setup spread
-        matchingEngine.setDefaultSpread(200,200);
+        matchingEngine.setDefaultSpread(2000000,2000000);
+        matchingEngine.setBaseFee(300000);
 
         vm.prank(trader1);
         token1.approve(address(matchingEngine), 10000000e18);

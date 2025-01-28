@@ -177,7 +177,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         address feeTo_,
         address WETH_
     ) external {
-        if(init) {
+        if (init) {
             revert AlreadyInitialized(init);
         }
         orderbookFactory = orderbookFactory_;
@@ -1559,6 +1559,15 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
                     address(this),
                     amount
                 );
+            } else {
+                if (msg.value == 0) {
+                    TransferHelper.safeTransferFrom(
+                        quote,
+                        msg.sender,
+                        address(this),
+                        amount
+                    );
+                }
             }
             TransferHelper.safeTransfer(quote, feeTo, fee);
         } else {
@@ -1570,6 +1579,15 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
                     address(this),
                     amount
                 );
+            } else {
+                if (msg.value == 0) {
+                    TransferHelper.safeTransferFrom(
+                        quote,
+                        msg.sender,
+                        address(this),
+                        amount
+                    );
+                }
             }
             TransferHelper.safeTransfer(base, feeTo, fee);
         }
@@ -1583,15 +1601,14 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
      * @param payment The address of the payment asset.
      * @param sender The address of the sender.
      */
-    function _listingDeposit(
-        address payment,
-        address sender
-    ) internal {
+    function _listingDeposit(address payment, address sender) internal {
         // check if the sender is admin
         if (hasRole(MARKET_MAKER_ROLE, sender)) {
             return;
         }
-        uint256 amount = IOrderbookFactory(orderbookFactory).getListingCost(payment);
+        uint256 amount = IOrderbookFactory(orderbookFactory).getListingCost(
+            payment
+        );
         // check if amount is zero
         if (amount == 0) {
             revert AmountIsZero();

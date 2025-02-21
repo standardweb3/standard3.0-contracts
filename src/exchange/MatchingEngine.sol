@@ -238,13 +238,15 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         uint32 buy,
         uint32 sell
     ) external returns (bool success) {
-        if (!hasRole(MARKET_MAKER_ROLE, _msgSender())) {
-            revert InvalidRole(MARKET_MAKER_ROLE, _msgSender());
+        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
         }
         defaultBuy = buy;
         defaultSell = sell;
         return true;
     }
+
+    // market maker functions
 
     function setSpread(
         address base,
@@ -252,16 +254,27 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         uint32 buy,
         uint32 sell
     ) external returns (bool success) {
-        if (!hasRole(MARKET_MAKER_ROLE, _msgSender())) {
-            revert InvalidRole(MARKET_MAKER_ROLE, _msgSender());
+        // get pair
+        address pair = IOrderbookFactory(orderbookFactory).getPair(base, quote);
+        if (pair == address(0)) {
+            revert PairDoesNotExist(base, quote, pair);
         }
+
+        if (!hasRole(MARKET_MAKER_ROLE, _msgSender())) {
+            if (!hasRole(bytes32(abi.encodePacked(pair)), _msgSender())) {
+                revert InvalidRole(
+                    bytes32(abi.encodePacked(pair)),
+                    _msgSender()
+                );
+            }
+        }
+
         _setSpread(base, quote, buy, sell);
         return true;
     }
 
-    // market maker function
     /**
-     * @dev Adjust the orderbook to average market price
+     * @dev Adjust the orderbook to market price
      * @param base The address of the base asset for the trading pair
      * @param quote The address of the quote asset for the trading pair
      * @param isBuy Boolean indicating if the order is buy or sell
@@ -280,14 +293,21 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         uint32 beforeAdjust,
         uint32 afterAdjust
     ) external nonReentrant returns (bool) {
-        if (!hasRole(MARKET_MAKER_ROLE, _msgSender())) {
-            revert InvalidRole(MARKET_MAKER_ROLE, _msgSender());
-        }
         // get pair
         address pair = IOrderbookFactory(orderbookFactory).getPair(base, quote);
         if (pair == address(0)) {
             revert PairDoesNotExist(base, quote, pair);
         }
+
+        if (!hasRole(MARKET_MAKER_ROLE, _msgSender())) {
+            if (!hasRole(bytes32(abi.encodePacked(pair)), _msgSender())) {
+                revert InvalidRole(
+                    bytes32(abi.encodePacked(pair)),
+                    _msgSender()
+                );
+            }
+        }
+
         // get spreads in the pair
         uint32 buySpread = isBuy ? beforeAdjust : getSpread(pair, true);
         uint32 sellSpread = !isBuy ? beforeAdjust : getSpread(pair, false);

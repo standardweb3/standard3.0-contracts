@@ -37,6 +37,17 @@ contract DeployStandard is Deployer {
     }
 }
 
+contract MintStandard is Deployer {
+    address stnd_address = 0xa111a06BDEbb8b1dAA79000F4B386A36E0AccE56;
+    Standard public stnd;
+    address minter = 0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
+    function run() external {
+        _setDeployer();
+        stnd = Standard(stnd_address);
+        stnd.mint(minter, 1000_000_000 * 10**18);
+    }
+}
+
 contract GrantMinterRole is Deployer {
     address stnd_address = 0x7a2e3a7A1bf8FaCCAd68115DC509DB5a5af4e7e4;
     Standard public stnd;

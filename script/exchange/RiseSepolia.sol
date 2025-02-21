@@ -18,6 +18,7 @@ import {Pass} from "../../src/point/Pass.sol";
 import {PrizePool} from "../../src/point/PrizePool.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {WETH9} from "../../src/mock/WETH9.sol";
 
 contract Deployer is Script {
     function _setDeployer() internal {
@@ -37,6 +38,7 @@ contract DeployMulticall3 is Deployer {
 contract DeployWETH is Deployer {
     function run() external {
         _setDeployer();
+        new WETH9();
         vm.stopBroadcast();
     }
 }
@@ -44,7 +46,7 @@ contract DeployWETH is Deployer {
 contract DeployExchangeProxy is Deployer {
     address impl = 0xE0892785D00F192110A05282387fBAC21b942Aad;
     address admin = 0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
-    address orderbookFactory = 0xf297cd3077dEC0f07A814999b7B282A8EA911cC0;
+    address orderbookFactory = 0xd7ABA1cbAd246249be6a0de9a449FB5EDEFf1E47;
     address weth = 0x4200000000000000000000000000000000000006;
    
 
@@ -77,7 +79,7 @@ contract InitializeExchangeProxy is Deployer {
         0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
     address constant weth = 0x4200000000000000000000000000000000000006;
     address constant orderbookFactory =
-        0xf297cd3077dEC0f07A814999b7B282A8EA911cC0;
+        0xd7ABA1cbAd246249be6a0de9a449FB5EDEFf1E47;
 
     function run() external {
         _setDeployer();
@@ -92,7 +94,7 @@ contract DeployExchangeMainnetContracts is Deployer {
         0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
     address constant foundation_address =
         0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
-    address constant weth = 0x5300000000000000000000000000000000000004;
+    address constant weth = 0x008fCD6315c68EbAa31244aea174993f63Ef14D5;
 
     function run() external {
         _setDeployer();
@@ -116,10 +118,10 @@ contract DeployPointFarmMainnetContracts is Deployer {
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
     MatchingEngine public matchingEngine;
     address constant matchingEngine_address =
-        0xd7ABA1cbAd246249be6a0de9a449FB5EDEFf1E47;
+        0x6B5A13Ca93871187330aE6d9E34cdAD610aA54cd;
     address constant foundation_address =
         0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
-    address constant weth = 0x4200000000000000000000000000000000000006;
+    address constant weth = 0xe8CabF9d1FFB6CE23cF0a86641849543ec7BD7d5;
     address constant stablecoin_address =
         0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
     STNDXP public point;
@@ -152,23 +154,7 @@ contract DeployPointFarmMainnetContracts is Deployer {
 contract CreatePairMainnet is Deployer {
     MatchingEngine public matchingEngine =
         MatchingEngine(
-            payable(address(0xd7ABA1cbAd246249be6a0de9a449FB5EDEFf1E47))
-        );
-    address constant base = 0x4200000000000000000000000000000000000006;
-    address constant quote = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
-    uint256 constant initMarketPrice = 341320000000;
-
-    function run() external {
-        _setDeployer();
-        matchingEngine.addPair(base, quote, initMarketPrice, 0, base);
-        vm.stopBroadcast();
-    }
-}
-
-contract testLimitSellETH is Deployer {
-    MatchingEngine public matchingEngine =
-        MatchingEngine(
-            payable(address(0xd7ABA1cbAd246249be6a0de9a449FB5EDEFf1E47))
+            payable(address(0x615a19aDE5C452DCb0DA995989bf74Ca86092c76))
         );
     address constant base = 0x4200000000000000000000000000000000000006;
     address constant quote = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
@@ -210,6 +196,64 @@ contract SetEventMainnet is Deployer {
         _setDeployer();
         pointFarm = PointFarm(pointFarm_address);
         pointFarm.setEvent(endDate);
+        vm.stopBroadcast();
+    }
+}
+
+contract AddPair is Deployer {
+    MatchingEngine public matchingEngine;
+    address constant matchingEngine_address =
+        0x6B5A13Ca93871187330aE6d9E34cdAD610aA54cd;
+    address constant base = 0xBAb93B7ad7fE8692A878B95a8e689423437cc500;
+    address constant quote = 0xa111a06BDEbb8b1dAA79000F4B386A36E0AccE56;
+    uint256 constant price = 147777000000;
+    
+    function run() external {
+        _setDeployer();
+        matchingEngine = MatchingEngine(
+            payable(address(matchingEngine_address))
+        );
+        matchingEngine.addPair(base, quote, price, 0, base);
+        vm.stopBroadcast();
+    }
+}
+
+contract SetupPriceOnPair is Deployer {
+    MatchingEngine public matchingEngine;
+    address constant matchingEngine_address =
+        0x6B5A13Ca93871187330aE6d9E34cdAD610aA54cd;
+    address constant base = 0xa111a06BDEbb8b1dAA79000F4B386A36E0AccE56;
+    address constant quote = 0xF1815bd50389c46847f0Bda824eC8da914045D14;
+    uint256 constant price = 250000000;
+    
+    function run() external {
+        _setDeployer();
+        matchingEngine = MatchingEngine(
+            payable(address(matchingEngine_address))
+        );
+        matchingEngine.addPair(base, quote, price, 0, base);
+        vm.stopBroadcast();
+    }
+}
+
+contract SetupSpreadOnPair is Deployer {
+    MatchingEngine public matchingEngine;
+    address constant matchingEngine_address =
+        0x6B5A13Ca93871187330aE6d9E34cdAD610aA54cd;
+    address constant base = 0xa111a06BDEbb8b1dAA79000F4B386A36E0AccE56;
+    address constant quote = 0xF1815bd50389c46847f0Bda824eC8da914045D14;
+    uint32 constant buyTick = 1000000;
+    uint32 constant sellTick = 100000;
+    /*
+     "buy_tick": 1000000,
+    "sell_tick": 100000
+    */
+    function run() external {
+        _setDeployer();
+        matchingEngine = MatchingEngine(
+            payable(address(matchingEngine_address))
+        );
+        matchingEngine.setSpread(base, quote, buyTick, sellTick);
         vm.stopBroadcast();
     }
 }

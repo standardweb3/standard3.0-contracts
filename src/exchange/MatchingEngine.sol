@@ -259,6 +259,56 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         return true;
     }
 
+    // market maker function
+    /**
+     * @dev Adjust the orderbook to average market price
+     * @param base The address of the base asset for the trading pair
+     * @param quote The address of the quote asset for the trading pair
+     * @param isBuy Boolean indicating if the order is buy or sell
+     * @param price The price to adjust
+     * @param assetAmount The amount of adjusting asset to set price in buy or sell position
+     * @param beforeAdjust The price before adjustment
+     * @param afterAdjust The price after adjustment
+     * @return bool
+     */
+    function adjustPrice(
+        address base,
+        address quote,
+        bool isBuy,
+        uint256 price,
+        uint256 assetAmount,
+        uint32 beforeAdjust,
+        uint32 afterAdjust
+    ) external nonReentrant returns (bool) {
+        if (!hasRole(MARKET_MAKER_ROLE, _msgSender())) {
+            revert InvalidRole(MARKET_MAKER_ROLE, _msgSender());
+        }
+        // get pair
+        address pair = IOrderbookFactory(orderbookFactory).getPair(base, quote);
+        if (pair == address(0)) {
+            revert PairDoesNotExist(base, quote, pair);
+        }
+        // get spreads in the pair
+        uint32 buySpread = isBuy ? beforeAdjust : getSpread(pair, true);
+        uint32 sellSpread = !isBuy ? beforeAdjust : getSpread(pair, false);
+        // change spread in the pair to adjust price
+        _setSpread(base, quote, buySpread, sellSpread);
+
+        // add limit buy or sell order to adjust price
+        if (isBuy) {
+            limitBuy(base, quote, price, assetAmount, false, 20, msg.sender);
+        } else {
+            limitSell(base, quote, price, assetAmount, false, 20, msg.sender);
+        }
+
+        // set spreads in the pair to original
+        buySpread = isBuy ? afterAdjust : getSpread(pair, true);
+        sellSpread = !isBuy ? afterAdjust : getSpread(pair, false);
+        _setSpread(base, quote, buySpread, sellSpread);
+
+        return true;
+    }
+
     // user functions
 
     /**

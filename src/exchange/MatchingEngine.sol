@@ -183,8 +183,8 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         orderbookFactory = orderbookFactory_;
         feeTo = feeTo_;
         WETH = WETH_;
-        defaultBuy = 2000000;
-        defaultSell = 2000000;
+        defaultBuy = 100000;
+        defaultSell = 100000;
         // get impl address of orderbook contract to predict address
         address impl = IOrderbookFactory(orderbookFactory_).impl();
         // Orderbook factory must be initialized first to locate pairs

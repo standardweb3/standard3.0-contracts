@@ -13,11 +13,7 @@ contract STNDXP is ERC20, ERC20Burnable, ERC20Pausable, AccessControl {
 
     mapping(address => uint256) public penalties;
 
-    error AmountExceededBalance(
-        address account,
-        uint256 amount,
-        uint256 balance
-    );
+    error AmountExceededBalance(address account, uint256 amount, uint256 balance);
 
     constructor() ERC20("Standard(STND) Xperience Point", "STNDXP") {
         // Grant the contract deployer the default admin role: they can grant and revoke any roles
@@ -28,10 +24,7 @@ contract STNDXP is ERC20, ERC20Burnable, ERC20Pausable, AccessControl {
         _grantRole(PAUSER_ROLE, msg.sender);
     }
 
-    function mint(
-        address to,
-        uint256 amount
-    ) public onlyRole(MINTER_ROLE) returns (uint256 minted) {
+    function mint(address to, uint256 amount) public onlyRole(MINTER_ROLE) returns (uint256 minted) {
         if (penalties[to] >= amount) {
             penalties[to] -= amount;
             return 0;
@@ -42,12 +35,7 @@ contract STNDXP is ERC20, ERC20Burnable, ERC20Pausable, AccessControl {
         }
     }
 
-    function mintMatch(
-        address sender,
-        address owner,
-        uint256 sdrAmount,
-        uint256 onrAmount
-    )
+    function mintMatch(address sender, address owner, uint256 sdrAmount, uint256 onrAmount)
         public
         onlyRole(MINTER_ROLE)
         returns (uint256 sdrMinted, uint256 onrMinted)
@@ -57,32 +45,21 @@ contract STNDXP is ERC20, ERC20Burnable, ERC20Pausable, AccessControl {
         return (sdrAmount, onrAmount);
     }
 
-    function penaltyOf(
-        address account
-    ) external view returns (uint256 penalty) {
+    function penaltyOf(address account) external view returns (uint256 penalty) {
         return penalties[account];
     }
 
-    function burn(
-        address to,
-        uint256 amount
-    ) public onlyRole(BURNER_ROLE) returns (uint256 burned) {
+    function burn(address to, uint256 amount) public onlyRole(BURNER_ROLE) returns (uint256 burned) {
         _burn(to, amount);
         return amount;
     }
 
-    function fine(
-        address to,
-        uint256 amount
-    ) public onlyRole(MINTER_ROLE) returns (uint256 fined) {
+    function fine(address to, uint256 amount) public onlyRole(MINTER_ROLE) returns (uint256 fined) {
         penalties[to] += amount;
         return amount;
     }
 
-    function removePenalty(
-        address to,
-        uint256 amount
-    ) external onlyRole(MINTER_ROLE) returns (uint256 removed) {
+    function removePenalty(address to, uint256 amount) external onlyRole(MINTER_ROLE) returns (uint256 removed) {
         // check point balance
         if (amount > balanceOf(to)) {
             revert AmountExceededBalance(to, amount, balanceOf(to));
@@ -100,11 +77,12 @@ contract STNDXP is ERC20, ERC20Burnable, ERC20Pausable, AccessControl {
         _unpause();
     }
 
-    function _update(
-        address from,
-        address to,
-        uint256 value
-    ) internal virtual override(ERC20, ERC20Pausable) whenNotPaused {
+    function _update(address from, address to, uint256 value)
+        internal
+        virtual
+        override(ERC20, ERC20Pausable)
+        whenNotPaused
+    {
         super._update(from, to, value);
     }
 }

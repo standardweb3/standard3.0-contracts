@@ -1,7 +1,6 @@
 import {PointFarmSetup} from "../PointFarmSetup.sol";
 
 contract MembershipTest is PointFarmSetup {
-
     function mSetUp() internal {
         super.setUp();
         vm.startPrank(trader1);
@@ -52,13 +51,7 @@ contract MembershipTest is PointFarmSetup {
         vm.prank(trader1);
         string memory uri = pass.uri(1);
         assert(
-            keccak256(abi.encodePacked(uri)) ==
-                keccak256(
-                    abi.encodePacked(
-                        "https://app.standardweb3.com/api/pass/9"
-                    )
-                )
+            keccak256(abi.encodePacked(uri)) == keccak256(abi.encodePacked("https://app.standardweb3.com/api/pass/9"))
         );
     }
 }
-

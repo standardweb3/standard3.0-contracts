@@ -101,19 +101,18 @@ contract Pass is ERC1155, AccessControl, Initializable {
         super.safeTransferFrom(msg.sender, to_, uid_, 1, "");
     }
 
-    function getMetaSupply(
-        uint8 metaId_
-    ) external view returns (uint256 supply) {
+    function getMetaSupply(uint8 metaId_) external view returns (uint256 supply) {
         return metaSupply[metaId_];
     }
 
-    function supportsInterface(
-        bytes4 interfaceId
-    ) public view virtual override(AccessControl, ERC1155) returns (bool) {
-        return
-            interfaceId == type(IERC1155).interfaceId ||
-            interfaceId == type(IERC1155MetadataURI).interfaceId ||
-            interfaceId == type(IAccessControl).interfaceId ||
-            super.supportsInterface(interfaceId);
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(AccessControl, ERC1155)
+        returns (bool)
+    {
+        return interfaceId == type(IERC1155).interfaceId || interfaceId == type(IERC1155MetadataURI).interfaceId
+            || interfaceId == type(IAccessControl).interfaceId || super.supportsInterface(interfaceId);
     }
 }

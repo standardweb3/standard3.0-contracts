@@ -10,7 +10,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * Only an admin can set the amount for each token.
  */
 contract TokenDispenser is AccessControl {
-
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     mapping(address => uint256) public tokenAmounts;
     mapping(address => mapping(address => bool)) public received;

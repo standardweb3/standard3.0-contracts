@@ -23,70 +23,31 @@ contract OrderSpreadTest is BaseSetup {
         vm.prank(booker);
         address base = address(token1);
         address quote = address(token2);
-        console.log(
-            "Base/Quote Pair: ",
-            matchingEngine.getPair(base, quote)
-        );
+        console.log("Base/Quote Pair: ", matchingEngine.getPair(base, quote));
         vm.prank(trader1);
-        matchingEngine.limitBuy(
-            base,
-            quote,
-            3632e8,
-            100e18,
-            true,
-            2,
-            trader1
-        );
+        matchingEngine.limitBuy(base, quote, 3632e8, 100e18, true, 2, trader1);
         book = Orderbook(payable(matchingEngine.getPair(base, quote)));
         (uint256 bidHead, uint256 askHead) = book.heads();
         console.log(bidHead, askHead);
         vm.prank(trader2);
-        matchingEngine.limitSell(
-            base,
-            quote,
-            10000e8,
-            100e18,
-            true,
-            2,
-            trader2
-        );
+        matchingEngine.limitSell(base, quote, 10000e8, 100e18, true, 2, trader2);
         console.log(matchingEngine.mktPrice(base, quote));
     }
 
-    
     function testLimitSellSpread() public {
         super.setUp();
         matchingEngine.addPair(address(token1), address(token2), 3632e8, 0, address(token1));
         vm.prank(booker);
         address base = address(token1);
         address quote = address(token2);
-        console.log(
-            "Base/Quote Pair: ",
-            matchingEngine.getPair(base, quote)
-        );
+        console.log("Base/Quote Pair: ", matchingEngine.getPair(base, quote));
         vm.prank(trader1);
-        matchingEngine.limitSell(
-            base,
-            quote,
-            3632e8,
-            100e18,
-            true,
-            2,
-            trader1
-        );
+        matchingEngine.limitSell(base, quote, 3632e8, 100e18, true, 2, trader1);
         book = Orderbook(payable(matchingEngine.getPair(base, quote)));
         (uint256 bidHead, uint256 askHead) = book.heads();
         console.log(bidHead, askHead);
         vm.prank(trader2);
-        matchingEngine.limitSell(
-            base,
-            quote,
-            0e8,
-            100e18,
-            true,
-            2,
-            trader2
-        );
+        matchingEngine.limitSell(base, quote, 0e8, 100e18, true, 2, trader2);
         console.log(matchingEngine.mktPrice(base, quote));
     }
 
@@ -96,24 +57,8 @@ contract OrderSpreadTest is BaseSetup {
         vm.prank(trader1);
         address base = address(token1);
         address quote = address(token2);
-        matchingEngine.limitSell(
-            base,
-            quote,
-            3632e8,
-            100e18,
-            true,
-            2,
-            trader1
-        );
+        matchingEngine.limitSell(base, quote, 3632e8, 100e18, true, 2, trader1);
         vm.prank(trader1);
-        matchingEngine.limitBuy(
-            base,
-            quote,
-            3632e8,
-            100e18,
-            true,
-            2,
-            trader1
-        );
+        matchingEngine.limitBuy(base, quote, 3632e8, 100e18, true, 2, trader1);
     }
 }

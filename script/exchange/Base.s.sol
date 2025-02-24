@@ -46,22 +46,13 @@ contract DeployExchangeProxy is Deployer {
     address admin = 0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
     address orderbookFactory = 0xf297cd3077dEC0f07A814999b7B282A8EA911cC0;
     address weth = 0x4200000000000000000000000000000000000006;
-   
 
     function run() external {
         _setDeployer();
         bytes memory data = "";
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
-            impl,
-            admin,
-            data
-        );
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(impl, admin, data);
         MatchingEngine matchingEngine = MatchingEngine(payable(address(proxy)));
-        matchingEngine.initialize(
-            orderbookFactory,
-            admin,
-            weth
-        );
+        matchingEngine.initialize(orderbookFactory, admin, weth);
         vm.stopBroadcast();
     }
 }
@@ -71,13 +62,10 @@ contract InitializeExchangeProxy is Deployer {
     address constant proxy_addr = 0x01c2dfc35CBd8d759E968d39B56f1628F23Eaad9;
 
     uint32 constant spb = 2;
-    address constant deployer_address =
-        0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
-    address constant foundation_address =
-        0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
+    address constant deployer_address = 0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
+    address constant foundation_address = 0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
     address constant weth = 0x4200000000000000000000000000000000000006;
-    address constant orderbookFactory =
-        0xf297cd3077dEC0f07A814999b7B282A8EA911cC0;
+    address constant orderbookFactory = 0xf297cd3077dEC0f07A814999b7B282A8EA911cC0;
 
     function run() external {
         _setDeployer();
@@ -88,23 +76,17 @@ contract DeployExchangeMainnetContracts is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     /// Second per block to finalize
     uint32 constant spb = 2;
-    address constant deployer_address =
-        0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
-    address constant foundation_address =
-        0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
+    address constant deployer_address = 0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
+    address constant foundation_address = 0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
     address constant weth = 0x4200000000000000000000000000000000000006;
 
     function run() external {
         _setDeployer();
         OrderbookFactory orderbookFactory = new OrderbookFactory();
         MatchingEngine matchingEngine = new MatchingEngine();
-        
+
         orderbookFactory.initialize(address(matchingEngine));
-        matchingEngine.initialize(
-            address(orderbookFactory),
-            address(deployer_address),
-            address(weth)
-        );
+        matchingEngine.initialize(address(orderbookFactory), address(deployer_address), address(weth));
 
         vm.stopBroadcast();
     }
@@ -115,13 +97,10 @@ contract DeployPointFarmMainnetContracts is Deployer {
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
     MatchingEngine public matchingEngine;
-    address constant matchingEngine_address =
-        0xE0892785D00F192110A05282387fBAC21b942Aad;
-    address constant foundation_address =
-        0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
+    address constant matchingEngine_address = 0xE0892785D00F192110A05282387fBAC21b942Aad;
+    address constant foundation_address = 0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
     address constant weth = 0x4200000000000000000000000000000000000006;
-    address constant stablecoin_address =
-        0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
+    address constant stablecoin_address = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
     STNDXP public point;
     Pass public pass;
     PointFarm public pointFarm;
@@ -140,9 +119,7 @@ contract DeployPointFarmMainnetContracts is Deployer {
             address(stablecoin_address)
         );
         pass.initialize(address(pointFarm));
-        matchingEngine = MatchingEngine(
-            payable(address(matchingEngine_address))
-        );
+        matchingEngine = MatchingEngine(payable(address(matchingEngine_address)));
         matchingEngine.setFeeTo(address(pointFarm));
         point.grantRole(MINTER_ROLE, address(pointFarm));
         vm.stopBroadcast();
@@ -150,10 +127,7 @@ contract DeployPointFarmMainnetContracts is Deployer {
 }
 
 contract CreatePairMainnet is Deployer {
-    MatchingEngine public matchingEngine =
-        MatchingEngine(
-            payable(address(0xE0892785D00F192110A05282387fBAC21b942Aad))
-        );
+    MatchingEngine public matchingEngine = MatchingEngine(payable(address(0xE0892785D00F192110A05282387fBAC21b942Aad)));
     address constant base = 0x4200000000000000000000000000000000000006;
     address constant quote = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
     uint256 constant initMarketPrice = 341320000000;
@@ -167,8 +141,7 @@ contract CreatePairMainnet is Deployer {
 
 contract CreateEventMainnet is Deployer {
     PointFarm public pointFarm;
-    address constant pointFarm_address =
-        0x90Fcc35562f3E4A0bDf1dAd6B6eB0c1F13d0d62c;
+    address constant pointFarm_address = 0x90Fcc35562f3E4A0bDf1dAd6B6eB0c1F13d0d62c;
     // Unix Epoch time for start/end
     uint256 startDate = 0;
     uint256 endDate = 0;
@@ -185,8 +158,7 @@ contract CreateEventMainnet is Deployer {
 
 contract SetEventMainnet is Deployer {
     PointFarm public pointFarm;
-    address constant pointFarm_address =
-        0x90Fcc35562f3E4A0bDf1dAd6B6eB0c1F13d0d62c;
+    address constant pointFarm_address = 0x90Fcc35562f3E4A0bDf1dAd6B6eB0c1F13d0d62c;
     // timestamp in seconds
     uint256 endDate = 0;
 
@@ -214,11 +186,7 @@ contract SetupPrizePoolMainnet is Deployer {
         prizePool = new PrizePool();
         point = STNDXP(point_address);
         point.grantRole(BURNER_ROLE, address(prizePool));
-        TransferHelper.safeTransfer(
-            stablecoin_address,
-            address(prizePool),
-            prize_amount
-        );
+        TransferHelper.safeTransfer(stablecoin_address, address(prizePool), prize_amount);
         prizePool.initialize(address(stablecoin_address), address(point));
         vm.stopBroadcast();
     }
@@ -227,10 +195,8 @@ contract SetupPrizePoolMainnet is Deployer {
 contract collectFee is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     /// Second per block to finalize
-    address constant deployer_address =
-        0x34CCCa03631830cD8296c172bf3c31e126814ce9;
-    address constant foundation_address =
-        0x34CCCa03631830cD8296c172bf3c31e126814ce9;
+    address constant deployer_address = 0x34CCCa03631830cD8296c172bf3c31e126814ce9;
+    address constant foundation_address = 0x34CCCa03631830cD8296c172bf3c31e126814ce9;
     PointFarm public pointFarm;
     address constant pointFarm_address = address(0);
     address constant token_address = address(0);

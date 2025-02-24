@@ -42,21 +42,12 @@ library NetworkStateLibrary {
     error BondAlreadyExists(address collateral, address currency, uint128 id);
     error MktPriceIsZero(address base, address quote);
     error ValueOverflow(uint256 price, uint256 amount);
-    error InvalidCDP(
-        address collateral,
-        address debt,
-        uint256 cAmount,
-        uint256 dAmount
-    );
+    error InvalidCDP(address collateral, address debt, uint256 cAmount, uint256 dAmount);
     error SupplyLimitExceeded(uint256 supply, uint256 issued, uint256 issueAmount);
 
-    function _initialize(
-        State storage self,
-        address coupon_,
-        address currency_,
-        address market_,
-        address weth_
-    ) public {
+    function _initialize(State storage self, address coupon_, address currency_, address market_, address weth_)
+        public
+    {
         if (msg.sender != self.gov) revert InvalidAccess(msg.sender, self.gov);
         self.weth = weth_;
         self.market = market_;
@@ -64,13 +55,10 @@ library NetworkStateLibrary {
         self.coupon = coupon_;
     }
 
-    function _setCDP(
-        State storage self,
-        address collateral,
-        uint32 mcr,
-        uint32 rfr,
-        uint32 lfr
-    ) public returns (bool success) {
+    function _setCDP(State storage self, address collateral, uint32 mcr, uint32 rfr, uint32 lfr)
+        public
+        returns (bool success)
+    {
         if (msg.sender != self.gov) revert InvalidAccess(msg.sender, self.gov);
         if (mcr > 0) {
             self.cdps[collateral].mcr = mcr;
@@ -84,32 +72,24 @@ library NetworkStateLibrary {
         return true;
     }
 
-    function _setSupply(
-        State storage self,
-        uint256 supply
-    ) public returns (bool success) {
+    function _setSupply(State storage self, uint256 supply) public returns (bool success) {
         if (msg.sender != self.gov) revert InvalidAccess(msg.sender, self.gov);
         self.supply = supply;
         return true;
     }
 
-    function _getCDP(
-        State storage self,
-        address collateral
-    ) public view returns (CDP memory) {
+    function _getCDP(State storage self, address collateral) public view returns (CDP memory) {
         return self.cdps[collateral];
     }
 
-    function allBondsLength(State storage self) public view returns (uint) {
+    function allBondsLength(State storage self) public view returns (uint256) {
         return self.count;
     }
 
-    function _createBond(
-        State storage self,
-        address collateral,
-        uint256 cAmount,
-        uint256 dAmount
-    ) public returns (address bond) {
+    function _createBond(State storage self, address collateral, uint256 cAmount, uint256 dAmount)
+        public
+        returns (address bond)
+    {
         // get id
         uint128 id = self.count;
         uint256 issued = IERC20(self.currency).totalSupply();
@@ -136,10 +116,7 @@ library NetworkStateLibrary {
             revert BondAlreadyExists(collateral, self.currency, id);
         }
 
-        address proxy = CloneFactory._createCloneWithSalt(
-            self.impl,
-            _getSalt(collateral, self.currency, id)
-        );
+        address proxy = CloneFactory._createCloneWithSalt(self.impl, _getSalt(collateral, self.currency, id));
 
         IBond(proxy).initialize(id, collateral, self.currency, self.market);
 
@@ -148,12 +125,7 @@ library NetworkStateLibrary {
         return (proxy);
     }
 
-    function _liquidate(
-        State storage self,
-        address collateral_,
-        address debt_,
-        uint128 id_
-    ) public returns (bool) {
+    function _liquidate(State storage self, address collateral_, address debt_, uint128 id_) public returns (bool) {
         // TODO: modify liquidator validation
         if (msg.sender != self.liquidator) revert InvalidAccess(msg.sender, self.liquidator);
         address bond = _predictAddress(self, collateral_, debt_, id_);
@@ -161,62 +133,43 @@ library NetworkStateLibrary {
         return true;
     }
 
-    function _borrowMore(
-        State storage self,
-        uint128 id_,
-        address collateral_, 
-        uint256 amount_
-    ) public view returns (bool) {
+    function _borrowMore(State storage self, uint128 id_, address collateral_, uint256 amount_)
+        public
+        view
+        returns (bool)
+    {
         address bond = _predictAddress(self, collateral_, self.currency, id_);
         //IBond(bond).borrowMore();
     }
 
-    function _predictAddress(
-        State storage self,
-        address collateral_,
-        address debt_,
-        uint128 id_
-    ) public view returns (address) {
+    function _predictAddress(State storage self, address collateral_, address debt_, uint128 id_)
+        public
+        view
+        returns (address)
+    {
         bytes32 salt = _getSalt(collateral_, debt_, id_);
-        return
-            CloneFactory.predictAddressWithSalt(address(this), self.impl, salt);
+        return CloneFactory.predictAddressWithSalt(address(this), self.impl, salt);
     }
 
-    function isValidSupply(
-        State storage self,
-        uint256 issued_,
-        uint256 issueAmount_
-    ) public view returns (bool) {
-        return
-            issued_ + issueAmount_ - IERC20(self.currency).balanceOf(self.liquidator) <=
-            self.supply;
+    function isValidSupply(State storage self, uint256 issued_, uint256 issueAmount_) public view returns (bool) {
+        return issued_ + issueAmount_ - IERC20(self.currency).balanceOf(self.liquidator) <= self.supply;
     }
 
-    function _isValidCDP(
-        State storage self,
-        address collateral_,
-        address debt_,
-        uint256 cAmount_,
-        uint256 dAmount_
-    ) public view returns (bool) {
-        (uint256 collateralValueTimes100, uint256 debtValue) = _calculateValues(
-            self,
-            collateral_,
-            debt_,
-            cAmount_,
-            dAmount_
-        );
+    function _isValidCDP(State storage self, address collateral_, address debt_, uint256 cAmount_, uint256 dAmount_)
+        public
+        view
+        returns (bool)
+    {
+        (uint256 collateralValueTimes100, uint256 debtValue) =
+            _calculateValues(self, collateral_, debt_, cAmount_, dAmount_);
 
-        uint mcr = self.cdps[collateral_].mcr;
-        uint cDecimals = self.cdps[collateral_].decimals;
+        uint256 mcr = self.cdps[collateral_].mcr;
+        uint256 cDecimals = self.cdps[collateral_].decimals;
 
         uint256 debtValueAdjusted = debtValue / (10 ** cDecimals);
 
         // if the debt become obsolete
-        return
-            debtValueAdjusted == 0
-                ? true
-                : collateralValueTimes100 / debtValueAdjusted >= mcr;
+        return debtValueAdjusted == 0 ? true : collateralValueTimes100 / debtValueAdjusted >= mcr;
     }
 
     function _calculateValues(
@@ -233,23 +186,16 @@ library NetworkStateLibrary {
         return (collateralValueTimes100, debtValue);
     }
 
-    function _getAssetPrice(
-        State storage self,
-        address asset_
-    ) public view returns (uint) {
-        uint price = IMatchingEngine(self.market).mktPrice(asset_, self.currency);
+    function _getAssetPrice(State storage self, address asset_) public view returns (uint256) {
+        uint256 price = IMatchingEngine(self.market).mktPrice(asset_, self.currency);
         if (price == 0) {
             revert MktPriceIsZero(asset_, self.currency);
         }
         return price;
     }
 
-    function getAssetValue(
-        State storage self,
-        address asset_,
-        uint256 amount_
-    ) public view returns (uint256) {
-        uint price = _getAssetPrice(self, asset_);
+    function getAssetValue(State storage self, address asset_, uint256 amount_) public view returns (uint256) {
+        uint256 price = _getAssetPrice(self, asset_);
         uint256 value = price * amount_;
         if (value < amount_) {
             revert ValueOverflow(price, amount_);
@@ -257,11 +203,7 @@ library NetworkStateLibrary {
         return value;
     }
 
-    function _getSalt(
-        address collateral_,
-        address debt_,
-        uint128 id_
-    ) public pure returns (bytes32) {
+    function _getSalt(address collateral_, address debt_, uint128 id_) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(collateral_, debt_, id_));
     }
 }

@@ -3,37 +3,20 @@ pragma solidity ^0.8.24;
 import {TransferHelper} from "./TransferHelper.sol";
 
 interface IPoint {
-    function mint(
-        address account,
-        uint256 amount
-    ) external returns (uint256 minted);
-    function fine(
-        address account,
-        uint256 amount
-    ) external returns (uint256 fined);
-    function removePenalty(
-        address account,
-        uint256 amount
-    ) external returns (uint256 removed);
-    function mintMatch(
-        address sender,
-        address owner,
-        uint256 sdrAmount,
-        uint256 onrAmount
-    ) external returns (uint256 sdrMinted, uint256 onrMinted);
+    function mint(address account, uint256 amount) external returns (uint256 minted);
+    function fine(address account, uint256 amount) external returns (uint256 fined);
+    function removePenalty(address account, uint256 amount) external returns (uint256 removed);
+    function mintMatch(address sender, address owner, uint256 sdrAmount, uint256 onrAmount)
+        external
+        returns (uint256 sdrMinted, uint256 onrMinted);
 }
 
 interface IMatchingEngine {
-    function convert(
-        address base,
-        address quote,
-        uint256 amount,
-        bool isBid
-    ) external view returns (uint256 converted);
-    function getPair(
-        address base,
-        address quote
-    ) external view returns (address pair);
+    function convert(address base, address quote, uint256 amount, bool isBid)
+        external
+        view
+        returns (uint256 converted);
+    function getPair(address base, address quote) external view returns (address pair);
 }
 
 library PointAccountantLib {
@@ -73,10 +56,7 @@ library PointAccountantLib {
     error EventStillOn(uint32 eventId, uint256 endDate);
     error InvalidAddress(address addr);
 
-    function _setStablecoin(
-        State storage self,
-        address stablecoin
-    ) internal returns (bool) {
+    function _setStablecoin(State storage self, address stablecoin) internal returns (bool) {
         if (stablecoin == address(0)) {
             revert InvalidAddress(stablecoin);
         }
@@ -85,20 +65,14 @@ library PointAccountantLib {
         return true;
     }
 
-    function _setBaseMultiplier(
-        State storage self,
-        uint32 x
-    ) internal returns (uint32) {
+    function _setBaseMultiplier(State storage self, uint32 x) internal returns (uint32) {
         self.baseMultiplier = x;
     }
 
-    function _setMultiplier(
-        State storage self,
-        address base,
-        address quote,
-        bool isBid,
-        uint32 x
-    ) internal returns (address pair) {
+    function _setMultiplier(State storage self, address base, address quote, bool isBid, uint32 x)
+        internal
+        returns (address pair)
+    {
         pair = IMatchingEngine(self.matchingEngine).getPair(base, quote);
         if (isBid) {
             self.multipliers[pair].buy = x;
@@ -108,11 +82,7 @@ library PointAccountantLib {
         return pair;
     }
 
-    function _createEvent(
-        State storage self,
-        uint256 startDate,
-        uint256 endDate
-    ) internal returns (uint32 eventId) {
+    function _createEvent(State storage self, uint256 startDate, uint256 endDate) internal returns (uint32 eventId) {
         if (self.currentEvent == 0) {
             self.currentEvent = 1;
             if (startDate > endDate) {
@@ -143,29 +113,19 @@ library PointAccountantLib {
         self.events[self.currentEvent].endDate = endDate;
     }
 
-    function _getEvent(
-        State storage self,
-        uint32 eventId
-    ) internal view returns (Event memory pEvent) {
+    function _getEvent(State storage self, uint32 eventId) internal view returns (Event memory pEvent) {
         return self.events[eventId];
     }
 
-    function _checkEventOn(
-        State storage self
-    ) internal view returns (bool isEventOn) {
+    function _checkEventOn(State storage self) internal view returns (bool isEventOn) {
         if (self.currentEvent == 0) {
             return false;
         }
-        return
-            block.timestamp <= self.events[self.currentEvent].endDate &&
-            block.timestamp >= self.events[self.currentEvent].startDate;
+        return block.timestamp <= self.events[self.currentEvent].endDate
+            && block.timestamp >= self.events[self.currentEvent].startDate;
     }
 
-    function _getMultiplier(
-        State storage self,
-        address pair,
-        bool isBid
-    ) internal view returns (uint32 x) {
+    function _getMultiplier(State storage self, address pair, bool isBid) internal view returns (uint32 x) {
         return isBid ? self.multipliers[pair].buy : self.multipliers[pair].sell;
     }
 
@@ -192,18 +152,10 @@ library PointAccountantLib {
         // compute usdt value
         address asset = isBid ? quote : base;
         address pair = IMatchingEngine(self.matchingEngine).getPair(base, quote);
-        uint256 stablecoinValue = IMatchingEngine(self.matchingEngine).convert(
-            asset,
-            self.stablecoin,
-            amount,
-            true
-        );
-        uint32 multipliers = self.baseMultiplier *
-            _getMultiplier(self, pair, isBid);
+        uint256 stablecoinValue = IMatchingEngine(self.matchingEngine).convert(asset, self.stablecoin, amount, true);
+        uint32 multipliers = self.baseMultiplier * _getMultiplier(self, pair, isBid);
         // points = (multipliers in 4 decimals x2) * (point decimal) / (denominator x3) * (stablecoin value decimal)
-        points =
-            (((multipliers * stablecoinValue) * 1e18 * pointx) / (1e12)) *
-            self.scOne;
+        points = (((multipliers * stablecoinValue) * 1e18 * pointx) / (1e12)) * self.scOne;
         IPoint(self.point).fine(account, points);
         return (points);
     }
@@ -232,63 +184,38 @@ library PointAccountantLib {
         }
 
         // compute usdt value
-        uint256 stablecoinValue = IMatchingEngine(self.matchingEngine).convert(
-            give,
-            self.stablecoin,
-            amount,
-            true
-        );
+        uint256 stablecoinValue = IMatchingEngine(self.matchingEngine).convert(give, self.stablecoin, amount, true);
 
         uint256 snd = _getPointAmount(self, orderbook, isBid, stablecoinValue, sndPointx);
         uint256 onr = _getPointAmount(self, orderbook, isBid, stablecoinValue, onrPointx);
 
-        IPoint(self.point).mintMatch(
-            sender,
-            owner,
-            snd,
-            onr
-        );
+        IPoint(self.point).mintMatch(sender, owner, snd, onr);
 
         return (points);
     }
 
-    function _getPointAmount(
-        State storage self,
-        address orderbook,
-        bool isBid,
-        uint256 stablecoinValue,
-        uint32 pointx
-    ) internal view returns (uint256 point) {
-        uint32 multipliers = self.baseMultiplier *
-            _getMultiplier(self, orderbook, isBid);
+    function _getPointAmount(State storage self, address orderbook, bool isBid, uint256 stablecoinValue, uint32 pointx)
+        internal
+        view
+        returns (uint256 point)
+    {
+        uint32 multipliers = self.baseMultiplier * _getMultiplier(self, orderbook, isBid);
         uint256 numerator = multipliers * stablecoinValue * pointx * 1e18;
         uint256 denominator = 1e12 * self.scOne;
         return numerator / denominator;
     }
 
-    function _reportBonus(
-        State storage self,
-        address account,
-        uint256 amount
-    ) internal returns (bool) {
+    function _reportBonus(State storage self, address account, uint256 amount) internal returns (bool) {
         IPoint(self.point).mint(account, amount);
         return true;
     }
 
-    function _reportPenalty(
-        State storage self,
-        address account,
-        uint256 amount
-    ) internal returns (bool) {
+    function _reportPenalty(State storage self, address account, uint256 amount) internal returns (bool) {
         IPoint(self.point).fine(account, amount);
         return true;
     }
 
-    function _removePenalty(
-        State storage self,
-        address account,
-        uint256 amount
-    ) internal returns (bool) {
+    function _removePenalty(State storage self, address account, uint256 amount) internal returns (bool) {
         IPoint(self.point).removePenalty(account, amount);
         return true;
     }

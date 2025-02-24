@@ -21,49 +21,21 @@ contract OrderMatchTest is BaseSetup {
         super.setUp();
         matchingEngine.addPair(address(token1), address(token2), 1000e8, 0, address(token1));
         vm.prank(trader1);
-        matchingEngine.limitSell(
-            address(token1),
-            address(token2),
-            1000e8,
-            10000e18,
-            true,
-            2,
-            trader1
-        );
+        matchingEngine.limitSell(address(token1), address(token2), 1000e8, 10000e18, true, 2, trader1);
         console.log("Ask Orders: ");
-        ExchangeOrderbook.Order[] memory askOrders0 = matchingEngine.getOrders(
-            address(token1),
-            address(token2),
-            false,
-            1000e8,
-            4
-        );
+        ExchangeOrderbook.Order[] memory askOrders0 =
+            matchingEngine.getOrders(address(token1), address(token2), false, 1000e8, 4);
         for (uint256 i = 0; i < 4; i++) {
             console.log(askOrders0[i].owner, askOrders0[i].depositAmount);
         }
         vm.prank(trader1);
-        matchingEngine.limitBuy(
-            address(token1),
-            address(token2),
-            1000e8,
-            10000e18,
-            false,
-            2,
-            trader1
-        );
-        book = Orderbook(
-            payable(orderbookFactory.getPair(address(token1), address(token2)))
-        );
+        matchingEngine.limitBuy(address(token1), address(token2), 1000e8, 10000e18, false, 2, trader1);
+        book = Orderbook(payable(orderbookFactory.getPair(address(token1), address(token2))));
         (uint256 bidHead, uint256 askHead) = book.heads();
         console.log(bidHead, askHead);
         console.log("Ask Orders: ");
-        ExchangeOrderbook.Order[] memory askOrders = matchingEngine.getOrders(
-            address(token1),
-            address(token2),
-            false,
-            1000e8,
-            4
-        );
+        ExchangeOrderbook.Order[] memory askOrders =
+            matchingEngine.getOrders(address(token1), address(token2), false, 1000e8, 4);
         for (uint256 i = 0; i < 4; i++) {
             console.log(askOrders[i].owner, askOrders[i].depositAmount);
         }
@@ -72,15 +44,7 @@ contract OrderMatchTest is BaseSetup {
         //console.log(book.checkRequired());
         vm.prank(trader1);
 
-        matchingEngine.limitBuy(
-            address(token1),
-            address(token2),
-            1000e8,
-            10000e18,
-            true,
-            2,
-            trader1
-        );
+        matchingEngine.limitBuy(address(token1), address(token2), 1000e8, 10000e18, true, 2, trader1);
     }
 
     function testMatchOrders() public {
@@ -90,35 +54,17 @@ contract OrderMatchTest is BaseSetup {
         // placeBid or placeAsk two of them is using the _insertId function it will revert
         // because the program will enter the "if (amount > self.orders[head].depositAmount)."
         // statement, and eventually, it will cause an infinite loop.
-        matchingEngine.limitBuy(
-            address(token1),
-            address(token2),
-            1000e8,
-            3000e18,
-            true,
-            2,
-            trader2
-        );
+        matchingEngine.limitBuy(address(token1), address(token2), 1000e8, 3000e18, true, 2, trader2);
 
-        ExchangeOrderbook.Order[] memory bidOrders0 = matchingEngine.getOrders(
-            address(token1),
-            address(token2),
-            true,
-            1000e8,
-            4
-        );
+        ExchangeOrderbook.Order[] memory bidOrders0 =
+            matchingEngine.getOrders(address(token1), address(token2), true, 1000e8, 4);
         console.log("Bid Orders: ");
         for (uint256 i = 0; i < 4; i++) {
             console.log(bidOrders0[i].owner, bidOrders0[i].depositAmount);
         }
 
-        ExchangeOrderbook.Order[] memory askOrders0 = matchingEngine.getOrders(
-            address(token1),
-            address(token2),
-            false,
-            1000e8,
-            4
-        );
+        ExchangeOrderbook.Order[] memory askOrders0 =
+            matchingEngine.getOrders(address(token1), address(token2), false, 1000e8, 4);
         console.log("Ask Orders: ");
         for (uint256 i = 0; i < 4; i++) {
             console.log(askOrders0[i].owner, askOrders0[i].depositAmount);
@@ -126,78 +72,40 @@ contract OrderMatchTest is BaseSetup {
 
         vm.prank(trader1);
         //vm.expectRevert("OutOfGas");
-        matchingEngine.limitSell(
-            address(token1),
-            address(token2),
-            1000e8,
-            1e18,
-            true,
-            2,
-            trader1
-        );
+        matchingEngine.limitSell(address(token1), address(token2), 1000e8, 1e18, true, 2, trader1);
 
-        ExchangeOrderbook.Order[] memory bidOrders = matchingEngine.getOrders(
-            address(token1),
-            address(token2),
-            true,
-            1000e8,
-            4
-        );
+        ExchangeOrderbook.Order[] memory bidOrders =
+            matchingEngine.getOrders(address(token1), address(token2), true, 1000e8, 4);
         console.log("Bid Orders: ");
         for (uint256 i = 0; i < 4; i++) {
             console.log(bidOrders[i].owner, bidOrders[i].depositAmount);
         }
 
-        ExchangeOrderbook.Order[] memory askOrders = matchingEngine.getOrders(
-            address(token1),
-            address(token2),
-            false,
-            1000e8,
-            4
-        );
+        ExchangeOrderbook.Order[] memory askOrders =
+            matchingEngine.getOrders(address(token1), address(token2), false, 1000e8, 4);
         console.log("Ask Orders: ");
         for (uint256 i = 0; i < 4; i++) {
             console.log(askOrders[i].owner, askOrders[i].depositAmount);
         }
-        book = Orderbook(
-            payable(orderbookFactory.getPair(address(token1), address(token2)))
-        );
+        book = Orderbook(payable(orderbookFactory.getPair(address(token1), address(token2))));
         (uint256 bidHead, uint256 askHead) = book.heads();
         console.log(bidHead, askHead);
 
         vm.prank(trader2);
         //vm.expectRevert("OutOfGas");
-        matchingEngine.limitSell(
-            address(token1),
-            address(token2),
-            1000e8,
-            1e18,
-            true,
-            2,
-            trader2
-        );
+        matchingEngine.limitSell(address(token1), address(token2), 1000e8, 1e18, true, 2, trader2);
     }
 
     function testAmountIsZero() public {
         super.setUp();
         matchingEngine.addPair(address(token1), address(token2), 500000000, 0, address(token1));
         vm.prank(booker);
-        book = Orderbook(
-            payable(orderbookFactory.getPair(address(token1), address(token2)))
-        );
+        book = Orderbook(payable(orderbookFactory.getPair(address(token1), address(token2))));
 
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
         // because the program will enter the "if (amount > self.orders[head].depositAmount)."
         // statement, and eventually, it will cause an infinite loop.
-        matchingEngine.limitSell(
-            address(token1),
-            address(token2),
-            500000000,
-            10,
-            true,
-            2,
-            trader1
-        );
+        matchingEngine.limitSell(address(token1), address(token2), 500000000, 10, true, 2, trader1);
     }
 }

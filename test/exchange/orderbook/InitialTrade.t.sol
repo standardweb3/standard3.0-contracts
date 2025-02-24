@@ -25,14 +25,6 @@ contract InitialTradeTest is BaseSetup {
         // placeBid or placeAsk two of them is using the _insertId function it will revert
         // because the program will enter the "if (amount > self.orders[head].depositAmount)."
         // statement, and eventually, it will cause an infinite loop.
-        matchingEngine.limitSellETH{value: 1e4}(
-            address(token2),
-            500000000,
-            true,
-            2,
-            trader1
-        );
-
-        
+        matchingEngine.limitSellETH{value: 1e4}(address(token2), 500000000, true, 2, trader1);
     }
 }

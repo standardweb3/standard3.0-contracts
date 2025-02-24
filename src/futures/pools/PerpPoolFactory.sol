@@ -29,14 +29,13 @@ contract PerpPoolFactory is IPerpPoolFactory, Initializable {
     error PoolAlreadyExists(address base, address quote, address pair);
     error SameBaseQuote(address base, address quote);
 
-    constructor() {
-    }
+    constructor() {}
 
-    function createPerpPool(
-        address base_,
-        address quote_,
-        address collateral_
-    ) external override returns (address orderbook) {
+    function createPerpPool(address base_, address quote_, address collateral_)
+        external
+        override
+        returns (address orderbook)
+    {
         if (msg.sender != perp) {
             revert InvalidAccess(msg.sender, perp);
         }
@@ -58,10 +57,7 @@ contract PerpPoolFactory is IPerpPoolFactory, Initializable {
             revert PoolAlreadyExists(base_, quote_, pool);
         }
 
-        address proxy = CloneFactory._createCloneWithSalt(
-            impl,
-            _getSalt(base_, quote_, collateral_)
-        );
+        address proxy = CloneFactory._createCloneWithSalt(impl, _getSalt(base_, quote_, collateral_));
         IPerpPool(proxy).initialize(allPoolsLength(), base_, quote_, collateral_, engine, perp);
         allPools.push(proxy);
         return (proxy);
@@ -75,11 +71,7 @@ contract PerpPoolFactory is IPerpPoolFactory, Initializable {
         return allPools[poolId_];
     }
 
-    function getPool(
-        address base,
-        address quote,
-        address collateral
-    ) external view override returns (address pool) {
+    function getPool(address base, address quote, address collateral) external view override returns (address pool) {
         pool = _predictAddress(base, quote, collateral);
         return address(pool).code.length > 0 ? pool : address(0);
     }
@@ -107,27 +99,17 @@ contract PerpPoolFactory is IPerpPoolFactory, Initializable {
         bytes32 salt = keccak256(abi.encodePacked("perppool", version));
         assembly {
             addr := create2(0, add(bytecode, 0x20), mload(bytecode), salt)
-            if iszero(extcodesize(addr)) {
-                revert(0, 0)
-            }
+            if iszero(extcodesize(addr)) { revert(0, 0) }
         }
         impl = addr;
     }
 
-    function _predictAddress(
-        address base_,
-        address quote_,
-        address collateral_
-    ) internal view returns (address) {
+    function _predictAddress(address base_, address quote_, address collateral_) internal view returns (address) {
         bytes32 salt = _getSalt(base_, quote_, collateral_);
         return CloneFactory.predictAddressWithSalt(address(this), impl, salt);
     }
 
-    function _getSalt(
-        address base_,
-        address quote_,
-        address collateral_
-    ) internal pure returns (bytes32) {
+    function _getSalt(address base_, address quote_, address collateral_) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked(base_, quote_, collateral_));
     }
 
@@ -140,10 +122,7 @@ contract PerpPoolFactory is IPerpPoolFactory, Initializable {
     }
 
     //  Set up listing cost for each token, each pair creates 2GB of data in a month, costing 0.1 ETH
-    function setListingCost(
-        address payment,
-        uint256 amount
-    ) external returns (uint256) {
+    function setListingCost(address payment, uint256 amount) external returns (uint256) {
         if (msg.sender != perp) {
             revert InvalidAccess(msg.sender, perp);
         }

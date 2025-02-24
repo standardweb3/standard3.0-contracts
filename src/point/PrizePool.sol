@@ -12,16 +12,17 @@ interface IPoint {
 }
 
 contract PrizePool is Initializable {
-
     address point;
     address prize;
 
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
+
     event PrizeReady(address pool, address prize, uint256 amount, address point, uint256 totalPoint, uint256 timestamp);
+
     error PrizeDoesNotExist(address prize, uint256 amount);
     error PoolIsNotBurner(bytes32 role, address pool);
 
-    function initialize(address prize_, address point_) external initializer  {
+    function initialize(address prize_, address point_) external initializer {
         uint256 totalPrize = IPoint(prize_).balanceOf(address(this));
         if (totalPrize == 0) {
             revert PrizeDoesNotExist(prize_, totalPrize);
@@ -34,7 +35,7 @@ contract PrizePool is Initializable {
         uint256 totalPoint = IPoint(point).totalSupply();
         emit PrizeReady(address(this), prize_, totalPrize, point_, totalPoint, block.timestamp);
     }
-    
+
     function claim(uint256 amount) external {
         uint256 totalPrize = IPoint(prize).balanceOf(address(this));
         IPoint(point).burn(msg.sender, amount);

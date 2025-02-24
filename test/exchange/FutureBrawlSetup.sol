@@ -25,17 +25,13 @@ contract FutureBrawlSetup is BaseSetup {
         reporter = users[5];
 
         stablecoin = new MockToken("Stablecoin", "STBC");
-        
+
         orderbookFactory = new OrderbookFactory();
         matchingEngine = new MatchingEngine();
 
         orderbookFactory.initialize(address(matchingEngine));
-        matchingEngine.initialize(
-            address(orderbookFactory),
-            address(booker),
-            address(weth)
-        );
-        
+        matchingEngine.initialize(address(orderbookFactory), address(booker), address(weth));
+
         feeToken.mint(trader1, 10e41);
         feeToken.mint(trader2, 100000e18);
         feeToken.mint(booker, 100000e18);
@@ -52,7 +48,6 @@ contract FutureBrawlSetup is BaseSetup {
         vm.prank(trader2);
         feeToken.approve(address(matchingEngine), 10000e18);
 
-        
         // setup brawl portal
         portal = new BrawlPortal();
         brawlFactory = new TimeBrawlFactory();
@@ -60,13 +55,8 @@ contract FutureBrawlSetup is BaseSetup {
         portal.initialize(address(matchingEngine), address(brawlFactory));
         brawlFactory.initialize(address(portal));
 
-        
-
         // mine 1000 blocks
         utils.mineBlocks(1000);
         console.log("Block number after mining 1000 blocks: ", block.number);
-        
     }
 }
-
-

@@ -27,12 +27,7 @@ library ExchangeOrderbook {
     error PriceIsZero(uint256 price);
 
     // for orders, lower depositAmount are next, higher depositAmount comes first
-    function _insertId(
-        OrderStorage storage self,
-        uint256 price,
-        uint32 id,
-        uint256 amount
-    ) internal {
+    function _insertId(OrderStorage storage self, uint256 price, uint32 id, uint256 amount) internal {
         uint32 last = 0;
         uint32 head = self.head[price];
         mapping(uint32 => uint32) storage list = self.list[price];
@@ -75,10 +70,7 @@ library ExchangeOrderbook {
     }
 
     // pop front
-    function _fpop(
-        OrderStorage storage self,
-        uint256 price
-    ) internal returns (uint256) {
+    function _fpop(OrderStorage storage self, uint256 price) internal returns (uint256) {
         uint32 first = self.head[price];
         if (first == 0) {
             return 0;
@@ -89,38 +81,25 @@ library ExchangeOrderbook {
         return first;
     }
 
-    function _createOrder(
-        OrderStorage storage self,
-        address owner,
-        uint256 price,
-        uint256 depositAmount
-    ) internal returns (uint32 id) {
-        if(price == 0) {
+    function _createOrder(OrderStorage storage self, address owner, uint256 price, uint256 depositAmount)
+        internal
+        returns (uint32 id)
+    {
+        if (price == 0) {
             revert PriceIsZero(price);
         }
-        Order memory order = Order({
-            owner: owner,
-            price: price,
-            depositAmount: depositAmount
-        });
+        Order memory order = Order({owner: owner, price: price, depositAmount: depositAmount});
         // In order to prevent order overflow, order id must start from 1
-        self.count = self.count == 0 || self.count == type(uint32).max
-            ? 1
-            : self.count + 1;
+        self.count = self.count == 0 || self.count == type(uint32).max ? 1 : self.count + 1;
         self.orders[self.count] = order;
         return self.count;
     }
 
-    function _decreaseOrder(
-        OrderStorage storage self,
-        uint32 id,
-        uint256 amount,
-        uint256 dust,
-        bool clear
-    ) internal returns (uint256 sendFund, uint256 deletePrice) {
-        uint256 decreased = self.orders[id].depositAmount < amount
-            ? 0
-            : self.orders[id].depositAmount - amount;
+    function _decreaseOrder(OrderStorage storage self, uint32 id, uint256 amount, uint256 dust, bool clear)
+        internal
+        returns (uint256 sendFund, uint256 deletePrice)
+    {
+        uint256 decreased = self.orders[id].depositAmount < amount ? 0 : self.orders[id].depositAmount - amount;
         // remove dust
         if (decreased <= dust || clear) {
             decreased = self.orders[id].depositAmount;
@@ -132,10 +111,7 @@ library ExchangeOrderbook {
         }
     }
 
-    function _deleteOrder(
-        OrderStorage storage self,
-        uint32 id
-    ) internal returns (uint256 deletePrice) {
+    function _deleteOrder(OrderStorage storage self, uint32 id) internal returns (uint256 deletePrice) {
         uint256 price = self.orders[id].price;
         uint32 last = 0;
         uint32 head = self.head[price];
@@ -166,11 +142,7 @@ library ExchangeOrderbook {
     }
 
     // show n order ids at the price in the orderbook
-    function _getOrderIds(
-        OrderStorage storage self,
-        uint256 price,
-        uint32 n
-    ) internal view returns (uint32[] memory) {
+    function _getOrderIds(OrderStorage storage self, uint256 price, uint32 n) internal view returns (uint32[] memory) {
         uint32 head = self.head[price];
         uint32[] memory orders = new uint32[](n);
         uint32 i = 0;
@@ -182,11 +154,7 @@ library ExchangeOrderbook {
         return orders;
     }
 
-    function _getOrders(
-        OrderStorage storage self,
-        uint256 price,
-        uint32 n
-    ) internal view returns (Order[] memory) {
+    function _getOrders(OrderStorage storage self, uint256 price, uint32 n) internal view returns (Order[] memory) {
         uint32 head = self.head[price];
         Order[] memory orders = new Order[](n);
         uint32 i = 0;
@@ -198,12 +166,11 @@ library ExchangeOrderbook {
         return orders;
     }
 
-    function _getOrdersPaginated(
-        OrderStorage storage self,
-        uint256 price,
-        uint32 start,
-        uint32 end
-    ) internal view returns (Order[] memory) {
+    function _getOrdersPaginated(OrderStorage storage self, uint256 price, uint32 start, uint32 end)
+        internal
+        view
+        returns (Order[] memory)
+    {
         uint32 head = self.head[price];
         Order[] memory orders = new Order[](end - start);
         uint32 i = 0;
@@ -222,32 +189,19 @@ library ExchangeOrderbook {
         return orders;
     }
 
-    function _head(
-        OrderStorage storage self,
-        uint256 price
-    ) internal view returns (uint32) {
+    function _head(OrderStorage storage self, uint256 price) internal view returns (uint32) {
         return self.head[price];
     }
 
-    function _isEmpty(
-        OrderStorage storage self,
-        uint256 price
-    ) internal view returns (bool) {
+    function _isEmpty(OrderStorage storage self, uint256 price) internal view returns (bool) {
         return self.head[price] == 0;
     }
 
-    function _next(
-        OrderStorage storage self,
-        uint256 price,
-        uint32 curr
-    ) internal view returns (uint32) {
+    function _next(OrderStorage storage self, uint256 price, uint32 curr) internal view returns (uint32) {
         return self.list[price][curr];
     }
 
-    function _getOrder(
-        OrderStorage storage self,
-        uint32 id
-    ) internal view returns (Order memory) {
+    function _getOrder(OrderStorage storage self, uint32 id) internal view returns (Order memory) {
         return self.orders[id];
     }
 }

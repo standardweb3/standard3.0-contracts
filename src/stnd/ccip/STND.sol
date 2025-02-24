@@ -6,15 +6,11 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Pausable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract Standard is
-    ERC20,
-    ERC20Burnable,
-    AccessControl
-{
+contract Standard is ERC20, ERC20Burnable, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    uint256 private constant MAX_SUPPLY = 1000_000_000 * 10**18; // 1 billion tokens with 18 decimals
-    error MaxSupplyReached(uint256 currentSupply, uint256 newSupply);
+    uint256 private constant MAX_SUPPLY = 1000_000_000 * 10 ** 18; // 1 billion tokens with 18 decimals
 
+    error MaxSupplyReached(uint256 currentSupply, uint256 newSupply);
 
     constructor() ERC20("Standard", "STND") {
         // Grant the contract deployer the default admin role: they can grant and revoke any roles

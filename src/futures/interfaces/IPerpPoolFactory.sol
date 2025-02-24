@@ -1,6 +1,7 @@
 pragma solidity ^0.8.24;
 
 import "../libraries/FuturesPool.sol";
+
 interface IPerpPoolFactory {
     struct Pool {
         uint256 id;
@@ -17,16 +18,9 @@ interface IPerpPoolFactory {
 
     function impl() external view returns (address);
 
-    function createPerpPool(
-        address base_,
-        address quote_,
-        address collateral_
-    ) external returns (address orderbook);
+    function createPerpPool(address base_, address quote_, address collateral_) external returns (address orderbook);
 
-    function setListingCost(
-        address payment,
-        uint256 amount
-    ) external returns (uint256);
+    function setListingCost(address payment, uint256 amount) external returns (uint256);
 
     function isClone(address vault) external view returns (bool cloned);
 
@@ -35,5 +29,4 @@ interface IPerpPoolFactory {
     function getByteCode() external view returns (bytes memory bytecode);
 
     function getListingCost(address payment) external view returns (uint256 amount);
-
 }

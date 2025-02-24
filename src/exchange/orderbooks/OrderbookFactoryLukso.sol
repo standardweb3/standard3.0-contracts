@@ -27,13 +27,9 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
     error PairAlreadyExists(address base, address quote, address pair);
     error SameBaseQuote(address base, address quote);
 
-    constructor() {
-    }
+    constructor() {}
 
-    function createBook(
-        address base_,
-        address quote_
-    ) external override returns (address orderbook) {
+    function createBook(address base_, address quote_) external override returns (address orderbook) {
         if (msg.sender != engine) {
             revert InvalidAccess(msg.sender, engine);
         }
@@ -55,10 +51,7 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
             revert PairAlreadyExists(base_, quote_, pair);
         }
 
-        address proxy = CloneFactory._createCloneWithSalt(
-            impl,
-            _getSalt(base_, quote_)
-        );
+        address proxy = CloneFactory._createCloneWithSalt(impl, _getSalt(base_, quote_));
         IOrderbook(proxy).initialize(allPairsLength(), base_, quote_, engine);
         allPairs.push(proxy);
         return (proxy);
@@ -68,46 +61,36 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
         cloned = CloneFactory._isClone(impl, vault);
     }
 
-    function getPair(
-        address base,
-        address quote
-    ) external view override returns (address book) {
+    function getPair(address base, address quote) external view override returns (address book) {
         book = _predictAddress(base, quote);
         return address(book).code.length > 0 ? book : address(0);
     }
 
-    function getPairs(
-        uint256 start,
-        uint256 end
-    ) public view override returns (IOrderbookFactory.Pair[] memory) {
+    function getPairs(uint256 start, uint256 end) public view override returns (IOrderbookFactory.Pair[] memory) {
         uint256 last = end > allPairs.length ? allPairs.length : end;
-        IOrderbookFactory.Pair[] memory pairs = new IOrderbookFactory.Pair[](
-            last - start
-        );
+        IOrderbookFactory.Pair[] memory pairs = new IOrderbookFactory.Pair[](last - start);
         for (uint256 i = start; i < last; i++) {
-            (address base, address quote) = IOrderbook(allPairs[i])
-                .getBaseQuote();
+            (address base, address quote) = IOrderbook(allPairs[i]).getBaseQuote();
             pairs[i] = Pair(base, quote);
         }
         return pairs;
     }
 
-    function getPairsWithIds(
-        uint256[] memory ids
-    ) public view override returns (IOrderbookFactory.Pair[] memory pairs) {
+    function getPairsWithIds(uint256[] memory ids)
+        public
+        view
+        override
+        returns (IOrderbookFactory.Pair[] memory pairs)
+    {
         pairs = new IOrderbookFactory.Pair[](ids.length);
         for (uint256 i = 0; i < ids.length; i++) {
-            (address base, address quote) = IOrderbook(allPairs[i])
-                .getBaseQuote();
+            (address base, address quote) = IOrderbook(allPairs[i]).getBaseQuote();
             pairs[i] = Pair(base, quote);
         }
         return pairs;
     }
 
-    function getPairNames(
-        uint256 start,
-        uint256 end
-    ) external view override returns (string[] memory names) {
+    function getPairNames(uint256 start, uint256 end) external view override returns (string[] memory names) {
         IOrderbookFactory.Pair[] memory pairs = getPairs(start, end);
         names = new string[](pairs.length);
         for (uint256 i = 0; i < pairs.length; i++) {
@@ -118,13 +101,10 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
         return names;
     }
 
-    function getPairNamesWithIds(
-        uint256[] memory ids
-    ) external view override returns (string[] memory names) {
+    function getPairNamesWithIds(uint256[] memory ids) external view override returns (string[] memory names) {
         names = new string[](ids.length);
         for (uint256 i = 0; i < ids.length; i++) {
-            (address base, address quote) = IOrderbook(allPairs[i])
-                .getBaseQuote();
+            (address base, address quote) = IOrderbook(allPairs[i]).getBaseQuote();
             string memory baseName = IERC20(base).symbol();
             string memory quoteName = IERC20(quote).symbol();
             names[i] = string(abi.encodePacked(baseName, "/", quoteName));
@@ -132,9 +112,7 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
         return names;
     }
 
-    function getBaseQuote(
-        address orderbook
-    ) external view override returns (address base, address quote) {
+    function getBaseQuote(address orderbook) external view override returns (address base, address quote) {
         return IOrderbook(orderbook).getBaseQuote();
     }
 
@@ -160,25 +138,17 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
         bytes32 salt = keccak256(abi.encodePacked("orderbook", version));
         assembly {
             addr := create2(0, add(bytecode, 0x20), mload(bytecode), salt)
-            if iszero(extcodesize(addr)) {
-                revert(0, 0)
-            }
+            if iszero(extcodesize(addr)) { revert(0, 0) }
         }
         impl = addr;
     }
 
-    function _predictAddress(
-        address base_,
-        address quote_
-    ) internal view returns (address) {
+    function _predictAddress(address base_, address quote_) internal view returns (address) {
         bytes32 salt = _getSalt(base_, quote_);
         return CloneFactory.predictAddressWithSalt(address(this), impl, salt);
     }
 
-    function _getSalt(
-        address base_,
-        address quote_
-    ) internal pure returns (bytes32) {
+    function _getSalt(address base_, address quote_) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked(base_, quote_));
     }
 
@@ -191,10 +161,7 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
     }
 
     //  Set up listing cost for each token, each pair creates 2GB of data in a month, costing 0.1 ETH
-    function setListingCost(
-        address payment,
-        uint256 amount
-    ) external returns (uint256) {
+    function setListingCost(address payment, uint256 amount) external returns (uint256) {
         if (msg.sender != engine) {
             revert InvalidAccess(msg.sender, engine);
         }

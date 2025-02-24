@@ -30,81 +30,30 @@ contract BrawlPortal is AccessControl, Initializable {
         feeTo = feeTo_;
     }
 
-    function initialize(
-        address engine_,
-        address factory_
-    ) external initializer {
+    function initialize(address engine_, address factory_) external initializer {
         engine = engine_;
         factory = factory_;
     }
 
-    function create(
-        address base,
-        address quote,
-        address bet,
-        uint256 duration
-    ) external returns (address brawl) {
+    function create(address base, address quote, address bet, uint256 duration) external returns (address brawl) {
         uint256 startPrice = IMatchingEngine(engine).mktPrice(base, quote);
-        return
-            ITimeBrawlFactory(factory).createBrawl(
-                base,
-                quote,
-                startPrice,
-                bet,
-                block.timestamp + duration
-            );
+        return ITimeBrawlFactory(factory).createBrawl(base, quote, startPrice, bet, block.timestamp + duration);
     }
 
-    function long(
-        address base,
-        address quote,
-        uint256 id,
-        address bet,
-        uint256 amount
-    ) external {
-        (address brawl, uint256 withoutFee) = _deposit(
-            base,
-            quote,
-            id,
-            bet,
-            amount
-        );
+    function long(address base, address quote, uint256 id, address bet, uint256 amount) external {
+        (address brawl, uint256 withoutFee) = _deposit(base, quote, id, bet, amount);
         TransferHelper.safeTransfer(bet, brawl, withoutFee);
         ITimeBrawl(brawl).long(msg.sender, amount);
     }
 
-    function short(
-        address base,
-        address quote,
-        uint32 id,
-        address bet,
-        uint256 amount
-    ) external {
-        (address brawl, uint256 withoutFee) = _deposit(
-            base,
-            quote,
-            id,
-            bet,
-            amount
-        );
+    function short(address base, address quote, uint32 id, address bet, uint256 amount) external {
+        (address brawl, uint256 withoutFee) = _deposit(base, quote, id, bet, amount);
         TransferHelper.safeTransfer(bet, brawl, withoutFee);
         ITimeBrawl(brawl).short(msg.sender, amount);
     }
 
-    function flat(
-        address base,
-        address quote,
-        uint256 id,
-        address bet,
-        uint256 amount
-    ) external {
-        (address brawl, uint256 withoutFee) = _deposit(
-            base,
-            quote,
-            id,
-            bet,
-            amount
-        );
+    function flat(address base, address quote, uint256 id, address bet, uint256 amount) external {
+        (address brawl, uint256 withoutFee) = _deposit(base, quote, id, bet, amount);
         TransferHelper.safeTransfer(bet, brawl, withoutFee);
         ITimeBrawl(brawl).flat(msg.sender, amount);
     }
@@ -120,29 +69,22 @@ contract BrawlPortal is AccessControl, Initializable {
         ITimeBrawl(brawl).claim(msg.sender);
     }
 
-    function getBrawl(
-        address base,
-        address quote,
-        uint256 id
-    ) public view returns (address brawl) {
+    function getBrawl(address base, address quote, uint256 id) public view returns (address brawl) {
         return ITimeBrawlFactory(factory).getBrawl(base, quote, id);
     }
 
-    function getBrawlInfo(
-        address base,
-        address quote,
-        uint256 id
-    ) external view returns (ITimeBrawl.Brawl memory brawl) {
+    function getBrawlInfo(address base, address quote, uint256 id)
+        external
+        view
+        returns (ITimeBrawl.Brawl memory brawl)
+    {
         return ITimeBrawlFactory(factory).getBrawlInfo(base, quote, id);
     }
 
-    function _deposit(
-        address base,
-        address quote,
-        uint256 id,
-        address bet,
-        uint256 amount
-    ) internal returns (address brawl, uint256 withoutFee) {
+    function _deposit(address base, address quote, uint256 id, address bet, uint256 amount)
+        internal
+        returns (address brawl, uint256 withoutFee)
+    {
         brawl = getBrawl(base, quote, id);
         // check if brawl's bet is the sent bet
         address accepted = ITimeBrawl(brawl).bet();

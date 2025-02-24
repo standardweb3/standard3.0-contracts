@@ -27,10 +27,7 @@ library CloneFactory {
             */
             let clone := mload(0x40)
             // store 32 bytes to memory starting at "clone"
-            mstore(
-                clone,
-                0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000
-            )
+            mstore(clone, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)
 
             /*
               |              20 bytes                |
@@ -50,10 +47,7 @@ library CloneFactory {
             */
             // store 32 bytes to memory starting at "clone" + 40 bytes
             // 0x28 = 40
-            mstore(
-                add(clone, 0x28),
-                0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000
-            )
+            mstore(add(clone, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)
 
             /*
               |               20 bytes               |                 20 bytes              |           15 bytes          |
@@ -67,82 +61,47 @@ library CloneFactory {
         }
     }
 
-    function _isClone(
-        address target,
-        address query
-    ) internal view returns (bool result) {
+    function _isClone(address target, address query) internal view returns (bool result) {
         bytes20 targetBytes = bytes20(target);
         assembly {
             let clone := mload(0x40)
-            mstore(
-                clone,
-                0x363d3d373d3d3d363d7300000000000000000000000000000000000000000000
-            )
+            mstore(clone, 0x363d3d373d3d3d363d7300000000000000000000000000000000000000000000)
             mstore(add(clone, 0xa), targetBytes)
-            mstore(
-                add(clone, 0x1e),
-                0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000
-            )
+            mstore(add(clone, 0x1e), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)
 
             let other := add(clone, 0x40)
             extcodecopy(query, other, 0, 0x2d)
-            result := and(
-                eq(mload(clone), mload(other)),
-                eq(mload(add(clone, 0xd)), mload(add(other, 0xd)))
-            )
+            result := and(eq(mload(clone), mload(other)), eq(mload(add(clone, 0xd)), mload(add(other, 0xd))))
         }
     }
 
-    function _createCloneWithSalt(
-        address target,
-        bytes32 salt
-    ) internal returns (address result) {
+    function _createCloneWithSalt(address target, bytes32 salt) internal returns (address result) {
         bytes20 targetBytes = bytes20(target);
         assembly {
             let clone := mload(0x40)
-            mstore(
-                clone,
-                0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000
-            )
+            mstore(clone, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)
             mstore(add(clone, 0x14), targetBytes)
-            mstore(
-                add(clone, 0x28),
-                0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000
-            )
+            mstore(add(clone, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)
 
             // Use create2 with the provided salt
             result := create2(0, clone, 0x37, salt)
-            if iszero(extcodesize(result)) {
-                revert(0, 0)
-            }
+            if iszero(extcodesize(result)) { revert(0, 0) }
         }
     }
 
-    function predictAddressWithSalt(
-        address deployer,
-        address target,
-        bytes32 salt
-    ) internal pure returns (address) {
+    function predictAddressWithSalt(address deployer, address target, bytes32 salt) internal pure returns (address) {
         // Create the expected bytecode of the minimal proxy
-        bytes memory bytecode = abi.encodePacked(
-            hex"3d602d80600a3d3981f3363d3d373d3d3d363d73",
-            target,
-            hex"5af43d82803e903d91602b57fd5bf3"
-        );
+        bytes memory bytecode =
+            abi.encodePacked(hex"3d602d80600a3d3981f3363d3d373d3d3d363d73", target, hex"5af43d82803e903d91602b57fd5bf3");
 
         bytes32 bytecodeHash = keccak256(bytecode);
 
-        bytes32 _data = keccak256(
-            abi.encodePacked(bytes1(0xff), deployer, salt, bytecodeHash)
-        );
+        bytes32 _data = keccak256(abi.encodePacked(bytes1(0xff), deployer, salt, bytecodeHash));
         return address(uint160(uint256(_data)));
     }
 
     function getBytecode(address target) internal pure returns (bytes memory bytecode) {
-        return  abi.encodePacked(
-            hex"3d602d80600a3d3981f3363d3d373d3d3d363d73",
-            target,
-            hex"5af43d82803e903d91602b57fd5bf3"
-        );
+        return
+            abi.encodePacked(hex"3d602d80600a3d3981f3363d3d373d3d3d363d73", target, hex"5af43d82803e903d91602b57fd5bf3");
     }
 }

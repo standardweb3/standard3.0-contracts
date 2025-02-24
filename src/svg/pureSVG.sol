@@ -3,7 +3,6 @@ pragma solidity ^0.8.24;
 import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
-
 contract PureSVG {
     using Strings for uint256;
 
@@ -206,8 +205,7 @@ contract PureSVG {
     }
 
     function generateSVG() internal pure returns (string memory svg) {
-        string memory a =
-            string(abi.encodePacked("0x2260fac5e5542a773aa44fbcfedf7c193bc2c599", unicode" • ", "Vault"));
+        string memory a = string(abi.encodePacked("0x2260fac5e5542a773aa44fbcfedf7c193bc2c599", unicode" • ", "Vault"));
         string memory b = string(abi.encodePacked(unicode" • ", "Ethereum", unicode" • "));
         string memory first = string(
             abi.encodePacked(

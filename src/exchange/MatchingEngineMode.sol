@@ -1,20 +1,13 @@
 // SPDX-License-Identifier: BUSL-1.1
 
 pragma solidity ^0.8.24;
+
 import {MatchingEngine} from "./MatchingEngine.sol";
 
 interface IRevenue {
-    function report(
-        uint32 uid,
-        address token,
-        uint256 amount,
-        bool isAdd
-    ) external;
+    function report(uint32 uid, address token, uint256 amount, bool isAdd) external;
 
-    function isReportable(
-        address token,
-        uint32 uid
-    ) external view returns (bool);
+    function isReportable(address token, uint32 uid) external view returns (bool);
 
     function refundFee(address to, address token, uint256 amount) external;
 
@@ -25,8 +18,7 @@ interface IDecimals {
     function decimals() external view returns (uint8 decimals);
 }
 
-
-interface IFeeSharing  {
+interface IFeeSharing {
     /// @notice Mints ownership NFT that allows the owner to collect fees earned by the smart contract.
     ///         `msg.sender` is assumed to be a smart contract that earns fees. Only smart contract itself
     ///         can register a fee receipient.
@@ -47,10 +39,8 @@ interface IFeeSharing  {
 
 // Onchain Matching engine for the orders
 contract MatchingEngineMode is MatchingEngine {
-    
     constructor() {
         IFeeSharing(0x8680CEaBcb9b56913c519c069Add6Bc3494B7020).isRegistered(0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0);
         IFeeSharing(0x8680CEaBcb9b56913c519c069Add6Bc3494B7020).register(0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0);
     }
-
 }

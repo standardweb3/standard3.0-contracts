@@ -30,13 +30,7 @@ contract PointFarm is AccessControl, Initializable {
     event PointMatchReported(address sender, address owner, uint256 amount);
     event PenaltyReported(address account, uint256 amount);
     event PenaltyRemoved(address account, uint256 amount);
-    event MultiplierSet(
-        address base,
-        address quote,
-        address pair,
-        bool isBid,
-        uint32 x
-    );
+    event MultiplierSet(address base, address quote, address pair, bool isBid, uint32 x);
     event EventCreated(uint32 eventId, uint256 startDate, uint256 endDate);
 
     constructor() {
@@ -63,10 +57,10 @@ contract PointFarm is AccessControl, Initializable {
         _accountant._setBaseMultiplier(10000);
         _accountant._setStablecoin(stablecoin_);
     }
-    
+
     /// @dev setBaseMultiplier: Set base multiplier
     /// @param x The base multiplier
-    /// @return The base multiplier 
+    /// @return The base multiplier
     function setBaseMultiplier(uint32 x) external returns (uint32) {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -92,26 +86,16 @@ contract PointFarm is AccessControl, Initializable {
     /// @param subFee_ The subscription fee per block in one token
     /// @param metaId_ The meta id of the token to pay the fee
     /// @param quotas_ The number of tokens to be issued for registration
-    function setMembership(
-        uint8 metaId_,
-        address feeToken_,
-        uint256 regFee_,
-        uint256 subFee_,
-        uint32 quotas_
-    ) external {
+    function setMembership(uint8 metaId_, address feeToken_, uint256 regFee_, uint256 subFee_, uint32 quotas_)
+        external
+    {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
         }
         if (metaId_ == 0) {
             revert InvalidMeta(metaId_, msg.sender);
         }
-        _membership._setMembership(
-            metaId_,
-            feeToken_,
-            regFee_,
-            subFee_,
-            quotas_
-        );
+        _membership._setMembership(metaId_, feeToken_, regFee_, subFee_, quotas_);
     }
 
     function setEvent(uint256 endDate) external {
@@ -160,12 +144,7 @@ contract PointFarm is AccessControl, Initializable {
         _membership._setSTND(stnd);
     }
 
-    function setFees(
-        uint8 metaId_,
-        address feeToken_,
-        uint256 regFee_,
-        uint256 subFee_
-    ) external {
+    function setFees(uint8 metaId_, address feeToken_, uint256 regFee_, uint256 subFee_) external {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
         }
@@ -173,19 +152,13 @@ contract PointFarm is AccessControl, Initializable {
     }
 
     /// @dev register: Register as a member
-    function register(
-        uint8 metaId_,
-        address feeToken_
-    ) external returns (uint256 uid) {
+    function register(uint8 metaId_, address feeToken_) external returns (uint256 uid) {
         // check if metaId is valid, meta only supports 1~11
         if (metaId_ == 0 || _membership.metas[metaId_].metaId != metaId_) {
             revert InvalidMeta(metaId_, msg.sender);
         }
         // check if early adoptor, foundation, beta account is only used by admin
-        if (
-            (metaId_ == 9 || metaId_ == 10 || metaId_ == 11) &&
-            !hasRole(DEFAULT_ADMIN_ROLE, msg.sender)
-        ) {
+        if ((metaId_ == 9 || metaId_ == 10 || metaId_ == 11) && !hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
         }
         uid = _membership._register(metaId_, feeToken_, false);
@@ -207,17 +180,20 @@ contract PointFarm is AccessControl, Initializable {
      * @param blocks_ The number of blocks to remain subscribed
      * @param feeToken_ The address of the token to pay the fee
      */
-    function subscribe(
-        uint256 uid_,
-        address feeToken_,
-        uint64 blocks_
-    ) external returns (uint256 at, uint256 until, address with) {
+    function subscribe(uint256 uid_, address feeToken_, uint64 blocks_)
+        external
+        returns (uint256 at, uint256 until, address with)
+    {
         (at, until, with) = _membership._subscribe(uid_, feeToken_, blocks_);
         emit MemberSubscribed(at, until, with);
         return (at, until, with);
     }
 
-    function subscribeETH(uint256 uid_, uint64 blocks_) external payable returns (uint256 at, uint256 until, address with) {
+    function subscribeETH(uint256 uid_, uint64 blocks_)
+        external
+        payable
+        returns (uint256 at, uint256 until, address with)
+    {
         require(msg.value > 0, "Membership: zero value");
         IWETH(_membership.weth).deposit{value: msg.value}();
         (at, until, with) = _membership._subscribe(uid_, _membership.weth, blocks_);
@@ -225,11 +201,7 @@ contract PointFarm is AccessControl, Initializable {
         return (at, until, with);
     }
 
-    function offerTrial(
-        uint256 uid_,
-        address holder_,
-        uint256 blocks_
-    ) external {
+    function offerTrial(uint256 uid_, address holder_, uint256 blocks_) external {
         if (!hasRole(PROMOTER_ROLE, msg.sender)) {
             revert InvalidRole(PROMOTER_ROLE, msg.sender);
         }
@@ -242,10 +214,7 @@ contract PointFarm is AccessControl, Initializable {
         _membership._unsubscribe(uid_);
     }
 
-    function balanceOf(
-        address who,
-        uint256 uid_
-    ) external view returns (uint256) {
+    function balanceOf(address who, uint256 uid_) external view returns (uint256) {
         return _membership._balanceOf(who, uid_);
     }
 
@@ -257,9 +226,7 @@ contract PointFarm is AccessControl, Initializable {
         return _membership._getSubStatus(uid_);
     }
 
-    function getMeta(
-        uint8 metaId_
-    ) external view returns (MembershipLib.Meta memory) {
+    function getMeta(uint8 metaId_) external view returns (MembershipLib.Meta memory) {
         return _membership.metas[metaId_];
     }
 
@@ -275,11 +242,8 @@ contract PointFarm is AccessControl, Initializable {
         return _accountant._checkEventOn();
     }
 
-    function feeOf(
-        address account,
-        bool isMaker
-    ) external view returns (uint32 feeNum) {
-        if(_membership._isSubscribed(account)) {
+    function feeOf(address account, bool isMaker) external view returns (uint32 feeNum) {
+        if (_membership._isSubscribed(account)) {
             return _membership._getFeeRate(account, isMaker);
         } else {
             return 10000;
@@ -291,10 +255,7 @@ contract PointFarm is AccessControl, Initializable {
      * @param account account to mint point to
      * @param amount amount of point to mint
      */
-    function reportBonus(
-        address account,
-        uint256 amount
-    ) external returns (bool) {
+    function reportBonus(address account, uint256 amount) external returns (bool) {
         // check if the sender is a promoter
         if (!hasRole(PROMOTER_ROLE, msg.sender)) {
             revert InvalidRole(PROMOTER_ROLE, msg.sender);
@@ -309,10 +270,7 @@ contract PointFarm is AccessControl, Initializable {
      * @param account account to fine point to
      * @param amount amount of point to fine
      */
-    function reportPenalty(
-        address account,
-        uint256 amount
-    ) external returns (bool) {
+    function reportPenalty(address account, uint256 amount) external returns (bool) {
         // check if the sender is a promoter
         if (!hasRole(PROMOTER_ROLE, msg.sender)) {
             revert InvalidRole(PROMOTER_ROLE, msg.sender);
@@ -331,14 +289,10 @@ contract PointFarm is AccessControl, Initializable {
      * @param owner address of owner
      * @param amount amount to mint
      */
-    function reportMatch(
-        address orderbook,
-        address give,
-        bool isBid,
-        address sender,
-        address owner,
-        uint256 amount
-    ) external returns (bool) {
+    function reportMatch(address orderbook, address give, bool isBid, address sender, address owner, uint256 amount)
+        external
+        returns (bool)
+    {
         if (msg.sender != _accountant.matchingEngine) {
             revert InvalidAccess(msg.sender, _accountant.matchingEngine);
         }
@@ -365,12 +319,7 @@ contract PointFarm is AccessControl, Initializable {
      * @param isBid order type. if true, buy. if false, sell.
      * @param x amount of x to multiply (e.g. 100x)
      */
-    function setMultiplier(
-        address base,
-        address quote,
-        bool isBid,
-        uint32 x
-    ) external returns (bool) {
+    function setMultiplier(address base, address quote, bool isBid, uint32 x) external returns (bool) {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
         }
@@ -380,14 +329,11 @@ contract PointFarm is AccessControl, Initializable {
     }
 
     /**
-     * Create event on the 
-     * @param startDate starting date for 
-     * @param endDate end date for 
+     * Create event on the
+     * @param startDate starting date for
+     * @param endDate end date for
      */
-    function createEvent(
-        uint256 startDate,
-        uint256 endDate
-    ) external returns (uint32 eventId) {
+    function createEvent(uint256 startDate, uint256 endDate) external returns (uint32 eventId) {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, msg.sender);
         }

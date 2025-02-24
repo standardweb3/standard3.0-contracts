@@ -6,6 +6,7 @@ pragma solidity ^0.8.24;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
+
 interface IERC20Errors {
     /**
      * @dev Indicates an error related to the current `balance` of a `sender`. Used in transfers.
@@ -72,9 +73,9 @@ interface IERC20Errors {
  * these events, as it isn't required by the specification.
  */
 abstract contract ERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
-    mapping(address  => uint256) private _balances;
+    mapping(address => uint256) private _balances;
 
-    mapping(address  => mapping(address => uint256)) private _allowances;
+    mapping(address => mapping(address => uint256)) private _allowances;
 
     uint256 private _totalSupply;
     uint16 feeRate;
@@ -252,7 +253,7 @@ abstract contract ERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
             unchecked {
                 // Overflow not possible: balance + value is at most totalSupply, which we know fits into a uint256.
                 // Fee on transfer
-                
+
                 _balances[to] += value - fee;
                 _balances[treasury] += fee;
             }

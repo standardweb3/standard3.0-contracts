@@ -1,7 +1,6 @@
 import {PointFarmSetup} from "../PointFarmSetup.sol";
 
 contract EventTest is PointFarmSetup {
-
     function eventSetUp() internal {
         super.setUp();
         // make an event

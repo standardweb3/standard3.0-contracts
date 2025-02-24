@@ -21,28 +21,10 @@ contract ManipulationTest is BaseSetup {
         super.setUp();
         matchingEngine.addPair(address(token1), address(token2), 90e8, 0, address(token1));
         vm.prank(trader1);
-        matchingEngine.limitSell(
-            address(token1),
-            address(token2),
-            90e8,
-            100e18,
-            true,
-            2,
-            trader1
-        );
+        matchingEngine.limitSell(address(token1), address(token2), 90e8, 100e18, true, 2, trader1);
         vm.prank(trader1);
-        matchingEngine.limitBuy(
-            address(token1),
-            address(token2),
-            110e8,
-            100e18,
-            true,
-            2,
-            trader1
-        );
-        book = Orderbook(
-            payable(orderbookFactory.getPair(address(token1), address(token2)))
-        );
+        matchingEngine.limitBuy(address(token1), address(token2), 110e8, 100e18, true, 2, trader1);
+        book = Orderbook(payable(orderbookFactory.getPair(address(token1), address(token2))));
         console.log("Market price before manipulation: ", book.mktPrice());
         vm.prank(attacker);
         //book.placeBid(address(trader1), 1e7, 100e18);

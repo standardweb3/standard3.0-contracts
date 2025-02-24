@@ -23,9 +23,9 @@ contract SubscriptionTest is PointFarmSetup {
         subcSetUp();
         vm.startPrank(trader1);
         pointFarm.register(9, address(feeToken));
-        pointFarm.subscribe(1,address(feeToken), 10000);
+        pointFarm.subscribe(1, address(feeToken), 10000);
         pointFarm.unsubscribe(1);
-        pointFarm.subscribe(1,address(feeToken), 10000);
+        pointFarm.subscribe(1, address(feeToken), 10000);
     }
 
     // subscription cannot be done when fee is not configured
@@ -34,7 +34,7 @@ contract SubscriptionTest is PointFarmSetup {
         vm.startPrank(trader1);
         pointFarm.register(9, address(feeToken));
         vm.expectRevert();
-        pointFarm.subscribe(1,address(stablecoin), 10000);
+        pointFarm.subscribe(1, address(stablecoin), 10000);
     }
 
     // subscription can be done on only one token
@@ -42,10 +42,10 @@ contract SubscriptionTest is PointFarmSetup {
         subcSetUp();
         vm.startPrank(trader1);
         pointFarm.register(9, address(feeToken));
-        pointFarm.subscribe(1,address(feeToken), 10000);
+        pointFarm.subscribe(1, address(feeToken), 10000);
         pointFarm.setMembership(9, address(stablecoin), 1e18, 1e18, 5);
         vm.expectRevert();
-        pointFarm.subscribe(1,address(stablecoin), 10000);
+        pointFarm.subscribe(1, address(stablecoin), 10000);
     }
 
     // trader point can be migrated into other ABT if one owns them all
@@ -54,7 +54,7 @@ contract SubscriptionTest is PointFarmSetup {
         vm.startPrank(trader1);
         pointFarm.balanceOf(address(trader1), 1);
         pointFarm.register(9, address(feeToken));
-        pointFarm.subscribe(1, address(feeToken),  10000);
+        pointFarm.subscribe(1, address(feeToken), 10000);
     }
 
     // subscribing with stnd shows subscribed STND amount

@@ -52,13 +52,10 @@ contract Bond {
     }
 
     // called once by the factory at time of deployment
-    function initialize(
-        uint128 vaultId_,
-        address collateral_,
-        address debt_,
-        address coupon_,
-        uint256 amount_
-    ) external onlyState {
+    function initialize(uint128 vaultId_, address collateral_, address debt_, address coupon_, uint256 amount_)
+        external
+        onlyState
+    {
         id = vaultId_;
         collateral = collateral_;
         debt = debt_;
@@ -96,28 +93,16 @@ contract Bond {
 
     /// Deposit collateral
     function depositCollateral(uint256 amount_) external onlyBondOwner {
-        TransferHelper.safeTransferFrom(
-            collateral,
-            msg.sender,
-            address(this),
-            amount_
-        );
+        TransferHelper.safeTransferFrom(collateral, msg.sender, address(this), amount_);
     }
 
     /// Withdraw collateral
     function withdrawCollateral(uint256 amount_) external onlyBondOwner {
-        require(
-            IERC20Minimal(collateral).balanceOf(address(this)) >= amount_,
-            "Vault: Not enough collateral"
-        );
+        require(IERC20Minimal(collateral).balanceOf(address(this)) >= amount_, "Vault: Not enough collateral");
         if (borrow != 0) {
             require(
                 INetworkState(state).isValidCDP(
-                    collateral,
-                    debt,
-                    IERC20Minimal(collateral).balanceOf(address(this)) -
-                        amount_,
-                    borrow
+                    collateral, debt, IERC20Minimal(collateral).balanceOf(address(this)) - amount_, borrow
                 ),
                 "Vault: below MCR"
             );
@@ -131,12 +116,7 @@ contract Bond {
         uint256 fee = _calculateFee();
         require(amount_ != 0, "Vault: amount is zero");
         // send M1 to the vault
-        TransferHelper.safeTransferFrom(
-            debt,
-            msg.sender,
-            address(this),
-            amount_
-        );
+        TransferHelper.safeTransferFrom(debt, msg.sender, address(this), amount_);
         uint256 left = _sendFee(debt, amount_, fee);
         _burnM1FromVault(left);
         borrow -= left;
@@ -147,17 +127,9 @@ contract Bond {
     function redeemBond(uint256 amount_) external onlyBondOwner {
         // calculate debt with interest
         uint256 fee = _calculateFee();
-        require(
-            fee + borrow == amount_,
-            "Vault: not enough balance to payback"
-        );
+        require(fee + borrow == amount_, "Vault: not enough balance to payback");
         // send M1 to the vault
-        TransferHelper.safeTransferFrom(
-            debt,
-            msg.sender,
-            address(this),
-            amount_
-        );
+        TransferHelper.safeTransferFrom(debt, msg.sender, address(this), amount_);
         // send fee to the pool
         uint256 left = _sendFee(debt, amount_, fee);
         // burn M1 debt with interest
@@ -171,9 +143,7 @@ contract Bond {
 
     /// get amount left to borrow
     function getMargin(uint256 mcr) external view returns (uint256 available) {
-        return
-            ((IERC20Minimal(collateral).balanceOf(address(this)) / mcr) *
-                100000) - borrow;
+        return ((IERC20Minimal(collateral).balanceOf(address(this)) / mcr) * 100000) - borrow;
     }
 
     /// burn vault v1
@@ -201,11 +171,7 @@ contract Bond {
         return _calculateFee() + borrow;
     }
 
-    function _sendFee(
-        address asset_,
-        uint256 amount_,
-        uint256 fee_
-    ) internal returns (uint256 left) {
+    function _sendFee(address asset_, uint256 amount_, uint256 fee_) internal returns (uint256 left) {
         address dividend = INetworkState(state).dividend();
         address feeTo = INetworkState(state).feeTo();
         address treasury = INetworkState(state).treasury();

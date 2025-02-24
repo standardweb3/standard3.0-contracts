@@ -6,7 +6,6 @@ import {TransferHelper} from "../../libraries/TransferHelper.sol";
 import {ITimeBrawl} from "../../interfaces/ITimeBrawl.sol";
 
 contract TimeBrawl is Initializable, ITimeBrawl {
-
     uint256 id;
     address portal;
     uint256 startPrice;
@@ -25,13 +24,10 @@ contract TimeBrawl is Initializable, ITimeBrawl {
     // 0: long, 1: short, 2: flat
     mapping(uint8 => Pool) contributions;
 
-    function initialize(
-        uint256 id_,
-        address portal_,
-        uint256 startPrice_,
-        address bet_,
-        uint256 endTime_
-    ) external initializer {
+    function initialize(uint256 id_, address portal_, uint256 startPrice_, address bet_, uint256 endTime_)
+        external
+        initializer
+    {
         id = id_;
         portal = portal_;
         startPrice = startPrice_;
@@ -50,16 +46,10 @@ contract TimeBrawl is Initializable, ITimeBrawl {
         _;
     }
 
-    function _addAmountToPool(
-        uint8 choice,
-        address user,
-        uint256 amount
-    ) internal {
+    function _addAmountToPool(uint8 choice, address user, uint256 amount) internal {
         Pool storage pool = contributions[choice];
         uint256 prevAmount = (pool.percentage[user] * pool.total) / 10000;
-        pool.percentage[user] = uint32(
-            ((prevAmount + amount) * 10000) / (pool.total + amount)
-        );
+        pool.percentage[user] = uint32(((prevAmount + amount) * 10000) / (pool.total + amount));
         pool.total += amount;
     }
 
@@ -120,19 +110,11 @@ contract TimeBrawl is Initializable, ITimeBrawl {
         if (win == 0) {
             revert NoWinnersYet(win, block.timestamp, endTime);
         }
-        uint256 prize = (contributions[win].percentage[user] *
-            contributions[win].total) / 10000;
+        uint256 prize = (contributions[win].percentage[user] * contributions[win].total) / 10000;
         TransferHelper.safeTransfer(bet, user, prize);
     }
 
     function getBrawl() external view returns (ITimeBrawl.Brawl memory brawl) {
-        return Brawl(
-            portal,
-            startPrice,
-            bet,
-            total,
-            endTime,
-            win
-        );
+        return Brawl(portal, startPrice, bet, total, endTime, win);
     }
 }

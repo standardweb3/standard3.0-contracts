@@ -39,14 +39,10 @@ contract PerpPool is IPerpPool, Initializable {
     error InvalidAccess(address sender, address allowed);
     error PriceIsZero(uint256 price);
 
-    function initialize(
-        uint256 id_,
-        address base_,
-        address quote_,
-        address collateral_,
-        address engine_,
-        address perp_
-    ) external initializer {
+    function initialize(uint256 id_, address base_, address quote_, address collateral_, address engine_, address perp_)
+        external
+        initializer
+    {
         uint8 baseD = TransferHelper.decimals(base_);
         uint8 quoteD = TransferHelper.decimals(quote_);
         uint8 collD = TransferHelper.decimals(collateral_);
@@ -64,68 +60,45 @@ contract PerpPool is IPerpPool, Initializable {
         _;
     }
 
-    function placeShort(
-        address owner,
-        uint256 price,
-        uint256 amount,
-        uint32 leverage,
-        bool autoUpdate
-    ) external onlyEngine returns (uint32 id) {
-        _shortPositions._createPosition(
-            owner,
-            price,
-            amount,
-            leverage,
-            autoUpdate
-        );
+    function placeShort(address owner, uint256 price, uint256 amount, uint32 leverage, bool autoUpdate)
+        external
+        onlyEngine
+        returns (uint32 id)
+    {
+        _shortPositions._createPosition(owner, price, amount, leverage, autoUpdate);
         return id;
     }
 
-    function placeLong(
-        address owner,
-        uint256 price,
-        uint256 amount,
-        uint32 leverage,
-        bool autoUpdate
-    ) external onlyEngine returns (uint32 id) {
-        _longPositions._createPosition(
-            owner,
-            price,
-            amount,
-            leverage,
-            autoUpdate
-        );
+    function placeLong(address owner, uint256 price, uint256 amount, uint32 leverage, bool autoUpdate)
+        external
+        onlyEngine
+        returns (uint32 id)
+    {
+        _longPositions._createPosition(owner, price, amount, leverage, autoUpdate);
         return id;
     }
 
-    function closePosition(
-        bool isLong,
-        uint256 positionId,
-        address owner
-    ) external onlyEngine returns (uint256 remaining) {
+    function closePosition(bool isLong, uint256 positionId, address owner)
+        external
+        onlyEngine
+        returns (uint256 remaining)
+    {
         // check position owner
-        FuturesPool.Position memory position = isLong
-            ? _longPositions._getPosition(positionId)
-            : _shortPositions._getPosition(positionId);
+        FuturesPool.Position memory position =
+            isLong ? _longPositions._getPosition(positionId) : _shortPositions._getPosition(positionId);
 
         if (position.owner != owner) {
             revert InvalidAccess(owner, position.owner);
         }
 
-        isLong
-            ? _sendFunds(pool.quote, owner, position.margin)
-            : _sendFunds(pool.base, owner, position.margin);
+        isLong ? _sendFunds(pool.quote, owner, position.margin) : _sendFunds(pool.base, owner, position.margin);
 
         return (position.margin);
     }
 
-    function liquidate(
-        bool isLong,
-        uint32 positionId
-    ) public onlyEngine returns (address owner) {
-        FuturesPool.Position memory position = isLong
-            ? _longPositions._getPosition(positionId)
-            : _shortPositions._getPosition(positionId);
+    function liquidate(bool isLong, uint32 positionId) public onlyEngine returns (address owner) {
+        FuturesPool.Position memory position =
+            isLong ? _longPositions._getPosition(positionId) : _shortPositions._getPosition(positionId);
         // if isLong == true, sender is matching ask position with bid position(i.e. selling base to receive quote), otherwise sender is matching bid position with ask position(i.e. buying base with quote)
         if (isLong) {
             _longPositions._liquidate(positionId);
@@ -137,20 +110,17 @@ contract PerpPool is IPerpPool, Initializable {
         return position.owner;
     }
 
-    function batchLiquidate(
-        bool[] memory isLong,
-        uint32[] memory positionId
-    ) external onlyEngine returns (address owner) {
-        for (uint i = 0; i < positionId.length; i++) {
+    function batchLiquidate(bool[] memory isLong, uint32[] memory positionId)
+        external
+        onlyEngine
+        returns (address owner)
+    {
+        for (uint256 i = 0; i < positionId.length; i++) {
             liquidate(isLong[i], positionId[i]);
         }
     }
 
-    function _sendFunds(
-        address token,
-        address to,
-        uint256 amount
-    ) internal returns (bool) {
+    function _sendFunds(address token, address to, uint256 amount) internal returns (bool) {
         address weth = IWETHMinimal(pool.engine).WETH();
         if (token == weth) {
             IWETHMinimal(weth).withdraw(amount);
@@ -165,38 +135,29 @@ contract PerpPool is IPerpPool, Initializable {
         return (a > b ? a - b : b - a, a > b);
     }
 
-    function getPosition(
-        bool isLong,
-        uint32 positionId
-    ) external view returns (FuturesPool.Position memory) {
-        return
-            isLong
-                ? _longPositions._getPosition(positionId)
-                : _shortPositions._getPosition(positionId);
+    function getPosition(bool isLong, uint32 positionId) external view returns (FuturesPool.Position memory) {
+        return isLong ? _longPositions._getPosition(positionId) : _shortPositions._getPosition(positionId);
     }
 
     receive() external payable {
         assert(msg.sender == IWETHMinimal(pool.engine).WETH());
     }
 
-    function placeShort(
-        address owner,
-        uint256 price,
-        uint256 amount,
-        bool autoUpdate
-    ) external override returns (uint256 id) {}
+    function placeShort(address owner, uint256 price, uint256 amount, bool autoUpdate)
+        external
+        override
+        returns (uint256 id)
+    {}
 
-    function placeLong(
-        address owner,
-        uint256 price,
-        uint256 amount,
-        bool autoUpdate
-    ) external override returns (uint256 id) {}
+    function placeLong(address owner, uint256 price, uint256 amount, bool autoUpdate)
+        external
+        override
+        returns (uint256 id)
+    {}
 
-    function openPosition(
-        bool isLong,
-        uint256 price,
-        uint256 amount,
-        address owner
-    ) external override returns (uint256 id) {}
+    function openPosition(bool isLong, uint256 price, uint256 amount, address owner)
+        external
+        override
+        returns (uint256 id)
+    {}
 }

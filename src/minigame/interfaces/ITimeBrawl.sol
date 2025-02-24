@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 interface ITimeBrawl {
-    struct Brawl {  
+    struct Brawl {
         address portal;
         uint256 startPrice;
         address bet;
@@ -12,13 +12,7 @@ interface ITimeBrawl {
         uint8 win;
     }
 
-    function initialize(
-        uint id, 
-        address portal_,
-        uint256 startPrice_,
-        address bet_,
-        uint256 endTime_
-    ) external;
+    function initialize(uint256 id, address portal_, uint256 startPrice_, address bet_, uint256 endTime_) external;
 
     function long(address user, uint256 amount) external;
 

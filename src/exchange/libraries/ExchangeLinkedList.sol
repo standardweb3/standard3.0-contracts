@@ -28,39 +28,31 @@ library ExchangeLinkedList {
         self.lmp = lmp_;
     }
 
-    function _heads(
-        PriceLinkedList storage self
-    ) internal view returns (uint256, uint256) {
+    function _heads(PriceLinkedList storage self) internal view returns (uint256, uint256) {
         return (self.bidHead, self.askHead);
     }
 
-    function _askHead(
-        PriceLinkedList storage self
-    ) internal view returns (uint256) {
+    function _askHead(PriceLinkedList storage self) internal view returns (uint256) {
         return self.askHead;
     }
 
-    function _bidHead(
-        PriceLinkedList storage self
-    ) internal view returns (uint256) {
+    function _bidHead(PriceLinkedList storage self) internal view returns (uint256) {
         return self.bidHead;
     }
 
-    function _mktPrice(
-        PriceLinkedList storage self
-    ) internal view returns (uint256) {
+    function _mktPrice(PriceLinkedList storage self) internal view returns (uint256) {
         if (self.bidHead == 0 && self.askHead == 0) {
             if (self.lmp == 0) {
                 revert NoMatchPrice(self.bidHead, self.askHead, self.lmp);
             }
             return self.lmp;
         } else if (self.bidHead != 0 && self.askHead == 0) {
-            if(self.lmp != 0) {
+            if (self.lmp != 0) {
                 return self.lmp >= self.bidHead ? self.lmp : self.bidHead;
             }
             return self.bidHead;
         } else if (self.bidHead == 0 && self.askHead != 0) {
-            if(self.lmp != 0) {
+            if (self.lmp != 0) {
                 return self.lmp <= self.askHead ? self.lmp : self.askHead;
             }
             return self.askHead;
@@ -69,11 +61,7 @@ library ExchangeLinkedList {
         }
     }
 
-    function _next(
-        PriceLinkedList storage self,
-        bool isBid,
-        uint256 price
-    ) internal view returns (uint256) {
+    function _next(PriceLinkedList storage self, bool isBid, uint256 price) internal view returns (uint256) {
         if (isBid) {
             return self.bidPrices[price];
         } else {
@@ -82,11 +70,7 @@ library ExchangeLinkedList {
     }
 
     // for bidPrices, lower ones are next, for askPrices, higher ones are next
-    function _insert(
-        PriceLinkedList storage self,
-        bool isBid,
-        uint256 price
-    ) internal {
+    function _insert(PriceLinkedList storage self, bool isBid, uint256 price) internal {
         if (isBid) {
             uint256 last = 0;
             uint256 head = self.bidHead;
@@ -159,10 +143,7 @@ library ExchangeLinkedList {
         }
     }
 
-    function _clearHead(
-        PriceLinkedList storage self,
-        bool isBid
-    ) internal returns (uint256 newHead) {
+    function _clearHead(PriceLinkedList storage self, bool isBid) internal returns (uint256 newHead) {
         if (isBid) {
             self.bidHead = self.bidPrices[self.bidHead];
         } else {
@@ -171,11 +152,7 @@ library ExchangeLinkedList {
         return isBid ? self.bidHead : self.askHead;
     }
 
-    function _delete(
-        PriceLinkedList storage self,
-        bool isBid,
-        uint256 price
-    ) internal returns (bool) {
+    function _delete(PriceLinkedList storage self, bool isBid, uint256 price) internal returns (bool) {
         // traverse the list
         if (price == 0) {
             // revert ZeroPrice(price);
@@ -324,11 +301,7 @@ library ExchangeLinkedList {
     }
 
     // show n prices shown in the orderbook
-    function _getPrices(
-        PriceLinkedList storage self,
-        bool isBid,
-        uint256 n
-    ) internal view returns (uint256[] memory) {
+    function _getPrices(PriceLinkedList storage self, bool isBid, uint256 n) internal view returns (uint256[] memory) {
         uint256 i = 0;
         uint256[] memory prices = new uint256[](n);
         for (
@@ -342,41 +315,28 @@ library ExchangeLinkedList {
         return prices;
     }
 
-    function _getPricesPaginated(
-        PriceLinkedList storage self,
-        bool isBid,
-        uint256 start,
-        uint256 end
-    ) internal view returns (uint256[] memory) {
+    function _getPricesPaginated(PriceLinkedList storage self, bool isBid, uint256 start, uint256 end)
+        internal
+        view
+        returns (uint256[] memory)
+    {
         uint256 i = 0;
         uint256[] memory prices = new uint256[](end - start);
         uint256 price = isBid ? self.bidHead : self.askHead;
-        for (
-            price;
-            price != 0 && i < start;
-            price = isBid ? self.bidPrices[price] : self.askPrices[price]
-        ) {
+        for (price; price != 0 && i < start; price = isBid ? self.bidPrices[price] : self.askPrices[price]) {
             i++;
         }
         if (price == 0) {
             return prices;
         }
-        for (
-            price;
-            price != 0 && i < end;
-            price = isBid ? self.bidPrices[price] : self.askPrices[price]
-        ) {
+        for (price; price != 0 && i < end; price = isBid ? self.bidPrices[price] : self.askPrices[price]) {
             prices[i] = price;
             i++;
         }
         return prices;
     }
 
-    function _checkPriceExists(
-        PriceLinkedList storage self,
-        bool isBid,
-        uint256 price
-    ) internal view returns (bool) {
+    function _checkPriceExists(PriceLinkedList storage self, bool isBid, uint256 price) internal view returns (bool) {
         // traverse the list
         if (price == 0) {
             revert ZeroPrice(price);

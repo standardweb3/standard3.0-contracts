@@ -30,6 +30,7 @@ contract DeployMulticall3 is Deployer {
 
 contract DeployStandard is Deployer {
     ERC20MintablePausableBurnable public stnd;
+
     function run() external {
         _setDeployer();
         stnd = new ERC20MintablePausableBurnable();
@@ -41,6 +42,7 @@ contract GrantMinterRole is Deployer {
     address stnd_address = 0x7a2e3a7A1bf8FaCCAd68115DC509DB5a5af4e7e4;
     ERC20MintablePausableBurnable public stnd;
     address minter = address(0);
+
     function run() external {
         _setDeployer();
         stnd = ERC20MintablePausableBurnable(stnd_address);

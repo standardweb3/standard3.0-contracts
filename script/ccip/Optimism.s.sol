@@ -30,6 +30,7 @@ contract DeployMulticall3 is Deployer {
 
 contract DeploySTND is Deployer {
     Standard public stnd;
+
     function run() external {
         _setDeployer();
         stnd = new Standard();
@@ -41,6 +42,7 @@ contract GrantMinterRole is Deployer {
     address stnd_address = 0x7a2e3a7A1bf8FaCCAd68115DC509DB5a5af4e7e4;
     Standard public stnd;
     address minter = address(0);
+
     function run() external {
         _setDeployer();
         stnd = Standard(stnd_address);

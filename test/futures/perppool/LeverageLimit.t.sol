@@ -4,13 +4,7 @@ contract LeverageLimitTest is PerpFuturesBaseSetup {
     function leverageLimitSetUp() internal returns (address) {
         perpFuturesSetUp();
 
-        return perpFutures.addPool(
-            address(feeToken),
-            address(stablecoin),
-            address(stablecoin),
-            0,
-            address(feeToken)
-        );
+        return perpFutures.addPool(address(feeToken), address(stablecoin), address(stablecoin), 0, address(feeToken));
     }
 
     // test setting leverage limit

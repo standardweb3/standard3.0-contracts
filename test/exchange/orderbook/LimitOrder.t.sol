@@ -21,59 +21,21 @@ contract LimitOrderTest is BaseSetup {
     function testLimitTradeWithDiffDecimals() public {
         super.setUp();
         matchingEngine.addPair(address(token1), address(btc), 1e8, 0, address(token1));
-        console.log(
-            "Base/Quote Pair: ",
-            matchingEngine.getPair(address(token1), address(btc))
-        );
+        console.log("Base/Quote Pair: ", matchingEngine.getPair(address(token1), address(btc)));
         vm.prank(trader1);
-        matchingEngine.limitBuy(
-            address(token1),
-            address(btc),
-            1e8,
-            1e8,
-            true,
-            2,
-            trader1
-        );
+        matchingEngine.limitBuy(address(token1), address(btc), 1e8, 1e8, true, 2, trader1);
         vm.prank(trader2);
-        matchingEngine.limitSell(
-            address(token1),
-            address(btc),
-            1e8,
-            1e18,
-            true,
-            2,
-            trader2
-        );
+        matchingEngine.limitSell(address(token1), address(btc), 1e8, 1e18, true, 2, trader2);
     }
 
     function testLimitTrade() public {
         super.setUp();
         matchingEngine.addPair(address(token1), address(token2), 1e8, 0, address(token1));
-        console.log(
-            "Base/Quote Pair: ",
-            matchingEngine.getPair(address(token1), address(token2))
-        );
+        console.log("Base/Quote Pair: ", matchingEngine.getPair(address(token1), address(token2)));
         vm.prank(trader1);
-        matchingEngine.limitBuy(
-            address(token1),
-            address(token2),
-            1e8,
-            100e18,
-            true,
-            2,
-            trader1
-        );
+        matchingEngine.limitBuy(address(token1), address(token2), 1e8, 100e18, true, 2, trader1);
         vm.prank(trader2);
-        matchingEngine.limitSell(
-            address(token1),
-            address(token2),
-            1e8,
-            100e18,
-            true,
-            2,
-            trader2
-        );
+        matchingEngine.limitSell(address(token1), address(token2), 1e8, 100e18, true, 2, trader2);
     }
 
     function testLimitBuyETH() public {
@@ -82,25 +44,11 @@ contract LimitOrderTest is BaseSetup {
         console.log("weth balance");
         console.log(trader1.balance / 1e18);
         vm.prank(trader1);
-        matchingEngine.limitBuyETH{value: 1e18}(
-            address(token1),
-            1e8,
-            true,
-            5,
-            trader1
-        );
+        matchingEngine.limitBuyETH{value: 1e18}(address(token1), 1e8, true, 5, trader1);
         vm.prank(trader1);
         token1.approve(address(matchingEngine), 10e18);
         vm.prank(trader1);
-        matchingEngine.limitSell(
-            address(token1),
-            address(weth),
-            1e8,
-            1e18,
-            true,
-            5,
-            trader1
-        );
+        matchingEngine.limitSell(address(token1), address(weth), 1e8, 1e18, true, 5, trader1);
         console.log("weth balance");
         console.log(trader1.balance / 1e18);
     }
@@ -112,33 +60,13 @@ contract LimitOrderTest is BaseSetup {
         console.log("weth balance");
         console.log(trader1.balance / 1e18);
         vm.prank(trader1);
-        matchingEngine.limitSellETH{value: 1e18}(
-            address(token1),
-            1e8,
-            true,
-            5,
-            trader1
-        );
+        matchingEngine.limitSellETH{value: 1e18}(address(token1), 1e8, true, 5, trader1);
         vm.prank(trader1);
-        matchingEngine.limitBuyETH{value: 1e18}(
-            address(token1),
-            1e8,
-            true,
-            5,
-            trader1
-        );
+        matchingEngine.limitBuyETH{value: 1e18}(address(token1), 1e8, true, 5, trader1);
         vm.prank(trader1);
         token1.approve(address(matchingEngine), 10e18);
         vm.prank(trader1);
-        matchingEngine.limitBuy(
-            address(weth),
-            address(token1),
-            1e8,
-            1e18,
-            true,
-            5,
-            trader1
-        );
+        matchingEngine.limitBuy(address(weth), address(token1), 1e8, 1e18, true, 5, trader1);
         console.log("weth balance");
         console.log(trader1.balance / 1e18);
     }
@@ -150,31 +78,12 @@ contract LimitOrderTest is BaseSetup {
         console.log(trader1.balance / 1e18);
         vm.startPrank(trader1);
 
-        matchingEngine.limitBuy(
-            address(weth),
-            address(token1),
-            1e8,
-            1e18,
-            true,
-            5,
-            trader1
-        );
+        matchingEngine.limitBuy(address(weth), address(token1), 1e8, 1e18, true, 5, trader1);
         console.log("weth balance");
         console.log(trader1.balance / 1e18);
-        uint256 mktPrice = matchingEngine.mktPrice(
-            address(weth),
-            address(token1)
-        );
+        uint256 mktPrice = matchingEngine.mktPrice(address(weth), address(token1));
         console.log(mktPrice);
-        matchingEngine.limitBuy(
-            address(weth),
-            address(token1),
-            294900000001,
-            1e18,
-            true,
-            5,
-            trader1
-        );
+        matchingEngine.limitBuy(address(weth), address(token1), 294900000001, 1e18, true, 5, trader1);
     }
 
     // limit order is possible on out of spread range, but it is not matched
@@ -183,15 +92,7 @@ contract LimitOrderTest is BaseSetup {
         matchingEngine.addPair(address(token1), address(token2), 1e8, 0, address(token1));
         vm.prank(trader1);
         // mktprice is setup with lmp
-        matchingEngine.limitBuy(
-            address(token1),
-            address(token2),
-            1e8,
-            1e18,
-            true,
-            5,
-            trader1
-        );
+        matchingEngine.limitBuy(address(token1), address(token2), 1e8, 1e18, true, 5, trader1);
     }
 
     function _setupVolatilityTest()
@@ -216,44 +117,22 @@ contract LimitOrderTest is BaseSetup {
         base.approve(address(matchingEngine), type(uint256).max);
         quote.approve(address(matchingEngine), type(uint256).max);
         // make last matched price
-        matchingEngine.limitBuy(
-            address(base),
-            address(quote),
-            1e8,
-            1e18,
-            true,
-            2,
-            trader1
-        );
-        matchingEngine.limitSell(
-            address(base),
-            address(quote),
-            1e8,
-            1e18,
-            true,
-            2,
-            trader1
-        );
+        matchingEngine.limitBuy(address(base), address(quote), 1e8, 1e18, true, 2, trader1);
+        matchingEngine.limitSell(address(base), address(quote), 1e8, 1e18, true, 2, trader1);
         // get pair and price info
-        book = Orderbook(
-            payable(matchingEngine.getPair(address(base), address(quote)))
-        );
+        book = Orderbook(payable(matchingEngine.getPair(address(base), address(quote))));
         (uint256 bidHead, uint256 askHead) = book.heads();
-        uint256 lmp = IOrderbook(
-            matchingEngine.getPair(address(base), address(quote))
-        ).lmp();
+        uint256 lmp = IOrderbook(matchingEngine.getPair(address(base), address(quote))).lmp();
         up = (lmp * (1e8 + 2000000)) / 1e8;
         down = (lmp * (1e8 - 2000000)) / 1e8;
         return (base, quote, book, bidHead, askHead, up, down);
     }
 
-    function _detLimitBuyMakePrice(
-        address orderbook,
-        uint256 lp,
-        uint256 bidHead,
-        uint256 askHead,
-        uint32 spread
-    ) internal view returns (uint256 price, uint256 lmp) {
+    function _detLimitBuyMakePrice(address orderbook, uint256 lp, uint256 bidHead, uint256 askHead, uint32 spread)
+        internal
+        view
+        returns (uint256 price, uint256 lmp)
+    {
         uint256 up;
         lmp = IOrderbook(orderbook).lmp();
         if (askHead == 0 && bidHead == 0) {
@@ -282,13 +161,11 @@ contract LimitOrderTest is BaseSetup {
         }
     }
 
-    function _detLimitSellMakePrice(
-        address orderbook,
-        uint256 lp,
-        uint256 bidHead,
-        uint256 askHead,
-        uint32 spread
-    ) internal view returns (uint256 price, uint256 lmp) {
+    function _detLimitSellMakePrice(address orderbook, uint256 lp, uint256 bidHead, uint256 askHead, uint32 spread)
+        internal
+        view
+        returns (uint256 price, uint256 lmp)
+    {
         uint256 down;
         lmp = IOrderbook(orderbook).lmp();
         if (askHead == 0 && bidHead == 0) {
@@ -318,441 +195,158 @@ contract LimitOrderTest is BaseSetup {
 
     // on limit sell, if limit price is higher than market price + ranged price, order is made with limit price.
     function testLimitSellVolatilityOutOfRange() public {
-        (
-            MockBase base,
-            MockQuote quote,
-            Orderbook book,
-            uint256 bidHead,
-            uint256 askHead,
-            uint256 up,
-            uint256 down
-        ) = _setupVolatilityTest();
+        (MockBase base, MockQuote quote, Orderbook book, uint256 bidHead, uint256 askHead, uint256 up, uint256 down) =
+            _setupVolatilityTest();
         // check limit price is higher than up
         uint256 limitPrice = (1e11 * (1e8 + 1000)) / 1e8;
         console.log(limitPrice, up);
         assert(limitPrice > up);
-        (uint256 result, uint lmp) = _detLimitSellMakePrice(
-            address(book),
-            limitPrice,
-            bidHead,
-            askHead,
-            2000000
-        );
+        (uint256 result, uint256 lmp) = _detLimitSellMakePrice(address(book), limitPrice, bidHead, askHead, 2000000);
         console.log("result: ", result);
         assert(result == limitPrice);
-        (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine
-            .limitSell(
-                address(base),
-                address(quote),
-                limitPrice,
-                1e18,
-                true,
-                5,
-                trader1
-            );
+        (uint256 makePrice, uint256 _placed, uint256 _matched) =
+            matchingEngine.limitSell(address(base), address(quote), limitPrice, 1e18, true, 5, trader1);
         assert(makePrice == result);
     }
 
     // on limit sell, if limit price is lower than market price - ranged price, order is made with market price - ranged price.
     function testLimitSellVolatilityDown() public {
-        (
-            MockBase base,
-            MockQuote quote,
-            Orderbook book,
-            uint256 bidHead,
-            uint256 askHead,
-            uint256 up,
-            uint256 down
-        ) = _setupVolatilityTest();
+        (MockBase base, MockQuote quote, Orderbook book, uint256 bidHead, uint256 askHead, uint256 up, uint256 down) =
+            _setupVolatilityTest();
         // check limit price is higher than up
         uint256 limitPrice = (1e8 * (1e8 - 10000000)) / 1e8;
         console.log(limitPrice, down);
         assert(limitPrice < down);
-        (uint256 result, uint lmp) = _detLimitSellMakePrice(
-            address(book),
-            limitPrice,
-            bidHead,
-            askHead,
-            2000000
-        );
+        (uint256 result, uint256 lmp) = _detLimitSellMakePrice(address(book), limitPrice, bidHead, askHead, 2000000);
         console.log("result: ", result);
         assert(result == down);
         uint256 mp = IOrderbook(address(book)).lmp();
-        (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine
-            .limitSell(
-                address(base),
-                address(quote),
-                limitPrice,
-                1e18,
-                true,
-                5,
-                trader1
-            );
+        (uint256 makePrice, uint256 _placed, uint256 _matched) =
+            matchingEngine.limitSell(address(base), address(quote), limitPrice, 1e18, true, 5, trader1);
         assert(makePrice == result);
         assert(makePrice < mp);
     }
 
     // on limit buy, if limit price is higher than market price + ranged price, order is made with market price + ranged price.
     function testLimitBuyVolatilityUp() public {
-        (
-            MockBase base,
-            MockQuote quote,
-            Orderbook book,
-            uint256 bidHead,
-            uint256 askHead,
-            uint256 up,
-            uint256 down
-        ) = _setupVolatilityTest();
+        (MockBase base, MockQuote quote, Orderbook book, uint256 bidHead, uint256 askHead, uint256 up, uint256 down) =
+            _setupVolatilityTest();
         // check limit price is higher than up
         uint256 limitPrice = (1e11 * (1e8 + 10000000)) / 1e8;
         console.log(limitPrice, up);
         assert(limitPrice > up);
-        (uint256 result, uint lmp) = _detLimitBuyMakePrice(
-            address(book),
-            limitPrice,
-            bidHead,
-            askHead,
-            2000000
-        );
+        (uint256 result, uint256 lmp) = _detLimitBuyMakePrice(address(book), limitPrice, bidHead, askHead, 2000000);
         console.log("result: ", result);
         uint256 mp = IOrderbook(address(book)).lmp();
         assert(result == up);
-        (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine
-            .limitBuy(
-                address(base),
-                address(quote),
-                limitPrice,
-                1e18,
-                true,
-                5,
-                trader1
-            );
+        (uint256 makePrice, uint256 _placed, uint256 _matched) =
+            matchingEngine.limitBuy(address(base), address(quote), limitPrice, 1e18, true, 5, trader1);
         assert(makePrice == result);
         assert(makePrice > mp);
     }
 
     // on limit buy, if limit price is lower than market price - ranged price, order is made with limit price.
     function testLimitBuyVolatilityLimitPrice() public {
-        (
-            MockBase base,
-            MockQuote quote,
-            Orderbook book,
-            uint256 bidHead,
-            uint256 askHead,
-            uint256 up,
-            uint256 down
-        ) = _setupVolatilityTest();
+        (MockBase base, MockQuote quote, Orderbook book, uint256 bidHead, uint256 askHead, uint256 up, uint256 down) =
+            _setupVolatilityTest();
         // check limit price is higher than up
         uint256 limitPrice = (1e8 * (1e8 - 10000000)) / 1e8;
         console.log(limitPrice, down);
         assert(limitPrice < down);
-        (uint256 result, uint lmp) = _detLimitBuyMakePrice(
-            address(book),
-            limitPrice,
-            bidHead,
-            askHead,
-            2000000
-        );
+        (uint256 result, uint256 lmp) = _detLimitBuyMakePrice(address(book), limitPrice, bidHead, askHead, 2000000);
         console.log("result: ", result);
         assert(result == limitPrice);
-        (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine
-            .limitBuy(
-                address(base),
-                address(quote),
-                limitPrice,
-                1e18,
-                true,
-                5,
-                trader1
-            );
+        (uint256 makePrice, uint256 _placed, uint256 _matched) =
+            matchingEngine.limitBuy(address(base), address(quote), limitPrice, 1e18, true, 5, trader1);
         assert(makePrice == result);
     }
 
     // on limit sell, if limit price is lower than market price - ranged price, order is made with limit price.
     function testLimitSellVolatilityLimitPrice() public {
-        (
-            MockBase base,
-            MockQuote quote,
-            Orderbook book,
-            uint256 bidHead,
-            uint256 askHead,
-            uint256 up,
-            uint256 down
-        ) = _setupVolatilityTest();
-        matchingEngine.limitSell(
-            address(base),
-            address(quote),
-            1e8,
-            1e18,
-            true,
-            5,
-            trader1
-        );
+        (MockBase base, MockQuote quote, Orderbook book, uint256 bidHead, uint256 askHead, uint256 up, uint256 down) =
+            _setupVolatilityTest();
+        matchingEngine.limitSell(address(base), address(quote), 1e8, 1e18, true, 5, trader1);
     }
 
     function testLimitBuyNoSuspensionWhenBidAskHeadExists() public {
-        (
-            MockBase base,
-            MockQuote quote,
-            Orderbook book,
-            uint256 bidHead,
-            uint256 askHead,
-            uint256 up,
-            uint256 down
-        ) = _setupVolatilityTest();
+        (MockBase base, MockQuote quote, Orderbook book, uint256 bidHead, uint256 askHead, uint256 up, uint256 down) =
+            _setupVolatilityTest();
 
         // set up a limit buy/sell order
-         matchingEngine.limitBuy(
-            address(base),
-            address(quote),
-            1e7,
-            1e18,
-            true,
-            5,
-            trader1
-        );
-        matchingEngine.limitSell(
-            address(base),
-            address(quote),
-            1e11,
-            1e18,
-            true,
-            5,
-            trader1
-        );
+        matchingEngine.limitBuy(address(base), address(quote), 1e7, 1e18, true, 5, trader1);
+        matchingEngine.limitSell(address(base), address(quote), 1e11, 1e18, true, 5, trader1);
         // set up a limit buy order to match the limit sell
-        matchingEngine.limitBuy(
-            address(base),
-            address(quote),
-            1e10,
-            1e18,
-            true,
-            8,
-            trader1
-        );
+        matchingEngine.limitBuy(address(base), address(quote), 1e10, 1e18, true, 8, trader1);
 
         assert(matchingEngine.mktPrice(address(base), address(quote)) == 102e6);
     }
 
     function testLimitBuySuspensionWhenBidAskHeadExistsAfterClearingHead() public {
-        (
-            MockBase base,
-            MockQuote quote,
-            Orderbook book,
-            uint256 bidHead,
-            uint256 askHead,
-            uint256 up,
-            uint256 down
-        ) = _setupVolatilityTest();
+        (MockBase base, MockQuote quote, Orderbook book, uint256 bidHead, uint256 askHead, uint256 up, uint256 down) =
+            _setupVolatilityTest();
 
         // set up a limit buy/sell order
-         matchingEngine.limitBuy(
-            address(base),
-            address(quote),
-            1e7,
-            1e18,
-            true,
-            5,
-            trader1
-        );
-        matchingEngine.limitSell(
-            address(base),
-            address(quote),
-            1e11,
-            1e18,
-            true,
-            5,
-            trader1
-        );
+        matchingEngine.limitBuy(address(base), address(quote), 1e7, 1e18, true, 5, trader1);
+        matchingEngine.limitSell(address(base), address(quote), 1e11, 1e18, true, 5, trader1);
 
         // set up a limit buy order to match the limit sell
-        matchingEngine.limitBuy(
-            address(base),
-            address(quote),
-            1e12,
-            1e24,
-            true,
-            8,
-            trader1
-        );
+        matchingEngine.limitBuy(address(base), address(quote), 1e12, 1e24, true, 8, trader1);
 
         assert(matchingEngine.mktPrice(address(base), address(quote)) == 102e9);
     }
 
     function testLimitSellNoSuspensionWhenBidAskHeadExists() public {
-        (
-            MockBase base,
-            MockQuote quote,
-            Orderbook book,
-            uint256 bidHead,
-            uint256 askHead,
-            uint256 up,
-            uint256 down
-        ) = _setupVolatilityTest();
+        (MockBase base, MockQuote quote, Orderbook book, uint256 bidHead, uint256 askHead, uint256 up, uint256 down) =
+            _setupVolatilityTest();
 
         // set up a limit sell order
-        matchingEngine.limitBuy(
-            address(base),
-            address(quote),
-            1e6,
-            1e18,
-            true,
-            5,
-            trader1
-        );
-        matchingEngine.limitSell(
-             address(base),
-            address(quote),
-            1e11,
-            1e18,
-            true,
-            5,
-            trader1
-        );
+        matchingEngine.limitBuy(address(base), address(quote), 1e6, 1e18, true, 5, trader1);
+        matchingEngine.limitSell(address(base), address(quote), 1e11, 1e18, true, 5, trader1);
 
         // set up a limit buy order to match the limit sell
-        matchingEngine.limitSell(
-            address(base),
-            address(quote),
-            1e7,
-            1e20,
-            true,
-            8,
-            trader1
-        );
+        matchingEngine.limitSell(address(base), address(quote), 1e7, 1e20, true, 8, trader1);
 
         assert(matchingEngine.mktPrice(address(base), address(quote)) == 98e6);
     }
 
     function testLimitSellSuspensionWhenBidAskHeadExistsAfterClearingHead() public {
-        (
-            MockBase base,
-            MockQuote quote,
-            Orderbook book,
-            uint256 bidHead,
-            uint256 askHead,
-            uint256 up,
-            uint256 down
-        ) = _setupVolatilityTest();
+        (MockBase base, MockQuote quote, Orderbook book, uint256 bidHead, uint256 askHead, uint256 up, uint256 down) =
+            _setupVolatilityTest();
 
         // set up a limit buy/sell order
-        matchingEngine.limitBuy(
-            address(base),
-            address(quote),
-            1e6,
-            1e18,
-            true,
-            5,
-            trader1
-        );
-        matchingEngine.limitSell(
-             address(base),
-            address(quote),
-            1e11,
-            1e18,
-            true,
-            5,
-            trader1
-        );
-        
+        matchingEngine.limitBuy(address(base), address(quote), 1e6, 1e18, true, 5, trader1);
+        matchingEngine.limitSell(address(base), address(quote), 1e11, 1e18, true, 5, trader1);
+
         // set up a limit buy order to match the limit sell
-        matchingEngine.limitSell(
-            address(base),
-            address(quote),
-            1e5,
-            1e24,
-            true,
-            8,
-            trader1
-        );
+        matchingEngine.limitSell(address(base), address(quote), 1e5, 1e24, true, 8, trader1);
 
         assert(matchingEngine.mktPrice(address(base), address(quote)) == 98e4);
     }
 
     function testLimitBuyAllowsBelowLMP() public {
-        (
-            MockBase base,
-            MockQuote quote,
-            Orderbook book,
-            uint256 bidHead,
-            uint256 askHead,
-            uint256 up,
-            uint256 down
-        ) = _setupVolatilityTest();
+        (MockBase base, MockQuote quote, Orderbook book, uint256 bidHead, uint256 askHead, uint256 up, uint256 down) =
+            _setupVolatilityTest();
 
-        matchingEngine.limitBuy(
-            address(base),
-            address(quote),
-            1e8-1,
-            1e18,
-            true,
-            5,
-            trader1
-        );
+        matchingEngine.limitBuy(address(base), address(quote), 1e8 - 1, 1e18, true, 5, trader1);
 
-        matchingEngine.limitSell(
-            address(base),
-            address(quote),
-            1e8+1,
-            1e18,
-            true,
-            5,
-            trader1
-        );
+        matchingEngine.limitSell(address(base), address(quote), 1e8 + 1, 1e18, true, 5, trader1);
 
-        (uint256 lp, uint256 matched, uint32 id) = matchingEngine.limitBuy(
-            address(base),
-            address(quote),
-            1e5,
-            1e18,
-            true,
-            5,
-            trader1
-        );
+        (uint256 lp, uint256 matched, uint32 id) =
+            matchingEngine.limitBuy(address(base), address(quote), 1e5, 1e18, true, 5, trader1);
 
         assert(lp == 1e5);
     }
 
     function testLimitSellAllowsAboveLMP() public {
-        (
-            MockBase base,
-            MockQuote quote,
-            Orderbook book,
-            uint256 bidHead,
-            uint256 askHead,
-            uint256 up,
-            uint256 down
-        ) = _setupVolatilityTest();
+        (MockBase base, MockQuote quote, Orderbook book, uint256 bidHead, uint256 askHead, uint256 up, uint256 down) =
+            _setupVolatilityTest();
 
-        matchingEngine.limitBuy(
-            address(base),
-            address(quote),
-            1e8-1,
-            1e18,
-            true,
-            5,
-            trader1
-        );
+        matchingEngine.limitBuy(address(base), address(quote), 1e8 - 1, 1e18, true, 5, trader1);
 
-        matchingEngine.limitSell(
-            address(base),
-            address(quote),
-            1e8+1,
-            1e18,
-            true,
-            5,
-            trader1
-        );
+        matchingEngine.limitSell(address(base), address(quote), 1e8 + 1, 1e18, true, 5, trader1);
 
-        (uint256 lp, uint256 matched, uint32 id) = matchingEngine.limitSell(
-            address(base),
-            address(quote),
-            1e11,
-            1e18,
-            true,
-            5,
-            trader1
-        );
+        (uint256 lp, uint256 matched, uint32 id) =
+            matchingEngine.limitSell(address(base), address(quote), 1e11, 1e18, true, 5, trader1);
 
         assert(lp == 1e11);
     }

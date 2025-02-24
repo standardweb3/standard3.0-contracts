@@ -1,16 +1,13 @@
 /// SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.24;
+
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {TransferHelper} from "../exchange/libraries/TransferHelper.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {IMatchingEngine} from "../exchange/interfaces/IMatchingEngine.sol";
 
 contract Memecoin is ERC20 {
-    constructor(
-        string memory name,
-        string memory symbol,
-        uint256 totalSupply
-    ) ERC20(name, symbol) {
+    constructor(string memory name, string memory symbol, uint256 totalSupply) ERC20(name, symbol) {
         _mint(msg.sender, totalSupply);
     }
 }
@@ -30,20 +27,15 @@ contract MemecoinGenerator is AccessControl {
         fee = _fee;
     }
 
-    function createMemecoin(
-        string memory name,
-        string memory symbol,
-        uint256 initialSupply
-    ) public returns (Memecoin) {
+    function createMemecoin(string memory name, string memory symbol, uint256 initialSupply)
+        public
+        returns (Memecoin)
+    {
         Memecoin memecoin = new Memecoin(name, symbol, initialSupply);
         return memecoin;
     }
 
-    function launch(
-        string memory name,
-        string memory symbol,
-        uint256 initialSupply
-    ) public payable {
+    function launch(string memory name, string memory symbol, uint256 initialSupply) public payable {
         require(feeTo != address(0), "FeeTo address not set");
         require(fee > 0, "Fee not set");
         require(msg.value >= fee, "Insufficient fee");
@@ -54,7 +46,6 @@ contract MemecoinGenerator is AccessControl {
         uint256 ETHBidAmount = msg.value - fee;
 
         uint256 ETHBidStablecoinAmount = IMatchingEngine(matchingEngine).convert(WETH, stablecoin, ETHBidAmount, false);
-
 
         // calculate initial price in USDT
         uint256 initialMarketcap = 69420 * TransferHelper.decimals(stablecoin);
@@ -69,6 +60,6 @@ contract MemecoinGenerator is AccessControl {
         }
 
         // add pair to Standard
-        IMatchingEngine(matchingEngine).addPair(address(memecoin), WETH, 1,0, address(memecoin));
+        IMatchingEngine(matchingEngine).addPair(address(memecoin), WETH, 1, 0, address(memecoin));
     }
 }

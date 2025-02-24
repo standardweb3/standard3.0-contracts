@@ -8,13 +8,7 @@ contract PositionsTest is PerpFuturesBaseSetup {
     // test long position
     function testLong() public {
         positionsSetUp();
-        perpFutures.long(
-            address(feeToken),
-            address(stablecoin),
-            address(stablecoin),
-            1,
-            1
-        );
+        perpFutures.long(address(feeToken), address(stablecoin), address(stablecoin), 1, 1);
     }
 
     // test short position

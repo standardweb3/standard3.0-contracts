@@ -8,13 +8,7 @@ contract AddPooltTest is PerpFuturesBaseSetup {
     function testAddPool() public {
         addPoolSetUp();
         // Add a pool
-        perpFutures.addPool(
-            address(feeToken),
-            address(stablecoin),
-            address(stablecoin),
-            0,
-            address(feeToken)
-        );
+        perpFutures.addPool(address(feeToken), address(stablecoin), address(stablecoin), 0, address(feeToken));
     }
 
     function testSetListingCost() public {
@@ -31,20 +25,11 @@ contract AddPooltTest is PerpFuturesBaseSetup {
         // list the pool with the listing cost
         vm.startPrank(trader1);
         stablecoin.approve(address(perpFutures), 100e18);
-        perpFutures.addPool(
-            address(feeToken),
-            address(stablecoin),
-            address(stablecoin),
-            0,
-            address(stablecoin)
-        );
+        perpFutures.addPool(address(feeToken), address(stablecoin), address(stablecoin), 0, address(stablecoin));
         vm.stopPrank();
 
         // Check if the lister's balance has decreased by the listing cost
-        assertEq(
-            stablecoin.balanceOf(address(trader1)),
-            listerBalance - 100e18
-        );
+        assertEq(stablecoin.balanceOf(address(trader1)), listerBalance - 100e18);
     }
 
     function testSetListingCostETH() public {
@@ -60,18 +45,10 @@ contract AddPooltTest is PerpFuturesBaseSetup {
 
         // list the pool with the listing cost
         vm.startPrank(trader1);
-        perpFutures.addPoolETH{value: 1e18}(
-            address(feeToken),
-            address(stablecoin),
-            address(stablecoin),
-            0
-        );
+        perpFutures.addPoolETH{value: 1e18}(address(feeToken), address(stablecoin), address(stablecoin), 0);
         vm.stopPrank();
 
         // Check if the lister's balance has decreased by the listing cost
-        assertEq(
-            address(trader1).balance,
-            listerBalance - 1e18
-        );
+        assertEq(address(trader1).balance, listerBalance - 1e18);
     }
 }

@@ -19,101 +19,36 @@ import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 contract MarketMaking is BaseSetup {
     bytes32 DEFAULT_ADMIN_ROLE = "0x0";
     bytes32 private constant MARKET_MAKER_ROLE = keccak256("MARKET_MAKER_ROLE");
+
     function testMarketMakingOnSellSide() public {
         super.setUp();
-        matchingEngine.addPair(
-            address(token1),
-            address(token2),
-            90e8,
-            0,
-            address(token1)
-        );
+        matchingEngine.addPair(address(token1), address(token2), 90e8, 0, address(token1));
         vm.prank(trader1);
-        matchingEngine.limitSell(
-            address(token1),
-            address(token2),
-            90e8,
-            100e18,
-            true,
-            2,
-            trader1
-        );
+        matchingEngine.limitSell(address(token1), address(token2), 90e8, 100e18, true, 2, trader1);
         vm.prank(trader1);
-        matchingEngine.limitBuy(
-            address(token1),
-            address(token2),
-            110e8,
-            100e18,
-            true,
-            2,
-            trader1
-        );
-        book = Orderbook(
-            payable(orderbookFactory.getPair(address(token1), address(token2)))
-        );
+        matchingEngine.limitBuy(address(token1), address(token2), 110e8, 100e18, true, 2, trader1);
+        book = Orderbook(payable(orderbookFactory.getPair(address(token1), address(token2))));
         console.log("Market price before market making: ", book.mktPrice());
 
         matchingEngine.grantRole(MARKET_MAKER_ROLE, address(trader1));
         vm.prank(trader1);
-        matchingEngine.adjustPrice(
-            address(token1),
-            address(token2),
-            false,
-            70e8,
-            100000e18,
-            100000000,
-            100000,
-            false
-        );
+        matchingEngine.adjustPrice(address(token1), address(token2), false, 70e8, 100000e18, 100000000, 100000, false);
         console.log("Market price after market making:", book.mktPrice());
     }
 
     function testMarketMakingOnBuySide() public {
         super.setUp();
-        matchingEngine.addPair(
-            address(token1),
-            address(token2),
-            90e8,
-            0,
-            address(token1)
-        );
+        matchingEngine.addPair(address(token1), address(token2), 90e8, 0, address(token1));
         vm.prank(trader1);
-        matchingEngine.limitSell(
-            address(token1),
-            address(token2),
-            90e8,
-            100e18,
-            true,
-            2,
-            trader1
-        );
+        matchingEngine.limitSell(address(token1), address(token2), 90e8, 100e18, true, 2, trader1);
         vm.prank(trader1);
-        matchingEngine.limitBuy(
-            address(token1),
-            address(token2),
-            110e8,
-            100e18,
-            true,
-            2,
-            trader1
-        );
-        book = Orderbook(
-            payable(orderbookFactory.getPair(address(token1), address(token2)))
-        );
+        matchingEngine.limitBuy(address(token1), address(token2), 110e8, 100e18, true, 2, trader1);
+        book = Orderbook(payable(orderbookFactory.getPair(address(token1), address(token2))));
         console.log("Market price before market making: ", book.mktPrice());
 
         matchingEngine.grantRole(MARKET_MAKER_ROLE, address(trader1));
         vm.prank(trader1);
-        matchingEngine.adjustPrice(
-            address(token1),
-            address(token2),
-            true,
-            120e8,
-            100000e18,
-            100000000,
-            100000,
-            false
-        );
+        matchingEngine.adjustPrice(address(token1), address(token2), true, 120e8, 100000e18, 100000000, 100000, false);
         console.log("Market price after market making:", book.mktPrice());
     }
 }

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 
 pragma solidity ^0.8.24;
+
 import {IPerpPoolFactory} from "./interfaces/IPerpPoolFactory.sol";
 import {IPerpPool, FuturesPool} from "./interfaces/IPerpPool.sol";
 import {TransferHelper} from "./libraries/TransferHelper.sol";
@@ -9,25 +10,14 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 interface IRevenue {
-    function reportMatch(
-        address positionbook,
-        address give,
-        bool isBid,
-        address sender,
-        address owner,
-        uint256 amount
-    ) external;
+    function reportMatch(address positionbook, address give, bool isBid, address sender, address owner, uint256 amount)
+        external;
 
     function isReportable() external view returns (bool isReportable);
 
-    function feeOf(
-        address account,
-        bool isMaker
-    ) external view returns (uint32 feeNum);
+    function feeOf(address account, bool isMaker) external view returns (uint32 feeNum);
 
-    function isSubscribed(
-        address account
-    ) external view returns (bool isSubscribed);
+    function isSubscribed(address account) external view returns (bool isSubscribed);
 }
 
 interface IDecimals {
@@ -104,39 +94,15 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
 
     event PositionDeposit(address sender, address asset, uint256 fee);
 
-    event PositionCanceled(
-        address positionbook,
-        uint256 id,
-        bool isBid,
-        address indexed owner,
-        uint256 amount
-    );
+    event PositionCanceled(address positionbook, uint256 id, bool isBid, address indexed owner, uint256 amount);
 
-    event PositionOpened(
-        address perpPool,
-        uint256 mktPrice,
-        PositionData position
-    );
+    event PositionOpened(address perpPool, uint256 mktPrice, PositionData position);
 
-    event PositionClosed(
-        address perpPool,
-        uint256 mktPrice,
-        PositionData position,
-        uint256 received
-    );
+    event PositionClosed(address perpPool, uint256 mktPrice, PositionData position, uint256 received);
 
-    event PositionUpdated(
-        address perpPool,
-        uint256 mktPrice,
-        PositionData position
-    );
+    event PositionUpdated(address perpPool, uint256 mktPrice, PositionData position);
 
-    event PositionLiquidated(
-        address perpPool,
-        uint256 mktPrice,
-        PositionData position,
-        uint256 lost
-    );
+    event PositionLiquidated(address perpPool, uint256 mktPrice, PositionData position, uint256 lost);
 
     event ListingCostSet(address payment, uint256 amount);
 
@@ -148,47 +114,20 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
         uint256 listingDate
     );
 
-    event PoolUpdated(
-        address positionbook,
-        address base,
-        address quote,
-        address collateral,
-        uint256 listingDate
-    );
+    event PoolUpdated(address positionbook, address base, address quote, address collateral, uint256 listingDate);
 
     event PerpCreate2(address deployer, bytes bytecode);
 
     error EntryLongPriceHigherThanMktPrice(uint256 entry, uint256 mktPrice);
     error EntryShortPriceLowerthanMktPrice(uint256 entry, uint256 mktPrice);
-    error LowDeposit(
-        uint256 deposit,
-        uint256 entry,
-        uint32 leverage,
-        uint256 minDeposit
-    );
+    error LowDeposit(uint256 deposit, uint256 entry, uint32 leverage, uint256 minDeposit);
     error LeverageLimitExcceeded(uint32 leverage, uint32 leverageLimit);
 
     error InvalidFeeRate(uint256 feeNum, uint256 feeDenom);
     error InvalidRole(bytes32 role, address sender);
-    error InvalidPool(
-        address base,
-        address quote,
-        address collateral,
-        address pool
-    );
-    error PoolNotListedYet(
-        address base,
-        address quote,
-        address collateral,
-        uint256 listingDate,
-        uint256 timeNow
-    );
-    error PoolDoesNotExist(
-        address base,
-        address quote,
-        address collateral,
-        address pool
-    );
+    error InvalidPool(address base, address quote, address collateral, address pool);
+    error PoolNotListedYet(address base, address quote, address collateral, uint256 listingDate, uint256 timeNow);
+    error PoolDoesNotExist(address base, address quote, address collateral, address pool);
     error AmountIsZero();
     error FactoryNotInitialized(address factory);
     error AlreadyInitialized(bool init);
@@ -212,11 +151,7 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
      * Requirements:
      * - `msg.sender` must be the deployer of the contract.
      */
-    function initialize(
-        address perpPoolFactory_,
-        address feeTo_,
-        address WETH_
-    ) external {
+    function initialize(address perpPoolFactory_, address feeTo_, address WETH_) external {
         if (init) {
             revert AlreadyInitialized(init);
         }
@@ -231,8 +166,7 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
         if (impl == address(0)) {
             revert FactoryNotInitialized(perpPoolFactory_);
         }
-        bytes memory bytecode = IPerpPoolFactory(perpPoolFactory_)
-            .getByteCode();
+        bytes memory bytecode = IPerpPoolFactory(perpPoolFactory_).getByteCode();
         init = true;
         emit PerpCreate2(perpPoolFactory, bytecode);
     }
@@ -254,10 +188,7 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
      * Requirements:
      * - `msg.sender` must have the default admin role.
      */
-    function setListingCost(
-        address payment,
-        uint256 amount
-    ) external returns (uint256) {
+    function setListingCost(address payment, uint256 amount) external returns (uint256) {
         if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
         }
@@ -266,10 +197,7 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
         return amount;
     }
 
-    function setDefaultLeverage(
-        uint32 long,
-        uint32 short
-    ) external returns (bool success) {
+    function setDefaultLeverage(uint32 long, uint32 short) external returns (bool success) {
         if (!hasRole(MARKET_MAKER_ROLE, _msgSender())) {
             revert InvalidRole(MARKET_MAKER_ROLE, _msgSender());
         }
@@ -278,13 +206,10 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
         return true;
     }
 
-    function setLeverageLimit(
-        address base,
-        address quote,
-        address collateral,
-        uint32 long,
-        uint32 short
-    ) external returns (bool success) {
+    function setLeverageLimit(address base, address quote, address collateral, uint32 long, uint32 short)
+        external
+        returns (bool success)
+    {
         if (!hasRole(MARKET_MAKER_ROLE, _msgSender())) {
             revert InvalidRole(MARKET_MAKER_ROLE, _msgSender());
         }
@@ -302,12 +227,11 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
      * @param listingDate The listing Date for the trading pair
      * @return book The address of the newly created positionbook
      */
-    function addPoolETH(
-        address base,
-        address quote,
-        address collateral,
-        uint256 listingDate
-    ) external payable returns (address book) {
+    function addPoolETH(address base, address quote, address collateral, uint256 listingDate)
+        external
+        payable
+        returns (address book)
+    {
         IWETH(WETH).deposit{value: msg.value}();
         return addPool(base, quote, collateral, listingDate, WETH);
     }
@@ -321,32 +245,20 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
      * @param payment The address of the payment asset for the listing fee
      * @return pool The address of the newly created positionbook
      */
-    function addPool(
-        address base,
-        address quote,
-        address collateral,
-        uint256 listingDate,
-        address payment
-    ) public returns (address pool) {
+    function addPool(address base, address quote, address collateral, uint256 listingDate, address payment)
+        public
+        returns (address pool)
+    {
         _listingDeposit(payment, msg.sender);
         // create positionbook for the pair
-        pool = IPerpPoolFactory(perpPoolFactory).createPerpPool(
-            base,
-            quote,
-            collateral
-        );
+        pool = IPerpPoolFactory(perpPoolFactory).createPerpPool(base, quote, collateral);
         // set long/short spread to default suspension rate in basis point(bps)
         _setLeverage(base, quote, collateral, defaultLong, defaultShort);
         _setListingDate(pool, listingDate);
 
-        TransferHelper.TokenInfo memory baseInfo = TransferHelper.getTokenInfo(
-            base
-        );
-        TransferHelper.TokenInfo memory quoteInfo = TransferHelper.getTokenInfo(
-            quote
-        );
-        TransferHelper.TokenInfo memory collateralInfo = TransferHelper
-            .getTokenInfo(collateral);
+        TransferHelper.TokenInfo memory baseInfo = TransferHelper.getTokenInfo(base);
+        TransferHelper.TokenInfo memory quoteInfo = TransferHelper.getTokenInfo(quote);
+        TransferHelper.TokenInfo memory collateralInfo = TransferHelper.getTokenInfo(collateral);
         emit PoolAdded(pool, baseInfo, quoteInfo, collateralInfo, listingDate);
         return pool;
     }
@@ -358,12 +270,10 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
      * @param collateral The address of the collateral asset for the trading pair
      * @param listingDate The listing Date for the trading pair
      */
-    function updatePool(
-        address base,
-        address quote,
-        address collateral,
-        uint256 listingDate
-    ) external returns (address pool) {
+    function updatePool(address base, address quote, address collateral, uint256 listingDate)
+        external
+        returns (address pool)
+    {
         // check if the list request is done by
         if (!hasRole(MARKET_MAKER_ROLE, _msgSender())) {
             revert InvalidRole(MARKET_MAKER_ROLE, _msgSender());
@@ -383,24 +293,12 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
      * @param amount The amount of asset to deposit
      * @return positionId The ID of the position opened
      */
-    function long(
-        address base,
-        address quote,
-        address collateral,
-        uint32 leverage,
-        uint256 amount
-    ) external returns (uint256 positionId) {
-        (uint256 withoutFee, address pool) = _deposit(
-            base,
-            quote,
-            collateral,
-            leverage,
-            amount,
-            true
-        );
-        try
-            IPerpPool(pool).openPosition(true, leverage, withoutFee, msg.sender)
-        returns (uint256 id) {
+    function long(address base, address quote, address collateral, uint32 leverage, uint256 amount)
+        external
+        returns (uint256 positionId)
+    {
+        (uint256 withoutFee, address pool) = _deposit(base, quote, collateral, leverage, amount, true);
+        try IPerpPool(pool).openPosition(true, leverage, withoutFee, msg.sender) returns (uint256 id) {
             PositionData memory position = PositionData({
                 /// Position id
                 id: id,
@@ -433,29 +331,12 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
      * @param amount The amount of asset to deposit
      * @return positionId The ID of the position opened
      */
-    function short(
-        address base,
-        address quote,
-        address collateral,
-        uint32 leverage,
-        uint256 amount
-    ) external returns (uint256 positionId) {
-        (uint256 withoutFee, address pool) = _deposit(
-            base,
-            quote,
-            collateral,
-            leverage,
-            amount,
-            false
-        );
-        try
-            IPerpPool(pool).openPosition(
-                false,
-                leverage,
-                withoutFee,
-                msg.sender
-            )
-        returns (uint256 id) {
+    function short(address base, address quote, address collateral, uint32 leverage, uint256 amount)
+        external
+        returns (uint256 positionId)
+    {
+        (uint256 withoutFee, address pool) = _deposit(base, quote, collateral, leverage, amount, false);
+        try IPerpPool(pool).openPosition(false, leverage, withoutFee, msg.sender) returns (uint256 id) {
             PositionData memory position = PositionData({
                 /// Position id
                 id: id,
@@ -472,11 +353,7 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
                 /// Position is long
                 isLong: false
             });
-            emit PositionOpened(
-                pool,
-                0,
-                position
-            );
+            emit PositionOpened(pool, 0, position);
             return id;
         } catch {
             return 0;
@@ -492,33 +369,19 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
      * @param positionId The ID of the position to cancel
      * @return closed Closed amount from position
      */
-    function closePosition(
-        address base,
-        address quote,
-        address collateral,
-        bool isLong,
-        uint32 positionId
-    ) public nonReentrant returns (uint256) {
-        address pool = IPerpPoolFactory(perpPoolFactory).getPool(
-            base,
-            quote,
-            collateral
-        );
+    function closePosition(address base, address quote, address collateral, bool isLong, uint32 positionId)
+        public
+        nonReentrant
+        returns (uint256)
+    {
+        address pool = IPerpPoolFactory(perpPoolFactory).getPool(base, quote, collateral);
 
         if (pool == address(0)) {
             revert InvalidPool(base, quote, collateral, pool);
         }
 
-        try
-            IPerpPool(pool).closePosition(isLong, positionId, msg.sender)
-        returns (uint256 refunded) {
-            emit PositionCanceled(
-                pool,
-                positionId,
-                isLong,
-                msg.sender,
-                refunded
-            );
+        try IPerpPool(pool).closePosition(isLong, positionId, msg.sender) returns (uint256 refunded) {
+            emit PositionCanceled(pool, positionId, isLong, msg.sender, refunded);
             return refunded;
         } catch {
             return 0;
@@ -534,13 +397,7 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
     ) external returns (uint256[] memory refunded) {
         refunded = new uint256[](positionIds.length);
         for (uint32 i = 0; i < positionIds.length; i++) {
-            refunded[i] = closePosition(
-                base[i],
-                quote[i],
-                collateral[i],
-                isLong[i],
-                positionIds[i]
-            );
+            refunded[i] = closePosition(base[i], quote[i], collateral[i], isLong[i], positionIds[i]);
         }
         return refunded;
     }
@@ -553,13 +410,11 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
      * @param isLong Boolean indicating if the positionbook to retrieve positions from is an ask positionbook.
      * @param positionId The position id to retrieve.
      */
-    function getPosition(
-        address base,
-        address quote,
-        address collateral,
-        bool isLong,
-        uint32 positionId
-    ) public view returns (FuturesPool.Position memory) {
+    function getPosition(address base, address quote, address collateral, bool isLong, uint32 positionId)
+        public
+        view
+        returns (FuturesPool.Position memory)
+    {
         address pool = getPool(base, quote, collateral);
         return IPerpPool(pool).getPosition(isLong, positionId);
     }
@@ -570,39 +425,25 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
      * @param quote The address of the quote asset for the futures pool.
      * @return book The address of the positionbook.
      */
-    function getPool(
-        address base,
-        address quote,
-        address collateral
-    ) public view returns (address book) {
-        return
-            IPerpPoolFactory(perpPoolFactory).getPool(base, quote, collateral);
+    function getPool(address base, address quote, address collateral) public view returns (address book) {
+        return IPerpPoolFactory(perpPoolFactory).getPool(base, quote, collateral);
     }
 
-    function _setListingDate(
-        address book,
-        uint256 listingDate
-    ) internal returns (bool success) {
+    function _setListingDate(address book, uint256 listingDate) internal returns (bool success) {
         listingDates[book] = listingDate;
         return true;
     }
 
-    function _setLeverage(
-        address base,
-        address quote,
-        address collateral,
-        uint32 _long,
-        uint32 _short
-    ) internal returns (bool success) {
+    function _setLeverage(address base, address quote, address collateral, uint32 _long, uint32 _short)
+        internal
+        returns (bool success)
+    {
         address pool = getPool(base, quote, collateral);
         leverageLimits[pool] = DefaultLeverage(_long, _short);
         return true;
     }
 
-    function getLeverage(
-        address pool,
-        bool isLong
-    ) public view returns (uint32 leverageLimit) {
+    function getLeverage(address pool, bool isLong) public view returns (uint32 leverageLimit) {
         DefaultLeverage memory leverage;
         leverage = leverageLimits[pool];
         if (isLong) {
@@ -612,25 +453,10 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
         }
     }
 
-    function _report(
-        address positionbook,
-        address give,
-        bool isBid,
-        uint256 matched,
-        address owner
-    ) internal {
-        if (
-            _isContract(feeTo) && IRevenue(feeTo).isReportable() && matched > 0
-        ) {
+    function _report(address positionbook, address give, bool isBid, uint256 matched, address owner) internal {
+        if (_isContract(feeTo) && IRevenue(feeTo).isReportable() && matched > 0) {
             // report matched amount to accountant with give token on matching position
-            IRevenue(feeTo).reportMatch(
-                positionbook,
-                give,
-                isBid,
-                msg.sender,
-                owner,
-                matched
-            );
+            IRevenue(feeTo).reportMatch(positionbook, give, isBid, msg.sender, owner, matched);
         }
     }
 
@@ -645,14 +471,10 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
      * @return withoutFee The amount of asset without the fee.
      * @return pool The address of the positionbook for the given asset pair.
      */
-    function _deposit(
-        address base,
-        address quote,
-        address collateral,
-        uint32 leverage,
-        uint256 amount,
-        bool isLong
-    ) internal returns (uint256 withoutFee, address pool) {
+    function _deposit(address base, address quote, address collateral, uint32 leverage, uint256 amount, bool isLong)
+        internal
+        returns (uint256 withoutFee, address pool)
+    {
         // check if amount is zero
         if (amount == 0) {
             revert AmountIsZero();
@@ -665,13 +487,7 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
         }
         // check if the pair is listed
         if (listingDates[pool] > block.timestamp) {
-            revert PoolNotListedYet(
-                base,
-                quote,
-                collateral,
-                listingDates[pool],
-                block.timestamp
-            );
+            revert PoolNotListedYet(base, quote, collateral, listingDates[pool], block.timestamp);
         }
 
         // check if leverage is valid in case of both long and short
@@ -698,29 +514,18 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
         if (hasRole(MARKET_MAKER_ROLE, sender)) {
             return;
         }
-        uint256 amount = IPerpPoolFactory(perpPoolFactory).getListingCost(
-            payment
-        );
+        uint256 amount = IPerpPoolFactory(perpPoolFactory).getListingCost(payment);
         // check if amount is zero
         if (amount == 0) {
             revert AmountIsZero();
         }
         if (payment != WETH) {
-            TransferHelper.safeTransferFrom(
-                payment,
-                msg.sender,
-                address(this),
-                amount
-            );
+            TransferHelper.safeTransferFrom(payment, msg.sender, address(this), amount);
         }
         TransferHelper.safeTransfer(payment, feeTo, amount);
     }
 
-    function _fee(
-        uint256 amount,
-        address account,
-        bool isMaker
-    ) internal view returns (uint256 fee) {
+    function _fee(uint256 amount, address account, bool isMaker) internal view returns (uint256 fee) {
         if (_isContract(feeTo) && IRevenue(feeTo).isSubscribed(account)) {
             uint32 feeNum = IRevenue(feeTo).feeOf(account, isMaker);
             return (amount * feeNum) / feeDenom;
@@ -729,7 +534,7 @@ contract PerpFutures is ReentrancyGuard, AccessControl {
     }
 
     function _isContract(address addr) internal view returns (bool isContract) {
-        uint size;
+        uint256 size;
         assembly {
             size := extcodesize(addr)
         }

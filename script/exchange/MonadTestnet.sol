@@ -112,6 +112,60 @@ contract DeployExchangeMainnetContracts is Deployer {
     }
 }
 
+contract setDefaultSpread is Deployer {
+    // Change address constants on deploying to other networks from DeployAssets
+    /// Second per block to finalize
+    address constant engine = 0x6B5A13Ca93871187330aE6d9E34cdAD610aA54cd;
+
+    function run() external {
+        _setDeployer();
+        MatchingEngine matchingEngine = MatchingEngine(payable(engine));
+        matchingEngine.setDefaultSpread(100000, 100000);
+        
+
+        vm.stopBroadcast();
+    }
+}
+
+
+contract getDefaultSpread is Deployer {
+    // Change address constants on deploying to other networks from DeployAssets
+    /// Second per block to finalize
+    address constant engine = 0x6B5A13Ca93871187330aE6d9E34cdAD610aA54cd;
+
+    function run() external {
+        _setDeployer();
+        MatchingEngine matchingEngine = MatchingEngine(payable(engine));
+        matchingEngine.getSpread(0xdA367FE3198130d98c99C1909A56D71C1d1AA2f6, true);
+
+        matchingEngine.getSpread(0xdA367FE3198130d98c99C1909A56D71C1d1AA2f6, false);
+        
+
+        vm.stopBroadcast();
+    }
+}
+
+contract AdjustPrice is Deployer {
+     // Change address constants on deploying to other networks from DeployAssets
+    /// Second per block to finalize
+    address constant base = 0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701;
+    address constant quote = 0xf817257fed379853cDe0fa4F97AB987181B1E5Ea;
+    address constant engine = 0x6B5A13Ca93871187330aE6d9E34cdAD610aA54cd;
+    bool isBuy = true;
+    uint256 price = 465000000; // 1 ETH in wei
+    uint256 assetAmount = 1000000000000000000; // 1 ETH in wei
+    uint32 beforeAdjust = 4294967295;
+    uint32 afterAdjust = 100000;
+
+    function run() external {
+        _setDeployer();
+        MatchingEngine matchingEngine = MatchingEngine(payable(engine));
+        matchingEngine.adjustPrice(base, quote, isBuy, price, assetAmount, beforeAdjust, afterAdjust, false);
+
+        vm.stopBroadcast();
+    }
+}
+
 contract DeployPointFarmMainnetContracts is Deployer {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");

@@ -282,7 +282,9 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
      * @param assetAmount The amount of adjusting asset to set price in buy or sell position
      * @param beforeAdjust The price before adjustment
      * @param afterAdjust The price after adjustment
-     * @return bool
+     * @return makePrice price where the order is placed
+     * @return placed placed amount
+     * @return id placed order id
      */
     function adjustPrice(
         address base,
@@ -291,8 +293,9 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         uint256 price,
         uint256 assetAmount,
         uint32 beforeAdjust,
-        uint32 afterAdjust
-    ) external nonReentrant returns (bool) {
+        uint32 afterAdjust,
+        bool isMaker
+    ) external returns (uint256 makePrice, uint256 placed, uint32 id) {
         // get pair
         address pair = IOrderbookFactory(orderbookFactory).getPair(base, quote);
         if (pair == address(0)) {
@@ -309,6 +312,11 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         }
 
         // get spreads in the pair
+        // check if the sell spread to decrease price is greater than 100%
+        if(beforeAdjust > 100000000 && !isBuy) {
+            revert("Sell Spread too high, making underflow");
+        }
+
         uint32 buySpread = isBuy ? beforeAdjust : getSpread(pair, true);
         uint32 sellSpread = !isBuy ? beforeAdjust : getSpread(pair, false);
         // change spread in the pair to adjust price
@@ -316,9 +324,9 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
 
         // add limit buy or sell order to adjust price
         if (isBuy) {
-            limitBuy(base, quote, price, assetAmount, false, 20, msg.sender);
+         (makePrice, placed, id) = limitBuy(base, quote, price, assetAmount, true, 20, msg.sender);
         } else {
-            limitSell(base, quote, price, assetAmount, false, 20, msg.sender);
+            (makePrice, placed, id) = limitSell(base, quote, price, assetAmount, true, 20, msg.sender);
         }
 
         // set spreads in the pair to original
@@ -326,7 +334,12 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         sellSpread = !isBuy ? afterAdjust : getSpread(pair, false);
         _setSpread(base, quote, buySpread, sellSpread);
 
-        return true;
+        // if isMaker, cancel the order and return the fund to MM
+            if (!isMaker) {
+                cancelOrder(base, quote, isBuy, id);
+            }
+
+        return (makePrice, placed, id);
     }
 
     // user functions

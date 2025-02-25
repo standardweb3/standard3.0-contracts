@@ -43,10 +43,18 @@ DeFi 3.0 proposed by Standard focuses more on users' growth and experience than 
 
 Each money lego has README to build, test, and deploy with LICENSE.
 
-- **`point`** (governance & incentive management)
-- **`exchange`** (fully onchain CLOB)
-- **`stablecoin`** (CDP stablecoin with delta-neutral strategy)
-- **`futures`** (fully onchain futures)
+- **[`point`](src/point/)** (governance & incentive management)
+- **[`exchange`](src/exchange/)** (fully onchain CLOB)
+- **[`stablecoin`](src/stablecoin/)** (CDP stablecoin with delta-neutral strategy)
+- **[`futures`](src/futures/)** (fully onchain futures)
+
+## Getting Started
+
+First, clone the repository
+```
+https://github.com/standardweb3/standard3.0-contracts.git
+```
+Then, check each money lego directory's README for further development guidance.
 
 ## Docs
 

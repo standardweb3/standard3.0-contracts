@@ -5,7 +5,7 @@
   <h1><code>Standard</code></h1>
 
   <p>
-    <strong>A monorepo for Standard Protocol contracts</strong>
+    <strong>A monorepo of Standard contracts</strong>
   </p>
 
   <p>
@@ -14,18 +14,39 @@
 </div>
 
 ## What is Standard Protocol?
+
 ![overview](./media/overview.jpg)
 
-Standard Protocol operates as a comprehensive, all-encompassing application designed specifically for the blockchains. Its primary role is to provide a foundation or starting point for newly developed blockchain spaces, ensuring they have the necessary tools and environment to establish a thriving and dynamic ecosystem. The unique aspect of Standard is its ability to function as a unified execution layer empowering its users with fully decentralized system. This unified layer is a game-changer as it bridges the gap between different blockchain systems, enabling seamless interoperability among them. In simpler terms, regardless of which blockchain you're working on or interacting with, Standard ensures they can communicate and operate with each other without complications, all on your control.
+Standard Protocol is a protocol to make next-gen DeFi to solve four problems in Crypto's transparency:
+
+**`Transparency`**: Standard's onchain CLOB provides listing mechanism where we do fair auctions to list assets officially or permissionlessly with fixed cost for making a pair.
+
+**`Insolvency`**: All operations in Standard's CLOB are done in self-custody.
+
+**`Security`**: By having segregation of user's funds into each account with CLOB, hackers cannot hack Standard protocol unless they hack all of user's wallet.
+
+**`Personalization`**: By having each users' activity recorded in blockchain, personalized incentivization is possible such as fee discount, more points to top active traders in Standard orderbook exchange.
 
 ## The Standard Super App: Your DeFi3.0 Gateway
+
 ![overview](./media/defi3.0.png)
 
-The **Standard super app** stands as a pinnacle in the DeFi 3.0 ecosystem, bestowing individuals with a suite of integrated apps. Each app is meticulously designed to elevate diverse financial management and trading needs. Here's an overview what each component of Standard offers described as money legos.
+From the lessons of DeFi 2.0, Standard focuses on self-sovereignty of users asset and personalized experience. Standard declares itself as the gateway of DeFi 3.0. DeFi 2.0's failure to ensure user's safety while co-mingling assets in one contract caused losses over more than 1 billion USD worth of wealth by end users.
+
+DeFi 2.0 also made a social hierarchy of ponzis, where regular users who are active using the app or protocol was ignored by few who had asymmetric shares in the community. While the community is formed with different individuals with different situations, DeFi 2.0 communities have always been emphasizing buying more of their coins or tokens, depositing tokens to AMM pairs to increase TVL, or boost yield by leveraging endlessly. However, people always wanted to see apps which can have their own experience.
+
+DeFi 3.0 proposed by Standard focuses more on users' growth and experience than TVL or Token shares for the whole community. For easier and friendly experience, Standard builds fully onchain CLOB first. Other money legos always has segregation of users' fund into its protocol so that users can have safer experience than DeFi 2.0 by default. Standard makes community to willingly buy $STND token and use it for better experience instead of having higher social hierarchy in the community. Standard team is building new money legos that will deliver real, personalized user experiences.
 
 ![overview](./media/components_overview.png)
 
-In essence, the **Standard super app** unifies **Account** (governance & incentive management), **Exchange** (fully onchain CLOB), **Stablecoin** (CDP stablecoin with delta-neutral strategy), and **Futures** (fully onchain futures) into a cohesive ecosystem. This ensemble delivers a holistic suite of financial instruments, streamlining the intricacies of digital finance. With Standard, users are equipped, empowered, and emboldened to architect their financial destinies. It's not merely a platform but a beacon heralding the dawn of decentralized economic empowerment.
+## Money Legos
+
+Each money lego has README to build, test, and deploy with LICENSE.
+
+- **`point`** (governance & incentive management)
+- **`exchange`** (fully onchain CLOB)
+- **`stablecoin`** (CDP stablecoin with delta-neutral strategy)
+- **`futures`** (fully onchain futures)
 
 ## Docs
 
@@ -33,13 +54,14 @@ For more information on the concepts and how each app works, visit the official 
 
 <a href="https://learn.standardweb3.com" target="_blank" style="background-color:#3F3F3F; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Go to Official Documentation</a>
 
-
 ## Security
 
 ### Unit Tests
+
 [Contract Test Directory](./test)
 
 ### Audits
+
 [Hacken in 2023](./audits/hacken-2023)
 [Defimoon in 2023](./audits/defimoon-2023)
 
@@ -52,4 +74,3 @@ _These smart contracts and code are being provided as is. No guarantee, represen
 This software code is licensed with [BSL-1.1](./LICENSE).
 
 Terms of some parts of the code in the monorepo have different terms.
-

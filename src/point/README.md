@@ -1,4 +1,4 @@
-# pass
+# point
 
 ## **Managing Credit and Governance with [pass](./src/pass/README.md)**
 

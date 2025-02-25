@@ -5,5 +5,17 @@ pragma solidity ^0.8.24;
 import "./ERC20MintablePausableBurnable.sol";
 
 contract MockToken is ERC20MintablePausableBurnable {
-    constructor(string memory name, string memory symbol) ERC20MintablePausableBurnable(name, symbol) {}
+    uint8 _decimals;
+
+    constructor(
+        string memory name,
+        string memory symbol,
+        uint8 decimals_
+    ) ERC20MintablePausableBurnable(name, symbol) {
+        _decimals = decimals_;
+    }
+
+    function decimals() public view override returns (uint8) {
+        return _decimals;
+    }
 }

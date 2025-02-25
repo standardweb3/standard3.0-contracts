@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./media/standard_profile.jpeg" width=100/>
+<img src="./media/standard_profile.png" width=100/>
 
   <h1><code>Standard</code></h1>
 
@@ -14,15 +14,15 @@
 </div>
 
 ## What is Standard Protocol?
-![overview](./media/overview.png)
+![overview](./media/overview.jpg)
 
-Standard Protocol operates as a comprehensive, all-encompassing application designed specifically for the blockchain universe. Its primary role is to provide a foundation or starting point for newly developed blockchain spaces, ensuring they have the necessary tools and environment to establish a thriving and dynamic ecosystem. The unique aspect of Standard is its ability to function as a unified execution layer empowering its users with fully decentralized system. This unified layer is a game-changer as it bridges the gap between different blockchain systems, enabling seamless interoperability among them. In simpler terms, regardless of which blockchain you're working on or interacting with, Standard ensures they can communicate and operate with each other without complications, all on your control.
+Standard Protocol operates as a comprehensive, all-encompassing application designed specifically for the blockchains. Its primary role is to provide a foundation or starting point for newly developed blockchain spaces, ensuring they have the necessary tools and environment to establish a thriving and dynamic ecosystem. The unique aspect of Standard is its ability to function as a unified execution layer empowering its users with fully decentralized system. This unified layer is a game-changer as it bridges the gap between different blockchain systems, enabling seamless interoperability among them. In simpler terms, regardless of which blockchain you're working on or interacting with, Standard ensures they can communicate and operate with each other without complications, all on your control.
 
 ## The Standard Super App: Your Web3.0 Financial Gateway
 
 The **Standard super app** stands as a pinnacle in the web3.0 ecosystem, bestowing individuals with a suite of integrated apps. Each app is meticulously designed to elevate diverse financial management and trading needs. Here's an insight into what each facet of Standard offers:
 
-In essence, the **Standard super app** unifies **pass** (governance & credit management), **exchange** (digital trading), **SAFU** (financial standardization), and **SAIL** (wealth strategy) into a cohesive ecosystem. This ensemble delivers a holistic suite of financial instruments, streamlining the intricacies of digital finance. With Standard, users are equipped, empowered, and emboldened to architect their financial destinies. It's not merely a platform but a beacon heralding the dawn of decentralized economic empowerment.
+In essence, the **Standard super app** unifies **Account** (governance & incentive management), **Exchange** (fully onchain CLOB), **Stablecoin** (CDP stablecoin with delta-neutral strategy), and **Futures** (fully onchain futures) into a cohesive ecosystem. This ensemble delivers a holistic suite of financial instruments, streamlining the intricacies of digital finance. With Standard, users are equipped, empowered, and emboldened to architect their financial destinies. It's not merely a platform but a beacon heralding the dawn of decentralized economic empowerment.
 
 ## Docs
 
@@ -33,7 +33,7 @@ For more information on the concepts and how each app works, visit the official 
 
 ## Security
 
-### Tests
+### Unit Tests
 [Contract Test Directory](./test)
 
 ### Audits
@@ -47,4 +47,6 @@ _These smart contracts and code are being provided as is. No guarantee, represen
 ## License
 
 This software code is licensed with [BSL-1.1](./LICENSE).
+
+Terms of some parts of the code in the monorepo have different terms.
 

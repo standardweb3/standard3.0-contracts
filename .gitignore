@@ -29,3 +29,5 @@ node_modules
 foundry.toml
 script/Constants.sol
 broadcast
+
+.early.coverage

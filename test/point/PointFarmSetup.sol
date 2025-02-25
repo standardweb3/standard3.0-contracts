@@ -59,8 +59,8 @@ contract PointFarmSetup is Test {
         vm.label(reporter, "Reporter");
         vm.startPrank(trader1);
         weth = new WETH9();
-        feeToken = new MockToken("FeeToken", "FEE");
-        stablecoin = new MockToken("Stablecoin", "STBC");
+        feeToken = new MockToken("FeeToken", "FEE", 18);
+        stablecoin = new MockToken("Stablecoin", "STBC", 18);
         matchingEngine = new MatchingEngine();
         orderbookFactory = new OrderbookFactory();
         orderbookFactory.initialize(address(matchingEngine));

@@ -52,7 +52,7 @@ forge build
 To ensure the src function as expected, run tests specifically for the pass module:
 
 ```
-forge test --match-path test/pass/*
+forge test --match-path test/point/*
 ```
 
 ---

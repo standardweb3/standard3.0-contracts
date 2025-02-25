@@ -24,7 +24,7 @@ contract FutureBrawlSetup is BaseSetup {
         foundation = users[4];
         reporter = users[5];
 
-        stablecoin = new MockToken("Stablecoin", "STBC");
+        stablecoin = new MockToken("Stablecoin", "STBC", 18);
 
         orderbookFactory = new OrderbookFactory();
         matchingEngine = new MatchingEngine();

@@ -53,7 +53,7 @@ contract BaseSetup is Test {
         token1.mint(trader2, 10000000e18);
         token2.mint(trader2, 10000000e18);
         btc.mint(trader2, 10000000e18);
-        feeToken = new MockToken("Fee Token", "FEE");
+        feeToken = new MockToken("Fee Token", "FEE", 18);
         feeToken.mint(booker, 40000e18);
         matchingEngine = new MatchingEngine();
         orderbookFactory = new OrderbookFactory();

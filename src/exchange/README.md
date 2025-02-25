@@ -1,8 +1,8 @@
 # exchange
 
-## **Trading Digital Assets with [exchange](./src/exchange/README.md)**
+## **Trading Digital Assets with fully onchain CLOB**
 
-Standard offers the exchange app, which allows users to trade digital assets at their preferred prices and quantities. Whether you're a seasoned trader or new to the digital market, exchange offers the tools to buy and sell with precision and control.
+Standard offers the exchange protocol, which allows users to trade digital assets at their preferred prices and quantities. Whether you're a seasoned trader or new to the digital market, exchange offers the tools to buy and sell with precision and control.
 
 ## Table of Contents
 
@@ -15,7 +15,7 @@ Standard offers the exchange app, which allows users to trade digital assets at 
 
 ## Pre-requisites
 
-Before delving into the Standard monorepo src, ensure your environment is prepared and know how to use these tools.
+Before delving into a Standard monorepo project, ensure your environment is prepared and know how to use these tools.
 
 **Required Tools**:
 
@@ -29,7 +29,7 @@ To set up these tools, visit their respective [official documentation](https://b
 
 ## Usage
 
-Navigate your way through the Standard monorepo src with the following procedures:
+Navigate your way through the Standard exchange contracts with the following procedures:
 
 ### 1. Install
 
@@ -57,7 +57,40 @@ forge test --match-path test/exchange/*
 
 ### 4. Deploy
 
-To deploy the exchange contracts, find the scripts in `scripts` folder on root project 
+To deploy the exchange contracts in a chain, find `DeployExchangeMainnetContracts` contract in `scripts` folder on root project directory. 
+
+```
+contract DeployExchangeMainnetContracts is Deployer {
+    // Change address constants on deploying to other networks from DeployAssets
+    /// Second per block to finalize
+    uint32 constant spb = 2;
+    address constant deployer_address =
+        0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
+    address constant foundation_address =
+        0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
+    address constant weth = 0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701;
+
+    function run() external {
+        _setDeployer();
+        OrderbookFactory orderbookFactory = new OrderbookFactory();
+        MatchingEngine matchingEngine = new MatchingEngine();
+
+        orderbookFactory.initialize(address(matchingEngine));
+        matchingEngine.initialize(
+            address(orderbookFactory),
+            address(deployer_address),
+            address(weth)
+        );
+
+        vm.stopBroadcast();
+    }
+}
+```
+
+Run command in root directory below to deploy:
+```
+forge script script/exchange/MonadTestnet.sol:DeployExchangeMainnetContracts  --fork-url $MONAD_TESTNET_RPC -vvvv --gas-limit 18446744073709551615 --legacy --broadcast
+```
 
 ---
 

@@ -55,6 +55,10 @@ To ensure the src function as expected, run tests specifically for the pass modu
 forge test --match-path test/exchange/*
 ```
 
+### 4. Deploy
+
+To deploy the exchange contracts, find the scripts in `scripts` folder on root project 
+
 ---
 
 ## Security

@@ -21,7 +21,7 @@ Standard Protocol operates as a comprehensive, all-encompassing application desi
 ## The Standard Super App: Your DeFi3.0 Gateway
 ![overview](./media/defi3.0.png)
 
-The **Standard super app** stands as a pinnacle in the DeFi3.0 ecosystem, bestowing individuals with a suite of integrated apps. Each app is meticulously designed to elevate diverse financial management and trading needs. Here's an overview what each component of Standard offers described as money legos.
+The **Standard super app** stands as a pinnacle in the DeFi 3.0 ecosystem, bestowing individuals with a suite of integrated apps. Each app is meticulously designed to elevate diverse financial management and trading needs. Here's an overview what each component of Standard offers described as money legos.
 
 ![overview](./media/components_overview.png)
 

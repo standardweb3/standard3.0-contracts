@@ -19,7 +19,6 @@ import {PrizePool} from "../../src/point/PrizePool.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {WETH9} from "../../src/mock/WETH9.sol";
-import {BulkSender} from "../../src/mock/BulkSender.sol";
 
 contract Deployer is Script {
     function _setDeployer() internal {
@@ -90,7 +89,7 @@ contract DeployExchangeMainnetContracts is Deployer {
         0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
     address constant foundation_address =
         0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
-    address constant weth = 0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701;
+    address constant weth = 0x4200000000000000000000000000000000000006;
 
     function run() external {
         _setDeployer();
@@ -383,19 +382,12 @@ contract MintMockToken is Deployer {
     function run() external {
         _setDeployer();
         address token_address = vm.promptAddress("Enter Token Address");
+        address to = vm.promptAddress("Enter Address to Mint to");
 
         MockToken token = MockToken(token_address);
         uint256 amount = vm.promptUint("Enter Amount to Mint without decimals");
 
-        token.mint(address(this), amount);
-        vm.stopBroadcast();
-    }
-}
-
-contract DeployBulkSender is Deployer {
-    function run() external {
-        _setDeployer();
-        new BulkSender();
+        token.mint(to, amount * token.decimals());
         vm.stopBroadcast();
     }
 }

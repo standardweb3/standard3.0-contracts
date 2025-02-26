@@ -27,15 +27,17 @@ Standard Protocol is a protocol to make next-gen DeFi to solve four problems in 
 
 **`Personalization`**: By having each users' activity recorded in blockchain, personalized incentivization is possible such as fee discount, more points to top active traders in Standard orderbook exchange.
 
-## The Standard Super App: Your DeFi3.0 Gateway
+## The Standard Super App: Your DeFi 3.0 Gateway
 
 ![overview](./media/defi3.0.png)
 
-From the lessons of DeFi 2.0, Standard focuses on self-sovereignty of users asset and personalized experience. Standard declares itself as the gateway of DeFi 3.0. DeFi 2.0's failure to ensure user's safety while co-mingling assets in one contract caused losses over more than 1 billion USD worth of wealth by end users.
+From the lessons of DeFi 2.0, Standard focuses on self-sovereignty of users asset and personalized experience. Standard declares itself as the gateway of DeFi 3.0, learning from DeFi 2.0's negative consequences. 
 
-DeFi 2.0 also made a social hierarchy of ponzis, where regular users who are active using the app or protocol was ignored by few who had asymmetric shares in the community. While the community is formed with different individuals with different situations, DeFi 2.0 communities have always been emphasizing buying more of their coins or tokens, depositing tokens to AMM pairs to increase TVL, or boost yield by leveraging endlessly. However, people always wanted to see apps which can have their own experience.
+DeFi 2.0's failure to ensure user's safety while co-mingling assets in one contract caused losses over more than 1 billion USD worth of wealth by end users. To put this easily, it is like one goes to a bank with an account shared by all customers. Insiders or hackers were able to extract the whole users' fund due to this missing concept of self-custody within DeFi 2.0 smart contracts. Cases would include a famous quote 'Steady lads, deploying capital' by Do Kwon, a Luna Foundation Guard council. Whether he was guilty or not, the management of each positions for UST/LUNA had to be authorized only to each users who minted UST.
 
-DeFi 3.0 proposed by Standard focuses more on users' growth and experience than TVL or Token shares for the whole community. For easier and friendly experience, Standard builds fully onchain CLOB first. Other money legos always has segregation of users' fund into its protocol so that users can have safer experience than DeFi 2.0 by default. Standard makes community to willingly buy $STND token and use it for better experience instead of having higher social hierarchy in the community. Standard team is building new money legos that will deliver real, personalized user experiences.
+DeFi 2.0 also made a imbalanced social hierarchy, where regular users who are active using the app or protocol was ignored by few who had asymmetric shares in the community. While the community is formed with different individuals with different situations, DeFi 2.0 projects or chains have always been making Totalitarian propaganda based on materialistic values, emphasizing buying more of their coins or tokens just for ascending in its social hierarchy, depositing tokens to AMM pairs to increase TVL, often asking projects to grow TVL exclusively on one chain, or boost yield by leveraging endlessly. However, people always urged crypto to see apps which can have their own experience for mass adoption.
+
+DeFi 3.0 proposed by Standard focuses more on users' growth and experience than TVL for the whole crypto community. To remove consideration for TVL, Standard builds fully onchain CLOB first, focusing on better experience and capital efficiency. Other money legos always has segregation of users' fund into its protocol so that users can have safer experience than DeFi 2.0 by default. Standard makes community to willingly buy $STND token and use it for better experience instead of having higher social hierarchy in the community. Standard team is building new money legos that will deliver real, personalized user experiences.
 
 ![overview](./media/components_overview.png)
 

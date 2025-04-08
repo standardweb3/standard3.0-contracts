@@ -10,7 +10,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 interface IRevenue {
-    function feeOf(address account, bool isMaker) external view returns (uint32 feeNum);
+    function feeOf(address base, address quote, address account, address origin, bool isMaker) external view returns (uint32 feeNum);
 
     function isSubscribed(address account) external view returns (bool isSubscribed);
 }
@@ -1276,7 +1276,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             revert OrderSizeTooSmall(converted, minRequired);
         }
         // check sender's fee
-        uint256 fee = _fee(amount, msg.sender, isMaker);
+        uint256 fee = _fee(base, quote,amount, msg.sender, isMaker);
         withoutFee = amount - fee;
         if (isBid) {
             // transfer input asset give user to this contract
@@ -1325,9 +1325,9 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         TransferHelper.safeTransfer(payment, feeTo, amount);
     }
 
-    function _fee(uint256 amount, address account, bool isMaker) internal view returns (uint256 fee) {
+    function _fee(address base, address quote, uint256 amount, address account, bool isMaker) internal view returns (uint256 fee) {
         if (_isContract(feeTo) && IRevenue(feeTo).isSubscribed(account)) {
-            uint32 feeNum = IRevenue(feeTo).feeOf(account, isMaker);
+            uint32 feeNum = IRevenue(feeTo).feeOf(base, quote, account, tx.origin, isMaker);
             return (amount * feeNum) / DENOM;
         }
         return (amount * baseFee) / DENOM;

@@ -70,14 +70,14 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
 
     event OrderDeposit(address sender, address asset, uint256 fee);
 
-    event OrderCanceled(address orderbook, uint256 id, bool isBid, address indexed owner, uint256 amount);
+    event OrderCanceled(address pair, uint256 id, bool isBid, address indexed owner, uint256 amount);
 
-    event NewMarketPrice(address orderbook, uint256 price);
+    event NewMarketPrice(address pair, uint256 price);
     event ListingCostSet(address payment, uint256 amount);
 
     /**
      * @dev This event is emitted when an order is successfully matched with a counterparty.
-     * @param orderbook The address of the order book contract to get base and quote asset contract address.
+     * @param pair The address of the order book contract to get base and quote asset contract address.
      * @param id The unique identifier of the canceled order in bid/ask order database.
      * @param isBid A boolean indicating whether the matched order is a bid (true) or ask (false).
      * @param sender The address initiating the match.
@@ -87,7 +87,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
      * @param clear whether or not the order is cleared
      */
     event OrderMatched(
-        address orderbook,
+        address pair,
         uint256 id,
         bool isBid,
         address sender,
@@ -98,18 +98,18 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
     );
 
     event OrderPlaced(
-        address orderbook, uint256 id, address owner, bool isBid, uint256 price, uint256 withoutFee, uint256 placed
+        address pair, uint256 id, address owner, bool isBid, uint256 price, uint256 withoutFee, uint256 placed
     );
 
     event PairAdded(
-        address orderbook,
+        address pair,
         TransferHelper.TokenInfo base,
         TransferHelper.TokenInfo quote,
         uint256 listingPrice,
         uint256 listingDate
     );
 
-    event PairUpdated(address orderbook, address base, address quote, uint256 listingDate);
+    event PairUpdated(address pair, address base, address quote, uint256 listingDate);
 
     event PairCreate2(address deployer, bytes bytecode);
 

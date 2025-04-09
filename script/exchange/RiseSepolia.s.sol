@@ -77,7 +77,6 @@ contract InitializeExchangeProxy is Deployer {
 contract DeployExchangeMainnetContracts is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     /// Second per block to finalize
-    uint32 constant spb = 2;
     address constant deployer_address = 0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
     address constant foundation_address = 0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
     address constant weth = 0x008fCD6315c68EbAa31244aea174993f63Ef14D5;

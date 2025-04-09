@@ -5,7 +5,9 @@ pragma solidity ^0.8.24;
 import "../libraries/ExchangeOrderbook.sol";
 
 interface IOrderbook {
-    function initialize(uint256 id_, address base_, address quote_, address engine_) external;
+    function initialize(uint256 id_, address base_, address quote_, address engine_, uint32[] memory supported) external;
+
+    function getSupportedTerminals() external view returns (uint32[] memory);
 
     function setLmp(uint256 price) external;
 

@@ -27,7 +27,7 @@ contract MarketOrderTest is BaseSetup {
         quote = new MockQuote("Quote Token", "QUOTE");
         base.mint(trader1, type(uint256).max);
         quote.mint(trader1, type(uint256).max);
-        matchingEngine.addPair(address(base), address(quote), 1e8, 0, address(base));
+        matchingEngine.addPair(address(base), address(quote), 1e8, 0, address(base), new uint32[](0));
         vm.startPrank(trader1);
         base.approve(address(matchingEngine), type(uint256).max);
         quote.approve(address(matchingEngine), type(uint256).max);
@@ -90,7 +90,7 @@ contract MarketOrderTest is BaseSetup {
         MockQuote quote = new MockQuote("Quote Token", "QUOTE");
         base.mint(trader1, type(uint256).max);
         quote.mint(trader1, type(uint256).max);
-        matchingEngine.addPair(address(base), address(quote), 1e8, 0, address(base));
+        matchingEngine.addPair(address(base), address(quote), 1e8, 0, address(base), new uint32[](0));
         vm.startPrank(trader1);
         base.approve(address(matchingEngine), type(uint256).max);
         quote.approve(address(matchingEngine), type(uint256).max);

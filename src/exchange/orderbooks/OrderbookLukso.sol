@@ -20,6 +20,8 @@ contract OrderbookLukso is IOrderbook, Initializable {
     using ExchangeLinkedList for ExchangeLinkedList.PriceLinkedList;
     using ExchangeOrderbook for ExchangeOrderbook.OrderStorage;
 
+    uint32[] private supportedTerminals;
+
     // Pair Struct
     struct Pair {
         uint256 id;
@@ -41,7 +43,7 @@ contract OrderbookLukso is IOrderbook, Initializable {
     error InvalidAccess(address sender, address allowed);
     error PriceIsZero(uint256 price);
 
-    function initialize(uint256 id_, address base_, address quote_, address engine_) external initializer {
+    function initialize(uint256 id_, address base_, address quote_, address engine_, uint32[] memory supportedTerminals_) external initializer {
         uint8 baseD = TransferHelper.decimals(base_);
         uint8 quoteD = TransferHelper.decimals(quote_);
         if (baseD > 18 || quoteD > 18) {
@@ -51,6 +53,7 @@ contract OrderbookLukso is IOrderbook, Initializable {
         decDiff = uint64(10 ** diff);
         baseBquote = baseBquote_;
         pair = Pair(id_, base_, quote_, engine_);
+        supportedTerminals = supportedTerminals_;
     }
 
     modifier onlyEngine() {
@@ -207,6 +210,10 @@ contract OrderbookLukso is IOrderbook, Initializable {
          * otherwise quote amount is baseAmount * price, converting decimal from base to quote
          */
         return convert(price, order.depositAmount, isBid);
+    }
+
+    function getSupportedTerminals() external view returns (uint32[] memory) {
+        return supportedTerminals;
     }
 
     /////////////////////////////////

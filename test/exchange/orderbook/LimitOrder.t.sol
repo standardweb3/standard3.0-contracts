@@ -20,7 +20,7 @@ import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 contract LimitOrderTest is BaseSetup {
     function testLimitTradeWithDiffDecimals() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(btc), 1e8, 0, address(token1));
+        matchingEngine.addPair(address(token1), address(btc), 1e8, 0, address(token1), new uint32[](0));
         console.log("Base/Quote Pair: ", matchingEngine.getPair(address(token1), address(btc)));
         vm.prank(trader1);
         matchingEngine.limitBuy(address(token1), address(btc), 1e8, 1e8, true, 2, trader1);
@@ -30,7 +30,7 @@ contract LimitOrderTest is BaseSetup {
 
     function testLimitTrade() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(token2), 1e8, 0, address(token1));
+        matchingEngine.addPair(address(token1), address(token2), 1e8, 0, address(token1), new uint32[](0));
         console.log("Base/Quote Pair: ", matchingEngine.getPair(address(token1), address(token2)));
         vm.prank(trader1);
         matchingEngine.limitBuy(address(token1), address(token2), 1e8, 100e18, true, 2, trader1);
@@ -40,7 +40,7 @@ contract LimitOrderTest is BaseSetup {
 
     function testLimitBuyETH() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(weth), 1e8, 0, address(token1));
+        matchingEngine.addPair(address(token1), address(weth), 1e8, 0, address(token1), new uint32[](0));
         console.log("weth balance");
         console.log(trader1.balance / 1e18);
         vm.prank(trader1);
@@ -55,8 +55,8 @@ contract LimitOrderTest is BaseSetup {
 
     function testLimitSellETH() public {
         super.setUp();
-        matchingEngine.addPair(address(weth), address(token1), 1e8, 0, address(weth));
-        matchingEngine.addPair(address(token1), address(weth), 1e8, 0, address(token1));
+        matchingEngine.addPair(address(weth), address(token1), 1e8, 0, address(weth), new uint32[](0));
+        matchingEngine.addPair(address(token1), address(weth), 1e8, 0, address(token1), new uint32[](0));
         console.log("weth balance");
         console.log(trader1.balance / 1e18);
         vm.prank(trader1);
@@ -73,7 +73,7 @@ contract LimitOrderTest is BaseSetup {
 
     function testLimitBuyETHMakingNewBidHead() public {
         super.setUp();
-        matchingEngine.addPair(address(weth), address(token1), 1e8, 0, address(weth));
+        matchingEngine.addPair(address(weth), address(token1), 1e8, 0, address(weth), new uint32[](0));
         console.log("weth balance");
         console.log(trader1.balance / 1e18);
         vm.startPrank(trader1);
@@ -89,7 +89,7 @@ contract LimitOrderTest is BaseSetup {
     // limit order is possible on out of spread range, but it is not matched
     function testLimitOrderOutOfSpreadRange() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(token2), 1e8, 0, address(token1));
+        matchingEngine.addPair(address(token1), address(token2), 1e8, 0, address(token1), new uint32[](0));
         vm.prank(trader1);
         // mktprice is setup with lmp
         matchingEngine.limitBuy(address(token1), address(token2), 1e8, 1e18, true, 5, trader1);
@@ -112,7 +112,7 @@ contract LimitOrderTest is BaseSetup {
         quote = new MockQuote("Quote Token", "QUOTE");
         base.mint(trader1, type(uint256).max);
         quote.mint(trader1, type(uint256).max);
-        matchingEngine.addPair(address(base), address(quote), 1e8, 0, address(base));
+        matchingEngine.addPair(address(base), address(quote), 1e8, 0, address(base), new uint32[](0));
         vm.startPrank(trader1);
         base.approve(address(matchingEngine), type(uint256).max);
         quote.approve(address(matchingEngine), type(uint256).max);

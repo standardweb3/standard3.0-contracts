@@ -745,7 +745,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         returns (address book)
     {
         IWETH(WETH).deposit{value: msg.value}();
-        return addPair(base, quote, listingPrice, listingDate, WETH);
+        return addPair(base, quote, listingPrice, listingDate, WETH, new uint32[](0));
     }
 
     /**
@@ -756,13 +756,13 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
      * @param listingDate The listing Date for the trading pair
      * @return book The address of the newly created orderbook
      */
-    function addPair(address base, address quote, uint256 listingPrice, uint256 listingDate, address payment)
+    function addPair(address base, address quote, uint256 listingPrice, uint256 listingDate, address payment, uint32[] memory supportedTerminals)
         public
         returns (address book)
     {
         _listingDeposit(payment, msg.sender);
         // create orderbook for the pair
-        address orderbook = IOrderbookFactory(orderbookFactory).createBook(base, quote);
+        address orderbook = IOrderbookFactory(orderbookFactory).createBook(base, quote, supportedTerminals);
         IOrderbook(orderbook).setLmp(listingPrice);
         // set buy/sell spread to default suspension rate in basis point(bps)
         _setSpread(base, quote, defaultBuy, defaultSell);

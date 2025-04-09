@@ -19,7 +19,7 @@ import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 contract OrderSpreadTest is BaseSetup {
     function testLimitOrder() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(token2), 3632e8, 0, address(token1));
+        matchingEngine.addPair(address(token1), address(token2), 3632e8, 0, address(token1), new uint32[](0));
         vm.prank(booker);
         address base = address(token1);
         address quote = address(token2);
@@ -36,7 +36,7 @@ contract OrderSpreadTest is BaseSetup {
 
     function testLimitSellSpread() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(token2), 3632e8, 0, address(token1));
+        matchingEngine.addPair(address(token1), address(token2), 3632e8, 0, address(token1), new uint32[](0));
         vm.prank(booker);
         address base = address(token1);
         address quote = address(token2);
@@ -53,7 +53,7 @@ contract OrderSpreadTest is BaseSetup {
 
     function testLimitSellSpreadMatchesWithExactPrice() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(token2), 3632e8, 0, address(token1));
+        matchingEngine.addPair(address(token1), address(token2), 3632e8, 0, address(token1), new uint32[](0));
         vm.prank(trader1);
         address base = address(token1);
         address quote = address(token2);

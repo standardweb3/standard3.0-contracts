@@ -9,6 +9,8 @@ interface IOrderbook {
 
     function getSupportedTerminals() external view returns (uint32[] memory);
 
+    function updateSupportedTerminals(uint32[] memory supported) external;
+
     function setLmp(uint256 price) external;
 
     function placeAsk(address owner, uint256 price, uint256 amount) external returns (uint32 id);

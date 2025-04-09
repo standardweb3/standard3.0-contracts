@@ -9,7 +9,7 @@ import {IWETH} from "./interfaces/IWETH.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
-interface IRevenue {
+interface IProtocol {
     function feeOf(address base, address quote, address account, address origin, bool isMaker) external view returns (uint32 feeNum);
 
     function isSubscribed(address account) external view returns (bool isSubscribed);
@@ -874,16 +874,21 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
      */
     function updatePair(address base, address quote, uint256 listingPrice, uint256 listingDate, uint32[] memory supported)
         external
-        returns (address book)
+        returns (address pair)
     {
         // check if the list request is done by
         if (!hasRole(MARKET_MAKER_ROLE, _msgSender())) {
             revert InvalidRole(MARKET_MAKER_ROLE, _msgSender());
         }
+        // check if the supported length is not 0
+        if (supported.length == 0) {
+            revert AmountIsZero();
+        }
         // create orderbook for the pair
         address orderbook = getPair(base, quote);
         IOrderbook(orderbook).setLmp(listingPrice);
         uint32[] memory beforeUpdate = IOrderbook(orderbook).getSupportedTerminals();
+        IOrderbook(orderbook).updateSupportedTerminals(supported);
         emit PairUpdated(orderbook, base, quote, listingDate, beforeUpdate, supported);
         emit NewMarketPrice(orderbook, listingPrice);
         return orderbook;
@@ -1330,7 +1335,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             }
         }
         // check if the sender is supported terminal, only terminals can list pairs
-        uint32 terminalId = IRevenue(feeTo).getTerminalId(sender);
+        uint32 terminalId = IProtocol(feeTo).getTerminalId(sender);
         if (terminalId == 0) {
             revert InvalidTerminal(msg.sender);
         }
@@ -1349,8 +1354,8 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
     }
 
     function _fee(address base, address quote, uint256 amount, address account, bool isMaker) internal view returns (uint256 fee) {
-        if (_isContract(feeTo) && IRevenue(feeTo).isSubscribed(account)) {
-            uint32 feeNum = IRevenue(feeTo).feeOf(base, quote, account, tx.origin, isMaker);
+        if (_isContract(feeTo) && IProtocol(feeTo).isSubscribed(account)) {
+            uint32 feeNum = IProtocol(feeTo).feeOf(base, quote, account, tx.origin, isMaker);
             return (amount * feeNum) / DENOM;
         }
         return (amount * baseFee) / DENOM;

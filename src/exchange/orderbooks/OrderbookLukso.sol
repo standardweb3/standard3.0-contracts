@@ -68,6 +68,10 @@ contract OrderbookLukso is IOrderbook, Initializable {
         priceLists._setLmp(price);
     }
 
+    function updateSupportedTerminals(uint32[] memory supported_) external onlyEngine {
+        supportedTerminals = supported_;
+    }  
+
     function placeAsk(address owner, uint256 price, uint256 amount) external onlyEngine returns (uint32 id) {
         // clear empty head
         clearEmptyHead(false);

@@ -9,7 +9,7 @@ import {IWETH} from "./interfaces/IWETH.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
-interface IRevenue {
+interface IProtocol {
     function reportMatch(address orderbook, address give, bool isBid, address sender, address owner, uint256 amount)
         external;
 
@@ -1161,9 +1161,9 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
     }
 
     function _report(address orderbook, address give, bool isBid, uint256 matched, address owner) internal {
-        if (_isContract(feeTo) && IRevenue(feeTo).isReportable() && matched > 0) {
+        if (_isContract(feeTo) && IProtocol(feeTo).isReportable() && matched > 0) {
             // report matched amount to accountant with give token on matching order
-            IRevenue(feeTo).reportMatch(orderbook, give, isBid, msg.sender, owner, matched);
+            IProtocol(feeTo).reportMatch(orderbook, give, isBid, msg.sender, owner, matched);
         }
     }
 
@@ -1247,8 +1247,8 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
     }
 
     function _fee(uint256 amount, address account, bool isMaker) internal view returns (uint256 fee) {
-        if (_isContract(feeTo) && IRevenue(feeTo).isSubscribed(account)) {
-            uint32 feeNum = IRevenue(feeTo).feeOf(account, isMaker);
+        if (_isContract(feeTo) && IProtocol(feeTo).isSubscribed(account)) {
+            uint32 feeNum = IProtocol(feeTo).feeOf(account, isMaker);
             return (amount * feeNum) / feeDenom;
         }
         return (amount * 1) / 1000;

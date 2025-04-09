@@ -848,8 +848,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         public
         returns (address pair)
     {
-        _listingDeposit(payment, msg.sender, supported);
-        // set up supported terminals based on sender 
+        supported = _listingDeposit(payment, msg.sender, supported);
         
         // create orderbook for the pair
         address orderbook = IOrderbookFactory(orderbookFactory).createBook(base, quote, supported);
@@ -1322,7 +1321,13 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
     function _listingDeposit(address payment, address sender, uint32[] memory supported) internal returns (uint32[] memory terminalIds) {
         // check if the sender is admin
         if (hasRole(MARKET_MAKER_ROLE, sender)) {
-            return supported;
+            if (supported.length == 0) {
+                terminalIds = new uint32[](1);
+                terminalIds[0] = 1;
+                return terminalIds;
+            } else {
+                return supported;
+            }
         }
         // check if the sender is supported terminal, only terminals can list pairs
         uint32 terminalId = IRevenue(feeTo).getTerminalId(sender);

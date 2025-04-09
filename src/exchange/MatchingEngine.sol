@@ -37,6 +37,8 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
     uint32 defaultSell;
     // bool on initialization
     bool init;
+    // max matches
+    uint32 maxMatches;
 
     struct OrderData {
         /// Amount after removing fee
@@ -167,6 +169,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         }
         bytes memory bytecode = IOrderbookFactory(orderbookFactory_).getByteCode();
         init = true;
+        maxMatches = 20;
         emit PairCreate2(orderbookFactory, bytecode);
     }
 
@@ -184,6 +187,14 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
         }
         baseFee = baseFee_;
+        return true;
+    }
+
+    function setMaxMatches(uint32 n) external returns (bool success) {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        }
+        maxMatches = n;
         return true;
     }
 
@@ -253,7 +264,8 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         uint256 assetAmount,
         uint32 beforeAdjust,
         uint32 afterAdjust,
-        bool isMaker
+        bool isMaker,
+        uint32 n
     ) external returns (uint256 makePrice, uint256 placed, uint32 id) {
         // get pair
         address pair = IOrderbookFactory(orderbookFactory).getPair(base, quote);
@@ -1110,7 +1122,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         uint32 i,
         uint32 n
     ) internal returns (uint256 remaining, uint32 k) {
-        if (n > 20) {
+        if (n > maxMatches) {
             revert TooManyMatches(n);
         }
         remaining = amount;

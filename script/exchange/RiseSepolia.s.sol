@@ -43,6 +43,14 @@ contract DeployWETH is Deployer {
     }
 }
 
+contract DeployMockToken is Deployer {
+    function run() external {
+        _setDeployer();
+        new MockToken("CZ AI", "CZAI", 18);
+        vm.stopBroadcast();
+    }
+}
+
 contract DeployExchangeProxy is Deployer {
     address impl = 0xE0892785D00F192110A05282387fBAC21b942Aad;
     address admin = 0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
@@ -135,7 +143,7 @@ contract CreatePairMainnet is Deployer {
 
     function run() external {
         _setDeployer();
-        matchingEngine.addPair(base, quote, initMarketPrice, 0, base, new uint32[](0));
+        matchingEngine.addPair(base, quote, initMarketPrice, 0, base);
         vm.stopBroadcast();
     }
 }
@@ -181,7 +189,7 @@ contract AddPair is Deployer {
     function run() external {
         _setDeployer();
         matchingEngine = MatchingEngine(payable(address(matchingEngine_address)));
-        matchingEngine.addPair(base, quote, price, 0, base, new uint32[](0));
+        matchingEngine.addPair(base, quote, price, 0, base);
         vm.stopBroadcast();
     }
 }
@@ -196,7 +204,7 @@ contract SetupPriceOnPair is Deployer {
     function run() external {
         _setDeployer();
         matchingEngine = MatchingEngine(payable(address(matchingEngine_address)));
-        matchingEngine.addPair(base, quote, price, 0, base, new uint32[](0));
+        matchingEngine.addPair(base, quote, price, 0, base);
         vm.stopBroadcast();
     }
 }

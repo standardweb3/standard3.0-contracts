@@ -20,9 +20,9 @@ contract Orderbook is IOrderbook, Initializable {
     using ExchangeLinkedList for ExchangeLinkedList.PriceLinkedList;
     using ExchangeOrderbook for ExchangeOrderbook.OrderStorage;
 
-    // supported terminal IDs
-    uint32[] public supportedTerminals;
-    
+    // supported terminal and infos;
+    mapping(string => uint256) public listingInfos;
+
     // Pair Struct
     struct Pair {
         uint256 id;
@@ -44,7 +44,7 @@ contract Orderbook is IOrderbook, Initializable {
     error InvalidAccess(address sender, address allowed);
     error PriceIsZero(uint256 price);
 
-    function initialize(uint256 id_, address base_, address quote_, address engine_, uint32[] memory supported_) external initializer {
+    function initialize(uint256 id_, address base_, address quote_, address engine_) external initializer {
         uint8 baseD = TransferHelper.decimals(base_);
         uint8 quoteD = TransferHelper.decimals(quote_);
         if (baseD > 18 || quoteD > 18) {
@@ -54,7 +54,6 @@ contract Orderbook is IOrderbook, Initializable {
         decDiff = uint64(10 ** diff);
         baseBquote = baseBquote_;
         pair = Pair(id_, base_, quote_, engine_);
-        supportedTerminals = supported_;
     }
 
     modifier onlyEngine() {
@@ -68,9 +67,9 @@ contract Orderbook is IOrderbook, Initializable {
         if (price == 0) revert PriceIsZero(price);
         priceLists._setLmp(price);
     }
-    
-    function updateSupportedTerminals(uint32[] memory supported_) external onlyEngine {
-        supportedTerminals = supported_;
+
+    function updateListingInfo(string memory terminal, uint256 listingDate) external onlyEngine {
+        listingInfos[terminal] = listingDate;
     }
 
     function placeAsk(address owner, uint256 price, uint256 amount) external onlyEngine returns (uint32 id) {
@@ -254,8 +253,8 @@ contract Orderbook is IOrderbook, Initializable {
         return priceLists._next(isBid, price);
     }
 
-    function getSupportedTerminals() external view returns (uint32[] memory) {
-        return supportedTerminals;
+    function getListingInfo(string memory terminal) external view returns (uint256) {
+        return listingInfos[terminal];
     }
 
     function nextOrder(bool isBid, uint256 price, uint32 orderId) public view returns (uint32 next) {

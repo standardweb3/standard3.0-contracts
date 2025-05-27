@@ -10,14 +10,11 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 interface IProtocol {
-    function reportMatch(address orderbook, address give, bool isBid, address sender, address owner, uint256 amount)
-        external;
-
-    function isReportable() external view returns (bool isReportable);
-
-    function feeOf(address account, bool isMaker) external view returns (uint32 feeNum);
+    function feeOf(address base, address quote, address account, address origin, bool isMaker) external view returns (uint32 feeNum);
 
     function isSubscribed(address account) external view returns (bool isSubscribed);
+
+    function terminalName(address terminal) external view returns (string memory terminalName);
 }
 
 interface IDecimals {
@@ -30,8 +27,8 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
     bytes32 private constant MARKET_MAKER_ROLE = keccak256("MARKET_MAKER_ROLE");
     // fee recipient for point storage
     address private feeTo;
-    // fee denominator representing 0.001%, 1/1000000 = 0.001%
-    uint32 public constant feeDenom = 1000000;
+    // Denominator for fraction calculation overall
+    uint32 public constant DENOM = 100000000;
     // Factories
     address public orderbookFactory;
     // WETH
@@ -180,17 +177,18 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
 
     /**
      * @dev Set the listing cost for a token. Each pair costs minimum 2GB of data storage in a month, costing 0.1 ETH.
+     * @param terminalName terminal name
      * @param payment address of payment token
      * @param amount amount of token
      *
      * Requirements:
      * - `msg.sender` must have the default admin role.
      */
-    function setListingCost(address payment, uint256 amount) external returns (uint256) {
+    function setListingCost(string memory terminalName, address payment, uint256 amount) external returns (uint256) {
         if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
         }
-        IOrderbookFactory(orderbookFactory).setListingCost(payment, amount);
+        IOrderbookFactory(orderbookFactory).setListingCost(terminalName, payment, amount);
         emit ListingCostSet(payment, amount);
         return amount;
     }
@@ -739,13 +737,13 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
      * @param listingDate The listing Date for the trading pair
      * @return book The address of the newly created orderbook
      */
-    function addPairETH(address base, address quote, uint256 listingPrice, uint256 listingDate)
+    function addPairETH(address base, address quote, uint256 listingPrice, uint256 listingDate, string memory supportedTerminals)
         external
         payable
         returns (address book)
     {
         IWETH(WETH).deposit{value: msg.value}();
-        return addPair(base, quote, listingPrice, listingDate, WETH, new uint32[](0));
+        return addPair(base, quote, listingPrice, listingDate, WETH);
     }
 
     /**
@@ -756,13 +754,13 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
      * @param listingDate The listing Date for the trading pair
      * @return book The address of the newly created orderbook
      */
-    function addPair(address base, address quote, uint256 listingPrice, uint256 listingDate, address payment, uint32[] memory supportedTerminals)
+    function addPair(address base, address quote, uint256 listingPrice, uint256 listingDate, address payment)
         public
         returns (address book)
     {
         _listingDeposit(payment, msg.sender);
         // create orderbook for the pair
-        address orderbook = IOrderbookFactory(orderbookFactory).createBook(base, quote, supportedTerminals);
+        address orderbook = IOrderbookFactory(orderbookFactory).createBook(base, quote);
         IOrderbook(orderbook).setLmp(listingPrice);
         // set buy/sell spread to default suspension rate in basis point(bps)
         _setSpread(base, quote, defaultBuy, defaultSell);
@@ -1026,8 +1024,6 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
                 // execute order
                 TransferHelper.lsp7Transfer(give, address(this), orderbook, remaining);
                 address owner = IOrderbook(orderbook).execute(orderId, !isBid, recipient, remaining, clear);
-                // report points on match
-                _report(orderbook, give, isBid, remaining, owner);
                 // emit event order matched
                 emit OrderMatched(orderbook, orderId, isBid, recipient, owner, price, remaining, clear);
                 // end loop as remaining is 0
@@ -1043,8 +1039,6 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
                 remaining -= required;
                 TransferHelper.lsp7Transfer(give, address(this), orderbook, required);
                 address owner = IOrderbook(orderbook).execute(orderId, !isBid, recipient, required, clear);
-                // report points on match
-                _report(orderbook, give, isBid, required, owner);
                 // emit event order matched
                 emit OrderMatched(orderbook, orderId, isBid, recipient, owner, price, required, clear);
                 ++i;
@@ -1160,13 +1154,6 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         }
     }
 
-    function _report(address orderbook, address give, bool isBid, uint256 matched, address owner) internal {
-        if (_isContract(feeTo) && IProtocol(feeTo).isReportable() && matched > 0) {
-            // report matched amount to accountant with give token on matching order
-            IProtocol(feeTo).reportMatch(orderbook, give, isBid, msg.sender, owner, matched);
-        }
-    }
-
     /**
      * @dev Deposit amount of asset to the contract with the given asset information and subtracts the fee.
      * @param base The address of the base asset.
@@ -1230,12 +1217,13 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
      * @param payment The address of the payment asset.
      * @param sender The address of the sender.
      */
-    function _listingDeposit(address payment, address sender) internal {
+    function _listingDeposit(address payment, address sender) internal  returns (string memory terminalName) {
         // check if the sender is admin
         if (hasRole(MARKET_MAKER_ROLE, sender)) {
-            return;
+            return "standard";
         }
-        uint256 amount = IOrderbookFactory(orderbookFactory).getListingCost(payment);
+        terminalName = IProtocol(feeTo).terminalName(sender);
+        uint256 amount = IOrderbookFactory(orderbookFactory).getListingCost(terminalName, payment);
         // check if amount is zero
         if (amount == 0) {
             revert AmountIsZero();
@@ -1246,12 +1234,12 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         TransferHelper.lsp7Transfer(payment, address(this), feeTo, amount);
     }
 
-    function _fee(uint256 amount, address account, bool isMaker) internal view returns (uint256 fee) {
+    function _fee(address base, address quote, uint256 amount, address account, bool isMaker) internal view returns (uint256 fee) {
         if (_isContract(feeTo) && IProtocol(feeTo).isSubscribed(account)) {
-            uint32 feeNum = IProtocol(feeTo).feeOf(account, isMaker);
-            return (amount * feeNum) / feeDenom;
+            uint32 feeNum = IProtocol(feeTo).feeOf(base, quote, account, tx.origin, isMaker);
+            return (amount * feeNum) / DENOM;
         }
-        return (amount * 1) / 1000;
+        return (amount * baseFee) / DENOM;
     }
 
     function _isContract(address addr) internal view returns (bool isContract) {

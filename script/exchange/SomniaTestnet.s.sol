@@ -19,6 +19,7 @@ import {PrizePool} from "../../src/point/PrizePool.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {WETH9} from "../../src/mock/WETH9.sol";
+import {BulkSender} from "../../src/mock/BulkSender.sol";
 
 contract Deployer is Script {
     function _setDeployer() internal {
@@ -89,7 +90,7 @@ contract DeployExchangeMainnetContracts is Deployer {
         0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
     address constant foundation_address =
         0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
-    address constant weth = 0x4200000000000000000000000000000000000006;
+    address constant weth = 0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701;
 
     function run() external {
         _setDeployer();
@@ -266,9 +267,9 @@ contract AddPair is Deployer {
     MatchingEngine public matchingEngine;
     address constant matchingEngine_address =
         0x6B5A13Ca93871187330aE6d9E34cdAD610aA54cd;
-    address constant base = 0xBAb93B7ad7fE8692A878B95a8e689423437cc500;
-    address constant quote = 0xa111a06BDEbb8b1dAA79000F4B386A36E0AccE56;
-    uint256 constant price = 147777000000;
+    address constant base = 0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701;
+    address constant quote = 0x0ED782B8079529f7385c3eDA9fAf1EaA0DbC6a17;
+    uint256 constant price = 11000000;
 
     function run() external {
         _setDeployer();
@@ -383,12 +384,19 @@ contract MintMockToken is Deployer {
     function run() external {
         _setDeployer();
         address token_address = vm.promptAddress("Enter Token Address");
-        address to = vm.promptAddress("Enter Address to Mint to");
 
         MockToken token = MockToken(token_address);
         uint256 amount = vm.promptUint("Enter Amount to Mint without decimals");
 
-        token.mint(to, amount * token.decimals());
+        token.mint(address(this), amount);
+        vm.stopBroadcast();
+    }
+}
+
+contract DeployBulkSender is Deployer {
+    function run() external {
+        _setDeployer();
+        new BulkSender();
         vm.stopBroadcast();
     }
 }

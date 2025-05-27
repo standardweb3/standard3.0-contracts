@@ -14,7 +14,7 @@ interface IProtocol {
 
     function isSubscribed(address account) external view returns (bool isSubscribed);
 
-    function getTerminalId(address terminal) external view returns (uint32 terminalId);
+    function terminalName(address terminal) external view returns (string memory terminalName);
 }
 
 // Onchain Matching engine for the orders
@@ -111,10 +111,13 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         TransferHelper.TokenInfo quote,
         uint256 listingPrice,
         uint256 listingDate,
-        uint32[] supportedTerminals
+        string supportedTerminals
     );
 
-    event PairUpdated(address pair, address base, address quote, uint256 listingDate, uint32[] beforeUpdate, uint32[] afterUpdate);
+    event PairUpdated(address pair, address base, address quote, uint256 listingPrice, uint256 listingDate, string terminal);
+
+    event PairListed(address pair, string terminal);
+    event PairDeListed(address pair, string terminal);
 
     event PairCreate2(address deployer, bytes bytecode);
 
@@ -200,17 +203,18 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
 
     /**
      * @dev Set the listing cost for a token. Each pair costs minimum 2GB of data storage in a month, costing 0.1 ETH.
+     * @param terminal terminal name
      * @param payment address of payment token
      * @param amount amount of token
      *
      * Requirements:
      * - `msg.sender` must have the default admin role.
      */
-    function setListingCost(address payment, uint256 amount) external returns (uint256) {
+    function setListingCost(string memory terminal, address payment, uint256 amount) external returns (uint256) {
         if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
         }
-        IOrderbookFactory(orderbookFactory).setListingCost(payment, amount);
+        IOrderbookFactory(orderbookFactory).setListingCost(terminal, payment, amount);
         emit ListingCostSet(payment, amount);
         return amount;
     }
@@ -292,9 +296,9 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
 
         // add limit buy or sell order to adjust price
         if (isBuy) {
-            (makePrice, placed, id) = limitBuy(base, quote, price, assetAmount, true, 20, msg.sender);
+            (makePrice, placed, id) = limitBuy(base, quote, price, assetAmount, true, n, msg.sender);
         } else {
-            (makePrice, placed, id) = limitSell(base, quote, price, assetAmount, true, 20, msg.sender);
+            (makePrice, placed, id) = limitSell(base, quote, price, assetAmount, true, n, msg.sender);
         }
 
         // set spreads in the pair to original
@@ -835,16 +839,15 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
      * @param quote The address of the quote asset for the trading pair
      * @param listingPrice The initial market price for the trading pair
      * @param listingDate The listing Date for the trading pair
-     * @param supported The supported terminal IDs for the trading pair
      * @return book The address of the newly created orderbook
      */
-    function addPairETH(address base, address quote, uint256 listingPrice, uint256 listingDate, uint32[] memory supported)
+    function addPairETH(address base, address quote, uint256 listingPrice, uint256 listingDate)
         external
         payable
         returns (address book)
     {
         IWETH(WETH).deposit{value: msg.value}();
-        return addPair(base, quote, listingPrice, listingDate, WETH, supported);
+        return addPair(base, quote, listingPrice, listingDate, WETH);
     }
 
     /**
@@ -853,17 +856,16 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
      * @param quote The address of the quote asset for the trading pair
      * @param listingPrice The initial market price for the trading pair
      * @param listingDate The listing Date for the trading pair 
-     * @param supported The supported terminal IDs for the trading pair
      * @return pair The address of the newly created orderbook
      */
-    function addPair(address base, address quote, uint256 listingPrice, uint256 listingDate, address payment, uint32[] memory supported)
+    function addPair(address base, address quote, uint256 listingPrice, uint256 listingDate, address payment)
         public
         returns (address pair)
     {
-        supported = _listingDeposit(payment, msg.sender, supported);
+        string memory terminalName = _listingDeposit(payment, msg.sender);
         
         // create orderbook for the pair
-        address orderbook = IOrderbookFactory(orderbookFactory).createBook(base, quote, supported);
+        address orderbook = IOrderbookFactory(orderbookFactory).createBook(base, quote);
         IOrderbook(orderbook).setLmp(listingPrice);
         // set buy/sell spread to default suspension rate in basis point(bps)
         _setSpread(base, quote, defaultBuy, defaultSell);
@@ -871,7 +873,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
 
         TransferHelper.TokenInfo memory baseInfo = TransferHelper.getTokenInfo(base);
         TransferHelper.TokenInfo memory quoteInfo = TransferHelper.getTokenInfo(quote);
-        emit PairAdded(orderbook, baseInfo, quoteInfo, listingPrice, listingDate, supported);
+        emit PairAdded(orderbook, baseInfo, quoteInfo, listingPrice, listingDate, terminalName);
         emit NewMarketPrice(orderbook, listingPrice);
         return orderbook;
     }
@@ -882,9 +884,9 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
      * @param quote The address of the quote asset for the trading pair
      * @param listingPrice The initial market price for the trading pair
      * @param listingDate The listing Date for the trading pair
-     * @param supported The supported terminal IDs for the trading pair
+     * @param supported The supported exchange in Standard terminal ecosystem
      */
-    function updatePair(address base, address quote, uint256 listingPrice, uint256 listingDate, uint32[] memory supported)
+    function updatePair(address base, address quote, uint256 listingPrice, uint256 listingDate, string memory supported)
         external
         returns (address pair)
     {
@@ -892,18 +894,35 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         if (!hasRole(MARKET_MAKER_ROLE, _msgSender())) {
             revert InvalidRole(MARKET_MAKER_ROLE, _msgSender());
         }
-        // check if the supported length is not 0
-        if (supported.length == 0) {
-            revert AmountIsZero();
-        }
         // create orderbook for the pair
-        address orderbook = getPair(base, quote);
-        IOrderbook(orderbook).setLmp(listingPrice);
-        uint32[] memory beforeUpdate = IOrderbook(orderbook).getSupportedTerminals();
-        IOrderbook(orderbook).updateSupportedTerminals(supported);
-        emit PairUpdated(orderbook, base, quote, listingDate, beforeUpdate, supported);
-        emit NewMarketPrice(orderbook, listingPrice);
-        return orderbook;
+        pair = getPair(base, quote);
+        IOrderbook(pair).setLmp(listingPrice);
+        IOrderbook(pair).updateListingInfo(supported, listingDate);
+        emit PairUpdated(pair, base, quote, listingPrice, listingDate, supported);
+        emit NewMarketPrice(pair, listingPrice);
+        return pair;
+    }
+
+    function list(address base, address quote, string memory terminal, uint256 listingDate) external returns (address pair) {
+        // check if the list request is done by
+        if (!hasRole(MARKET_MAKER_ROLE, _msgSender())) {
+            revert InvalidRole(MARKET_MAKER_ROLE, _msgSender());
+        }
+        pair = getPair(base, quote);
+        IOrderbook(pair).updateListingInfo(terminal, listingDate);
+        emit PairListed(pair, terminal);
+        return pair;
+    }
+
+    function delist(address base, address quote, string memory terminal) external returns (address pair) {
+        // check if the list request is done by
+        if (!hasRole(MARKET_MAKER_ROLE, _msgSender())) {
+            revert InvalidRole(MARKET_MAKER_ROLE, _msgSender());
+        }
+        pair = getPair(base, quote);
+        IOrderbook(pair).updateListingInfo(terminal, 0);
+        emit PairDeListed(pair, terminal);
+        return pair;
     }
 
     /**
@@ -1335,23 +1354,17 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
      * @param payment The address of the payment asset.
      * @param sender The address of the sender.
      */
-    function _listingDeposit(address payment, address sender, uint32[] memory supported) internal returns (uint32[] memory terminalIds) {
+    function _listingDeposit(address payment, address sender) internal returns (string memory terminalName) {
         // check if the sender is admin
         if (hasRole(MARKET_MAKER_ROLE, sender)) {
-            if (supported.length == 0) {
-                terminalIds = new uint32[](1);
-                terminalIds[0] = 1;
-                return terminalIds;
-            } else {
-                return supported;
-            }
+            return "standard";
         }
         // check if the sender is supported terminal, only terminals can list pairs
-        uint32 terminalId = IProtocol(feeTo).getTerminalId(sender);
-        if (terminalId == 0) {
+        terminalName = IProtocol(feeTo).terminalName(sender);
+        if (keccak256(bytes(terminalName)) == keccak256(bytes(""))) {
             revert InvalidTerminal(msg.sender);
         }
-        uint256 amount = IOrderbookFactory(orderbookFactory).getListingCost(payment);
+        uint256 amount = IOrderbookFactory(orderbookFactory).getListingCost(terminalName, payment);
         // check if amount is zero
         if (amount == 0) {
             revert AmountIsZero();
@@ -1360,9 +1373,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             TransferHelper.safeTransferFrom(payment, msg.sender, address(this), amount);
         }
         TransferHelper.safeTransfer(payment, feeTo, amount);
-        terminalIds = new uint32[](1);
-        terminalIds[0] = terminalId;
-        return terminalIds;
+        return terminalName;
     }
 
     function _fee(address base, address quote, uint256 amount, address account, bool isMaker) internal view returns (uint256 fee) {

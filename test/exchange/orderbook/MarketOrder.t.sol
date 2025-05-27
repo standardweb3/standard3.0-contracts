@@ -21,7 +21,7 @@ import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 contract MarketOrderTest is BaseSetup {
     function testMarketBuyETH() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(weth), 1e8, 0, address(token1), new uint32[](0));
+        matchingEngine.addPair(address(token1), address(weth), 1e8, 0, address(token1));
         console.log("weth balance");
         console.log(trader1.balance / 1e18);
         vm.prank(trader1);
@@ -40,7 +40,7 @@ contract MarketOrderTest is BaseSetup {
 
     function testMarketSellETH() public {
         super.setUp();
-        matchingEngine.addPair(address(weth), address(token1), 1e8, 0, address(weth), new uint32[](0));
+        matchingEngine.addPair(address(weth), address(token1), 1e8, 0, address(weth));
         console.log("weth balance");
         console.log(trader1.balance / 1e18);
         vm.prank(trader1);
@@ -57,7 +57,7 @@ contract MarketOrderTest is BaseSetup {
 
     function testCancelJammingOrderbook() public {
         super.setUp();
-        matchingEngine.addPair(address(token1), address(token2), 1000e8, 0, address(token1), new uint32[](0));
+        matchingEngine.addPair(address(token1), address(token2), 1000e8, 0, address(token1));
         vm.prank(booker);
 
         book = Orderbook(payable(orderbookFactory.getPair(address(token1), address(token2))));
@@ -188,7 +188,7 @@ contract MarketOrderTest is BaseSetup {
         base.mint(trader1, type(uint256).max);
         quote.mint(trader1, type(uint256).max);
         // make a price in matching engine where 1 base = 1 quote with buy and sell order
-        matchingEngine.addPair(address(base), address(quote), 1e8, 0, address(base), new uint32[](0));
+        matchingEngine.addPair(address(base), address(quote), 1e8, 0, address(base));
         vm.startPrank(trader1);
         base.approve(address(matchingEngine), type(uint256).max);
         quote.approve(address(matchingEngine), type(uint256).max);
@@ -556,12 +556,28 @@ contract MarketOrderTest is BaseSetup {
         base.mint(trader1, type(uint256).max);
         quote.mint(trader1, type(uint256).max);
         // make a price in matching engine where 1 base = 1 quote with buy and sell order
-        matchingEngine.addPair(address(base), address(quote), 341320000000, 0, address(base), new uint32[](0));
+        matchingEngine.addPair(address(base), address(quote), 341320000000, 0, address(base));
         vm.startPrank(trader1);
         base.approve(address(matchingEngine), type(uint256).max);
         quote.approve(address(matchingEngine), type(uint256).max);
         matchingEngine.marketBuy(address(base), address(quote), 100000, true, 5, trader1, 2000000);
 
         matchingEngine.marketSell(address(base), address(quote), 1e14, true, 5, trader1, 2000000);
+    }
+
+    function testMarketBuyAndSell2() public {
+        super.setUp();
+        MockBTC btc = new MockBTC("BTC", "BTC");
+        MockQuote quote = new MockQuote("Quote Token", "QUOTE");
+        btc.mint(trader1, type(uint256).max);
+        quote.mint(trader1, type(uint256).max);
+        // make a price in matching engine where 1 base = 1 quote with buy and sell order
+        matchingEngine.addPair(address(btc), address(quote), 3598000000, 0, address(btc));
+        vm.startPrank(trader1);
+        btc.approve(address(matchingEngine), type(uint256).max);
+        quote.approve(address(matchingEngine), type(uint256).max);
+        matchingEngine.marketBuy(address(btc), address(quote), 9e18, true, 5, trader1, 2000000);
+
+        matchingEngine.marketSell(address(btc), address(quote), 1e14, true, 5, trader1, 2000000);
     }
 }

@@ -11,9 +11,9 @@ interface IOrderbookFactory {
 
     function impl() external view returns (address);
 
-    function createBook(address base_, address quote_, uint32[] memory supported) external returns (address pair);
+    function createBook(address base_, address quote_) external returns (address pair);
 
-    function setListingCost(address payment, uint256 amount) external returns (uint256);
+    function setListingCost(string memory terminal, address payment, uint256 amount) external returns (uint256);
 
     function isClone(address vault) external view returns (bool cloned);
 
@@ -31,5 +31,5 @@ interface IOrderbookFactory {
 
     function getByteCode() external view returns (bytes memory bytecode);
 
-    function getListingCost(address payment) external view returns (uint256 amount);
+    function getListingCost(string memory terminal, address payment) external view returns (uint256 amount);
 }

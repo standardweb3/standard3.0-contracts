@@ -29,7 +29,7 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
 
     constructor() {}
 
-    function createBook(address base_, address quote_, uint32[] memory supportedTerminals) external override returns (address orderbook) {
+    function createBook(address base_, address quote_) external override returns (address orderbook) {
         if (msg.sender != engine) {
             revert InvalidAccess(msg.sender, engine);
         }
@@ -52,7 +52,7 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
         }
 
         address proxy = CloneFactory._createCloneWithSalt(impl, _getSalt(base_, quote_));
-        IOrderbook(proxy).initialize(allPairsLength(), base_, quote_, engine, supportedTerminals);
+        IOrderbook(proxy).initialize(allPairsLength(), base_, quote_, engine);
         allPairs.push(proxy);
         return (proxy);
     }

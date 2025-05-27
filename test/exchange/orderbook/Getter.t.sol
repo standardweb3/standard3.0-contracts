@@ -24,8 +24,7 @@ contract GetterTest is BaseSetup {
             address(token2),
             100000000,
             0,
-            address(token1),
-            new uint32[](0)
+            address(token1)
         );
         vm.prank(booker);
         book = Orderbook(
@@ -108,8 +107,7 @@ contract GetterTest is BaseSetup {
             address(token2),
             100000000000,
             0,
-            address(token1),
-            new uint32[](0)
+            address(token1)
         );
         vm.prank(booker);
         book = Orderbook(
@@ -209,8 +207,7 @@ contract GetterTest is BaseSetup {
             address(token2),
             100000000,
             0,
-            address(token1),
-            new uint32[](0)
+            address(token1)
         );
         vm.prank(booker);
 
@@ -273,8 +270,7 @@ contract GetterTest is BaseSetup {
             address(token2),
             100000000,
             0,
-            address(token1),
-            new uint32[](0)
+            address(token1)
         );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert
@@ -314,8 +310,7 @@ contract GetterTest is BaseSetup {
             address(token2),
             100000000,
             0,
-            address(token1),
-            new uint32[](0)
+            address(token1)
         );
         vm.prank(trader1);
         // placeBid or placeAsk two of them is using the _insertId function it will revert

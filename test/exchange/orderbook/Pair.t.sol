@@ -27,8 +27,7 @@ contract PairTest is BaseSetup {
             address(token2),
             300000000,
             0,
-            address(token1),
-            listed
+            address(token1)
         );
     }
 
@@ -40,20 +39,19 @@ contract PairTest is BaseSetup {
             address(token2),
             300000000,
             0,
-            address(token1),
-            new uint32[](0)
+            address(token1)
         );
     }
 
     function testUpdatePairOnlyAllowedByAdmin() public {
         vm.prank(booker);
         vm.expectRevert();
-        matchingEngine.updatePair(address(token1), address(token2), 300000000, 0, new uint32[](0));
+        matchingEngine.updatePair(address(token1), address(token2), 300000000, 0, "1");
     }
 
     function testUpdatePairNotAllowedWithZeroSupportedTerminals() public {
         vm.expectRevert();
-        matchingEngine.updatePair(address(token1), address(token2), 300000000, 0, new uint32[](0));
+        matchingEngine.updatePair(address(token1), address(token2), 300000000, 0, "1");
     }
 
     function testUpdatePairEmitsTerminalsBeforeAndAfter() public {
@@ -61,12 +59,12 @@ contract PairTest is BaseSetup {
         listed[0] = 1;
         listed[1] = 2;
         listed[2] = 3;
-        matchingEngine.addPair(address(token1), address(token2), 300000000, 0, address(token1), listed);
+        matchingEngine.addPair(address(token1), address(token2), 300000000, 0, address(token1));
 
         uint32[] memory listed2 = new uint32[](2);
         listed2[0] = 2;
         listed2[1] = 3;
 
-        matchingEngine.updatePair(address(token1), address(token2), 300000000, 0, listed2);
+        matchingEngine.updatePair(address(token1), address(token2), 300000000, 0, "standard");
     }
 }

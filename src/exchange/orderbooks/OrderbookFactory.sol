@@ -21,7 +21,7 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
     /// address of order impl
     address public impl;
     /// listing cost of pair, for each fee token.
-    mapping(address => uint256) public listingCosts;
+    mapping(string => mapping(address => uint256)) public listingCosts;
 
     error InvalidAccess(address sender, address allowed);
     error PairAlreadyExists(address base, address quote, address pair);
@@ -29,7 +29,7 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
 
     constructor() {}
 
-    function createBook(address base_, address quote_, uint32[] memory supportedTerminals) external override returns (address orderbook) {
+    function createBook(address base_, address quote_) external override returns (address orderbook) {
         if (msg.sender != engine) {
             revert InvalidAccess(msg.sender, engine);
         }
@@ -52,7 +52,7 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
         }
 
         address proxy = CloneFactory._createCloneWithSalt(impl, _getSalt(base_, quote_));
-        IOrderbook(proxy).initialize(allPairsLength(), base_, quote_, engine, supportedTerminals);
+        IOrderbook(proxy).initialize(allPairsLength(), base_, quote_, engine);
         allPairs.push(proxy);
         return (proxy);
     }
@@ -156,16 +156,16 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
         return CloneFactory.getBytecode(impl);
     }
 
-    function getListingCost(address token) external view returns (uint256) {
-        return listingCosts[token];
+    function getListingCost(string memory terminal, address payment) external view returns (uint256) {
+        return listingCosts[terminal][payment];
     }
 
     //  Set up listing cost for each token, each pair creates 2GB of data in a month, costing 0.1 ETH
-    function setListingCost(address payment, uint256 amount) external returns (uint256) {
+    function setListingCost( string memory terminal, address payment, uint256 amount) external returns (uint256) {
         if (msg.sender != engine) {
             revert InvalidAccess(msg.sender, engine);
         }
-        listingCosts[payment] = amount;
+        listingCosts[terminal][payment] = amount;
         return amount;
     }
 }

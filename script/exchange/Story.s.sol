@@ -159,7 +159,7 @@ contract CreatePairMainnet is Deployer {
 
     function run() external {
         _setDeployer();
-        matchingEngine.addPair(base, quote, initMarketPrice, 0, base, new uint32[](0));
+        matchingEngine.addPair(base, quote, initMarketPrice, 0, base);
         vm.stopBroadcast();
     }
 }
@@ -205,7 +205,7 @@ contract AddPair is Deployer {
     function run() external {
         _setDeployer();
         matchingEngine = MatchingEngine(payable(address(matchingEngine_address)));
-        matchingEngine.addPair(base, quote, price, 0, base, new uint32[](0));
+        matchingEngine.addPair(base, quote, price, 0, base);
         vm.stopBroadcast();
     }
 }
@@ -220,7 +220,7 @@ contract SetupPriceOnPair is Deployer {
     function run() external {
         _setDeployer();
         matchingEngine = MatchingEngine(payable(address(matchingEngine_address)));
-        matchingEngine.addPair(base, quote, price, 0, base, new uint32[](0));
+        matchingEngine.addPair(base, quote, price, 0, base);
         vm.stopBroadcast();
     }
 }

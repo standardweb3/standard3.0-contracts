@@ -7,10 +7,6 @@ import "../libraries/ExchangeOrderbook.sol";
 interface IOrderbook {
     function initialize(uint256 id_, address base_, address quote_, address engine_) external;
 
-    function getListingInfo(string memory terminal) external view returns (uint256);
-
-    function updateListingInfo(string memory terminal, uint256 listingDate) external;
-
     function setLmp(uint256 price) external;
 
     function placeAsk(address owner, uint256 price, uint256 amount) external returns (uint32 id);

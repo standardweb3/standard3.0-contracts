@@ -897,31 +897,8 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         // create orderbook for the pair
         pair = getPair(base, quote);
         IOrderbook(pair).setLmp(listingPrice);
-        IOrderbook(pair).updateListingInfo(supported, listingDate);
         emit PairUpdated(pair, base, quote, listingPrice, listingDate, supported);
         emit NewMarketPrice(pair, listingPrice);
-        return pair;
-    }
-
-    function list(address base, address quote, string memory terminal, uint256 listingDate) external returns (address pair) {
-        // check if the list request is done by
-        if (!hasRole(MARKET_MAKER_ROLE, _msgSender())) {
-            revert InvalidRole(MARKET_MAKER_ROLE, _msgSender());
-        }
-        pair = getPair(base, quote);
-        IOrderbook(pair).updateListingInfo(terminal, listingDate);
-        emit PairListed(pair, terminal);
-        return pair;
-    }
-
-    function delist(address base, address quote, string memory terminal) external returns (address pair) {
-        // check if the list request is done by
-        if (!hasRole(MARKET_MAKER_ROLE, _msgSender())) {
-            revert InvalidRole(MARKET_MAKER_ROLE, _msgSender());
-        }
-        pair = getPair(base, quote);
-        IOrderbook(pair).updateListingInfo(terminal, 0);
-        emit PairDeListed(pair, terminal);
         return pair;
     }
 

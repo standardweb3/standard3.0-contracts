@@ -20,9 +20,6 @@ contract Orderbook is IOrderbook, Initializable {
     using ExchangeLinkedList for ExchangeLinkedList.PriceLinkedList;
     using ExchangeOrderbook for ExchangeOrderbook.OrderStorage;
 
-    // supported terminal and infos;
-    mapping(string => uint256) public listingInfos;
-
     // Pair Struct
     struct Pair {
         uint256 id;
@@ -66,10 +63,6 @@ contract Orderbook is IOrderbook, Initializable {
     function setLmp(uint256 price) external onlyEngine {
         if (price == 0) revert PriceIsZero(price);
         priceLists._setLmp(price);
-    }
-
-    function updateListingInfo(string memory terminal, uint256 listingDate) external onlyEngine {
-        listingInfos[terminal] = listingDate;
     }
 
     function placeAsk(address owner, uint256 price, uint256 amount) external onlyEngine returns (uint32 id) {
@@ -251,10 +244,6 @@ contract Orderbook is IOrderbook, Initializable {
 
     function nextPrice(bool isBid, uint256 price) external view returns (uint256 next) {
         return priceLists._next(isBid, price);
-    }
-
-    function getListingInfo(string memory terminal) external view returns (uint256) {
-        return listingInfos[terminal];
     }
 
     function nextOrder(bool isBid, uint256 price, uint32 orderId) public view returns (uint32 next) {

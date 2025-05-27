@@ -46,12 +46,12 @@ contract PairTest is BaseSetup {
     function testUpdatePairOnlyAllowedByAdmin() public {
         vm.prank(booker);
         vm.expectRevert();
-        matchingEngine.updatePair(address(token1), address(token2), 300000000, 0, "1");
+        matchingEngine.updatePair(address(token1), address(token2), 300000000, 0);
     }
 
     function testUpdatePairNotAllowedWithZeroSupportedTerminals() public {
         vm.expectRevert();
-        matchingEngine.updatePair(address(token1), address(token2), 300000000, 0, "1");
+        matchingEngine.updatePair(address(token1), address(token2), 300000000, 0);
     }
 
     function testUpdatePairEmitsTerminalsBeforeAndAfter() public {
@@ -65,6 +65,6 @@ contract PairTest is BaseSetup {
         listed2[0] = 2;
         listed2[1] = 3;
 
-        matchingEngine.updatePair(address(token1), address(token2), 300000000, 0, "standard");
+        matchingEngine.updatePair(address(token1), address(token2), 300000000, 0);
     }
 }

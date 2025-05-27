@@ -10,7 +10,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 interface IProtocol {
-    function feeOf(address base, address quote, address account, address origin, bool isMaker) external view returns (uint32 feeNum);
+    function feeOf(address base, address quote, address account, bool isMaker) external view returns (uint32 feeNum);
 
     function isSubscribed(address account) external view returns (bool isSubscribed);
 
@@ -23,8 +23,10 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
     bytes32 private constant MARKET_MAKER_ROLE = keccak256("MARKET_MAKER_ROLE");
     // fee recipient for point storage
     address private feeTo;
+    // incentive address
+    address private incentive;
     // base fee in numerator for DENOM
-    uint32 public baseFee = 100000;
+    uint32 private baseFee = 100000;
     // Denominator for fraction calculation overall
     uint32 public constant DENOM = 100000000;
     // Factories
@@ -114,10 +116,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         string supportedTerminals
     );
 
-    event PairUpdated(address pair, address base, address quote, uint256 listingPrice, uint256 listingDate, string terminal);
-
-    event PairListed(address pair, string terminal);
-    event PairDeListed(address pair, string terminal);
+    event PairUpdated(address pair, address base, address quote, uint256 listingPrice, uint256 listingDate);
 
     event PairCreate2(address deployer, bytes bytecode);
 
@@ -182,6 +181,14 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
         }
         feeTo = feeTo_;
+        return true;
+    }
+
+    function setIncentive(address incentive_) external returns (bool success) {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
+            revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        }
+        incentive = incentive_;
         return true;
     }
 
@@ -884,9 +891,8 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
      * @param quote The address of the quote asset for the trading pair
      * @param listingPrice The initial market price for the trading pair
      * @param listingDate The listing Date for the trading pair
-     * @param supported The supported exchange in Standard terminal ecosystem
      */
-    function updatePair(address base, address quote, uint256 listingPrice, uint256 listingDate, string memory supported)
+    function updatePair(address base, address quote, uint256 listingPrice, uint256 listingDate)
         external
         returns (address pair)
     {
@@ -897,7 +903,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         // create orderbook for the pair
         pair = getPair(base, quote);
         IOrderbook(pair).setLmp(listingPrice);
-        emit PairUpdated(pair, base, quote, listingPrice, listingDate, supported);
+        emit PairUpdated(pair, base, quote, listingPrice, listingDate);
         emit NewMarketPrice(pair, listingPrice);
         return pair;
     }
@@ -1337,7 +1343,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             return "standard";
         }
         // check if the sender is supported terminal, only terminals can list pairs
-        terminalName = IProtocol(feeTo).terminalName(sender);
+        terminalName = IProtocol(incentive).terminalName(sender);
         if (keccak256(bytes(terminalName)) == keccak256(bytes(""))) {
             revert InvalidTerminal(msg.sender);
         }
@@ -1354,11 +1360,11 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
     }
 
     function _fee(address base, address quote, uint256 amount, address account, bool isMaker) internal view returns (uint256 fee) {
-        if (_isContract(feeTo) && IProtocol(feeTo).isSubscribed(account)) {
-            uint32 feeNum = IProtocol(feeTo).feeOf(base, quote, account, tx.origin, isMaker);
+        if (_isContract(incentive) && IProtocol(incentive).isSubscribed(account)) {
+            uint32 feeNum = IProtocol(incentive).feeOf(base, quote, account, isMaker);
             return (amount * feeNum) / DENOM;
         }
-        return (amount * baseFee) / DENOM;
+        return (amount * _baseFee()) / DENOM;
     }
 
     function _baseFee() internal view returns (uint32) {

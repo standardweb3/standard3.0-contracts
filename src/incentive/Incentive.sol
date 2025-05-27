@@ -3,8 +3,9 @@
 pragma solidity ^0.8.24;
 
 import {IProtocol} from "./interfaces/IProtocol.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract Incentive is IProtocol {
+contract Incentive is IProtocol, AccessControl {
     address public membership;
 
     // fee numerator mappings: key: membership level, value: fee numerator

@@ -9,9 +9,11 @@ interface IOrderbook {
 
     function setLmp(uint256 price) external;
 
-    function placeAsk(address owner, uint256 price, uint256 amount) external returns (uint32 id);
+    function placeAsk(address owner, uint256 price, uint256 amount) external returns (uint32 id, bool foundDmt);
 
-    function placeBid(address owner, uint256 price, uint256 amount) external returns (uint32 id);
+    function placeBid(address owner, uint256 price, uint256 amount) external returns (uint32 id, bool foundDmt);
+
+    function removeDmt(bool isBid) external returns (ExchangeOrderbook.Order memory order);
 
     function cancelOrder(bool isBid, uint32 orderId, address owner) external returns (uint256 remaining);
 

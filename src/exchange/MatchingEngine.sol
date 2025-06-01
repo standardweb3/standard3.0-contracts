@@ -1102,11 +1102,17 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         internal
         returns (uint32 id)
     {
+        bool foundDmt;
         // create order
         if (isBid) {
-            id = IOrderbook(orderbook).placeBid(recipient, price, withoutFee);
+            (id, foundDmt) = IOrderbook(orderbook).placeBid(recipient, price, withoutFee);
         } else {
-            id = IOrderbook(orderbook).placeAsk(recipient, price, withoutFee);
+            (id, foundDmt) = IOrderbook(orderbook).placeAsk(recipient, price, withoutFee);
+        }
+        if (foundDmt) {
+            // emit canceling dormant order
+            ExchangeOrderbook.Order memory order = IOrderbook(orderbook).removeDmt(isBid);
+            emit OrderCanceled(orderbook, id, isBid, order.owner, order.depositAmount);
         }
         return id;
     }

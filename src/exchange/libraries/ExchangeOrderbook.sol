@@ -21,6 +21,7 @@ library ExchangeOrderbook {
         // count of the orders, used for array allocation
         uint32 count;
         address engine;
+        Order dormantOrder;
     }
 
     error OrderIdIsZero(uint32 id);
@@ -83,7 +84,7 @@ library ExchangeOrderbook {
 
     function _createOrder(OrderStorage storage self, address owner, uint256 price, uint256 depositAmount)
         internal
-        returns (uint32 id)
+        returns (uint32 id, bool foundDmt)
     {
         if (price == 0) {
             revert PriceIsZero(price);
@@ -91,8 +92,18 @@ library ExchangeOrderbook {
         Order memory order = Order({owner: owner, price: price, depositAmount: depositAmount});
         // In order to prevent order overflow, order id must start from 1
         self.count = self.count == 0 || self.count == type(uint32).max ? 1 : self.count + 1;
+        // check if the order already exists
+        if (self.orders[self.count].owner != address(0)) {
+            // store canceling order to dormantOrder
+            self.dormantOrder = self.orders[self.count];
+            // cancel the dormant order
+            _deleteOrder(self, self.count);
+            foundDmt = true;
+        }
+        // insert order
         self.orders[self.count] = order;
-        return self.count;
+        foundDmt = false;
+        return (self.count, foundDmt);
     }
 
     function _decreaseOrder(OrderStorage storage self, uint32 id, uint256 amount, uint256 dust, bool clear)

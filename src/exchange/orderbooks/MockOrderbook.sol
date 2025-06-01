@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: BUSL-1.1
 
+// DANGER: This is a mock contract for testing purposes only.
+// It can change order id count, and It should not be used in production.
+
 pragma solidity ^0.8.24;
 
 import {IOrderbook} from "../interfaces/IOrderbook.sol";
@@ -16,7 +19,7 @@ interface IWETHMinimal {
     function withdraw(uint256) external;
 }
 
-contract Orderbook is IOrderbook, Initializable {
+contract MockOrderbook is IOrderbook, Initializable {
     using ExchangeLinkedList for ExchangeLinkedList.PriceLinkedList;
     using ExchangeOrderbook for ExchangeOrderbook.OrderStorage;
 
@@ -63,6 +66,10 @@ contract Orderbook is IOrderbook, Initializable {
             revert InvalidAccess(msg.sender, pair.engine);
         }
         _;
+    }
+
+    function setOrderCount(bool isBid, uint32 count) external onlyEngine {
+        isBid ? _bidOrders.count = count : _askOrders.count = count;
     }
 
     function setLmp(uint256 price) external onlyEngine {

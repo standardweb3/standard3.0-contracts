@@ -69,28 +69,36 @@ contract OrderbookLukso is IOrderbook, Initializable {
     }
 
 
-    function placeAsk(address owner, uint256 price, uint256 amount) external onlyEngine returns (uint32 id) {
+    function placeAsk(address owner, uint256 price, uint256 amount) external onlyEngine returns (uint32 id, bool foundDmt) {
         // clear empty head
         clearEmptyHead(false);
-        id = _askOrders._createOrder(owner, price, amount);
+        (id, foundDmt) = _askOrders._createOrder(owner, price, amount);
         // check if the price is new in the list. if not, insert id to the list
         if (_askOrders._isEmpty(price)) {
             priceLists._insert(false, price);
         }
         _askOrders._insertId(price, id, amount);
-        return id;
+        return (id, foundDmt);
     }
 
-    function placeBid(address owner, uint256 price, uint256 amount) external onlyEngine returns (uint32 id) {
+    function placeBid(address owner, uint256 price, uint256 amount) external onlyEngine returns (uint32 id, bool foundDmt) {
         // clear empty head
         clearEmptyHead(true);
-        id = _bidOrders._createOrder(owner, price, amount);
+        (id, foundDmt) = _bidOrders._createOrder(owner, price, amount);
         // check if the price is new in the list. if not, insert id to the list
         if (_bidOrders._isEmpty(price)) {
             priceLists._insert(true, price);
         }
         _bidOrders._insertId(price, id, amount);
-        return id;
+        return (id, foundDmt);
+    }
+
+     function removeDmt(bool isBid) external onlyEngine returns (ExchangeOrderbook.Order memory order) {
+        // get dormant order
+        order = isBid ? _bidOrders.dormantOrder : _askOrders.dormantOrder;
+        // free memory for dormant order
+        isBid ? delete _bidOrders.dormantOrder : delete _askOrders.dormantOrder;
+        return order;
     }
 
     function cancelOrder(bool isBid, uint32 orderId, address owner) external onlyEngine returns (uint256 remaining) {

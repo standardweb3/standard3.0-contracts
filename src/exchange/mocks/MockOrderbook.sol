@@ -68,7 +68,7 @@ contract MockOrderbook is IOrderbook, Initializable {
         _;
     }
 
-    function setOrderCount(bool isBid, uint32 count) external onlyEngine {
+    function setOrderCount(bool isBid, uint32 count) external {
         isBid ? _bidOrders.count = count : _askOrders.count = count;
     }
 

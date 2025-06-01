@@ -90,20 +90,21 @@ library ExchangeOrderbook {
             revert PriceIsZero(price);
         }
         Order memory order = Order({owner: owner, price: price, depositAmount: depositAmount});
+        // set foundDmt to false by default
+        foundDmt = false;
         // In order to prevent order overflow, order id must start from 1
         self.count = self.count == 0 || self.count == type(uint32).max ? 1 : self.count + 1;
         // check if the order already exists
         if (self.orders[self.count].owner != address(0)) {
             // store canceling order to dormantOrder
             self.dormantOrder = self.orders[self.count];
-            // cancel the dormant order
+            // cancel the dormant order and set foundDmt to true
             _deleteOrder(self, self.count);
             foundDmt = true;
         }
         // insert order
         self.orders[self.count] = order;
-        foundDmt = false;
-        return (self.count, foundDmt);
+        return (self.count, foundDmt == true);
     }
 
     function _decreaseOrder(OrderStorage storage self, uint32 id, uint256 amount, uint256 dust, bool clear)

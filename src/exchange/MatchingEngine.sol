@@ -78,7 +78,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
 
     event OrderCanceled(address pair, uint256 id, bool isBid, address indexed owner, uint256 amount);
 
-    event NewMarketPrice(address pair, uint256 price);
+    event NewMarketPrice(address pair, uint256 price, bool isBid);
     event ListingCostSet(address payment, uint256 amount);
 
     /**
@@ -386,7 +386,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             //if made, set last market price to orderData.bidHead only if orderData.bidHead is greater than lmp
             if (orderData.bidHead > orderData.lmp) {
                 IOrderbook(orderData.orderbook).setLmp(orderData.bidHead);
-                emit NewMarketPrice(orderData.orderbook, orderData.bidHead);
+                emit NewMarketPrice(orderData.orderbook, orderData.bidHead, true);
             }
             emit OrderPlaced(
                 orderData.orderbook,
@@ -500,7 +500,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             //if made, set last market price to orderData.askHead only if askHead is smaller than lmp
             if (orderData.askHead < orderData.lmp) {
                 IOrderbook(orderData.orderbook).setLmp(orderData.askHead);
-                emit NewMarketPrice(orderData.orderbook, orderData.askHead);
+                emit NewMarketPrice(orderData.orderbook, orderData.askHead, false);
             }
             emit OrderPlaced(
                 orderData.orderbook,
@@ -650,7 +650,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             if (price > orderData.lmp) {
                 IOrderbook(orderData.orderbook).setLmp(price);
 
-                emit NewMarketPrice(orderData.orderbook, price);
+                emit NewMarketPrice(orderData.orderbook, price, true);
             }
             emit OrderPlaced(
                 orderData.orderbook, orderData.makeId, recipient, true, price, quoteAmount, orderData.withoutFee
@@ -749,7 +749,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             if (price < orderData.lmp) {
                 IOrderbook(orderData.orderbook).setLmp(price);
 
-                emit NewMarketPrice(orderData.orderbook, price);
+                emit NewMarketPrice(orderData.orderbook, price, false);
             }
             emit OrderPlaced(
                 orderData.orderbook, orderData.makeId, recipient, false, price, baseAmount, orderData.withoutFee
@@ -881,7 +881,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         TransferHelper.TokenInfo memory baseInfo = TransferHelper.getTokenInfo(base);
         TransferHelper.TokenInfo memory quoteInfo = TransferHelper.getTokenInfo(quote);
         emit PairAdded(orderbook, baseInfo, quoteInfo, listingPrice, listingDate, terminalName);
-        emit NewMarketPrice(orderbook, listingPrice);
+        emit NewMarketPrice(orderbook, listingPrice, true);
         return orderbook;
     }
 
@@ -904,7 +904,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         pair = getPair(base, quote);
         IOrderbook(pair).setLmp(listingPrice);
         emit PairUpdated(pair, base, quote, listingPrice, listingDate);
-        emit NewMarketPrice(pair, listingPrice);
+        emit NewMarketPrice(pair, listingPrice, true);
         return pair;
     }
 
@@ -1232,7 +1232,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         // set new market price as the orders are matched
         if (lmp != 0) {
             IOrderbook(orderbook).setLmp(lmp);
-            emit NewMarketPrice(orderbook, lmp);
+            emit NewMarketPrice(orderbook, lmp, isBid);
         }
 
         return (remaining, bidHead, askHead); // return bidHead, and askHead

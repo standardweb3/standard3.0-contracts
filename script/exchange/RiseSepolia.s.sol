@@ -224,7 +224,7 @@ contract SetupSpreadOnPair is Deployer {
     function run() external {
         _setDeployer();
         matchingEngine = MatchingEngine(payable(address(matchingEngine_address)));
-        matchingEngine.setSpread(base, quote, buyTick, sellTick);
+        matchingEngine.setSpread(base, quote, buyTick, sellTick, true);
         vm.stopBroadcast();
     }
 }

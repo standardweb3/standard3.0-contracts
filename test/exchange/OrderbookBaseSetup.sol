@@ -61,7 +61,8 @@ contract BaseSetup is Test {
         matchingEngine.initialize(address(orderbookFactory), address(booker), address(weth));
 
         // setup spread
-        matchingEngine.setDefaultSpread(2000000, 2000000);
+        matchingEngine.setDefaultSpread(2000000, 2000000, true);
+        matchingEngine.setDefaultSpread(2000000, 2000000, false);
         matchingEngine.setBaseFee(300000);
 
         vm.prank(trader1);

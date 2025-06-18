@@ -391,7 +391,7 @@ contract MintMockToken is Deployer {
         MockToken token = MockToken(token_address);
         uint256 amount = vm.promptUint("Enter Amount to Mint without decimals");
 
-        token.mint(address(this), amount);
+        token.mint(0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0, amount);
         vm.stopBroadcast();
     }
 }

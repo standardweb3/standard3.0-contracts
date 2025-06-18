@@ -116,7 +116,7 @@ contract setDefaultSpread is Deployer {
     function run() external {
         _setDeployer();
         MatchingEngine matchingEngine = MatchingEngine(payable(engine));
-        matchingEngine.setDefaultSpread(100000, 100000);
+        matchingEngine.setDefaultSpread(100000, 100000, true);
 
         vm.stopBroadcast();
     }
@@ -132,11 +132,13 @@ contract getDefaultSpread is Deployer {
         MatchingEngine matchingEngine = MatchingEngine(payable(engine));
         matchingEngine.getSpread(
             0xdA367FE3198130d98c99C1909A56D71C1d1AA2f6,
-            true
+            true,
+            false
         );
 
         matchingEngine.getSpread(
             0xdA367FE3198130d98c99C1909A56D71C1d1AA2f6,
+            false,
             false
         );
 
@@ -318,7 +320,7 @@ contract SetupSpreadOnPair is Deployer {
         matchingEngine = MatchingEngine(
             payable(address(matchingEngine_address))
         );
-        matchingEngine.setSpread(base, quote, buyTick, sellTick);
+        matchingEngine.setSpread(base, quote, buyTick, sellTick, true);
         vm.stopBroadcast();
     }
 }

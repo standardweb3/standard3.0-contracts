@@ -11,6 +11,7 @@ contract Deposit is AccessControl {
     event DepositETH(address indexed to, uint256 amount);
     event DepositToken(address indexed to, address indexed token, uint256 amount);
     event DepositNFT(address indexed to, address indexed token, uint256 tokenId);
+    event SetSupportedTokens(address[] tokens, bool[] isSupported);
 
     mapping(address => bool) public supportedTokens;
 
@@ -22,6 +23,7 @@ contract Deposit is AccessControl {
         for (uint256 i = 0; i < tokens.length; i++) {
             supportedTokens[tokens[i]] = isSupported[i];
         }
+        emit SetSupportedTokens(tokens, isSupported);
     }
 
     // Depost Native Token to api account

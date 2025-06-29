@@ -81,38 +81,5 @@ contract MockBaseSetup is Test {
         feeToken.approve(address(matchingEngine), 40000e18);
     }
 
-    function _showOrderbook(address base, address quote) internal view {
-        (uint256 bidHead, uint256 askHead) = matchingEngine.heads(base, quote);
-        console.log("Bid Head: ", bidHead);
-        console.log("Ask Head: ", askHead);
-        uint256[] memory bidPrices = matchingEngine.getPrices(address(base), address(quote), true, 20);
-        uint256[] memory askPrices = matchingEngine.getPrices(address(base), address(quote), false, 20);
-        console.log("Ask prices: ");
-        for (uint256 i = 0; i < 6; i++) {
-            console.log("AskPrice: ", askPrices[i]);
-            console.log("Ask Orders: ");
-            uint32[] memory askOrderIds =
-                matchingEngine.getOrderIds(address(base), address(quote), false, askPrices[i], 10);
-            ExchangeOrderbook.Order[] memory askOrders =
-                matchingEngine.getOrders(address(base), address(quote), false, askPrices[i], 10);
-            for (uint256 j = 0; j < 10; j++) {
-                console.log(askOrderIds[j], askOrders[j].owner, askOrders[j].depositAmount);
-            }
-        }
-
-        console.log("Bid prices: ");
-        for (uint256 i = 0; i < 6; i++) {
-            console.log("Bid Price: ", bidPrices[i]);
-            console.log("Bid Orders: ");
-            uint32[] memory bidOrderIds =
-                matchingEngine.getOrderIds(address(base), address(quote), false, bidPrices[i], 10);
-            ExchangeOrderbook.Order[] memory bidOrders =
-                matchingEngine.getOrders(address(base), address(quote), true, bidPrices[i], 10);
-            for (uint256 j = 0; j < 10; j++) {
-                console.log(bidOrderIds[j], bidOrders[j].owner, bidOrders[j].depositAmount);
-            }
-        }
-    }
-
     function _initOrderbook() internal {}
 }

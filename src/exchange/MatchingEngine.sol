@@ -8,6 +8,7 @@ import {TransferHelper} from "./libraries/TransferHelper.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {IMatchingEngine} from "./interfaces/IMatchingEngine.sol";
 
 interface IProtocol {
     function feeOf(
@@ -27,7 +28,7 @@ interface IProtocol {
 }
 
 // Onchain Matching engine for the orders
-contract MatchingEngine is ReentrancyGuard, AccessControl {
+contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
     // Market maker role
     bytes32 private constant MARKET_MAKER_ROLE = keccak256("MARKET_MAKER_ROLE");
     // fee recipient for point storage
@@ -59,7 +60,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         /// Amount after removing fee
         uint256 withoutFee;
         /// Orderbook contract address
-        address orderbook;
+        address pair;
         /// Head price on bid orderbook, the highest bid price
         uint256 bidHead;
         /// Head price on ask orderbook, the lowest ask price
@@ -206,8 +207,8 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         WETH = WETH_;
         defaultMktBuy = 100000;
         defaultMktSell = 100000;
-        defaultLmtBuy = 1000000;
-        defaultLmtSell = 1000000;
+        defaultLmtBuy = 3000000;
+        defaultLmtSell = 3000000;
         // get impl address of orderbook contract to predict address
         address impl = IOrderbookFactory(orderbookFactory_).impl();
         // Orderbook factory must be initialized first to locate pairs
@@ -222,7 +223,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
     }
 
     // admin functions
-    function setFeeTo(address feeTo_) external returns (bool success) {
+    function setFeeTo(address feeTo_) external override returns (bool success) {
         if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
         }
@@ -284,7 +285,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         uint32 buy,
         uint32 sell,
         bool isMkt
-    ) external returns (bool success) {
+    ) external override returns (bool success) {
         if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
             revert InvalidRole(DEFAULT_ADMIN_ROLE, _msgSender());
         }
@@ -306,7 +307,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         uint32 buy,
         uint32 sell,
         bool isMkt
-    ) external returns (bool success) {
+    ) external override returns (bool success) {
         // get pair
         address pair = IOrderbookFactory(orderbookFactory).getPair(base, quote);
         if (pair == address(0)) {
@@ -322,7 +323,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             }
         }
 
-        _setSpread(base, quote, buy, sell, isMkt);
+        _setSpread(pair, buy, sell, isMkt);
         return true;
     }
 
@@ -349,7 +350,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         uint32 afterAdjust,
         bool isMaker,
         uint32 n
-    ) external returns (uint256 makePrice, uint256 placed, uint32 id) {
+    ) external override returns (uint256 makePrice, uint256 placed, uint32 id) {
         // get pair
         address pair = IOrderbookFactory(orderbookFactory).getPair(base, quote);
         if (pair == address(0)) {
@@ -376,7 +377,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             ? beforeAdjust
             : getSpread(pair, false, false);
         // change spread in the pair to adjust price
-        _setSpread(base, quote, buySpread, sellSpread, false);
+        _setSpread(pair, buySpread, sellSpread, false);
 
         // add limit buy or sell order to adjust price
         if (isBuy) {
@@ -404,7 +405,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         // set spreads in the pair to original
         buySpread = isBuy ? afterAdjust : getSpread(pair, true, false);
         sellSpread = !isBuy ? afterAdjust : getSpread(pair, false, false);
-        _setSpread(base, quote, buySpread, sellSpread, false);
+        _setSpread(pair, buySpread, sellSpread, false);
 
         // if isMaker, cancel the order and return the fund to MM
         if (!isMaker) {
@@ -441,13 +442,14 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         uint32 slippageLimit
     )
         public
+        override
         nonReentrant
         returns (uint256 makePrice, uint256 placed, uint32 id)
     {
         OrderData memory orderData;
 
         // reuse quoteAmount variable as minRequired from _deposit to avoid stack too deep error
-        (orderData.withoutFee, orderData.orderbook) = _deposit(
+        (orderData.withoutFee, orderData.pair, orderData.lmp) = _deposit(
             base,
             quote,
             0,
@@ -458,9 +460,9 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
 
         // get spread limits
         orderData.spreadLimit = slippageLimit <=
-            getSpread(orderData.orderbook, true, true)
+            getSpread(orderData.pair, true, true)
             ? slippageLimit
-            : getSpread(orderData.orderbook, true, true);
+            : getSpread(orderData.pair, true, true);
 
         orderData.lmp = mktPrice(base, quote);
 
@@ -473,7 +475,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             orderData.bidHead,
             orderData.askHead
         ) = _limitOrder(
-            orderData.orderbook,
+            orderData.pair,
             orderData.withoutFee,
             quote,
             recipient,
@@ -484,7 +486,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
 
         // reuse orderData.bidHead argument for storing make price
         orderData.bidHead = _detMarketBuyMakePrice(
-            orderData.orderbook,
+            orderData.pair,
             orderData.bidHead,
             orderData.askHead,
             orderData.spreadLimit
@@ -494,7 +496,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         orderData.makeId = _detMake(
             base,
             quote,
-            orderData.orderbook,
+            orderData.pair,
             orderData.withoutFee,
             orderData.bidHead,
             true,
@@ -506,15 +508,11 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         if (orderData.makeId > 0) {
             //if made, set last market price to orderData.bidHead only if orderData.bidHead is greater than lmp
             if (orderData.bidHead > orderData.lmp) {
-                IOrderbook(orderData.orderbook).setLmp(orderData.bidHead);
-                emit NewMarketPrice(
-                    orderData.orderbook,
-                    orderData.bidHead,
-                    true
-                );
+                IOrderbook(orderData.pair).setLmp(orderData.bidHead);
+                emit NewMarketPrice(orderData.pair, orderData.bidHead, true);
             }
             emit OrderPlaced(
-                orderData.orderbook,
+                orderData.pair,
                 orderData.makeId,
                 recipient,
                 true,
@@ -590,11 +588,12 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         uint32 slippageLimit
     )
         public
+        override
         nonReentrant
         returns (uint256 makePrice, uint256 placed, uint32 id)
     {
         OrderData memory orderData;
-        (orderData.withoutFee, orderData.orderbook) = _deposit(
+        (orderData.withoutFee, orderData.pair, orderData.lmp) = _deposit(
             base,
             quote,
             0,
@@ -605,9 +604,9 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
 
         // get spread limits
         orderData.spreadLimit = slippageLimit <=
-            getSpread(orderData.orderbook, false, true)
+            getSpread(orderData.pair, false, true)
             ? slippageLimit
-            : getSpread(orderData.orderbook, false, true);
+            : getSpread(orderData.pair, false, true);
 
         orderData.lmp = mktPrice(base, quote);
 
@@ -620,7 +619,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             orderData.bidHead,
             orderData.askHead
         ) = _limitOrder(
-            orderData.orderbook,
+            orderData.pair,
             orderData.withoutFee,
             base,
             recipient,
@@ -631,7 +630,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
 
         // reuse orderData.askHead argument for storing make price
         orderData.askHead = _detMarketSellMakePrice(
-            orderData.orderbook,
+            orderData.pair,
             orderData.bidHead,
             orderData.askHead,
             orderData.spreadLimit
@@ -640,7 +639,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         orderData.makeId = _detMake(
             base,
             quote,
-            orderData.orderbook,
+            orderData.pair,
             orderData.withoutFee,
             orderData.askHead,
             false,
@@ -652,15 +651,11 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         if (orderData.makeId > 0) {
             //if made, set last market price to orderData.askHead only if askHead is smaller than lmp
             if (orderData.askHead < orderData.lmp) {
-                IOrderbook(orderData.orderbook).setLmp(orderData.askHead);
-                emit NewMarketPrice(
-                    orderData.orderbook,
-                    orderData.askHead,
-                    false
-                );
+                IOrderbook(orderData.pair).setLmp(orderData.askHead);
+                emit NewMarketPrice(orderData.pair, orderData.askHead, false);
             }
             emit OrderPlaced(
-                orderData.orderbook,
+                orderData.pair,
                 orderData.makeId,
                 recipient,
                 false,
@@ -732,7 +727,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         uint32 n,
         address recipient,
         uint32 slippageLimit
-    ) external payable returns (uint256 makePrice, uint256 placed, uint32 id) {
+    ) external override payable returns (uint256 makePrice, uint256 placed, uint32 id) {
         IWETH(WETH).deposit{value: msg.value}();
         return
             marketBuy(
@@ -765,7 +760,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         uint32 n,
         address recipient,
         uint32 slippageLimit
-    ) external payable returns (uint256 makePrice, uint256 placed, uint32 id) {
+    ) external override payable returns (uint256 makePrice, uint256 placed, uint32 id) {
         IWETH(WETH).deposit{value: msg.value}();
         return
             marketSell(
@@ -804,11 +799,12 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         address recipient
     )
         public
+        override
         nonReentrant
         returns (uint256 makePrice, uint256 placed, uint32 id)
     {
         OrderData memory orderData;
-        (orderData.withoutFee, orderData.orderbook) = _deposit(
+        (orderData.withoutFee, orderData.pair, orderData.lmp) = _deposit(
             base,
             quote,
             price,
@@ -818,7 +814,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         );
 
         // get spread limits
-        orderData.spreadLimit = getSpread(orderData.orderbook, true, false);
+        orderData.spreadLimit = getSpread(orderData.pair, true, false);
 
         // reuse quoteAmount for storing amount without fee
         quoteAmount = orderData.withoutFee;
@@ -829,20 +825,20 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             orderData.bidHead,
             orderData.askHead
         ) = _limitOrder(
-            orderData.orderbook,
+            orderData.pair,
             orderData.withoutFee,
             quote,
             recipient,
             true,
-            price >= (orderData.lmp * (DENOM - orderData.spreadLimit)) / DENOM
-                ? (orderData.lmp * (DENOM - orderData.spreadLimit)) / DENOM
+            price >= (orderData.lmp * (DENOM + orderData.spreadLimit)) / DENOM
+                ? (orderData.lmp * (DENOM + orderData.spreadLimit)) / DENOM
                 : price,
             n
         );
 
         // reuse price variable for storing make price, determine
         (price, orderData.lmp) = _detLimitBuyMakePrice(
-            orderData.orderbook,
+            orderData.pair,
             price,
             orderData.bidHead,
             orderData.askHead,
@@ -852,7 +848,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         orderData.makeId = _detMake(
             base,
             quote,
-            orderData.orderbook,
+            orderData.pair,
             orderData.withoutFee,
             price,
             true,
@@ -864,12 +860,12 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         if (orderData.makeId > 0) {
             // if made, set last market price to price only if price is higher than lmp
             if (price > orderData.lmp) {
-                IOrderbook(orderData.orderbook).setLmp(price);
+                IOrderbook(orderData.pair).setLmp(price);
 
-                emit NewMarketPrice(orderData.orderbook, price, true);
+                emit NewMarketPrice(orderData.pair, price, true);
             }
             emit OrderPlaced(
-                orderData.orderbook,
+                orderData.pair,
                 orderData.makeId,
                 recipient,
                 true,
@@ -948,11 +944,12 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         address recipient
     )
         public
+        override
         nonReentrant
         returns (uint256 makePrice, uint256 placed, uint32 id)
     {
         OrderData memory orderData;
-        (orderData.withoutFee, orderData.orderbook) = _deposit(
+        (orderData.withoutFee, orderData.pair, orderData.lmp) = _deposit(
             base,
             quote,
             price,
@@ -962,7 +959,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         );
 
         // get spread limit
-        orderData.spreadLimit = getSpread(orderData.orderbook, false, false);
+        orderData.spreadLimit = getSpread(orderData.pair, false, false);
 
         // reuse baseAmount for storing amount without fee
         baseAmount = orderData.withoutFee;
@@ -973,20 +970,20 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             orderData.bidHead,
             orderData.askHead
         ) = _limitOrder(
-            orderData.orderbook,
+            orderData.pair,
             orderData.withoutFee,
             base,
             recipient,
             false,
-            price <= (orderData.lmp * (DENOM + orderData.spreadLimit)) / DENOM
-                ? (orderData.lmp * (DENOM + orderData.spreadLimit)) / DENOM
+            price <= (orderData.lmp * (DENOM - orderData.spreadLimit)) / DENOM
+                ? (orderData.lmp * (DENOM - orderData.spreadLimit)) / DENOM
                 : price,
             n
         );
 
         // reuse price variable for make price
         (price, orderData.lmp) = _detLimitSellMakePrice(
-            orderData.orderbook,
+            orderData.pair,
             price,
             orderData.bidHead,
             orderData.askHead,
@@ -996,7 +993,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         orderData.makeId = _detMake(
             base,
             quote,
-            orderData.orderbook,
+            orderData.pair,
             orderData.withoutFee,
             price,
             false,
@@ -1007,12 +1004,12 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         if (orderData.makeId > 0) {
             // if made, set last market price to price only if price is lower than lmp
             if (price < orderData.lmp) {
-                IOrderbook(orderData.orderbook).setLmp(price);
+                IOrderbook(orderData.pair).setLmp(price);
 
-                emit NewMarketPrice(orderData.orderbook, price, false);
+                emit NewMarketPrice(orderData.pair, price, false);
             }
             emit OrderPlaced(
-                orderData.orderbook,
+                orderData.pair,
                 orderData.makeId,
                 recipient,
                 false,
@@ -1125,7 +1122,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         address quote,
         uint256 listingPrice,
         uint256 listingDate
-    ) external payable returns (address book) {
+    ) external override payable returns (address book) {
         IWETH(WETH).deposit{value: msg.value}();
         return addPair(base, quote, listingPrice, listingDate, WETH);
     }
@@ -1144,19 +1141,20 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         uint256 listingPrice,
         uint256 listingDate,
         address payment
-    ) public returns (address pair) {
+    ) public override returns (address pair) {
         string memory terminalName = _listingDeposit(payment, msg.sender);
 
         // create orderbook for the pair
-        address orderbook = IOrderbookFactory(orderbookFactory).createBook(
+        pair = IOrderbookFactory(orderbookFactory).createBook(
             base,
             quote
         );
-        IOrderbook(orderbook).setLmp(listingPrice);
+        IOrderbook(pair).setLmp(listingPrice);
         // set buy/sell spread to default suspension rate in basis point(bps)
-        _setSpread(base, quote, defaultMktBuy, defaultMktSell, true);
-        _setSpread(base, quote, defaultLmtBuy, defaultLmtSell, false);
-        _setListingDate(orderbook, listingDate);
+        _setSpread(pair, defaultMktBuy, defaultMktSell, true);
+        _setSpread(pair, defaultLmtBuy, defaultLmtSell, false);
+
+        _setListingDate(pair, listingDate);
 
         TransferHelper.TokenInfo memory baseInfo = TransferHelper.getTokenInfo(
             base
@@ -1165,15 +1163,15 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             quote
         );
         emit PairAdded(
-            orderbook,
+            pair,
             baseInfo,
             quoteInfo,
             listingPrice,
             listingDate,
             terminalName
         );
-        emit NewMarketPrice(orderbook, listingPrice, true);
-        return orderbook;
+        emit NewMarketPrice(pair, listingPrice, true);
+        return pair;
     }
 
     /**
@@ -1188,7 +1186,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         address quote,
         uint256 listingPrice,
         uint256 listingDate
-    ) external returns (address pair) {
+    ) external override returns (address pair) {
         // check if the list request is done by
         if (!hasRole(MARKET_MAKER_ROLE, _msgSender())) {
             revert InvalidRole(MARKET_MAKER_ROLE, _msgSender());
@@ -1234,73 +1232,59 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         }
     }
 
-    function rematchOrder(
-        address base,
-        address quote,
-        bool isBid,
-        uint32 orderId,
-        uint256 price,
-        uint256 amount,
-        uint32 n
-    ) external returns (uint256 makePrice, uint256 placed, uint32 id) {
-        cancelOrder(base, quote, isBid, orderId);
-        // adjust amount from input
-        _deposit(base, quote, price, amount, isBid, true);
-        // make new limit buy or sell order
-        if (isBid) {
-            return limitBuy(base, quote, price, amount, true, n, msg.sender);
-        } else {
-            return limitSell(base, quote, price, amount, true, n, msg.sender);
+    function updateOrders(
+        UpdateOrder[] memory updateOrderData
+    ) external returns (uint256[] memory makePrice, uint256[] memory placed, uint32[] memory id) {
+        makePrice = new uint256[](updateOrderData.length);
+        placed = new uint256[](updateOrderData.length);
+        id = new uint32[](updateOrderData.length);
+        for (uint32 i = 0; i < updateOrderData.length; i++) {
+            cancelOrder(
+                updateOrderData[i].base,
+                updateOrderData[i].quote,
+                updateOrderData[i].isBid,
+                updateOrderData[i].orderId
+            );
+
+            // make new limit buy or sell order
+            if (updateOrderData[i].isBid) {
+                (makePrice[i], placed[i], id[i]) = limitBuy(
+                        updateOrderData[i].base,
+                        updateOrderData[i].quote,
+                        updateOrderData[i].price,
+                        updateOrderData[i].amount,
+                        true,
+                        updateOrderData[i].n,
+                        updateOrderData[i].recipient
+                    );
+            } else {
+                (makePrice[i], placed[i], id[i]) = limitSell(
+                        updateOrderData[i].base,
+                        updateOrderData[i].quote,
+                        updateOrderData[i].price,
+                        updateOrderData[i].amount,
+                        true,
+                        updateOrderData[i].n,
+                        updateOrderData[i].recipient
+                    );
+            }
         }
+        return (makePrice, placed, id);
     }
 
     function cancelOrders(
-        address[] memory base,
-        address[] memory quote,
-        bool[] memory isBid,
-        uint32[] memory orderIds
+        CancelOrder[] memory cancelOrderData
     ) external returns (uint256[] memory refunded) {
-        refunded = new uint256[](orderIds.length);
-        for (uint32 i = 0; i < orderIds.length; i++) {
-            refunded[i] = cancelOrder(base[i], quote[i], isBid[i], orderIds[i]);
+        refunded = new uint256[](cancelOrderData.length);
+        for (uint32 i = 0; i < cancelOrderData.length; i++) {
+            refunded[i] = cancelOrder(
+                cancelOrderData[i].base,
+                cancelOrderData[i].quote,
+                cancelOrderData[i].isBid,
+                cancelOrderData[i].orderId
+            );
         }
         return refunded;
-    }
-
-    /**
-     * @dev Returns prices in the ask/bid orderbook for the given trading pair.
-     * @param base The address of the base asset for the trading pair.
-     * @param quote The address of the quote asset for the trading pair.
-     * @param isBid Boolean indicating if the orderbook to retrieve prices from is an ask orderbook.
-     * @param n The number of prices to retrieve.
-     */
-    function getPrices(
-        address base,
-        address quote,
-        bool isBid,
-        uint32 n
-    ) external view returns (uint256[] memory) {
-        address orderbook = getPair(base, quote);
-        return IOrderbook(orderbook).getPrices(isBid, n);
-    }
-
-    /**
-     * @dev Returns orders in the ask/bid orderbook for the given trading pair in a price.
-     * @param base The address of the base asset for the trading pair.
-     * @param quote The address of the quote asset for the trading pair.
-     * @param isBid Boolean indicating if the orderbook to retrieve orders from is an ask orderbook.
-     * @param price The price to retrieve orders from.
-     * @param n The number of orders to retrieve.
-     */
-    function getOrders(
-        address base,
-        address quote,
-        bool isBid,
-        uint256 price,
-        uint32 n
-    ) external view returns (ExchangeOrderbook.Order[] memory) {
-        address orderbook = getPair(base, quote);
-        return IOrderbook(orderbook).getOrders(isBid, price, n);
     }
 
     /**
@@ -1315,28 +1299,9 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         address quote,
         bool isBid,
         uint32 orderId
-    ) public view returns (ExchangeOrderbook.Order memory) {
+    ) public view override returns (ExchangeOrderbook.Order memory) {
         address orderbook = getPair(base, quote);
         return IOrderbook(orderbook).getOrder(isBid, orderId);
-    }
-
-    /**
-     * @dev Returns order ids in the ask/bid orderbook for the given trading pair in a price.
-     * @param base The address of the base asset for the trading pair.
-     * @param quote The address of the quote asset for the trading pair.
-     * @param isBid Boolean indicating if the orderbook to retrieve orders from is an ask orderbook.
-     * @param price The price to retrieve orders from.
-     * @param n The number of order ids to retrieve.
-     */
-    function getOrderIds(
-        address base,
-        address quote,
-        bool isBid,
-        uint256 price,
-        uint32 n
-    ) external view returns (uint32[] memory) {
-        address orderbook = getPair(base, quote);
-        return IOrderbook(orderbook).getOrderIds(isBid, price, n);
     }
 
     /**
@@ -1403,28 +1368,26 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
     }
 
     function _setSpread(
-        address base,
-        address quote,
+        address pair,
         uint32 buy,
         uint32 sell,
         bool isMkt
     ) internal returns (bool success) {
-        address book = getPair(base, quote);
         if (isMkt) {
-            mktSpreadLimits[book] = DefaultSpread(buy, sell);
+            mktSpreadLimits[pair] = DefaultSpread(buy, sell);
         } else {
-            lmtSpreadLimits[book] = DefaultSpread(buy, sell);
+            lmtSpreadLimits[pair] = DefaultSpread(buy, sell);
         }
         return true;
     }
 
     function getSpread(
-        address book,
+        address pair,
         bool isBuy,
         bool isMkt
     ) public view returns (uint32 spreadLimit) {
         DefaultSpread memory spread;
-        spread = isMkt ? mktSpreadLimits[book] : lmtSpreadLimits[book];
+        spread = isMkt ? mktSpreadLimits[pair] : lmtSpreadLimits[pair];
         if (isBuy) {
             return spread.buy;
         } else {
@@ -1434,14 +1397,14 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
 
     /**
      * @dev Internal function which makes an order on the orderbook.
-     * @param orderbook The address of the orderbook contract for the trading pair
+     * @param pair The address of the orderbook contract for the trading pair
      * @param withoutFee The remaining amount of the asset after the market order has been executed
      * @param price The price, base/quote regardless of decimals of the assets in the pair represented with 8 decimals (if 1000, base is 1000x quote)
      * @param isBid Boolean indicating if the order is a buy (false) or a sell (true)
      * @param recipient The address of the recipient to receive traded asset and claim ownership of made order
      */
     function _makeOrder(
-        address orderbook,
+        address pair,
         uint256 withoutFee,
         uint256 price,
         bool isBid,
@@ -1450,13 +1413,13 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         bool foundDmt;
         // create order
         if (isBid) {
-            (id, foundDmt) = IOrderbook(orderbook).placeBid(
+            (id, foundDmt) = IOrderbook(pair).placeBid(
                 recipient,
                 price,
                 withoutFee
             );
         } else {
-            (id, foundDmt) = IOrderbook(orderbook).placeAsk(
+            (id, foundDmt) = IOrderbook(pair).placeAsk(
                 recipient,
                 price,
                 withoutFee
@@ -1464,10 +1427,11 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         }
         if (foundDmt) {
             // emit canceling dormant order
-            ExchangeOrderbook.Order memory order = IOrderbook(orderbook)
-                .removeDmt(isBid);
+            ExchangeOrderbook.Order memory order = IOrderbook(pair).removeDmt(
+                isBid
+            );
             emit OrderCanceled(
-                orderbook,
+                pair,
                 id,
                 isBid,
                 order.owner,
@@ -1481,7 +1445,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
      * @dev Match bid if `isBid` is true, match ask if `isBid` is false.
      */
     function _matchAt(
-        address orderbook,
+        address pair,
         address give,
         address recipient,
         bool isBid,
@@ -1495,19 +1459,16 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         }
         remaining = amount;
         while (
-            remaining > 0 &&
-            !IOrderbook(orderbook).isEmpty(!isBid, price) &&
-            i < n
+            remaining > 0 && !IOrderbook(pair).isEmpty(!isBid, price) && i < n
         ) {
             // fpop OrderLinkedList by price, if ask you get bid order, if bid you get ask order. Get quote asset on bid order on buy, base asset on ask order on sell
-            (uint32 orderId, uint256 required, bool clear) = IOrderbook(
-                orderbook
-            ).fpop(!isBid, price, remaining);
+            (uint32 orderId, uint256 required, bool clear) = IOrderbook(pair)
+                .fpop(!isBid, price, remaining);
             // order exists, and amount is not 0
             if (remaining <= required) {
                 // execute order
-                TransferHelper.safeTransfer(give, orderbook, remaining);
-                address owner = IOrderbook(orderbook).execute(
+                TransferHelper.safeTransfer(give, pair, remaining);
+                address owner = IOrderbook(pair).execute(
                     orderId,
                     !isBid,
                     recipient,
@@ -1516,7 +1477,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
                 );
                 // emit event order matched
                 emit OrderMatched(
-                    orderbook,
+                    pair,
                     orderId,
                     isBid,
                     recipient,
@@ -1536,8 +1497,8 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             // remaining >= depositAmount
             else {
                 remaining -= required;
-                TransferHelper.safeTransfer(give, orderbook, required);
-                address owner = IOrderbook(orderbook).execute(
+                TransferHelper.safeTransfer(give, pair, required);
+                address owner = IOrderbook(pair).execute(
                     orderId,
                     !isBid,
                     recipient,
@@ -1546,7 +1507,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
                 );
                 // emit event order matched
                 emit OrderMatched(
-                    orderbook,
+                    pair,
                     orderId,
                     isBid,
                     recipient,
@@ -1564,7 +1525,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
 
     /**
      * @dev Executes limit order by matching orders in the orderbook based on the provided limit price.
-     * @param orderbook The address of the orderbook to execute the limit order on.
+     * @param pair The address of the orderbook to execute the limit order on.
      * @param amount The amount of asset to trade.
      * @param give The address of the asset to be traded.
      * @param recipient The address to receive asset after matching a trade
@@ -1574,7 +1535,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
      * @return remaining The remaining amount of asset that was not traded.
      */
     function _limitOrder(
-        address orderbook,
+        address pair,
         uint256 amount,
         address give,
         address recipient,
@@ -1583,9 +1544,9 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         uint32 n
     ) internal returns (uint256 remaining, uint256 bidHead, uint256 askHead) {
         remaining = amount;
-        uint256 lmp = IOrderbook(orderbook).lmp();
-        bidHead = IOrderbook(orderbook).clearEmptyHead(true);
-        askHead = IOrderbook(orderbook).clearEmptyHead(false);
+        uint256 lmp = IOrderbook(pair).lmp();
+        bidHead = IOrderbook(pair).clearEmptyHead(true);
+        askHead = IOrderbook(pair).clearEmptyHead(false);
         uint32 i = 0;
         // In LimitBuy
         if (isBid) {
@@ -1602,7 +1563,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             ) {
                 lmp = askHead;
                 (remaining, i) = _matchAt(
-                    orderbook,
+                    pair,
                     give,
                     recipient,
                     isBid,
@@ -1612,12 +1573,10 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
                     n
                 );
                 // i == 0 when orders are all empty and only head price is left
-                askHead = i == 0
-                    ? 0
-                    : IOrderbook(orderbook).clearEmptyHead(false);
+                askHead = i == 0 ? 0 : IOrderbook(pair).clearEmptyHead(false);
             }
             // update heads
-            bidHead = IOrderbook(orderbook).clearEmptyHead(true);
+            bidHead = IOrderbook(pair).clearEmptyHead(true);
         }
         // In LimitSell
         else {
@@ -1634,7 +1593,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
             ) {
                 lmp = bidHead;
                 (remaining, i) = _matchAt(
-                    orderbook,
+                    pair,
                     give,
                     recipient,
                     isBid,
@@ -1644,17 +1603,15 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
                     n
                 );
                 // i == 0 when orders are all empty and only head price is left
-                bidHead = i == 0
-                    ? 0
-                    : IOrderbook(orderbook).clearEmptyHead(true);
+                bidHead = i == 0 ? 0 : IOrderbook(pair).clearEmptyHead(true);
             }
             // update heads
-            askHead = IOrderbook(orderbook).clearEmptyHead(false);
+            askHead = IOrderbook(pair).clearEmptyHead(false);
         }
         // set new market price as the orders are matched
         if (lmp != 0) {
-            IOrderbook(orderbook).setLmp(lmp);
-            emit NewMarketPrice(orderbook, lmp, isBid);
+            IOrderbook(pair).setLmp(lmp);
+            emit NewMarketPrice(pair, lmp, isBid);
         }
 
         return (remaining, bidHead, askHead); // return bidHead, and askHead
@@ -1666,7 +1623,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
      * If an order cannot be made, transfers the remaining asset to either the orderbook or the user.
      * @param base The address of the base asset for the trading pair
      * @param quote The address of the quote asset for the trading pair
-     * @param orderbook The address of the orderbook contract for the trading pair
+     * @param pair The address of the orderbook contract for the trading pair
      * @param remaining The remaining amount of the asset after the market order has been taken
      * @param price The price used to determine if an order can be made
      * @param isBid Boolean indicating if the order was a buy (true) or a sell (false)
@@ -1677,7 +1634,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
     function _detMake(
         address base,
         address quote,
-        address orderbook,
+        address pair,
         uint256 remaining,
         uint256 price,
         bool isBid,
@@ -1685,14 +1642,14 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         address recipient
     ) internal returns (uint32 id) {
         if (remaining > 0) {
-            address stopTo = isMaker ? orderbook : recipient;
+            address stopTo = isMaker ? pair : recipient;
             TransferHelper.safeTransfer(
                 isBid ? quote : base,
                 stopTo,
                 remaining
             );
             if (isMaker) {
-                id = _makeOrder(orderbook, remaining, price, isBid, recipient);
+                id = _makeOrder(pair, remaining, price, isBid, recipient);
                 return id;
             }
         }
@@ -1715,7 +1672,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         uint256 amount,
         bool isBid,
         bool isMaker
-    ) internal returns (uint256 withoutFee, address pair) {
+    ) internal returns (uint256 withoutFee, address pair, uint256 lmp) {
         // check if amount is zero
         if (amount == 0) {
             revert AmountIsZero();
@@ -1790,7 +1747,9 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
         }
         emit OrderDeposit(msg.sender, isBid ? quote : base, fee);
 
-        return (withoutFee, pair);
+        lmp = IOrderbook(pair).lmp();
+
+        return (withoutFee, pair, lmp);
     }
 
     /**
@@ -1866,7 +1825,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
 
     /**
      * @dev return converted amount from base to quote or vice versa
-     * @param orderbook address of orderbook
+     * @param pair address of orderbook
      * @param price price of base/quote regardless of decimals of the assets in the pair represented with 8 decimals (if 1000, base is 1000x quote) proposed by a trader
      * @param amount amount of base or quote asset
      * @param isBid if true, amount is quote asset, otherwise base asset
@@ -1875,18 +1834,18 @@ contract MatchingEngine is ReentrancyGuard, AccessControl {
      * if orderbook does not exist, return 0
      */
     function _convert(
-        address orderbook,
+        address pair,
         uint256 price,
         uint256 amount,
         bool isBid
     ) internal view returns (uint256 converted) {
-        if (orderbook == address(0)) {
+        if (pair == address(0)) {
             return 0;
         } else {
             return
                 price == 0
-                    ? IOrderbook(orderbook).assetValue(amount, isBid)
-                    : IOrderbook(orderbook).convert(price, amount, isBid);
+                    ? IOrderbook(pair).assetValue(amount, isBid)
+                    : IOrderbook(pair).convert(price, amount, isBid);
         }
     }
 }

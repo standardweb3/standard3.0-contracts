@@ -77,27 +77,6 @@ contract GetterTest is BaseSetup {
             5,
             trader1
         );
-        uint256[] memory bidPrices = matchingEngine.getPrices(
-            address(token1),
-            address(token2),
-            true,
-            20
-        );
-        console.log("Bid prices: ");
-        for (uint256 i = 0; i < 4; i++) {
-            console.log(bidPrices[i]);
-        }
-        //matchingEngine.getOrders(address(token1), address(token2), true, 0, 0);
-        uint256[] memory askPrices = matchingEngine.getPrices(
-            address(token1),
-            address(token2),
-            false,
-            20
-        );
-        console.log("Ask prices: ");
-        for (uint256 i = 0; i < 3; i++) {
-            console.log(askPrices[i]);
-        }
     }
 
     function testGetPriceInsertion() public {
@@ -177,27 +156,6 @@ contract GetterTest is BaseSetup {
             5,
             trader1
         );
-        uint256[] memory bidPrices = matchingEngine.getPrices(
-            address(token1),
-            address(token2),
-            true,
-            20
-        );
-        console.log("Bid prices: ");
-        for (uint256 i = 0; i < 3; i++) {
-            console.log(bidPrices[i]);
-        }
-        //matchingEngine.getOrders(address(token1), address(token2), true, 0, 0);
-        uint256[] memory askPrices = matchingEngine.getPrices(
-            address(token1),
-            address(token2),
-            false,
-            20
-        );
-        console.log("Ask prices: ");
-        for (uint256 i = 0; i < 3; i++) {
-            console.log(askPrices[i]);
-        }
     }
 
     function testGetOrders() public {
@@ -249,18 +207,7 @@ contract GetterTest is BaseSetup {
             trader1
         );
 
-        console.log("Bid orders: ");
-        ExchangeOrderbook.Order[] memory bidOrders = matchingEngine.getOrders(
-            address(token1),
-            address(token2),
-            false,
-            500000000,
-            3
-        );
-
-        for (uint256 i = 0; i < 3; i++) {
-            console.log(bidOrders[i].owner, bidOrders[i].depositAmount);
-        }
+        
     }
 
     function testGetAskHead() public {
@@ -357,21 +304,8 @@ contract GetterTest is BaseSetup {
             2,
             trader1
         );
-        ExchangeOrderbook.Order[] memory orders = matchingEngine.getOrders(
-            address(token1),
-            address(token2),
-            false,
-            100000000,
-            4
-        );
-
         book = Orderbook(
             payable(orderbookFactory.getPair(address(token1), address(token2)))
         );
-
-        console.log("Ask Orders: ");
-        for (uint256 i = 0; i < 4; i++) {
-            console.log(orders[i].owner, orders[i].depositAmount);
-        }
     }
 }

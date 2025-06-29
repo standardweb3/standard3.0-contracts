@@ -423,7 +423,7 @@ contract Orderbook is IOrderbook, Initializable {
     }
 
     function isEmpty(bool isBid, uint256 price) public view returns (bool) {
-        return isBid ? _bidOrders._isEmpty(price) : _askOrders._isEmpty(price);
+        return  isBid ? _bidOrders._isEmpty(price) : _askOrders._isEmpty(price);
     }
 
     function convertMarket(

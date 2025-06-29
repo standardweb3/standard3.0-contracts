@@ -19,6 +19,7 @@ import {PrizePool} from "../../src/point/PrizePool.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {WETH9} from "../../src/mock/WETH9.sol";
+import {IMatchingEngine} from "../../src/exchange/interfaces/IMatchingEngine.sol";
 
 contract Deployer is Script {
     function _setDeployer() internal {
@@ -92,7 +93,14 @@ contract CancelOrders is Deployer {
         isBuy[0] = true;
         uint32[] memory orderIds = new uint32[](1);
         orderIds[0] = 1;
-        matchingEngineInstance.cancelOrders(base, quote, isBuy, orderIds);
+        IMatchingEngine.CancelOrder[] memory cancelOrderData = new IMatchingEngine.CancelOrder[](1);
+        cancelOrderData[0] = IMatchingEngine.CancelOrder({
+            base: base[0],
+            quote: quote[0],
+            isBid: isBuy[0],
+            orderId: orderIds[0]
+        });
+        matchingEngineInstance.cancelOrders(cancelOrderData);
         vm.stopBroadcast();
     }
 }

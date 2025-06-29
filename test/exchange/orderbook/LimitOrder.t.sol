@@ -292,7 +292,7 @@ contract LimitOrderTest is BaseSetup {
         // set up a limit buy order to match the limit sell
         matchingEngine.limitBuy(address(base), address(quote), 1e12, 1e24, true, 8, trader1);
 
-        assert(matchingEngine.mktPrice(address(base), address(quote)) == 102e9);
+        assert(matchingEngine.mktPrice(address(base), address(quote)) == 102e6);
     }
 
     function testLimitSellNoSuspensionWhenBidAskHeadExists() public {
@@ -320,7 +320,7 @@ contract LimitOrderTest is BaseSetup {
         // set up a limit buy order to match the limit sell
         matchingEngine.limitSell(address(base), address(quote), 1e5, 1e24, true, 8, trader1);
 
-        assert(matchingEngine.mktPrice(address(base), address(quote)) == 98e4);
+        assert(matchingEngine.mktPrice(address(base), address(quote)) == 98e6);
     }
 
     function testLimitBuyAllowsBelowLMP() public {

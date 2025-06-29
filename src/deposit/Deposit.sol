@@ -8,12 +8,6 @@ import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {IMatchingEngine} from "../exchange/interfaces/IMatchingEngine.sol";
 
 contract Deposit is AccessControl {
-
-    event DepositETH(address indexed to, uint256 amount);
-    event DepositToken(address indexed to, address indexed token, uint256 amount);
-    event DepositNFT(address indexed to, address indexed token, uint256 tokenId);
-    event SetSupportedTokens(address[] tokens, bool[] isSupported);
-
     mapping(address => bool) public supportedTokens;
 
     struct APICreateOrderInput {
@@ -48,6 +42,11 @@ contract Deposit is AccessControl {
         uint32 n;
         address recipient;
     }
+
+    event DepositETH(address indexed to, uint256 amount);
+    event DepositToken(address indexed to, address indexed token, uint256 amount);
+    event DepositNFT(address indexed to, address indexed token, uint256 tokenId);
+    event SetSupportedTokens(address[] tokens, bool[] isSupported);
 
     constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -88,7 +87,6 @@ contract Deposit is AccessControl {
     function createOrders(APICreateOrderInput[] memory orders) public payable {
         // create orders
         // check if the token is supported
-
         for (uint256 i = 0; i < orders.length; i++) {
             if(orders[i].isLimit) {
                 if(orders[i].isBid) {

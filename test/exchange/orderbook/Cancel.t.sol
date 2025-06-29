@@ -584,7 +584,7 @@ contract CancelTest is BaseSetup {
         matchingEngine.cancelOrder(address(token1), address(token2), false, 3);
     }
 
-    function testCancelOrders() public {
+    function testCancelOrdersWorksWithNoErrors2() public {
         super.setUp();
         matchingEngine.addPair(
             address(token1),
@@ -659,24 +659,19 @@ contract CancelTest is BaseSetup {
             );
         }
 
-        address[] memory baseArray = new address[](1);
-        baseArray[0] = (address(token1));
 
-        address[] memory quoteArray = new address[](1);
-        quoteArray[0] = (address(token2));
-
-        bool[] memory isBidArray = new bool[](1);
-        isBidArray[0] = (false);
-
-        uint32[] memory orderIds = new uint32[](1);
-        orderIds[0] = (1);
-
-        IMatchingEngine.CancelOrder[] memory cancelOrderData = new IMatchingEngine.CancelOrder[](1);
+        IMatchingEngine.CancelOrder[] memory cancelOrderData = new IMatchingEngine.CancelOrder[](2);
         cancelOrderData[0] = IMatchingEngine.CancelOrder({
             base: address(token1),
             quote: address(token2),
             isBid: false,
-            orderId: 1
+            orderId: 2
+        });
+        cancelOrderData[1] = IMatchingEngine.CancelOrder({
+            base: address(token1),
+            quote: address(token2),
+            isBid: false,
+            orderId: 3
         });
 
         // cancel orders
@@ -768,9 +763,8 @@ contract CancelTest is BaseSetup {
             5,
             trader1
         );
-
+        vm.startPrank(trader1);
         for (uint256 i = 0; i < 10; i++) {
-            vm.prank(trader1);
             matchingEngine.limitSell(
                 address(token1),
                 address(token2),
@@ -781,18 +775,7 @@ contract CancelTest is BaseSetup {
                 trader1
             );
         }
-
-        address[] memory baseArray = new address[](1);
-        baseArray[0] = (address(token1));
-
-        address[] memory quoteArray = new address[](1);
-        quoteArray[0] = (address(token2));
-
-        bool[] memory isBidArray = new bool[](1);
-        isBidArray[0] = (false);
-
-        uint32[] memory orderIds = new uint32[](1);
-        orderIds[0] = (1);
+        vm.stopPrank();
 
         IMatchingEngine.CancelOrder[] memory cancelOrderData = new IMatchingEngine.CancelOrder[](1);
         cancelOrderData[0] = IMatchingEngine.CancelOrder({
@@ -822,30 +805,10 @@ contract CancelTest is BaseSetup {
             trader1
         );
 
-        // error arrays
-
-        address[] memory baseErrorArray = new address[](3);
-        baseErrorArray[0] = (address(token1));
-        baseErrorArray[1] = (address(token1));
-        baseErrorArray[2] = (address(token1));
-
-        address[] memory quoteErrorArray = new address[](3);
-        quoteErrorArray[0] = (address(token2));
-        quoteErrorArray[1] = (address(token2));
-        quoteErrorArray[2] = (address(token2));
-
-        bool[] memory isBidErrorArray = new bool[](3);
-        isBidErrorArray[0] = (false);
-        isBidErrorArray[1] = (false);
-        isBidErrorArray[2] = (false);
-
-        uint32[] memory orderErrorIds = new uint32[](3);
-        orderErrorIds[0] = (1);
-        orderErrorIds[1] = (1);
-        orderErrorIds[2] = (1);
 
         IMatchingEngine.CancelOrder[] memory cancelOrderDataError = new IMatchingEngine.CancelOrder[](3);
 
+        // error object
         cancelOrderDataError[0] = IMatchingEngine.CancelOrder({
             base: address(token1),
             quote: address(token2),

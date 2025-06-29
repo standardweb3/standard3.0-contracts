@@ -727,7 +727,12 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
         uint32 n,
         address recipient,
         uint32 slippageLimit
-    ) external override payable returns (uint256 makePrice, uint256 placed, uint32 id) {
+    )
+        external
+        payable
+        override
+        returns (uint256 makePrice, uint256 placed, uint32 id)
+    {
         IWETH(WETH).deposit{value: msg.value}();
         return
             marketBuy(
@@ -760,7 +765,12 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
         uint32 n,
         address recipient,
         uint32 slippageLimit
-    ) external override payable returns (uint256 makePrice, uint256 placed, uint32 id) {
+    )
+        external
+        payable
+        override
+        returns (uint256 makePrice, uint256 placed, uint32 id)
+    {
         IWETH(WETH).deposit{value: msg.value}();
         return
             marketSell(
@@ -1122,7 +1132,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
         address quote,
         uint256 listingPrice,
         uint256 listingDate
-    ) external override payable returns (address book) {
+    ) external payable override returns (address book) {
         IWETH(WETH).deposit{value: msg.value}();
         return addPair(base, quote, listingPrice, listingDate, WETH);
     }
@@ -1145,10 +1155,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
         string memory terminalName = _listingDeposit(payment, msg.sender);
 
         // create orderbook for the pair
-        pair = IOrderbookFactory(orderbookFactory).createBook(
-            base,
-            quote
-        );
+        pair = IOrderbookFactory(orderbookFactory).createBook(base, quote);
         IOrderbook(pair).setLmp(listingPrice);
         // set buy/sell spread to default suspension rate in basis point(bps)
         _setSpread(pair, defaultMktBuy, defaultMktSell, true);
@@ -1199,6 +1206,31 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
         return pair;
     }
 
+    function _cancelOrder(
+        address base,
+        address quote,
+        bool isBid,
+        uint32 orderId,
+        address sender
+    ) internal returns (uint256) {
+        address orderbook = IOrderbookFactory(orderbookFactory).getPair(
+            base,
+            quote
+        );
+
+        if (orderbook == address(0)) {
+            revert InvalidPair(base, quote, orderbook);
+        }
+        try
+            IOrderbook(orderbook).cancelOrder(isBid, orderId, sender)
+        returns (uint256 refunded) {
+            emit OrderCanceled(orderbook, orderId, isBid, sender, refunded);
+            return refunded;
+        } catch {
+            return 0;
+        }
+    }
+
     /**
      * @dev Cancels an order in an orderbook by the given order ID and order type.
      * @param base The address of the base asset for the trading pair
@@ -1213,60 +1245,52 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
         bool isBid,
         uint32 orderId
     ) public nonReentrant returns (uint256) {
-        address orderbook = IOrderbookFactory(orderbookFactory).getPair(
-            base,
-            quote
-        );
-
-        if (orderbook == address(0)) {
-            revert InvalidPair(base, quote, orderbook);
-        }
-
-        try
-            IOrderbook(orderbook).cancelOrder(isBid, orderId, msg.sender)
-        returns (uint256 refunded) {
-            emit OrderCanceled(orderbook, orderId, isBid, msg.sender, refunded);
-            return refunded;
-        } catch {
-            return 0;
-        }
+        return _cancelOrder(base, quote, isBid, orderId, _msgSender());
     }
 
     function updateOrders(
         UpdateOrder[] memory updateOrderData
-    ) external returns (uint256[] memory makePrice, uint256[] memory placed, uint32[] memory id) {
+    )
+        external
+        returns (
+            uint256[] memory makePrice,
+            uint256[] memory placed,
+            uint32[] memory id
+        )
+    {
         makePrice = new uint256[](updateOrderData.length);
         placed = new uint256[](updateOrderData.length);
         id = new uint32[](updateOrderData.length);
         for (uint32 i = 0; i < updateOrderData.length; i++) {
-            cancelOrder(
+            _cancelOrder(
                 updateOrderData[i].base,
                 updateOrderData[i].quote,
                 updateOrderData[i].isBid,
-                updateOrderData[i].orderId
+                updateOrderData[i].orderId,
+                _msgSender()
             );
 
             // make new limit buy or sell order
             if (updateOrderData[i].isBid) {
                 (makePrice[i], placed[i], id[i]) = limitBuy(
-                        updateOrderData[i].base,
-                        updateOrderData[i].quote,
-                        updateOrderData[i].price,
-                        updateOrderData[i].amount,
-                        true,
-                        updateOrderData[i].n,
-                        updateOrderData[i].recipient
-                    );
+                    updateOrderData[i].base,
+                    updateOrderData[i].quote,
+                    updateOrderData[i].price,
+                    updateOrderData[i].amount,
+                    true,
+                    updateOrderData[i].n,
+                    updateOrderData[i].recipient
+                );
             } else {
                 (makePrice[i], placed[i], id[i]) = limitSell(
-                        updateOrderData[i].base,
-                        updateOrderData[i].quote,
-                        updateOrderData[i].price,
-                        updateOrderData[i].amount,
-                        true,
-                        updateOrderData[i].n,
-                        updateOrderData[i].recipient
-                    );
+                    updateOrderData[i].base,
+                    updateOrderData[i].quote,
+                    updateOrderData[i].price,
+                    updateOrderData[i].amount,
+                    true,
+                    updateOrderData[i].n,
+                    updateOrderData[i].recipient
+                );
             }
         }
         return (makePrice, placed, id);
@@ -1274,14 +1298,15 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
 
     function cancelOrders(
         CancelOrder[] memory cancelOrderData
-    ) external returns (uint256[] memory refunded) {
+    ) external nonReentrant returns (uint256[] memory refunded) {
         refunded = new uint256[](cancelOrderData.length);
         for (uint32 i = 0; i < cancelOrderData.length; i++) {
-            refunded[i] = cancelOrder(
+            refunded[i] = _cancelOrder(
                 cancelOrderData[i].base,
                 cancelOrderData[i].quote,
                 cancelOrderData[i].isBid,
-                cancelOrderData[i].orderId
+                cancelOrderData[i].orderId,
+                _msgSender()
             );
         }
         return refunded;

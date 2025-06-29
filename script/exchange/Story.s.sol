@@ -93,8 +93,8 @@ contract CancelOrders is Deployer {
         isBuy[0] = true;
         uint32[] memory orderIds = new uint32[](1);
         orderIds[0] = 1;
-        IMatchingEngine.CancelOrder[] memory cancelOrderData = new IMatchingEngine.CancelOrder[](1);
-        cancelOrderData[0] = IMatchingEngine.CancelOrder({
+        IMatchingEngine.CancelOrderInput[] memory cancelOrderData = new IMatchingEngine.CancelOrderInput[](1);
+        cancelOrderData[0] = IMatchingEngine.CancelOrderInput({
             base: base[0],
             quote: quote[0],
             isBid: isBuy[0],

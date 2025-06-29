@@ -16,7 +16,7 @@ contract Deposit is AccessControl {
 
     mapping(address => bool) public supportedTokens;
 
-    struct Order {
+    struct APICreateOrderInput {
         address matchingEngine;
         bool isBid;
         bool isLimit;
@@ -29,12 +29,24 @@ contract Deposit is AccessControl {
         uint32 matchN;
     }
 
-    struct CancelOrder {
+    struct APICancelOrderInput {
         address matchingEngine;
         address base;
         address quote;
         uint32 orderId;
         bool isBid;
+    }
+
+    struct APIUpdateOrderInput {
+        address matchingEngine;
+        address base;
+        address quote;
+        bool isBid;
+        uint32 orderId;
+        uint256 price;
+        uint256 amount;
+        uint32 n;
+        address recipient;
     }
 
     constructor() {
@@ -73,7 +85,7 @@ contract Deposit is AccessControl {
         emit DepositNFT(to, token, tokenId);
     }
 
-    function createOrders(Order[] memory orders) public payable {
+    function createOrders(APICreateOrderInput[] memory orders) public payable {
         // create orders
         // check if the token is supported
 
@@ -116,7 +128,7 @@ contract Deposit is AccessControl {
         }
     }
 
-    function cancelOrders(CancelOrder[] memory cancelOrderData) public {
+    function cancelOrders(APICancelOrderInput[] memory cancelOrderData) public {
         for (uint256 i = 0; i < cancelOrderData.length; i++) {
             IMatchingEngine(cancelOrderData[i].matchingEngine).cancelOrder(
                 cancelOrderData[i].base, 
@@ -124,6 +136,22 @@ contract Deposit is AccessControl {
                 cancelOrderData[i].isBid, 
                 cancelOrderData[i].orderId
             );
+        }
+    }
+
+    function updateOrders(APIUpdateOrderInput[] memory orders) public {
+        for (uint256 i = 0; i < orders.length; i++) {
+            IMatchingEngine.UpdateOrderInput memory updateOrderData = IMatchingEngine.UpdateOrderInput({
+                base: orders[i].base,
+                quote: orders[i].quote,
+                isBid: orders[i].isBid,
+                orderId: orders[i].orderId,
+                price: orders[i].price,
+                amount: orders[i].amount,
+                n: orders[i].n,
+                recipient: orders[i].recipient
+            });
+            IMatchingEngine(orders[i].matchingEngine).updateOrder(updateOrderData);
         }
     }
 }

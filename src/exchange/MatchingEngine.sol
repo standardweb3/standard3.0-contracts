@@ -1221,14 +1221,92 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
         if (orderbook == address(0)) {
             revert InvalidPair(base, quote, orderbook);
         }
-        try
-            IOrderbook(orderbook).cancelOrder(isBid, orderId, sender)
-        returns (uint256 refunded) {
+        try IOrderbook(orderbook).cancelOrder(isBid, orderId, sender) returns (
+            uint256 refunded
+        ) {
             emit OrderCanceled(orderbook, orderId, isBid, sender, refunded);
             return refunded;
         } catch {
             return 0;
         }
+    }
+
+    function _updateOrder(
+        UpdateOrderInput memory updateOrderData
+    ) internal returns (uint256 makePrice, uint256 placed, uint32 id) {
+        address orderbook = IOrderbookFactory(orderbookFactory).getPair(
+            updateOrderData.base,
+            updateOrderData.quote
+        );
+
+        if (orderbook == address(0)) {
+            revert InvalidPair(
+                updateOrderData.base,
+                updateOrderData.quote,
+                orderbook
+            );
+        }
+
+        // cancel order
+        _cancelOrder(
+            updateOrderData.base,
+            updateOrderData.quote,
+            updateOrderData.isBid,
+            updateOrderData.orderId,
+            _msgSender()
+        );
+
+        if (updateOrderData.isBid) {
+            (makePrice, placed, id) = limitBuy(
+                updateOrderData.base,
+                updateOrderData.quote,
+                updateOrderData.price,
+                updateOrderData.amount,
+                true,
+                updateOrderData.n,
+                updateOrderData.recipient
+            );
+        } else {
+            (makePrice, placed, id) = limitSell(
+                updateOrderData.base,
+                updateOrderData.quote,
+                updateOrderData.price,
+                updateOrderData.amount,
+                true,
+                updateOrderData.n,
+                updateOrderData.recipient
+            );
+        }
+        return (makePrice, placed, id);
+    }
+
+    function updateOrder(
+        UpdateOrderInput memory updateOrderData
+    )
+        external
+        nonReentrant
+        returns (uint256 makePrice, uint256 placed, uint32 id)
+    {
+        return _updateOrder(updateOrderData);
+    }
+
+    function updateOrders(
+        UpdateOrderInput[] memory updateOrderData
+    )
+        external
+        returns (
+            uint256[] memory makePrice,
+            uint256[] memory placed,
+            uint32[] memory id
+        )
+    {
+        makePrice = new uint256[](updateOrderData.length);
+        placed = new uint256[](updateOrderData.length);
+        id = new uint32[](updateOrderData.length);
+        for (uint32 i = 0; i < updateOrderData.length; i++) {
+            (makePrice[i], placed[i], id[i]) = _updateOrder(updateOrderData[i]);
+        }
+        return (makePrice, placed, id);
     }
 
     /**
@@ -1248,56 +1326,8 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
         return _cancelOrder(base, quote, isBid, orderId, _msgSender());
     }
 
-    function updateOrders(
-        UpdateOrder[] memory updateOrderData
-    )
-        external
-        returns (
-            uint256[] memory makePrice,
-            uint256[] memory placed,
-            uint32[] memory id
-        )
-    {
-        makePrice = new uint256[](updateOrderData.length);
-        placed = new uint256[](updateOrderData.length);
-        id = new uint32[](updateOrderData.length);
-        for (uint32 i = 0; i < updateOrderData.length; i++) {
-            _cancelOrder(
-                updateOrderData[i].base,
-                updateOrderData[i].quote,
-                updateOrderData[i].isBid,
-                updateOrderData[i].orderId,
-                _msgSender()
-            );
-
-            // make new limit buy or sell order
-            if (updateOrderData[i].isBid) {
-                (makePrice[i], placed[i], id[i]) = limitBuy(
-                    updateOrderData[i].base,
-                    updateOrderData[i].quote,
-                    updateOrderData[i].price,
-                    updateOrderData[i].amount,
-                    true,
-                    updateOrderData[i].n,
-                    updateOrderData[i].recipient
-                );
-            } else {
-                (makePrice[i], placed[i], id[i]) = limitSell(
-                    updateOrderData[i].base,
-                    updateOrderData[i].quote,
-                    updateOrderData[i].price,
-                    updateOrderData[i].amount,
-                    true,
-                    updateOrderData[i].n,
-                    updateOrderData[i].recipient
-                );
-            }
-        }
-        return (makePrice, placed, id);
-    }
-
     function cancelOrders(
-        CancelOrder[] memory cancelOrderData
+        CancelOrderInput[] memory cancelOrderData
     ) external nonReentrant returns (uint256[] memory refunded) {
         refunded = new uint256[](cancelOrderData.length);
         for (uint32 i = 0; i < cancelOrderData.length; i++) {

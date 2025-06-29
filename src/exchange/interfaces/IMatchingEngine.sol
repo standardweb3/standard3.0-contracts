@@ -4,14 +4,14 @@ import {ExchangeOrderbook} from "./IOrderbook.sol";
 pragma solidity ^0.8.24;
 
 interface IMatchingEngine {
-    struct CancelOrder {
+    struct CancelOrderInput {
         address base;
         address quote;
         bool isBid;
         uint32 orderId;
     }
 
-    struct UpdateOrder {
+    struct UpdateOrderInput {
         address base;
         address quote;
         bool isBid;
@@ -139,12 +139,20 @@ interface IMatchingEngine {
         address payment
     ) external returns (address pair);
 
-   function addPairETH(
+    function addPairETH(
         address base,
         address quote,
         uint256 listingPrice,
         uint256 listingDate
     ) external payable returns (address book);
+
+    function updateOrder(
+        UpdateOrderInput memory updateOrderData
+    ) external returns (uint256 makePrice, uint256 placed, uint32 id);
+
+    function updateOrders(
+        UpdateOrderInput[] memory updateOrderData
+    ) external returns (uint256[] memory makePrice, uint256[] memory placed, uint32[] memory id);
 
     function cancelOrder(
         address base,
@@ -154,7 +162,7 @@ interface IMatchingEngine {
     ) external returns (uint256 refunded);
 
     function cancelOrders(
-        CancelOrder[] memory cancelOrders
+        CancelOrderInput[] memory cancelOrders
     ) external returns (uint256[] memory refunded);
 
     function getOrder(

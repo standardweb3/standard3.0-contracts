@@ -660,14 +660,14 @@ contract CancelTest is BaseSetup {
         }
 
 
-        IMatchingEngine.CancelOrder[] memory cancelOrderData = new IMatchingEngine.CancelOrder[](2);
-        cancelOrderData[0] = IMatchingEngine.CancelOrder({
+        IMatchingEngine.CancelOrderInput[] memory cancelOrderData = new IMatchingEngine.CancelOrderInput[](2);
+        cancelOrderData[0] = IMatchingEngine.CancelOrderInput({
             base: address(token1),
             quote: address(token2),
             isBid: false,
             orderId: 2
         });
-        cancelOrderData[1] = IMatchingEngine.CancelOrder({
+        cancelOrderData[1] = IMatchingEngine.CancelOrderInput({
             base: address(token1),
             quote: address(token2),
             isBid: false,
@@ -777,8 +777,8 @@ contract CancelTest is BaseSetup {
         }
         vm.stopPrank();
 
-        IMatchingEngine.CancelOrder[] memory cancelOrderData = new IMatchingEngine.CancelOrder[](1);
-        cancelOrderData[0] = IMatchingEngine.CancelOrder({
+        IMatchingEngine.CancelOrderInput[] memory cancelOrderData = new IMatchingEngine.CancelOrderInput[](1);
+        cancelOrderData[0] = IMatchingEngine.CancelOrderInput({
             base: address(token1),
             quote: address(token2),
             isBid: false,
@@ -806,10 +806,10 @@ contract CancelTest is BaseSetup {
         );
 
 
-        IMatchingEngine.CancelOrder[] memory cancelOrderDataError = new IMatchingEngine.CancelOrder[](3);
+        IMatchingEngine.CancelOrderInput[] memory cancelOrderDataError = new IMatchingEngine.CancelOrderInput[](3);
 
         // error object
-        cancelOrderDataError[0] = IMatchingEngine.CancelOrder({
+        cancelOrderDataError[0] = IMatchingEngine.CancelOrderInput({
             base: address(token1),
             quote: address(token2),
             isBid: false,

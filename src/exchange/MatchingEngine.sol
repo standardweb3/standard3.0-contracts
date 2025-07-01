@@ -12,9 +12,7 @@ import {IMatchingEngine} from "./interfaces/IMatchingEngine.sol";
 
 interface IProtocol {
     function feeOf(address base, address quote, address account, bool isMaker) external view returns (uint32 feeNum);
-
-    function accountFee(address account, bool isMaker) external view returns (uint256 feeNum);
-
+    
     function isSubscribed(address account) external view returns (bool isSubscribed);
 
     function terminalName(address terminal) external view returns (string memory terminalName);
@@ -1073,11 +1071,11 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
         return IOrderbook(orderbook).getOrder(isBid, orderId);
     }
 
-    function accountFee(address account, bool isMaker) external view returns (uint256 feeNum) {
+    function feeOf(address base, address quote, address account, bool isMaker) external view returns (uint32 feeNum) {
         if (incentive == address(0x0)) {
             return _dfltFee(isMaker);
         } else {
-            try IProtocol(incentive).accountFee(account, isMaker) returns (uint256 num) {
+            try IProtocol(incentive).feeOf(base, quote, account, isMaker) returns (uint32 num) {
                 return num;
             } catch {
                 return _dfltFee(isMaker);
@@ -1314,7 +1312,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
      * @param remaining The remaining amount of the asset after the market order has been taken
      * @param price The price used to determine if an order can be made
      * @param isBid Boolean indicating if the order was a buy (true) or a sell (false)
-     * @param isMaker Boolean indicating if an order is for storing in orderbook
+     * @param isMaker Boolean indicating if an order is for storing in orderbook or just take profit after matching trades
      * @param recipient The address to receive asset after matching a trade and making an order
      * @return id placed order id
      */
@@ -1375,8 +1373,8 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
         if (converted <= minRequired) {
             revert OrderSizeTooSmall(converted, minRequired);
         }
-        // check sender's fee
-        uint256 fee = _fee(base, quote, amount, msg.sender, isMaker);
+        // check sender's maker fee
+        uint256 fee = _fee(base, quote, amount, msg.sender);
         withoutFee = amount - fee;
         if (isBid) {
             // transfer input asset give user to this contract
@@ -1433,13 +1431,13 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
         return terminalName;
     }
 
-    function _fee(address base, address quote, uint256 amount, address account, bool isMaker)
+    function _fee(address base, address quote, uint256 amount, address account)
         internal
         view
         returns (uint256 fee)
     {
-        if (_isContract(incentive) && IProtocol(incentive).isSubscribed(account)) {
-            uint32 feeNum = IProtocol(incentive).feeOf(base, quote, account, isMaker);
+        if (_isContract(incentive)) {
+            uint32 feeNum = IProtocol(incentive).feeOf(base, quote, account, true);
             return (amount * feeNum) / DENOM;
         }
         return (amount * _dfltFee(true)) / DENOM;

@@ -149,7 +149,7 @@ contract Orderbook is IOrderbook, Initializable {
             // decrease remaining amount of order
             (uint256 withDust, uint256 deletePrice) = _bidOrders._decreaseOrder(orderId, converted, dust, clear);
             // sender is matching ask order for base asset with quote asset
-            baseTakerFee = _sendFunds(pair.base, order.owner, amount, true);
+            baseTakerFee = _sendFunds(pair.base, order.owner, amount, false);
             // send converted amount of quote asset from owner to sender
             quoteTakerFee = _sendFunds(pair.quote, sender, withDust, true);
             // delete price if price of the order is empty
@@ -163,7 +163,7 @@ contract Orderbook is IOrderbook, Initializable {
             (uint256 withDust, uint256 deletePrice) = _askOrders._decreaseOrder(orderId, converted, dust, clear);
             // sender is matching bid order for quote asset with base asset
             // send deposited amount of quote asset from sender to owner
-            quoteTakerFee = _sendFunds(pair.quote, order.owner, amount, true);
+            quoteTakerFee = _sendFunds(pair.quote, order.owner, amount, false);
             // send converted amount of base asset from owner to sender
             baseTakerFee = _sendFunds(pair.base, sender, withDust, true);
             // delete price if price of the order is empty
@@ -214,10 +214,7 @@ contract Orderbook is IOrderbook, Initializable {
     ) internal returns (uint256 takerFeeAmount) {
         address weth = IWETHMinimal(pair.engine).WETH();
         if (isTaker) {
-            uint256 takerFee = IMatchingEngine(pair.engine).accountFee(
-                to,
-                false
-            );
+            uint32 takerFee = IMatchingEngine(pair.engine).feeOf(pair.base, pair.quote, to, false);
             takerFeeAmount = (amount * takerFee) / DENOM;
             uint256 withoutTakerFee = amount - takerFeeAmount;
             if (token == weth) {

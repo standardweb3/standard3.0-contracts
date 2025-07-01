@@ -32,7 +32,9 @@ contract MarketMaking is BaseSetup {
 
         matchingEngine.grantRole(MARKET_MAKER_ROLE, address(trader1));
         vm.prank(trader1);
-        matchingEngine.adjustPrice(address(token1), address(token2), false, 70e8, 100000e18, 100000000, 100000, false, 20);
+        matchingEngine.adjustPrice(
+            address(token1), address(token2), false, 70e8, 100000e18, 100000000, 100000, false, 20
+        );
         console.log("Market price after market making:", book.mktPrice());
     }
 
@@ -48,7 +50,9 @@ contract MarketMaking is BaseSetup {
 
         matchingEngine.grantRole(MARKET_MAKER_ROLE, address(trader1));
         vm.prank(trader1);
-        matchingEngine.adjustPrice(address(token1), address(token2), true, 120e8, 100000e18, 100000000, 100000, false, 20);
+        matchingEngine.adjustPrice(
+            address(token1), address(token2), true, 120e8, 100000e18, 100000000, 100000, false, 20
+        );
         console.log("Market price after market making:", book.mktPrice());
     }
 }

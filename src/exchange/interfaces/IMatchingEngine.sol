@@ -1,9 +1,16 @@
 // SPDX-License-Identifier: BUSL-1.1
-import {ExchangeOrderbook} from "./IOrderbook.sol";
+import {ExchangeOrderbook} from "../libraries/ExchangeOrderbook.sol";
 
 pragma solidity ^0.8.24;
 
 interface IMatchingEngine {
+
+    struct OrderMatch {
+        address owner;
+        uint256 baseTakerFee;
+        uint256 quoteTakerFee;
+    }
+
     struct CancelOrderInput {
         address base;
         address quote;
@@ -25,19 +32,13 @@ interface IMatchingEngine {
     // admin functions
     function setFeeTo(address feeTo_) external returns (bool success);
 
-    function setDefaultSpread(
-        uint32 buy,
-        uint32 sell,
-        bool isMkt
-    ) external returns (bool success);
+    function setDefaultFee(bool isMaker, uint32 fee_) external returns (bool success);
 
-    function setSpread(
-        address base,
-        address quote,
-        uint32 buy,
-        uint32 sell,
-        bool isMkt
-    ) external returns (bool success);
+    function setDefaultSpread(uint32 buy, uint32 sell, bool isMkt) external returns (bool success);
+
+    function setSpread(address base, address quote, uint32 buy, uint32 sell, bool isMkt)
+        external
+        returns (bool success);
 
     function adjustPrice(
         address base,
@@ -51,12 +52,9 @@ interface IMatchingEngine {
         uint32 n
     ) external returns (uint256 makePrice, uint256 placed, uint32 id);
 
-    function updatePair(
-        address base,
-        address quote,
-        uint256 listingPrice,
-        uint256 listingDate
-    ) external returns (address pair);
+    function updatePair(address base, address quote, uint256 listingPrice, uint256 listingDate)
+        external
+        returns (address pair);
 
     // user functions
     function marketBuy(
@@ -79,21 +77,15 @@ interface IMatchingEngine {
         uint32 slippageLimit
     ) external returns (uint256 makePrice, uint256 placed, uint32 id);
 
-    function marketBuyETH(
-        address base,
-        bool isMaker,
-        uint32 n,
-        address recipient,
-        uint32 slippageLimit
-    ) external payable returns (uint256 makePrice, uint256 placed, uint32 id);
+    function marketBuyETH(address base, bool isMaker, uint32 n, address recipient, uint32 slippageLimit)
+        external
+        payable
+        returns (uint256 makePrice, uint256 placed, uint32 id);
 
-    function marketSellETH(
-        address quote,
-        bool isMaker,
-        uint32 n,
-        address recipient,
-        uint32 slippageLimit
-    ) external payable returns (uint256 makePrice, uint256 placed, uint32 id);
+    function marketSellETH(address quote, bool isMaker, uint32 n, address recipient, uint32 slippageLimit)
+        external
+        payable
+        returns (uint256 makePrice, uint256 placed, uint32 id);
 
     function limitBuy(
         address base,
@@ -115,82 +107,52 @@ interface IMatchingEngine {
         address recipient
     ) external returns (uint256 makePrice, uint256 placed, uint32 id);
 
-    function limitBuyETH(
-        address base,
-        uint256 price,
-        bool isMaker,
-        uint32 n,
-        address recipient
-    ) external payable returns (uint256 makePrice, uint256 placed, uint32 id);
+    function limitBuyETH(address base, uint256 price, bool isMaker, uint32 n, address recipient)
+        external
+        payable
+        returns (uint256 makePrice, uint256 placed, uint32 id);
 
-    function limitSellETH(
-        address quote,
-        uint256 price,
-        bool isMaker,
-        uint32 n,
-        address recipient
-    ) external payable returns (uint256 makePrice, uint256 placed, uint32 id);
+    function limitSellETH(address quote, uint256 price, bool isMaker, uint32 n, address recipient)
+        external
+        payable
+        returns (uint256 makePrice, uint256 placed, uint32 id);
 
-    function addPair(
-        address base,
-        address quote,
-        uint256 listingPrice,
-        uint256 listingDate,
-        address payment
-    ) external returns (address pair);
+    function addPair(address base, address quote, uint256 listingPrice, uint256 listingDate, address payment)
+        external
+        returns (address pair);
 
-    function addPairETH(
-        address base,
-        address quote,
-        uint256 listingPrice,
-        uint256 listingDate
-    ) external payable returns (address book);
+    function addPairETH(address base, address quote, uint256 listingPrice, uint256 listingDate)
+        external
+        payable
+        returns (address book);
 
-    function updateOrder(
-        UpdateOrderInput memory updateOrderData
-    ) external returns (uint256 makePrice, uint256 placed, uint32 id);
+    function updateOrder(UpdateOrderInput memory updateOrderData)
+        external
+        returns (uint256 makePrice, uint256 placed, uint32 id);
 
-    function updateOrders(
-        UpdateOrderInput[] memory updateOrderData
-    ) external returns (uint256[] memory makePrice, uint256[] memory placed, uint32[] memory id);
+    function updateOrders(UpdateOrderInput[] memory updateOrderData)
+        external
+        returns (uint256[] memory makePrice, uint256[] memory placed, uint32[] memory id);
 
-    function cancelOrder(
-        address base,
-        address quote,
-        bool isBid,
-        uint32 orderId
-    ) external returns (uint256 refunded);
+    function cancelOrder(address base, address quote, bool isBid, uint32 orderId) external returns (uint256 refunded);
 
-    function cancelOrders(
-        CancelOrderInput[] memory cancelOrders
-    ) external returns (uint256[] memory refunded);
+    function cancelOrders(CancelOrderInput[] memory cancelOrders) external returns (uint256[] memory refunded);
 
-    function getOrder(
-        address base,
-        address quote,
-        bool isBid,
-        uint32 orderId
-    ) external view returns (ExchangeOrderbook.Order memory);
+    function getOrder(address base, address quote, bool isBid, uint32 orderId)
+        external
+        view
+        returns (ExchangeOrderbook.Order memory);
 
-    function getPair(
-        address base,
-        address quote
-    ) external view returns (address book);
+    function getPair(address base, address quote) external view returns (address book);
 
-    function heads(
-        address base,
-        address quote
-    ) external view returns (uint256 bidHead, uint256 askHead);
+    function heads(address base, address quote) external view returns (uint256 bidHead, uint256 askHead);
 
-    function mktPrice(
-        address base,
-        address quote
-    ) external view returns (uint256);
+    function mktPrice(address base, address quote) external view returns (uint256);
 
-    function convert(
-        address base,
-        address quote,
-        uint256 amount,
-        bool isBid
-    ) external view returns (uint256 converted);
+    function convert(address base, address quote, uint256 amount, bool isBid)
+        external
+        view
+        returns (uint256 converted);
+
+    function accountFee(address account, bool isMaker) external view returns (uint256 feeNum);
 }

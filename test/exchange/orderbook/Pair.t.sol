@@ -22,25 +22,13 @@ contract PairTest is BaseSetup {
         listed[0] = 1;
         listed[1] = 2;
         listed[2] = 3;
-        matchingEngine.addPair(
-            address(token1),
-            address(token2),
-            300000000,
-            0,
-            address(token1)
-        );
+        matchingEngine.addPair(address(token1), address(token2), 300000000, 0, address(token1));
     }
 
     function testAddPairOnlyAllowedByAdmin() public {
         vm.prank(booker);
         vm.expectRevert();
-        matchingEngine.addPair(
-            address(token1),
-            address(token2),
-            300000000,
-            0,
-            address(token1)
-        );
+        matchingEngine.addPair(address(token1), address(token2), 300000000, 0, address(token1));
     }
 
     function testUpdatePairOnlyAllowedByAdmin() public {

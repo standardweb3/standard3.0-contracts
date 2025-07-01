@@ -81,7 +81,7 @@ contract MarketOrderTest is BaseSetup {
         matchingEngine.cancelOrder(address(token1), address(token2), false, 2);
         ExchangeOrderbook.Order memory order = matchingEngine.getOrder(address(token1), address(token2), false, 3);
         console.log("Order id 3: ", order.owner, order.depositAmount);
-        
+
         vm.prank(trader1);
         matchingEngine.marketBuy(
             address(token1),

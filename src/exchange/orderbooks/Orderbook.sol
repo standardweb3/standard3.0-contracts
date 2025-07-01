@@ -7,6 +7,7 @@ import {Initializable} from "../../security/Initializable.sol";
 import {TransferHelper} from "../libraries/TransferHelper.sol";
 import {ExchangeLinkedList} from "../libraries/ExchangeLinkedList.sol";
 import {ExchangeOrderbook} from "../libraries/ExchangeOrderbook.sol";
+import {IMatchingEngine} from "../interfaces/IMatchingEngine.sol";
 
 interface IWETHMinimal {
     function WETH() external view returns (address);
@@ -19,6 +20,8 @@ interface IWETHMinimal {
 contract Orderbook is IOrderbook, Initializable {
     using ExchangeLinkedList for ExchangeLinkedList.PriceLinkedList;
     using ExchangeOrderbook for ExchangeOrderbook.OrderStorage;
+
+    uint32 public constant DENOM = 100000000;
 
     // Pair Struct
     struct Pair {
@@ -41,12 +44,7 @@ contract Orderbook is IOrderbook, Initializable {
     error InvalidAccess(address sender, address allowed);
     error PriceIsZero(uint256 price);
 
-    function initialize(
-        uint256 id_,
-        address base_,
-        address quote_,
-        address engine_
-    ) external initializer {
+    function initialize(uint256 id_, address base_, address quote_, address engine_) external initializer {
         uint8 baseD = TransferHelper.decimals(base_);
         uint8 quoteD = TransferHelper.decimals(quote_);
         if (baseD > 18 || quoteD > 18) {
@@ -70,11 +68,11 @@ contract Orderbook is IOrderbook, Initializable {
         priceLists._setLmp(price);
     }
 
-    function placeAsk(
-        address owner,
-        uint256 price,
-        uint256 amount
-    ) external onlyEngine returns (uint32 id, bool foundDmt) {
+    function placeAsk(address owner, uint256 price, uint256 amount)
+        external
+        onlyEngine
+        returns (uint32 id, bool foundDmt)
+    {
         // clear empty head
         clearEmptyHead(false);
         (id, foundDmt) = _askOrders._createOrder(owner, price, amount);
@@ -86,11 +84,11 @@ contract Orderbook is IOrderbook, Initializable {
         return (id, foundDmt);
     }
 
-    function placeBid(
-        address owner,
-        uint256 price,
-        uint256 amount
-    ) external onlyEngine returns (uint32 id, bool foundDmt) {
+    function placeBid(address owner, uint256 price, uint256 amount)
+        external
+        onlyEngine
+        returns (uint32 id, bool foundDmt)
+    {
         // clear empty head
         clearEmptyHead(true);
         (id, foundDmt) = _bidOrders._createOrder(owner, price, amount);
@@ -102,29 +100,21 @@ contract Orderbook is IOrderbook, Initializable {
         return (id, foundDmt);
     }
 
-    function removeDmt(
-        bool isBid
-    ) external onlyEngine returns (ExchangeOrderbook.Order memory order) {
+    function removeDmt(bool isBid) external onlyEngine returns (ExchangeOrderbook.Order memory order) {
         // get dormant order
         order = isBid ? _bidOrders.dormantOrder : _askOrders.dormantOrder;
         // send funds for dormant order
         isBid
-            ? _sendFunds(pair.quote, order.owner, order.depositAmount)
-            : _sendFunds(pair.base, order.owner, order.depositAmount);
+            ? _sendFunds(pair.quote, order.owner, order.depositAmount, false)
+            : _sendFunds(pair.base, order.owner, order.depositAmount, false);
         // free memory for dormant order
         isBid ? delete _bidOrders.dormantOrder : delete _askOrders.dormantOrder;
         return order;
     }
 
-    function cancelOrder(
-        bool isBid,
-        uint32 orderId,
-        address owner
-    ) external onlyEngine returns (uint256 remaining) {
+    function cancelOrder(bool isBid, uint32 orderId, address owner) external onlyEngine returns (uint256 remaining) {
         // check order owner
-        ExchangeOrderbook.Order memory order = isBid
-            ? _bidOrders._getOrder(orderId)
-            : _askOrders._getOrder(orderId);
+        ExchangeOrderbook.Order memory order = isBid ? _bidOrders._getOrder(orderId) : _askOrders._getOrder(orderId);
 
         // check before the price had an order not being empty
         bool wasEmpty = isEmpty(isBid, order.price);
@@ -133,12 +123,8 @@ contract Orderbook is IOrderbook, Initializable {
             revert InvalidAccess(owner, order.owner);
         }
 
-        uint256 deletePrice = isBid
-            ? _bidOrders._deleteOrder(orderId)
-            : _askOrders._deleteOrder(orderId);
-        isBid
-            ? _sendFunds(pair.quote, owner, order.depositAmount)
-            : _sendFunds(pair.base, owner, order.depositAmount);
+        uint256 deletePrice = isBid ? _bidOrders._deleteOrder(orderId) : _askOrders._deleteOrder(orderId);
+        isBid ? _sendFunds(pair.quote, owner, order.depositAmount, false) : _sendFunds(pair.base, owner, order.depositAmount, false);
 
         // check if the canceled order was the only one order in the list
         if (!wasEmpty && deletePrice != 0) {
@@ -148,31 +134,24 @@ contract Orderbook is IOrderbook, Initializable {
         return (order.depositAmount);
     }
 
-    function execute(
-        uint32 orderId,
-        bool isBid,
-        address sender,
-        uint256 amount,
-        bool clear
-    ) external onlyEngine returns (address owner) {
-        ExchangeOrderbook.Order memory order = isBid
-            ? _bidOrders._getOrder(orderId)
-            : _askOrders._getOrder(orderId);
+    function execute(uint32 orderId, bool isBid, address sender, uint256 amount, bool clear)
+        external
+        onlyEngine
+        returns (IMatchingEngine.OrderMatch memory orderMatch)
+    {
+        ExchangeOrderbook.Order memory order = isBid ? _bidOrders._getOrder(orderId) : _askOrders._getOrder(orderId);
         uint256 converted = convert(order.price, amount, isBid);
         uint256 dust = convert(order.price, 1, isBid);
+        uint256 baseTakerFee;
+        uint256 quoteTakerFee;
         // if isBid == true, sender is matching ask order with bid order(i.e. selling base to receive quote), otherwise sender is matching bid order with ask order(i.e. buying base with quote)
         if (isBid) {
             // decrease remaining amount of order
-            (uint256 withDust, uint256 deletePrice) = _bidOrders._decreaseOrder(
-                orderId,
-                converted,
-                dust,
-                clear
-            );
+            (uint256 withDust, uint256 deletePrice) = _bidOrders._decreaseOrder(orderId, converted, dust, clear);
             // sender is matching ask order for base asset with quote asset
-            _sendFunds(pair.base, order.owner, amount);
+            baseTakerFee = _sendFunds(pair.base, order.owner, amount, true);
             // send converted amount of quote asset from owner to sender
-            _sendFunds(pair.quote, sender, withDust);
+            quoteTakerFee = _sendFunds(pair.quote, sender, withDust, true);
             // delete price if price of the order is empty
             if (deletePrice != 0) {
                 priceLists._delete(isBid, deletePrice);
@@ -181,30 +160,23 @@ contract Orderbook is IOrderbook, Initializable {
         // if the order is bid order on the base/quote pair
         else {
             // decrease remaining amount of order
-            (uint256 withDust, uint256 deletePrice) = _askOrders._decreaseOrder(
-                orderId,
-                converted,
-                dust,
-                clear
-            );
+            (uint256 withDust, uint256 deletePrice) = _askOrders._decreaseOrder(orderId, converted, dust, clear);
             // sender is matching bid order for quote asset with base asset
             // send deposited amount of quote asset from sender to owner
-            _sendFunds(pair.quote, order.owner, amount);
+            quoteTakerFee = _sendFunds(pair.quote, order.owner, amount, true);
             // send converted amount of base asset from owner to sender
-            _sendFunds(pair.base, sender, withDust);
+            baseTakerFee = _sendFunds(pair.base, sender, withDust, true);
             // delete price if price of the order is empty
             if (deletePrice != 0) {
                 priceLists._delete(isBid, deletePrice);
             }
         }
-        return order.owner;
+        return IMatchingEngine.OrderMatch(order.owner, baseTakerFee, quoteTakerFee);
     }
 
     function clearEmptyHead(bool isBid) public returns (uint256 head) {
         head = isBid ? priceLists._bidHead() : priceLists._askHead();
-        uint32 orderId = isBid
-            ? _bidOrders._head(head)
-            : _askOrders._head(head);
+        uint32 orderId = isBid ? _bidOrders._head(head) : _askOrders._head(head);
         while (orderId == 0 && head != 0) {
             orderId = isBid ? _bidOrders._head(head) : _askOrders._head(head);
             if (orderId == 0) {
@@ -214,19 +186,13 @@ contract Orderbook is IOrderbook, Initializable {
         return head;
     }
 
-    function fpop(
-        bool isBid,
-        uint256 price,
-        uint256 remaining
-    )
+    function fpop(bool isBid, uint256 price, uint256 remaining)
         external
         onlyEngine
         returns (uint32 orderId, uint256 required, bool clear)
     {
         orderId = isBid ? _bidOrders._head(price) : _askOrders._head(price);
-        ExchangeOrderbook.Order memory order = isBid
-            ? _bidOrders._getOrder(orderId)
-            : _askOrders._getOrder(orderId);
+        ExchangeOrderbook.Order memory order = isBid ? _bidOrders._getOrder(orderId) : _askOrders._getOrder(orderId);
         required = convert(price, order.depositAmount, !isBid);
         if (required <= remaining) {
             isBid ? _bidOrders._fpop(price) : _askOrders._fpop(price);
@@ -243,15 +209,34 @@ contract Orderbook is IOrderbook, Initializable {
     function _sendFunds(
         address token,
         address to,
-        uint256 amount
-    ) internal returns (bool) {
+        uint256 amount,
+        bool isTaker
+    ) internal returns (uint256 takerFeeAmount) {
         address weth = IWETHMinimal(pair.engine).WETH();
-        if (token == weth) {
-            IWETHMinimal(weth).withdraw(amount);
-            return payable(to).send(amount);
+        if (isTaker) {
+            uint256 takerFee = IMatchingEngine(pair.engine).accountFee(
+                to,
+                false
+            );
+            takerFeeAmount = (amount * takerFee) / DENOM;
+            uint256 withoutTakerFee = amount - takerFeeAmount;
+            if (token == weth) {
+                IWETHMinimal(weth).withdraw(amount);
+                payable(to).transfer(takerFeeAmount);
+                payable(to).transfer(withoutTakerFee);
+            } else {
+                TransferHelper.safeTransfer(token, to, takerFeeAmount);
+                TransferHelper.safeTransfer(token, to, withoutTakerFee);
+            }
+            return takerFeeAmount;
         } else {
-            TransferHelper.safeTransfer(token, to, amount);
-            return true;
+            if (token == weth) {
+                IWETHMinimal(weth).withdraw(amount);
+                payable(to).transfer(amount);
+            } else {
+                TransferHelper.safeTransfer(token, to, amount);
+            }
+            return 0;
         }
     }
 
@@ -260,14 +245,8 @@ contract Orderbook is IOrderbook, Initializable {
     }
 
     // get required amount for executing the order
-    function getRequired(
-        bool isBid,
-        uint256 price,
-        uint32 orderId
-    ) external view returns (uint256 required) {
-        ExchangeOrderbook.Order memory order = isBid
-            ? _bidOrders._getOrder(orderId)
-            : _askOrders._getOrder(orderId);
+    function getRequired(bool isBid, uint256 price, uint32 orderId) external view returns (uint256 required) {
+        ExchangeOrderbook.Order memory order = isBid ? _bidOrders._getOrder(orderId) : _askOrders._getOrder(orderId);
         if (order.depositAmount == 0) {
             return 0;
         }
@@ -299,10 +278,7 @@ contract Orderbook is IOrderbook, Initializable {
         return priceLists._bidHead();
     }
 
-    function orderHead(
-        bool isBid,
-        uint256 price
-    ) external view returns (uint32) {
+    function orderHead(bool isBid, uint256 price) external view returns (uint32) {
         return isBid ? _bidOrders._head(price) : _askOrders._head(price);
     }
 
@@ -310,102 +286,56 @@ contract Orderbook is IOrderbook, Initializable {
         return priceLists._mktPrice();
     }
 
-    function getPrices(
-        bool isBid,
-        uint32 n
-    ) external view returns (uint256[] memory) {
+    function getPrices(bool isBid, uint32 n) external view returns (uint256[] memory) {
         return priceLists._getPrices(isBid, n);
     }
 
-    function nextPrice(
-        bool isBid,
-        uint256 price
-    ) external view returns (uint256 next) {
+    function nextPrice(bool isBid, uint256 price) external view returns (uint256 next) {
         return priceLists._next(isBid, price);
     }
 
-    function nextOrder(
-        bool isBid,
-        uint256 price,
-        uint32 orderId
-    ) public view returns (uint32 next) {
-        return
-            isBid
-                ? _bidOrders._next(price, orderId)
-                : _askOrders._next(price, orderId);
+    function nextOrder(bool isBid, uint256 price, uint32 orderId) public view returns (uint32 next) {
+        return isBid ? _bidOrders._next(price, orderId) : _askOrders._next(price, orderId);
     }
 
-    function sfpop(
-        bool isBid,
-        uint256 price,
-        uint32 orderId,
-        bool isHead
-    ) external view returns (uint32 id, uint256 required, bool clear) {
+    function sfpop(bool isBid, uint256 price, uint32 orderId, bool isHead)
+        external
+        view
+        returns (uint32 id, uint256 required, bool clear)
+    {
         id = isHead ? orderId : nextOrder(isBid, price, orderId);
-        ExchangeOrderbook.Order memory order = isBid
-            ? _bidOrders._getOrder(id)
-            : _askOrders._getOrder(id);
+        ExchangeOrderbook.Order memory order = isBid ? _bidOrders._getOrder(id) : _askOrders._getOrder(id);
         required = convert(price, order.depositAmount, !isBid);
         return (id, required, id == 0);
     }
 
-    function getPricesPaginated(
-        bool isBid,
-        uint32 start,
-        uint32 end
-    ) external view returns (uint256[] memory) {
+    function getPricesPaginated(bool isBid, uint32 start, uint32 end) external view returns (uint256[] memory) {
         return priceLists._getPricesPaginated(isBid, start, end);
     }
 
-    function getOrderIds(
-        bool isBid,
-        uint256 price,
-        uint32 n
-    ) external view returns (uint32[] memory) {
-        return
-            isBid
-                ? _bidOrders._getOrderIds(price, n)
-                : _askOrders._getOrderIds(price, n);
+    function getOrderIds(bool isBid, uint256 price, uint32 n) external view returns (uint32[] memory) {
+        return isBid ? _bidOrders._getOrderIds(price, n) : _askOrders._getOrderIds(price, n);
     }
 
-    function getOrders(
-        bool isBid,
-        uint256 price,
-        uint32 n
-    ) external view returns (ExchangeOrderbook.Order[] memory) {
-        return
-            isBid
-                ? _bidOrders._getOrders(price, n)
-                : _askOrders._getOrders(price, n);
+    function getOrders(bool isBid, uint256 price, uint32 n) external view returns (ExchangeOrderbook.Order[] memory) {
+        return isBid ? _bidOrders._getOrders(price, n) : _askOrders._getOrders(price, n);
     }
 
-    function getOrdersPaginated(
-        bool isBid,
-        uint256 price,
-        uint32 start,
-        uint32 end
-    ) external view returns (ExchangeOrderbook.Order[] memory) {
-        return
-            isBid
-                ? _bidOrders._getOrdersPaginated(price, start, end)
-                : _askOrders._getOrdersPaginated(price, start, end);
-    }
-
-    function getOrder(
-        bool isBid,
-        uint32 orderId
-    ) external view returns (ExchangeOrderbook.Order memory) {
-        return
-            isBid
-                ? _bidOrders._getOrder(orderId)
-                : _askOrders._getOrder(orderId);
-    }
-
-    function getBaseQuote()
+    function getOrdersPaginated(bool isBid, uint256 price, uint32 start, uint32 end)
         external
         view
-        returns (address base, address quote)
+        returns (ExchangeOrderbook.Order[] memory)
     {
+        return isBid
+            ? _bidOrders._getOrdersPaginated(price, start, end)
+            : _askOrders._getOrdersPaginated(price, start, end);
+    }
+
+    function getOrder(bool isBid, uint32 orderId) external view returns (ExchangeOrderbook.Order memory) {
+        return isBid ? _bidOrders._getOrder(orderId) : _askOrders._getOrder(orderId);
+    }
+
+    function getBaseQuote() external view returns (address base, address quote) {
         return (pair.base, pair.quote);
     }
 
@@ -415,41 +345,25 @@ contract Orderbook is IOrderbook, Initializable {
      * @param isBid if true, get asset value in quote asset, otherwise get asset value in base asset
      * @return converted asset value in quote asset if isBid is true, otherwise asset value in base asset
      */
-    function assetValue(
-        uint256 amount,
-        bool isBid
-    ) external view returns (uint256 converted) {
+    function assetValue(uint256 amount, bool isBid) external view returns (uint256 converted) {
         return convert(priceLists._mktPrice(), amount, isBid);
     }
 
     function isEmpty(bool isBid, uint256 price) public view returns (bool) {
-        return  isBid ? _bidOrders._isEmpty(price) : _askOrders._isEmpty(price);
+        return isBid ? _bidOrders._isEmpty(price) : _askOrders._isEmpty(price);
     }
 
-    function convertMarket(
-        uint256 amount,
-        bool isBid
-    ) external view returns (uint256 converted) {
+    function convertMarket(uint256 amount, bool isBid) external view returns (uint256 converted) {
         return convert(priceLists.lmp, amount, isBid);
     }
 
-    function convert(
-        uint256 price,
-        uint256 amount,
-        bool isBid
-    ) public view returns (uint256 converted) {
+    function convert(uint256 price, uint256 amount, bool isBid) public view returns (uint256 converted) {
         if (isBid) {
             // convert base to quote
-            return
-                baseBquote
-                    ? ((amount * price) / 1e8) / decDiff
-                    : ((amount * price) / 1e8) * decDiff;
+            return baseBquote ? ((amount * price) / 1e8) / decDiff : ((amount * price) / 1e8) * decDiff;
         } else {
             // convert quote to base
-            return
-                baseBquote
-                    ? ((amount * 1e8) / price) * decDiff
-                    : ((amount * 1e8) / price) / decDiff;
+            return baseBquote ? ((amount * 1e8) / price) * decDiff : ((amount * 1e8) / price) / decDiff;
         }
     }
 

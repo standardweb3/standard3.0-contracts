@@ -10,6 +10,7 @@ import {Initializable} from "../../security/Initializable.sol";
 import {TransferHelper} from "../libraries/TransferHelper.sol";
 import {ExchangeLinkedList} from "../libraries/ExchangeLinkedList.sol";
 import {ExchangeOrderbook} from "../libraries/ExchangeOrderbook.sol";
+import {IMatchingEngine} from "../interfaces/IMatchingEngine.sol";
 
 interface IWETHMinimal {
     function WETH() external view returns (address);
@@ -22,6 +23,8 @@ interface IWETHMinimal {
 contract MockOrderbook is IOrderbook, Initializable {
     using ExchangeLinkedList for ExchangeLinkedList.PriceLinkedList;
     using ExchangeOrderbook for ExchangeOrderbook.OrderStorage;
+
+    uint32 public constant DENOM = 100000000;
 
     // Pair Struct
     struct Pair {
@@ -116,8 +119,8 @@ contract MockOrderbook is IOrderbook, Initializable {
         order = isBid ? _bidOrders.dormantOrder : _askOrders.dormantOrder;
         // send funds for dormant order
         isBid
-            ? _sendFunds(pair.quote, order.owner, order.depositAmount)
-            : _sendFunds(pair.base, order.owner, order.depositAmount);
+            ? _sendFunds(pair.quote, order.owner, order.depositAmount, false)
+            : _sendFunds(pair.base, order.owner, order.depositAmount, false);
         // free memory for dormant order
         isBid ? delete _bidOrders.dormantOrder : delete _askOrders.dormantOrder;
         return order;
@@ -144,8 +147,8 @@ contract MockOrderbook is IOrderbook, Initializable {
             ? _bidOrders._deleteOrder(orderId)
             : _askOrders._deleteOrder(orderId);
         isBid
-            ? _sendFunds(pair.quote, owner, order.depositAmount)
-            : _sendFunds(pair.base, owner, order.depositAmount);
+            ? _sendFunds(pair.quote, owner, order.depositAmount, false)
+            : _sendFunds(pair.base, owner, order.depositAmount, false);
 
         // check if the canceled order was the only one order in the list
         if (!wasEmpty && deletePrice != 0) {
@@ -161,12 +164,18 @@ contract MockOrderbook is IOrderbook, Initializable {
         address sender,
         uint256 amount,
         bool clear
-    ) external onlyEngine returns (address owner) {
+    )
+        external
+        onlyEngine
+        returns (IMatchingEngine.OrderMatch memory orderMatch)
+    {
         ExchangeOrderbook.Order memory order = isBid
             ? _bidOrders._getOrder(orderId)
             : _askOrders._getOrder(orderId);
         uint256 converted = convert(order.price, amount, isBid);
         uint256 dust = convert(order.price, 1, isBid);
+        uint256 baseTakerFee;
+        uint256 quoteTakerFee;
         // if isBid == true, sender is matching ask order with bid order(i.e. selling base to receive quote), otherwise sender is matching bid order with ask order(i.e. buying base with quote)
         if (isBid) {
             // decrease remaining amount of order
@@ -177,9 +186,9 @@ contract MockOrderbook is IOrderbook, Initializable {
                 clear
             );
             // sender is matching ask order for base asset with quote asset
-            _sendFunds(pair.base, order.owner, amount);
+            baseTakerFee = _sendFunds(pair.base, order.owner, amount, true);
             // send converted amount of quote asset from owner to sender
-            _sendFunds(pair.quote, sender, withDust);
+            quoteTakerFee = _sendFunds(pair.quote, sender, withDust, true);
             // delete price if price of the order is empty
             if (deletePrice != 0) {
                 priceLists._delete(isBid, deletePrice);
@@ -196,15 +205,15 @@ contract MockOrderbook is IOrderbook, Initializable {
             );
             // sender is matching bid order for quote asset with base asset
             // send deposited amount of quote asset from sender to owner
-            _sendFunds(pair.quote, order.owner, amount);
+            quoteTakerFee = _sendFunds(pair.quote, order.owner, amount, true);
             // send converted amount of base asset from owner to sender
-            _sendFunds(pair.base, sender, withDust);
+            baseTakerFee = _sendFunds(pair.base, sender, withDust, true);
             // delete price if price of the order is empty
             if (deletePrice != 0) {
                 priceLists._delete(isBid, deletePrice);
             }
         }
-        return order.owner;
+        return IMatchingEngine.OrderMatch(order.owner, baseTakerFee, quoteTakerFee);
     }
 
     function clearEmptyHead(bool isBid) public returns (uint256 head) {
@@ -250,15 +259,34 @@ contract MockOrderbook is IOrderbook, Initializable {
     function _sendFunds(
         address token,
         address to,
-        uint256 amount
-    ) internal returns (bool) {
+        uint256 amount,
+        bool isTaker
+    ) internal returns (uint256 takerFeeAmount) {
         address weth = IWETHMinimal(pair.engine).WETH();
-        if (token == weth) {
-            IWETHMinimal(weth).withdraw(amount);
-            return payable(to).send(amount);
+        if (isTaker) {
+            uint256 takerFee = IMatchingEngine(pair.engine).accountFee(
+                to,
+                false
+            );
+            takerFeeAmount = (amount * takerFee) / DENOM;
+            uint256 withoutTakerFee = amount - takerFeeAmount;
+            if (token == weth) {
+                IWETHMinimal(weth).withdraw(amount);
+                payable(to).transfer(takerFeeAmount);
+                payable(to).transfer(withoutTakerFee);
+            } else {
+                TransferHelper.safeTransfer(token, to, takerFeeAmount);
+                TransferHelper.safeTransfer(token, to, withoutTakerFee);
+            }
+            return takerFeeAmount;
         } else {
-            TransferHelper.safeTransfer(token, to, amount);
-            return true;
+            if (token == weth) {
+                IWETHMinimal(weth).withdraw(amount);
+                payable(to).transfer(amount);
+            } else {
+                TransferHelper.safeTransfer(token, to, amount);
+            }
+            return 0;
         }
     }
 

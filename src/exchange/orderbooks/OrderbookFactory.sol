@@ -161,7 +161,7 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
     }
 
     //  Set up listing cost for each token, each pair creates 2GB of data in a month, costing 0.1 ETH
-    function setListingCost( string memory terminal, address payment, uint256 amount) external returns (uint256) {
+    function setListingCost(string memory terminal, address payment, uint256 amount) external returns (uint256) {
         if (msg.sender != engine) {
             revert InvalidAccess(msg.sender, engine);
         }

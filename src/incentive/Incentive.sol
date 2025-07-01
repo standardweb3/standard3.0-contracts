@@ -29,4 +29,10 @@ contract Incentive is IProtocol, AccessControl {
     function terminalName(address terminal) external view returns (string memory name) {
         return terminalNames[terminal];
     }
+
+    function accountFee(address account, bool isMaker) external view returns (uint256 feeNum) {
+        // TODO: get membership level from membership contract
+        // TODO: get fee numerator from feeNumerators
+        return 0;
+    }
 }

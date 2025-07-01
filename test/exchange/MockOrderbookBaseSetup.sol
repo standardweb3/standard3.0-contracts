@@ -63,7 +63,8 @@ contract MockBaseSetup is Test {
         // setup spread
         matchingEngine.setDefaultSpread(2000000, 2000000, true);
         matchingEngine.setDefaultSpread(2000000, 2000000, false);
-        matchingEngine.setBaseFee(300000);
+        matchingEngine.setDefaultFee(true, 300000);
+        matchingEngine.setDefaultFee(false, 0);
 
         vm.prank(trader1);
         token1.approve(address(matchingEngine), 10000000e18);

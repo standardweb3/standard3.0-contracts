@@ -141,13 +141,13 @@ contract ConversionTest is BaseSetup {
         vm.prank(trader2);
         matchingEngine.limitSell(address(token1), address(btc), 1000e8, 10e18, true, 5, trader2);
 
-        bool isEmpty = Orderbook(payable(orderbookFactory.getPair(address(token1), address(btc)))).isEmpty(false, 1000e8);
+        bool isEmpty =
+            Orderbook(payable(orderbookFactory.getPair(address(token1), address(btc)))).isEmpty(false, 1000e8);
         console.log("isEmpty: ", isEmpty);
 
         // deposit 10000e8(9997e8 after fee) for buying 10e18 token1 for 1000 token2 * amount
         vm.prank(trader1);
         matchingEngine.limitBuy(address(token1), address(btc), 1000e8, 10000e8, true, 5, trader1);
-
 
         // after trade balances
         uint256 afterTrader2T1Balance = token1.balanceOf(address(trader2));

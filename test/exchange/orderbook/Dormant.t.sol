@@ -22,6 +22,5 @@ contract DormantTest is MockBaseSetup {
         matchingEngine.limitBuy(address(token1), address(token2), 100000000, 100, true, 1, address(trader1));
         mockBook.setOrderCount(true, 1);
         matchingEngine.limitBuy(address(token1), address(token2), 100000000, 1000, true, 1, address(trader1));
-        
     }
 }

@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-
 // DANGER: This is a mock contract for testing purposes only.
 // It can change order id count, and It should not be used in production.
-
 
 pragma solidity ^0.8.24;
 
@@ -167,7 +165,7 @@ contract MockOrderbookFactory is IOrderbookFactory, Initializable {
     }
 
     //  Set up listing cost for each token, each pair creates 2GB of data in a month, costing 0.1 ETH
-    function setListingCost( string memory terminal, address payment, uint256 amount) external returns (uint256) {
+    function setListingCost(string memory terminal, address payment, uint256 amount) external returns (uint256) {
         if (msg.sender != engine) {
             revert InvalidAccess(msg.sender, engine);
         }

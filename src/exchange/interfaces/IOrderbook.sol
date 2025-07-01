@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.24;
 
-import "../libraries/ExchangeOrderbook.sol";
+import {IMatchingEngine, ExchangeOrderbook} from "./IMatchingEngine.sol";
 
 interface IOrderbook {
     function initialize(uint256 id_, address base_, address quote_, address engine_) external;
@@ -19,7 +19,7 @@ interface IOrderbook {
 
     function execute(uint32 orderId, bool isBid, address sender, uint256 amount, bool clear)
         external
-        returns (address owner);
+        returns (IMatchingEngine.OrderMatch memory orderMatch);
 
     function clearEmptyHead(bool isBid) external returns (uint256 head);
 

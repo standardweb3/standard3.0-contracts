@@ -7,11 +7,9 @@ import "./ERC20MintablePausableBurnable.sol";
 contract MockToken is ERC20MintablePausableBurnable {
     uint8 _decimals;
 
-    constructor(
-        string memory name,
-        string memory symbol,
-        uint8 decimals_
-    ) ERC20MintablePausableBurnable(name, symbol) {
+    constructor(string memory name, string memory symbol, uint8 decimals_)
+        ERC20MintablePausableBurnable(name, symbol)
+    {
         _decimals = decimals_;
     }
 

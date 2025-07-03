@@ -126,6 +126,17 @@ contract getDefaultSpread is Deployer {
     }
 }
 
+contract MarketBuy is Deployer {
+    address constant engine = 0x8E9e786f757B881C7B456682Ae7D2a06820220b1;
+
+    function run() external {
+        _setDeployer();
+        MatchingEngine matchingEngine = MatchingEngine(payable(engine));
+        matchingEngine.marketBuy(address(0x33f6552F37772e42A31d03233812d2dC6afd2f97), address(0x0ED782B8079529f7385c3eDA9fAf1EaA0DbC6a17), 17390200, true, 1, address(0x8E9e786f757B881C7B456682Ae7D2a06820220b1), 10000000);
+        vm.stopBroadcast();
+    }
+}
+
 contract AdjustPrice is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     /// Second per block to finalize

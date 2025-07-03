@@ -154,5 +154,9 @@ interface IMatchingEngine {
         view
         returns (uint256 converted);
 
+    function feeTo() external view returns (address);
+
+    function incentive() external view returns (address);
+    
     function feeOf(address base, address quote, address account, bool isMaker) external view returns (uint32 feeNum);
 }

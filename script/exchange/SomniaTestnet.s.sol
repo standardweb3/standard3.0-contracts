@@ -95,6 +95,16 @@ contract DeployExchangeMainnetContracts is Deployer {
     }
 }
 
+contract MarketBuy is Deployer {
+    address constant engine = 0x44E7525Cf9d56733D08fc98BcD750d504fCE91eC;
+
+    function run() external {
+        _setDeployer();
+        MatchingEngine matchingEngine = MatchingEngine(payable(engine));
+        matchingEngine.marketBuy(address(0x4A3BC48C156384f9564Fd65A53a2f3D534D8f2b7), address(0x0ED782B8079529f7385c3eDA9fAf1EaA0DbC6a17), 17390200, true, 1, address(0x44E7525Cf9d56733D08fc98BcD750d504fCE91eC), 10000000);
+        vm.stopBroadcast();
+    }
+}   
 contract setDefaultSpread is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     /// Second per block to finalize
@@ -109,6 +119,26 @@ contract setDefaultSpread is Deployer {
         vm.stopBroadcast();
     }
 }
+
+contract ShowOrderbook is Deployer {
+    // Change address constants on deploying to other networks from DeployAssets
+    /// Second per block to finalize
+    address constant orderbook = 0x6C867Af0F0E7BE0055c4e530DC9390e5D98B9E3f;
+
+    function run() external {
+        _setDeployer();
+        Orderbook orderbook = Orderbook(payable(orderbook));
+        orderbook.bidHead();
+        orderbook.askHead();
+        orderbook.getPrices(true, 4);
+        orderbook.getPrices(false, 20);
+        orderbook.getOrderIds(true, 4, 5);
+        orderbook.getOrderIds(false, 90610055130, 5);
+
+        vm.stopBroadcast();
+    }
+}
+
 
 contract getDefaultSpread is Deployer {
     // Change address constants on deploying to other networks from DeployAssets

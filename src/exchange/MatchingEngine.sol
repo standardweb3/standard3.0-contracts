@@ -23,9 +23,9 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
     // Market maker role
     bytes32 private constant MARKET_MAKER_ROLE = keccak256("MARKET_MAKER_ROLE");
     // fee recipient for point storage
-    address private feeTo;
+    address public feeTo;
     // incentive address
-    address private incentive;
+    address public incentive;
     // base fee in numerator for DENOM
     uint32 private defaultMakerFee = 100000;
     // base taker fee in numerator for DENOM
@@ -1169,7 +1169,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
         }
         if (foundDmt) {
             // emit canceling dormant order
-            ExchangeOrderbook.Order memory order = IOrderbook(pair).removeDmt(isBid);
+            ExchangeOrderbook.Order memory order = IOrderbook(pair).removeDmt(id, isBid);
             emit OrderCanceled(pair, id, isBid, order.owner, order.depositAmount);
         }
         return id;

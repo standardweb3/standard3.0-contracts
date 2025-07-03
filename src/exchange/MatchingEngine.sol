@@ -1169,7 +1169,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
         }
         if (foundDmt) {
             // emit canceling dormant order
-            ExchangeOrderbook.Order memory order = IOrderbook(pair).removeDmt(id, isBid);
+            ExchangeOrderbook.Order memory order = IOrderbook(pair).removeDmt(isBid);
             emit OrderCanceled(pair, id, isBid, order.owner, order.depositAmount);
         }
         return id;

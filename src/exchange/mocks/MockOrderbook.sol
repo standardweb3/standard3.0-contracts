@@ -113,7 +113,6 @@ contract MockOrderbook is IOrderbook, Initializable {
     }
 
     function removeDmt(
-        uint32 dormantOrderId,
         bool isBid
     ) external onlyEngine returns (ExchangeOrderbook.Order memory order) {
         // get dormant order
@@ -122,11 +121,6 @@ contract MockOrderbook is IOrderbook, Initializable {
         // check before the price had an order not being empty
         bool wasEmpty = isEmpty(isBid, order.price);
 
-        // send funds for dormant order
-        uint256 deletePrice = isBid
-            ? _bidOrders._deleteOrder(dormantOrderId)
-            : _askOrders._deleteOrder(dormantOrderId);
-
         // free memory for dormant order
         isBid ? delete _bidOrders.dormantOrder : delete _askOrders.dormantOrder;
 
@@ -134,8 +128,8 @@ contract MockOrderbook is IOrderbook, Initializable {
             ? _sendFunds(pair.quote, order.owner, order.depositAmount, false)
             : _sendFunds(pair.base, order.owner, order.depositAmount, false);
 
-        // check if the canceled order was the only one order in the list
-        if (!wasEmpty && deletePrice != 0) {
+        // check if the dormant order was the only one order in the list of the price
+        if (!wasEmpty && order.price != 0) {
             priceLists._delete(isBid, order.price);
         }
         return order;

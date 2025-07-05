@@ -41,10 +41,11 @@ contract LimitOrderTest is BaseSetup {
             matchingEngine.limitBuy(address(token1), address(btc), 1e8, 1e8, true, 2, trader1);
         // rematch trade
         vm.prank(trader1);
-        MatchingEngine.UpdateOrderInput[] memory updateOrderData = new MatchingEngine.UpdateOrderInput[](1);
+        MatchingEngine.CreateOrderInput[] memory updateOrderData = new MatchingEngine.CreateOrderInput[](1);
         updateOrderData[0].base = address(token1);
         updateOrderData[0].quote = address(btc);
         updateOrderData[0].isBid = true;
+        updateOrderData[0].isLimit = true;
         updateOrderData[0].orderId = ord0Id;
         updateOrderData[0].price = 1e8;
         updateOrderData[0].amount = 1e10;
@@ -62,7 +63,7 @@ contract LimitOrderTest is BaseSetup {
             matchingEngine.limitBuy(address(token1), address(btc), 1e8, 1e8, true, 2, trader1);
         // rematch trade
         vm.prank(trader1);
-        MatchingEngine.UpdateOrderInput[] memory updateOrderData = new MatchingEngine.UpdateOrderInput[](1);
+        MatchingEngine.CreateOrderInput[] memory updateOrderData = new MatchingEngine.CreateOrderInput[](1);
         updateOrderData[0].base = address(token1);
         updateOrderData[0].quote = address(btc);
         updateOrderData[0].isBid = true;
@@ -84,10 +85,11 @@ contract LimitOrderTest is BaseSetup {
             matchingEngine.limitBuy(address(token1), address(btc), 1e8, 1e8, true, 2, trader1);
         // rematch trade
         vm.prank(trader1);
-        MatchingEngine.UpdateOrderInput[] memory updateOrderData = new MatchingEngine.UpdateOrderInput[](1);
+        MatchingEngine.CreateOrderInput[] memory updateOrderData = new MatchingEngine.CreateOrderInput[](1);
         updateOrderData[0].base = address(token1);
         updateOrderData[0].quote = address(btc);
         updateOrderData[0].isBid = true;
+        updateOrderData[0].isLimit = true;
         updateOrderData[0].orderId = ord0Id;
         updateOrderData[0].price = 1e5;
         updateOrderData[0].amount = 1e10;

@@ -37,6 +37,7 @@ contract Deposit is AccessControl {
         address base;
         address quote;
         bool isBid;
+        bool isLimit;
         uint32 orderId;
         uint256 price;
         uint256 amount;
@@ -183,10 +184,11 @@ contract Deposit is AccessControl {
 
     function updateOrders(APIUpdateOrderInput[] memory orders) public {
         for (uint256 i = 0; i < orders.length; i++) {
-            IMatchingEngine.UpdateOrderInput memory updateOrderData = IMatchingEngine.UpdateOrderInput({
+            IMatchingEngine.CreateOrderInput memory updateOrderData = IMatchingEngine.CreateOrderInput({
                 base: orders[i].base,
                 quote: orders[i].quote,
                 isBid: orders[i].isBid,
+                isLimit: orders[i].isLimit,
                 orderId: orders[i].orderId,
                 price: orders[i].price,
                 amount: orders[i].amount,

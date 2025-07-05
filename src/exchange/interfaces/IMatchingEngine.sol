@@ -18,10 +18,11 @@ interface IMatchingEngine {
         uint32 orderId;
     }
 
-    struct UpdateOrderInput {
+    struct CreateOrderInput {
         address base;
         address quote;
         bool isBid;
+        bool isLimit;
         uint32 orderId;
         uint256 price;
         uint256 amount;
@@ -126,11 +127,7 @@ interface IMatchingEngine {
         payable
         returns (address book);
 
-    function updateOrder(UpdateOrderInput memory updateOrderData)
-        external
-        returns (uint256 makePrice, uint256 placed, uint32 id);
-
-    function updateOrders(UpdateOrderInput[] memory updateOrderData)
+    function updateOrders(CreateOrderInput[] memory createOrderData)
         external
         returns (uint256[] memory makePrice, uint256[] memory placed, uint32[] memory id);
 

@@ -1238,8 +1238,77 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
         }
     }
 
+    function createOrder(
+        CreateOrderInput memory createOrderData
+    ) public payable returns (uint256 makePrice, uint256 placed, uint32 id) {
+        if (createOrderData.isBid) {
+            if (createOrderData.quote == WETH) {
+                // Convert ETH to WETH for internal call
+                IWETH(WETH).deposit{value: createOrderData.amount}();
+            }
+            if (createOrderData.isLimit) {
+                (makePrice, placed, id) = limitBuy(
+                    createOrderData.base,
+                    createOrderData.quote,
+                    createOrderData.price,
+                    createOrderData.amount,
+                    true,
+                    createOrderData.n,
+                    createOrderData.recipient
+                );
+            } else {
+                (makePrice, placed, id) = marketBuy(
+                    createOrderData.base,
+                    createOrderData.quote,
+                    createOrderData.amount,
+                    true,
+                    createOrderData.n,
+                    createOrderData.recipient,
+                    defaultMktBuy
+                );
+            }
+        } else {
+            if (createOrderData.base == WETH) {
+                // Convert ETH to WETH for internal call
+                IWETH(WETH).deposit{value: createOrderData.amount}();
+            }
+            if (createOrderData.isLimit) {
+                (makePrice, placed, id) = limitSell(
+                    createOrderData.base,
+                    createOrderData.quote,
+                    createOrderData.price,
+                    createOrderData.amount,
+                    true,
+                    createOrderData.n,
+                    createOrderData.recipient
+                );
+            } else {
+                (makePrice, placed, id) = marketSell(
+                    createOrderData.base,
+                    createOrderData.quote,
+                    createOrderData.amount,
+                    true,
+                    createOrderData.n,
+                    createOrderData.recipient,
+                    defaultMktSell
+                );
+            }
+        }
+        return (makePrice, placed, id);
+    }
+
+    function createOrders(CreateOrderInput[] memory createOrderData) external returns (uint256[] memory makePrice, uint256[] memory placed, uint32[] memory id) {
+        makePrice = new uint256[](createOrderData.length);
+        placed = new uint256[](createOrderData.length);
+        id = new uint32[](createOrderData.length);
+        for (uint32 i = 0; i < createOrderData.length; i++) {
+            (makePrice[i], placed[i], id[i]) = createOrder(createOrderData[i]);
+        }
+        return (makePrice, placed, id);
+    }
+
     function _updateOrder(
-        UpdateOrderInput memory updateOrderData
+        CreateOrderInput memory updateOrderData
     ) internal returns (uint256 makePrice, uint256 placed, uint32 id) {
         address orderbook = IOrderbookFactory(orderbookFactory).getPair(
             updateOrderData.base,
@@ -1266,32 +1335,12 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
             return (0, 0, 0);
         }
 
-        if (updateOrderData.isBid) {
-            (makePrice, placed, id) = limitBuy(
-                updateOrderData.base,
-                updateOrderData.quote,
-                updateOrderData.price,
-                updateOrderData.amount,
-                true,
-                updateOrderData.n,
-                updateOrderData.recipient
-            );
-        } else {
-            (makePrice, placed, id) = limitSell(
-                updateOrderData.base,
-                updateOrderData.quote,
-                updateOrderData.price,
-                updateOrderData.amount,
-                true,
-                updateOrderData.n,
-                updateOrderData.recipient
-            );
-        }
+        (makePrice, placed, id) = createOrder(updateOrderData);
         return (makePrice, placed, id);
     }
 
     function updateOrder(
-        UpdateOrderInput memory updateOrderData
+        CreateOrderInput memory updateOrderData
     )
         external
         nonReentrant
@@ -1301,7 +1350,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
     }
 
     function updateOrders(
-        UpdateOrderInput[] memory updateOrderData
+        CreateOrderInput[] memory updateOrderData
     )
         external
         returns (

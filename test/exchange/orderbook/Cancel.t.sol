@@ -18,6 +18,19 @@ import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 import {IMatchingEngine} from "../../../src/exchange/interfaces/IMatchingEngine.sol";
 
 contract CancelTest is BaseSetup {
+
+    function testCancelOrderSimply() public {
+        matchingEngine.addPair(address(token1), address(token2), 300000000, 0, address(token1));
+        vm.prank(booker);
+        book = Orderbook(payable(orderbookFactory.getPair(address(token1), address(token2))));
+        vm.prank(trader1);
+        matchingEngine.limitSell(address(token1), address(token2), 500000000, 10, true, 2, trader1);
+        vm.prank(trader1);
+        matchingEngine.cancelOrder(address(token1), address(token2), false, 1);
+        vm.prank(trader1);
+    }
+
+
     function testCancelAtPriceZeroPasses() public {
         matchingEngine.addPair(address(token1), address(token2), 300000000, 0, address(token1));
         vm.prank(booker);

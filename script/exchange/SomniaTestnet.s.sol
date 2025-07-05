@@ -20,6 +20,7 @@ import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {WETH9} from "../../src/mock/WETH9.sol";
 import {BulkSender} from "../../src/mock/BulkSender.sol";
+import {IMatchingEngine} from "../../src/exchange/interfaces/IMatchingEngine.sol";
 
 contract Deployer is Script {
     function _setDeployer() internal {
@@ -95,8 +96,49 @@ contract DeployExchangeMainnetContracts is Deployer {
     }
 }
 
+contract initializeEngine is Deployer {
+    address constant engine = 0x08D7AE3e5BA1515a578c7905dE04A72Ae376f313;
+    address constant orderbookFactory = 0xa5DD7591cc0be4446D633eC14c67F5ec3B818489;
+    address constant deployer_address = 0xF8FB4672170607C95663f4Cc674dDb1386b7CfE0;
+    address constant weth = 0x4A3BC48C156384f9564Fd65A53a2f3D534D8f2b7;
+
+    function run() external {
+        _setDeployer();
+        MatchingEngine matchingEngine = MatchingEngine(payable(engine));
+        matchingEngine.initialize(address(orderbookFactory), address(deployer_address), address(weth));
+        
+    }
+}   
+
+contract AddPair is Deployer {
+    address constant engine = 0x08D7AE3e5BA1515a578c7905dE04A72Ae376f313;
+
+    function run() external {
+        _setDeployer();
+        MatchingEngine matchingEngine = MatchingEngine(payable(engine));
+        matchingEngine.addPair(address(0x54597df4E4A6385B77F39d458Eb75443A8f9Aa9e), address(0x0ED782B8079529f7385c3eDA9fAf1EaA0DbC6a17), 9600000000000, 0, address(0x54597df4E4A6385B77F39d458Eb75443A8f9Aa9e));
+        vm.stopBroadcast();
+    }
+}
+
+contract CancelOrder is Deployer {
+    address constant engine = 0x08D7AE3e5BA1515a578c7905dE04A72Ae376f313;
+
+    function run() external {
+        _setDeployer();
+        MatchingEngine matchingEngine = MatchingEngine(payable(engine));
+        IMatchingEngine.CancelOrderInput[] memory cancelOrderData = new IMatchingEngine.CancelOrderInput[](1);
+        cancelOrderData[0].base = address(0xb35a7935F8fbc52fB525F16Af09329b3794E8C42);
+        cancelOrderData[0].quote = address(0x0ED782B8079529f7385c3eDA9fAf1EaA0DbC6a17);
+        cancelOrderData[0].isBid = false;
+        cancelOrderData[0].orderId = 1;
+        matchingEngine.cancelOrders(cancelOrderData);
+        vm.stopBroadcast();
+    }
+}
+
 contract MarketBuy is Deployer {
-    address constant engine = 0x44E7525Cf9d56733D08fc98BcD750d504fCE91eC;
+    address constant engine = 0x08D7AE3e5BA1515a578c7905dE04A72Ae376f313;
 
     function run() external {
         _setDeployer();
@@ -255,6 +297,7 @@ contract SetEventMainnet is Deployer {
     }
 }
 
+/*
 contract AddPair is Deployer {
     MatchingEngine public matchingEngine;
     address constant matchingEngine_address = 0x6B5A13Ca93871187330aE6d9E34cdAD610aA54cd;
@@ -269,6 +312,7 @@ contract AddPair is Deployer {
         vm.stopBroadcast();
     }
 }
+*/
 
 contract SetupPriceOnPair is Deployer {
     MatchingEngine public matchingEngine;

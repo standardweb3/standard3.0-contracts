@@ -6,8 +6,8 @@ pragma solidity ^0.8.24;
 interface IMatchingEngine {
     struct OrderMatch {
         address owner;
-        uint256 baseTakerFee;
-        uint256 quoteTakerFee;
+        uint256 baseFee;
+        uint256 quoteFee;
     }
 
     struct CancelOrderInput {

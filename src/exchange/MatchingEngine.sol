@@ -108,8 +108,8 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
         address owner,
         uint256 price,
         uint256 amount,
-        uint256 baseTakerFee,
-        uint256 quoteTakerFee,
+        uint256 baseFee,
+        uint256 quoteFee,
         bool clear
     );
 
@@ -1264,8 +1264,8 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
                     orderMatch.owner,
                     price,
                     remaining,
-                    orderMatch.baseTakerFee,
-                    orderMatch.quoteTakerFee,
+                    orderMatch.baseFee,
+                    orderMatch.quoteFee,
                     clear
                 );
                 // end loop as remaining is 0
@@ -1291,8 +1291,8 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
                     orderMatch.owner,
                     price,
                     required,
-                    orderMatch.baseTakerFee,
-                    orderMatch.quoteTakerFee,
+                    orderMatch.baseFee,
+                    orderMatch.quoteFee,
                     clear
                 );
                 ++i;
@@ -1497,7 +1497,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
         TransferHelper.safeTransfer(payment, feeTo, amount);
         return terminalName;
     }
-    
+
     function _dfltFee(bool isMaker) internal view returns (uint32) {
         return isMaker ? defaultMakerFee : defaultTakerFee;
     }

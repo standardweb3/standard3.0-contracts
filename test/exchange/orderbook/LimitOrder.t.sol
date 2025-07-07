@@ -204,9 +204,9 @@ contract LimitOrderTest is BaseSetup {
         (uint256 result, uint256 lmp) = _detLimitSellMakePrice(address(book), limitPrice, bidHead, askHead, 2000000);
         console.log("result: ", result);
         assert(result == limitPrice);
-        (uint256 makePrice, uint256 _placed, uint256 _matched) =
+        MatchingEngine.OrderResult memory orderResult =
             matchingEngine.limitSell(address(base), address(quote), limitPrice, 1e18, true, 5, trader1);
-        assert(makePrice == result);
+        assert(orderResult.makePrice == result);
     }
 
     // on limit sell, if limit price is lower than market price - ranged price, order is made with market price - ranged price.
@@ -221,10 +221,10 @@ contract LimitOrderTest is BaseSetup {
         console.log("result: ", result);
         assert(result == down);
         uint256 mp = IOrderbook(address(book)).lmp();
-        (uint256 makePrice, uint256 _placed, uint256 _matched) =
+        MatchingEngine.OrderResult memory orderResult =
             matchingEngine.limitSell(address(base), address(quote), limitPrice, 1e18, true, 5, trader1);
-        assert(makePrice == result);
-        assert(makePrice < mp);
+        assert(orderResult.makePrice == result);
+        assert(orderResult.makePrice < mp);
     }
 
     // on limit buy, if limit price is higher than market price + ranged price, order is made with market price + ranged price.
@@ -239,10 +239,10 @@ contract LimitOrderTest is BaseSetup {
         console.log("result: ", result);
         uint256 mp = IOrderbook(address(book)).lmp();
         assert(result == up);
-        (uint256 makePrice, uint256 _placed, uint256 _matched) =
+        MatchingEngine.OrderResult memory orderResult =
             matchingEngine.limitBuy(address(base), address(quote), limitPrice, 1e18, true, 5, trader1);
-        assert(makePrice == result);
-        assert(makePrice > mp);
+        assert(orderResult.makePrice == result);
+        assert(orderResult.makePrice > mp);
     }
 
     // on limit buy, if limit price is lower than market price - ranged price, order is made with limit price.
@@ -256,9 +256,9 @@ contract LimitOrderTest is BaseSetup {
         (uint256 result, uint256 lmp) = _detLimitBuyMakePrice(address(book), limitPrice, bidHead, askHead, 2000000);
         console.log("result: ", result);
         assert(result == limitPrice);
-        (uint256 makePrice, uint256 _placed, uint256 _matched) =
+        MatchingEngine.OrderResult memory orderResult =
             matchingEngine.limitBuy(address(base), address(quote), limitPrice, 1e18, true, 5, trader1);
-        assert(makePrice == result);
+        assert(orderResult.makePrice == result);
     }
 
     // on limit sell, if limit price is lower than market price - ranged price, order is made with limit price.
@@ -331,10 +331,10 @@ contract LimitOrderTest is BaseSetup {
 
         matchingEngine.limitSell(address(base), address(quote), 1e8 + 1, 1e18, true, 5, trader1);
 
-        (uint256 lp, uint256 matched, uint32 id) =
+        MatchingEngine.OrderResult memory result =
             matchingEngine.limitBuy(address(base), address(quote), 1e5, 1e18, true, 5, trader1);
 
-        assert(lp == 1e5);
+        assert(result.makePrice == 1e5);
     }
 
     function testLimitSellAllowsAboveLMP() public {
@@ -345,9 +345,9 @@ contract LimitOrderTest is BaseSetup {
 
         matchingEngine.limitSell(address(base), address(quote), 1e8 + 1, 1e18, true, 5, trader1);
 
-        (uint256 lp, uint256 matched, uint32 id) =
+        MatchingEngine.OrderResult memory result =
             matchingEngine.limitSell(address(base), address(quote), 1e11, 1e18, true, 5, trader1);
 
-        assert(lp == 1e11);
+        assert(result.makePrice == 1e11);
     }
 }

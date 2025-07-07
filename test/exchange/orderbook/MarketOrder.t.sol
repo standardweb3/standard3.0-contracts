@@ -17,8 +17,10 @@ import {WETH9} from "../../../src/mock/WETH9.sol";
 import {BaseSetup} from "../OrderbookBaseSetup.sol";
 import {console} from "forge-std/console.sol";
 import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
+import {IMatchingEngine} from "../../../src/exchange/interfaces/IMatchingEngine.sol";
 
 contract MarketOrderTest is BaseSetup {
+
     function testMarketBuyETH() public {
         super.setUp();
         matchingEngine.addPair(address(token1), address(weth), 1e8, 0, address(token1));
@@ -220,11 +222,11 @@ contract MarketOrderTest is BaseSetup {
         console.log("result: ", result);
         // check computed result
         assert(result == up);
-        (uint256 makePrice, uint256 _placed, uint256 _matched) =
+        IMatchingEngine.OrderResult memory orderResult =
             matchingEngine.marketBuy(address(base), address(quote), 1e8, true, 5, trader1, 2000000);
         // check make price is equal to computed result
-        console.log("make price: ", makePrice);
-        assert(makePrice == result);
+        console.log("make price: ", orderResult.makePrice);
+        assert(orderResult.makePrice == result);
     }
 
     // On market buy, if bidHead is lower than lmp + ranged price, order is lmp + ranged price
@@ -248,11 +250,11 @@ contract MarketOrderTest is BaseSetup {
         console.log("result: ", result);
         // check computed result
         assert(result == up);
-        (uint256 makePrice, uint256 _placed, uint256 _matched) =
+        IMatchingEngine.OrderResult memory orderResult =
             matchingEngine.marketBuy(address(base), address(quote), 1e8, true, 5, trader1, 2000000);
         // check make price is equal to computed result
-        console.log("make price: ", makePrice);
-        assert(makePrice == result);
+        console.log("make price: ", orderResult.makePrice);
+        assert(orderResult.makePrice == result);
     }
 
     // On market buy, if askHead is lower than lmp + ranged price, order is made with askHead
@@ -270,11 +272,11 @@ contract MarketOrderTest is BaseSetup {
         console.log("result: ", result);
         // check computed result
         assert(result == askHead);
-        (uint256 makePrice, uint256 _placed, uint256 _matched) =
+        IMatchingEngine.OrderResult memory orderResult =
             matchingEngine.marketBuy(address(base), address(quote), 1e8, true, 5, trader1, 2000000);
         // check make price is equal to computed result
-        console.log("make price: ", makePrice);
-        assert(makePrice == result);
+        console.log("make price: ", orderResult.makePrice);
+        assert(orderResult.makePrice == result);
     }
 
     // On market buy, bidHead and askHead exists. if lmp + ranged price is higher than bidHead, and lmp + ranged price is lower than askHead, order is made in askHead.
@@ -293,11 +295,11 @@ contract MarketOrderTest is BaseSetup {
         console.log("result: ", result);
         // check computed result
         assert(result == askHead);
-        (uint256 makePrice, uint256 _placed, uint256 _matched) =
+        IMatchingEngine.OrderResult memory orderResult =
             matchingEngine.marketBuy(address(base), address(quote), 1e8, true, 5, trader1, 2000000);
         // check make price is equal to computed result
-        console.log("make price: ", makePrice);
-        assert(makePrice == result);
+        console.log("make price: ", orderResult.makePrice);
+        assert(orderResult.makePrice == result);
     }
 
     function testMarketBuyVolatilityOnSlippageLimit() public {
@@ -320,11 +322,11 @@ contract MarketOrderTest is BaseSetup {
         console.log("result: ", result);
         // check computed result
         assert(result == 100500000);
-        (uint256 makePrice, uint256 _placed, uint256 _matched) =
+        IMatchingEngine.OrderResult memory orderResult =
             matchingEngine.marketBuy(address(base), address(quote), 1e8, true, 5, trader1, 500000);
         // check make price is equal to computed result
-        console.log("make price: ", makePrice);
-        assert(makePrice == result);
+        console.log("make price: ", orderResult.makePrice);
+        assert(orderResult.makePrice == result);
     }
 
     function testMarketBuyVolatilityOnSlippageLimit2() public {
@@ -347,11 +349,11 @@ contract MarketOrderTest is BaseSetup {
         console.log("result: ", result);
         // check computed result
         assert(result == up);
-        (uint256 makePrice, uint256 _placed, uint256 _matched) =
+        IMatchingEngine.OrderResult memory orderResult =
             matchingEngine.marketBuy(address(base), address(quote), 1e8, true, 5, trader1, 3000000);
         // check make price is equal to computed result
-        console.log("make price: ", makePrice);
-        assert(makePrice == result);
+        console.log("make price: ", orderResult.makePrice);
+        assert(orderResult.makePrice == result);
     }
 
     // On market buy, if askHead is lower than lmp + ranged price, order is made with askHead
@@ -367,11 +369,11 @@ contract MarketOrderTest is BaseSetup {
         console.log("result: ", result);
         // check computed result
         assert(result == askHead);
-        (uint256 makePrice, uint256 _placed, uint256 _matched) =
+        IMatchingEngine.OrderResult memory orderResult =
             matchingEngine.marketBuy(address(base), address(quote), 1e8, true, 5, trader1, 2000000);
         // check make price is equal to computed result
-        console.log("make price: ", makePrice);
-        assert(makePrice == result);
+        console.log("make price: ", orderResult.makePrice);
+        assert(orderResult.makePrice == result);
     }
 
     // On market sell, if bidHead is lower than lmp - ranged price, order is made with lmp - ranged price.
@@ -388,11 +390,11 @@ contract MarketOrderTest is BaseSetup {
         console.log("result: ", result);
         // check computed result
         assert(result == down);
-        (uint256 makePrice, uint256 _placed, uint256 _matched) =
+        IMatchingEngine.OrderResult memory orderResult =
             matchingEngine.marketSell(address(base), address(quote), 1e8, true, 5, trader1, 2000000);
         // check make price is equal to computed result
-        console.log("make price: ", makePrice);
-        assert(makePrice == result);
+        console.log("make price: ", orderResult.makePrice);
+        assert(orderResult.makePrice == result);
     }
 
     // On market sell, if bidHead is lower than lmp - ranged price, order is lmp - ranged price
@@ -409,11 +411,11 @@ contract MarketOrderTest is BaseSetup {
         console.log("result: ", result);
         // check computed result
         assert(result == down);
-        (uint256 makePrice, uint256 _placed, uint256 _matched) =
+        IMatchingEngine.OrderResult memory orderResult =
             matchingEngine.marketSell(address(base), address(quote), 1e8, true, 5, trader1, 2000000);
         // check make price is equal to computed result
-        console.log("make price: ", makePrice);
-        assert(makePrice == result);
+        console.log("make price: ", orderResult.makePrice);
+        assert(orderResult.makePrice == result);
     }
 
     // On market sell, if bidHead is higher than lmp - ranged price, order is made with bidHead
@@ -429,11 +431,11 @@ contract MarketOrderTest is BaseSetup {
         console.log("result: ", result);
         // check computed result
         assert(result == bidHead);
-        (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine // silence warning
+        IMatchingEngine.OrderResult memory orderResult = matchingEngine // silence warning
             .marketSell(address(base), address(quote), 1e8, true, 5, trader1, 2000000);
         // check make price is equal to computed result
-        console.log("make price: ", makePrice);
-        assert(makePrice == result);
+        console.log("make price: ", orderResult.makePrice);
+        assert(orderResult.makePrice == result);
     }
 
     function testMarketSellVolatilityDownOnSlippageLimit() public {
@@ -449,11 +451,11 @@ contract MarketOrderTest is BaseSetup {
         console.log("result: ", result);
         // check computed result with user input with 50bps down
         assert(result == 99500000);
-        (uint256 makePrice, uint256 _placed, uint256 _matched) =
+        IMatchingEngine.OrderResult memory orderResult =
             matchingEngine.marketSell(address(base), address(quote), 1e8, true, 5, trader1, 500000);
         // check make price is equal to computed result
-        console.log("make price: ", makePrice);
-        assert(makePrice == result);
+        console.log("make price: ", orderResult.makePrice);
+        assert(orderResult.makePrice == result);
     }
 
     function testMarketSellVolatilityDownOnSlippageLimit2() public {
@@ -469,11 +471,11 @@ contract MarketOrderTest is BaseSetup {
         console.log("result: ", result);
         // check computed result with user input with 50bps down
         assert(result == down);
-        (uint256 makePrice, uint256 _placed, uint256 _matched) =
+        IMatchingEngine.OrderResult memory orderResult =
             matchingEngine.marketSell(address(base), address(quote), 1e8, true, 5, trader1, 3000000);
         // check make price is equal to computed result
-        console.log("make price: ", makePrice);
-        assert(makePrice == result);
+        console.log("make price: ", orderResult.makePrice);
+        assert(orderResult.makePrice == result);
     }
 
     // Check if market sell leading to zero price is fixed
@@ -485,11 +487,11 @@ contract MarketOrderTest is BaseSetup {
         book = Orderbook(payable(matchingEngine.getPair(address(base), address(quote))));
         (uint256 _bidHead, uint256 _askHead) = book.heads();
         uint256 beforeB = quote.balanceOf(address(trader1));
-        (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine // silence warning
+        IMatchingEngine.OrderResult memory orderResult = matchingEngine // silence warning
             .marketSell(address(base), address(quote), 1e8, false, 5, trader1, 2000000);
         uint256 afterB = quote.balanceOf(address(trader1));
         // check make price is equal to computed result
-        console.log("make price: ", makePrice);
+        console.log("make price: ", orderResult.makePrice);
         console.log("market price: ", book.mktPrice());
         console.log("balance before: ", beforeB);
         console.log("balance after: ", afterB);
@@ -505,17 +507,20 @@ contract MarketOrderTest is BaseSetup {
             uint256 _up, // silence warning
             uint256 _down // silence warning
         ) = _setupVolatilityTest();
-
+        console.log("market buy price test begins: ", _mp);
         // get pair and price info
-        book = Orderbook(payable(matchingEngine.getPair(address(base), address(quote))));
-        (uint256 _bidHead, uint256 _askHead) = book.heads(); // silence warning
+        Orderbook bookBefore = Orderbook(payable(matchingEngine.getPair(address(base), address(quote))));
+        (uint256 _bidHead, uint256 _askHead) = bookBefore.heads(); // silence warning
         uint256 beforeB = quote.balanceOf(address(trader1));
-        (uint256 makePrice, uint256 _placed, uint256 _matched) = matchingEngine // silence warning
+        IMatchingEngine.OrderResult memory orderResult = matchingEngine // silence warning
             .marketBuy(address(base), address(quote), 1e8, false, 5, trader1, 2000000);
+        Orderbook bookAfter = Orderbook(payable(matchingEngine.getPair(address(base), address(quote))));
         uint256 afterB = quote.balanceOf(address(trader1));
         // check make price is equal to computed result
-        console.log("make price: ", makePrice);
-        console.log("market price: ", book.mktPrice());
+        console.log("make price: ", orderResult.makePrice);
+        console.log("placed amount: ", orderResult.placed);
+        console.log("order id: ", orderResult.id);
+        console.log("market price before trade: ", bookBefore.mktPrice());
         console.log("balance before: ", beforeB);
         console.log("balance after: ", afterB);
     }
@@ -540,12 +545,12 @@ contract MarketOrderTest is BaseSetup {
         console.log("result: ", result);
         // check computed result
         assert(result == bidHead);
-        (uint256 makePrice, uint256 _placed, /* silence warning */ uint256 _matched /* silence warning */ ) =
+        IMatchingEngine.OrderResult memory orderResult =
         matchingEngine.marketSell( // silence warning
         address(base), address(quote), 1e8, true, 5, trader1, 2000000);
         // check make price is equal to computed result
-        console.log("make price: ", makePrice);
-        assert(makePrice == result);
+        console.log("make price: ", orderResult.makePrice);
+        assert(orderResult.makePrice == result);
     }
 
     function testMarketBuyAndSell() public {

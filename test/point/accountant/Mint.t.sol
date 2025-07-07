@@ -1,4 +1,5 @@
 import {PointFarmSetup} from "../PointFarmSetup.sol";
+import {IMatchingEngine} from "../../../src/exchange/interfaces/IMatchingEngine.sol";
 
 contract MintTest is PointFarmSetup {
     function mintSetUp() internal {
@@ -34,10 +35,10 @@ contract MintTest is PointFarmSetup {
         base.approve(address(matchingEngine), type(uint256).max);
         usdc.approve(address(matchingEngine), type(uint256).max);
 
-        (uint256 _makePrice, uint256 _matched, uint32 buyId) =
-            matchingEngine.marketBuy(address(base), address(usdc), 100000, true, 5, trader1, 200);
+      
+        IMatchingEngine.OrderResult memory orderResult = matchingEngine.marketBuy(address(base), address(usdc), 100000, true, 5, trader1, 200);
 
-        matchingEngine.cancelOrder(address(base), address(usdc), true, buyId);
+        matchingEngine.cancelOrder(address(base), address(usdc), true, orderResult.id);
 
         matchingEngine.marketSell(address(base), address(usdc), 1e14, true, 5, trader1, 200);
     }

@@ -37,7 +37,7 @@ contract LimitOrderTest is BaseSetup {
         matchingEngine.addPair(address(token1), address(btc), 1e8, 0, address(token1));
         console.log("Base/Quote Pair: ", matchingEngine.getPair(address(token1), address(btc)));
         vm.prank(trader1);
-        (uint256 ord0Price, uint256 ord0Amount, uint32 ord0Id) =
+        MatchingEngine.OrderResult memory ord0Result =
             matchingEngine.limitBuy(address(token1), address(btc), 1e8, 1e8, true, 2, trader1);
         // rematch trade
         vm.prank(trader1);
@@ -46,7 +46,7 @@ contract LimitOrderTest is BaseSetup {
         updateOrderData[0].quote = address(btc);
         updateOrderData[0].isBid = true;
         updateOrderData[0].isLimit = true;
-        updateOrderData[0].orderId = ord0Id;
+        updateOrderData[0].orderId = ord0Result.id;
         updateOrderData[0].price = 1e8;
         updateOrderData[0].amount = 1e10;
         updateOrderData[0].n = 2;
@@ -59,7 +59,7 @@ contract LimitOrderTest is BaseSetup {
         matchingEngine.addPair(address(token1), address(btc), 1e8, 0, address(token1));
         console.log("Base/Quote Pair: ", matchingEngine.getPair(address(token1), address(btc)));
         vm.prank(trader1);
-        (uint256 ord0Price, uint256 ord0Amount, uint32 ord0Id) =
+        MatchingEngine.OrderResult memory ord0Result =
             matchingEngine.limitBuy(address(token1), address(btc), 1e8, 1e8, true, 2, trader1);
         // rematch trade
         vm.prank(trader1);
@@ -67,7 +67,7 @@ contract LimitOrderTest is BaseSetup {
         updateOrderData[0].base = address(token1);
         updateOrderData[0].quote = address(btc);
         updateOrderData[0].isBid = true;
-        updateOrderData[0].orderId = ord0Id;
+        updateOrderData[0].orderId = ord0Result.id;
         updateOrderData[0].price = 1e8;
         updateOrderData[0].amount = 1e5;
         updateOrderData[0].n = 5;
@@ -81,7 +81,7 @@ contract LimitOrderTest is BaseSetup {
         matchingEngine.addPair(address(token1), address(btc), 1e8, 0, address(token1));
         console.log("Base/Quote Pair: ", matchingEngine.getPair(address(token1), address(btc)));
         vm.prank(trader1);
-        (uint256 ord0Price, uint256 ord0Amount, uint32 ord0Id) =
+        MatchingEngine.OrderResult memory ord0Result =
             matchingEngine.limitBuy(address(token1), address(btc), 1e8, 1e8, true, 2, trader1);
         // rematch trade
         vm.prank(trader1);
@@ -90,7 +90,7 @@ contract LimitOrderTest is BaseSetup {
         updateOrderData[0].quote = address(btc);
         updateOrderData[0].isBid = true;
         updateOrderData[0].isLimit = true;
-        updateOrderData[0].orderId = ord0Id;
+        updateOrderData[0].orderId = ord0Result.id;
         updateOrderData[0].price = 1e5;
         updateOrderData[0].amount = 1e10;
         updateOrderData[0].n = 5;

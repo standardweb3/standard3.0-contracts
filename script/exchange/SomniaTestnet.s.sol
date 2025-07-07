@@ -106,9 +106,8 @@ contract initializeEngine is Deployer {
         _setDeployer();
         MatchingEngine matchingEngine = MatchingEngine(payable(engine));
         matchingEngine.initialize(address(orderbookFactory), address(deployer_address), address(weth));
-        
     }
-}   
+}
 
 contract AddPair is Deployer {
     address constant engine = 0x08D7AE3e5BA1515a578c7905dE04A72Ae376f313;
@@ -116,7 +115,13 @@ contract AddPair is Deployer {
     function run() external {
         _setDeployer();
         MatchingEngine matchingEngine = MatchingEngine(payable(engine));
-        matchingEngine.addPair(address(0x54597df4E4A6385B77F39d458Eb75443A8f9Aa9e), address(0x0ED782B8079529f7385c3eDA9fAf1EaA0DbC6a17), 9600000000000, 0, address(0x54597df4E4A6385B77F39d458Eb75443A8f9Aa9e));
+        matchingEngine.addPair(
+            address(0x54597df4E4A6385B77F39d458Eb75443A8f9Aa9e),
+            address(0x0ED782B8079529f7385c3eDA9fAf1EaA0DbC6a17),
+            9600000000000,
+            0,
+            address(0x54597df4E4A6385B77F39d458Eb75443A8f9Aa9e)
+        );
         vm.stopBroadcast();
     }
 }
@@ -143,10 +148,19 @@ contract MarketBuy is Deployer {
     function run() external {
         _setDeployer();
         MatchingEngine matchingEngine = MatchingEngine(payable(engine));
-        matchingEngine.marketBuy(address(0x4A3BC48C156384f9564Fd65A53a2f3D534D8f2b7), address(0x0ED782B8079529f7385c3eDA9fAf1EaA0DbC6a17), 17390200, true, 1, address(0x44E7525Cf9d56733D08fc98BcD750d504fCE91eC), 10000000);
+        matchingEngine.marketBuy(
+            address(0x4A3BC48C156384f9564Fd65A53a2f3D534D8f2b7),
+            address(0x0ED782B8079529f7385c3eDA9fAf1EaA0DbC6a17),
+            17390200,
+            true,
+            1,
+            address(0x44E7525Cf9d56733D08fc98BcD750d504fCE91eC),
+            10000000
+        );
         vm.stopBroadcast();
     }
-}   
+}
+
 contract setDefaultSpread is Deployer {
     // Change address constants on deploying to other networks from DeployAssets
     /// Second per block to finalize
@@ -180,7 +194,6 @@ contract ShowOrderbook is Deployer {
         vm.stopBroadcast();
     }
 }
-
 
 contract getDefaultSpread is Deployer {
     // Change address constants on deploying to other networks from DeployAssets

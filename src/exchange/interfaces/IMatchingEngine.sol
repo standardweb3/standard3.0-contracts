@@ -4,7 +4,6 @@ import {ExchangeOrderbook} from "../libraries/ExchangeOrderbook.sol";
 pragma solidity ^0.8.24;
 
 interface IMatchingEngine {
-
     struct OrderMatch {
         address owner;
         uint256 baseTakerFee;
@@ -154,6 +153,6 @@ interface IMatchingEngine {
     function feeTo() external view returns (address);
 
     function incentive() external view returns (address);
-    
+
     function feeOf(address base, address quote, address account, bool isMaker) external view returns (uint32 feeNum);
 }

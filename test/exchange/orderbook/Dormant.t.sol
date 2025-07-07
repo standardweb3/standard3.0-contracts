@@ -25,7 +25,7 @@ contract DormantTest is MockBaseSetup {
     }
 
     function testDormantOrderDoesNotHarmOrderbook() public {
-       token1.approve(address(matchingEngine), 100000000000000000);
+        token1.approve(address(matchingEngine), 100000000000000000);
         token2.approve(address(matchingEngine), 100000000000000000);
         token1.mint(address(this), 1000000000000000000000000000000);
         token2.mint(address(this), 1000000000000000000000000000000);

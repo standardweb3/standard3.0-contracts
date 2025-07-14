@@ -312,6 +312,10 @@ contract MockOrderbook is IOrderbook, Initializable {
         return isBid ? _bidOrders._next(price, orderId) : _askOrders._next(price, orderId);
     }
 
+    function nextMakeId(bool isBid) external view returns (uint32) {
+        return isBid ? _bidOrders._nextMakeId() : _askOrders._nextMakeId();
+    }
+
     function sfpop(bool isBid, uint256 price, uint32 orderId, bool isHead)
         external
         view

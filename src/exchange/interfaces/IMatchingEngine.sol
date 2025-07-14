@@ -35,6 +35,18 @@ interface IMatchingEngine {
         address recipient;
     }
 
+    struct MatchAtInput {
+        address pair;
+        address give;
+        address recipient;
+        bool isBid;
+        uint256 amount;
+        uint256 price;
+        uint32 i;
+        uint32 n;
+        uint32 takerId;
+    }
+
     // admin functions
     function setFeeTo(address feeTo_) external returns (bool success);
 

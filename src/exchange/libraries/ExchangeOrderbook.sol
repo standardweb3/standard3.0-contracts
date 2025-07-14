@@ -153,6 +153,10 @@ library ExchangeOrderbook {
         return self.head[price] == 0 ? price : 0;
     }
 
+    function _nextMakeId(OrderStorage storage self) internal view returns (uint32) {
+        return self.count == 0 || self.count == type(uint32).max ? 1 : self.count + 1;
+    }
+
     // show n order ids at the price in the orderbook
     function _getOrderIds(OrderStorage storage self, uint256 price, uint32 n) internal view returns (uint32[] memory) {
         uint32 head = self.head[price];

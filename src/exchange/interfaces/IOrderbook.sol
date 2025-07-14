@@ -69,6 +69,8 @@ interface IOrderbook {
 
     function assetValue(uint256 amount, bool isBid) external view returns (uint256 converted);
 
+    function nextMakeId(bool isBid) external view returns (uint32);
+
     function isEmpty(bool isBid, uint256 price) external view returns (bool);
 
     function convertMarket(uint256 amount, bool isBid) external view returns (uint256 converted);

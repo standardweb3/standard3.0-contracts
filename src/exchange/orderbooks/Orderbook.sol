@@ -371,5 +371,9 @@ contract Orderbook is IOrderbook, Initializable {
         }
     }
 
+    function nextMakeId(bool isBid) external view returns (uint32) {
+        return isBid ? _bidOrders._nextMakeId() : _askOrders._nextMakeId();
+    }
+
     receive() external payable {}
 }

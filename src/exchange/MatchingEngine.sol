@@ -117,6 +117,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
      */
     event OrderMatched(
         address pair,
+        uint32 takerId,
         uint256 id,
         bool isBid,
         address sender,
@@ -449,7 +450,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
         OrderData memory orderData;
 
         // reuse quoteAmount variable as minRequired from _deposit to avoid stack too deep error
-        (orderData.withoutFee, orderData.pair, orderData.lmp) = _deposit(
+        (orderData.withoutFee, orderData.pair, orderData.lmp, orderData.makeId) = _deposit(
             base,
             quote,
             0,
@@ -480,7 +481,8 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
             recipient,
             true,
             (orderData.lmp * (DENOM + orderData.spreadLimit)) / DENOM,
-            n
+            n,
+            orderData.makeId
         );
 
         // reuse orderData.bidHead argument for storing make price
@@ -592,7 +594,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
         uint32 slippageLimit
     ) public override nonReentrant returns (OrderResult memory result) {
         OrderData memory orderData;
-        (orderData.withoutFee, orderData.pair, orderData.lmp) = _deposit(
+        (orderData.withoutFee, orderData.pair, orderData.lmp, orderData.makeId) = _deposit(
             base,
             quote,
             0,
@@ -623,7 +625,8 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
             recipient,
             false,
             (orderData.lmp * (DENOM - orderData.spreadLimit)) / DENOM,
-            n
+            n,
+            orderData.makeId
         );
 
         // reuse orderData.askHead argument for storing make price
@@ -798,7 +801,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
         address recipient
     ) public override nonReentrant returns (OrderResult memory result) {
         OrderData memory orderData;
-        (orderData.withoutFee, orderData.pair, orderData.lmp) = _deposit(
+        (orderData.withoutFee, orderData.pair, orderData.lmp, orderData.makeId) = _deposit(
             base,
             quote,
             price,
@@ -826,7 +829,8 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
             price >= (orderData.lmp * (DENOM + orderData.spreadLimit)) / DENOM
                 ? (orderData.lmp * (DENOM + orderData.spreadLimit)) / DENOM
                 : price,
-            n
+            n,
+            orderData.makeId
         );
 
         // reuse price variable for storing make price, determine
@@ -942,7 +946,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
         address recipient
     ) public override nonReentrant returns (OrderResult memory result) {
         OrderData memory orderData;
-        (orderData.withoutFee, orderData.pair, orderData.lmp) = _deposit(
+        (orderData.withoutFee, orderData.pair, orderData.lmp, orderData.makeId) = _deposit(
             base,
             quote,
             price,
@@ -970,7 +974,8 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
             price <= (orderData.lmp * (DENOM - orderData.spreadLimit)) / DENOM
                 ? (orderData.lmp * (DENOM - orderData.spreadLimit)) / DENOM
                 : price,
-            n
+            n,
+            orderData.makeId
         );
 
         // reuse price variable for make price
@@ -1216,9 +1221,9 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
         }
     }
 
-    function createOrder(
+    function _createOrder(
         CreateOrderInput memory createOrderData
-    ) public nonReentrant payable override returns (OrderResult memory result) {
+    ) internal returns (OrderResult memory result) {
         if (createOrderData.isBid) {
             if (createOrderData.quote == WETH) {
                 // Convert ETH to WETH for internal call
@@ -1272,8 +1277,13 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
                 );
             }
         }
-
         return result;
+    }
+
+    function createOrder(
+        CreateOrderInput memory createOrderData
+    ) public nonReentrant payable override returns (OrderResult memory result) {
+        return _createOrder(createOrderData);
     }
 
     function createOrders(
@@ -1317,7 +1327,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
             return result;
         }
 
-        result = createOrder(updateOrderData);
+        result = _createOrder(updateOrderData);
         return result;
     }
 
@@ -1547,80 +1557,75 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
      * @dev Match bid if `isBid` is true, match ask if `isBid` is false.
      */
     function _matchAt(
-        address pair,
-        address give,
-        address recipient,
-        bool isBid,
-        uint256 amount,
-        uint256 price,
-        uint32 i,
-        uint32 n
+        MatchAtInput memory matchAtInput
     ) internal returns (uint256 remaining, uint32 k) {
-        if (n > maxMatches) {
-            revert TooManyMatches(n);
+        if (matchAtInput.n > maxMatches) {
+            revert TooManyMatches(matchAtInput.n);
         }
-        remaining = amount;
+        remaining = matchAtInput.amount;
         while (
-            remaining > 0 && !IOrderbook(pair).isEmpty(!isBid, price) && i < n
+            remaining > 0 && !IOrderbook(matchAtInput.pair).isEmpty(!matchAtInput.isBid, matchAtInput.price) && matchAtInput.i < matchAtInput.n
         ) {
             // fpop OrderLinkedList by price, if ask you get bid order, if bid you get ask order. Get quote asset on bid order on buy, base asset on ask order on sell
-            (uint32 orderId, uint256 required, bool clear) = IOrderbook(pair)
-                .fpop(!isBid, price, remaining);
+            (uint32 orderId, uint256 required, bool clear) = IOrderbook(matchAtInput.pair)
+                .fpop(!matchAtInput.isBid, matchAtInput.price, remaining);
             // order exists, and amount is not 0
             if (remaining <= required) {
                 // execute order
-                TransferHelper.safeTransfer(give, pair, remaining);
-                OrderMatch memory orderMatch = IOrderbook(pair).execute(
+                TransferHelper.safeTransfer(matchAtInput.give, matchAtInput.pair, remaining);
+                OrderMatch memory orderMatch = IOrderbook(matchAtInput.pair).execute(
                     orderId,
-                    !isBid,
-                    recipient,
+                    !matchAtInput.isBid,
+                    matchAtInput.recipient,
                     remaining,
                     clear
                 );
                 // emit event order matched
                 emit OrderMatched(
-                    pair,
+                    matchAtInput.pair,
+                    matchAtInput.takerId,
                     orderId,
-                    isBid,
-                    recipient,
+                    matchAtInput.isBid,
+                    matchAtInput.recipient,
                     orderMatch.owner,
-                    price,
+                    matchAtInput.price,
                     remaining,
                     orderMatch.baseFee,
                     orderMatch.quoteFee,
                     clear
                 );
                 // end loop as remaining is 0
-                return (0, n);
+                return (0, matchAtInput.n);
             }
             // order is null
             else if (required == 0) {
-                ++i;
+                ++matchAtInput.i;
                 continue;
             }
             // remaining >= depositAmount
             else {
                 remaining -= required;
-                TransferHelper.safeTransfer(give, pair, required);
-                IMatchingEngine.OrderMatch memory orderMatch = IOrderbook(pair)
-                    .execute(orderId, !isBid, recipient, required, clear);
+                TransferHelper.safeTransfer(matchAtInput.give, matchAtInput.pair, required);
+                IMatchingEngine.OrderMatch memory orderMatch = IOrderbook(matchAtInput.pair)
+                    .execute(orderId, !matchAtInput.isBid, matchAtInput.recipient, required, clear);
                 // emit event order matched
                 emit OrderMatched(
-                    pair,
+                    matchAtInput.pair,
+                    matchAtInput.takerId,
                     orderId,
-                    isBid,
-                    recipient,
+                    matchAtInput.isBid,
+                    matchAtInput.recipient,
                     orderMatch.owner,
-                    price,
+                    matchAtInput.price,
                     required,
                     orderMatch.baseFee,
                     orderMatch.quoteFee,
                     clear
                 );
-                ++i;
+                ++matchAtInput.i;
             }
         }
-        k = i;
+        k = matchAtInput.i;
         return (remaining, k);
     }
 
@@ -1642,7 +1647,8 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
         address recipient,
         bool isBid,
         uint256 limitPrice,
-        uint32 n
+        uint32 n,
+        uint32 takerId
     ) internal returns (uint256 remaining, uint256 bidHead, uint256 askHead) {
         remaining = amount;
         uint256 lmp = IOrderbook(pair).lmp();
@@ -1664,14 +1670,17 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
             ) {
                 lmp = askHead;
                 (remaining, i) = _matchAt(
-                    pair,
-                    give,
-                    recipient,
-                    isBid,
-                    remaining,
-                    askHead,
-                    i,
-                    n
+                    MatchAtInput({
+                        pair: pair,
+                        give: give,
+                        recipient: recipient,
+                        isBid: isBid,
+                        amount: remaining,
+                        price: askHead,
+                        i: i,
+                        n: n,
+                        takerId: takerId
+                    })
                 );
                 // i == 0 when orders are all empty and only head price is left
                 askHead = i == 0 ? 0 : IOrderbook(pair).clearEmptyHead(false);
@@ -1694,14 +1703,17 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
             ) {
                 lmp = bidHead;
                 (remaining, i) = _matchAt(
-                    pair,
-                    give,
-                    recipient,
-                    isBid,
-                    remaining,
-                    bidHead,
-                    i,
-                    n
+                    MatchAtInput({
+                        pair: pair,
+                        give: give,
+                        recipient: recipient,
+                        isBid: isBid,
+                        amount: remaining,  
+                        price: bidHead,
+                        i: i,
+                        n: n,
+                        takerId: takerId
+                    })
                 );
                 // i == 0 when orders are all empty and only head price is left
                 bidHead = i == 0 ? 0 : IOrderbook(pair).clearEmptyHead(true);
@@ -1772,7 +1784,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
         uint256 price,
         uint256 amount,
         bool isBid
-    ) internal returns (uint256 withoutFee, address pair, uint256 lmp) {
+    ) internal returns (uint256 withoutFee, address pair, uint256 lmp, uint32 takerId) {
         // check if amount is zero
         if (amount == 0) {
             revert AmountIsZero();
@@ -1843,8 +1855,10 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
         }
 
         lmp = IOrderbook(pair).lmp();
+        
+        takerId = IOrderbook(pair).nextMakeId(isBid);
 
-        return (amount, pair, lmp);
+        return (amount, pair, lmp, takerId);
     }
 
     /**

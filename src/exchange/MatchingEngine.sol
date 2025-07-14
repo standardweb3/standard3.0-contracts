@@ -107,7 +107,8 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
     /**
      * @dev This event is emitted when an order is successfully matched with a counterparty.
      * @param pair The address of the order book contract to get base and quote asset contract address.
-     * @param id The unique identifier of the canceled order in bid/ask order database.
+     * @param takerId the unique identifier of matched taker order in bid/ask order database.
+     * @param id The unique identifier of the matched maker order in bid/ask order database.
      * @param isBid A boolean indicating whether the matched order is a bid (true) or ask (false).
      * @param sender The address initiating the match.
      * @param owner The address of the order owner whose order is matched with the sender.

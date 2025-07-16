@@ -160,7 +160,7 @@ contract AdjustPrice is Deployer {
     function run() external {
         _setDeployer();
         MatchingEngine matchingEngine = MatchingEngine(payable(engine));
-        matchingEngine.adjustPrice(base, quote, isBuy, price, assetAmount, beforeAdjust, afterAdjust, false, 20);
+        //matchingEngine.adjustPrice(base, quote, isBuy, price, assetAmount, beforeAdjust, afterAdjust, false, 20);
 
         vm.stopBroadcast();
     }

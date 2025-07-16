@@ -20,7 +20,6 @@ import {stdStorage, StdStorage, Test} from "forge-std/Test.sol";
 import {IMatchingEngine} from "../../../src/exchange/interfaces/IMatchingEngine.sol";
 
 contract MarketOrderTest is BaseSetup {
-
     function testMarketBuyETH() public {
         super.setUp();
         matchingEngine.addPair(address(token1), address(weth), 1e8, 0, address(token1));
@@ -545,8 +544,7 @@ contract MarketOrderTest is BaseSetup {
         console.log("result: ", result);
         // check computed result
         assert(result == bidHead);
-        IMatchingEngine.OrderResult memory orderResult =
-        matchingEngine.marketSell( // silence warning
+        IMatchingEngine.OrderResult memory orderResult = matchingEngine.marketSell( // silence warning
         address(base), address(quote), 1e8, true, 5, trader1, 2000000);
         // check make price is equal to computed result
         console.log("make price: ", orderResult.makePrice);

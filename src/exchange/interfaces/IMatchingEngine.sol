@@ -4,6 +4,34 @@ import {ExchangeOrderbook} from "../libraries/ExchangeOrderbook.sol";
 pragma solidity ^0.8.24;
 
 interface IMatchingEngine {
+
+    struct OrderData {
+        /// Amount after removing fee
+        uint256 withoutFee;
+        /// Orderbook contract address
+        address pair;
+        /// Head price on bid orderbook, the highest bid price
+        uint256 bidHead;
+        /// Head price on ask orderbook, the lowest ask price
+        uint256 askHead;
+        /// Market price on pair
+        uint256 lmp;
+        /// Spread(volatility) limit on limit/market | buy/sell for market suspensions(e.g. circuit breaker, tick)
+        uint32 spreadLimit;
+        /// Make order id
+        uint32 makeId;
+        /// Whether an order deposit has been cleared
+        bool clear;
+    }
+
+    struct DefaultSpread {
+        /// Buy spread limit
+        uint32 buy;
+        /// Sell spread limit
+        uint32 sell;
+    }
+
+
     struct OrderMatch {
         address owner;
         uint256 baseFee;
@@ -41,10 +69,11 @@ interface IMatchingEngine {
         address recipient;
         bool isBid;
         uint256 amount;
+        uint256 total;
         uint256 price;
         uint32 i;
         uint32 n;
-        uint32 takerId;
+        uint16 orderHistoryId;
     }
 
     // admin functions
@@ -57,18 +86,6 @@ interface IMatchingEngine {
     function setSpread(address base, address quote, uint32 buy, uint32 sell, bool isMkt)
         external
         returns (bool success);
-
-    function adjustPrice(
-        address base,
-        address quote,
-        bool isBuy,
-        uint256 price,
-        uint256 assetAmount,
-        uint32 beforeAdjust,
-        uint32 afterAdjust,
-        bool isMaker,
-        uint32 n
-    ) external returns (OrderResult memory result);
 
     function updatePair(address base, address quote, uint256 listingPrice, uint256 listingDate)
         external
@@ -144,15 +161,14 @@ interface IMatchingEngine {
         payable
         returns (address book);
 
-    function createOrder(CreateOrderInput memory createOrderData) external payable returns (OrderResult memory result);
-
-    function createOrders(
-        CreateOrderInput[] memory createOrderData
-    ) external returns (OrderResult[] memory results);
-
-    function updateOrders(CreateOrderInput[] memory createOrderData)
+    function createOrder(CreateOrderInput memory createOrderData)
         external
-        returns (OrderResult[] memory results);
+        payable
+        returns (OrderResult memory result);
+
+    function createOrders(CreateOrderInput[] memory createOrderData) external returns (OrderResult[] memory results);
+
+    function updateOrders(CreateOrderInput[] memory createOrderData) external returns (OrderResult[] memory results);
 
     function cancelOrder(address base, address quote, bool isBid, uint32 orderId) external returns (uint256 refunded);
 

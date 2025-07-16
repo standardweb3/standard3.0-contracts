@@ -35,8 +35,8 @@ contract MintTest is PointFarmSetup {
         base.approve(address(matchingEngine), type(uint256).max);
         usdc.approve(address(matchingEngine), type(uint256).max);
 
-      
-        IMatchingEngine.OrderResult memory orderResult = matchingEngine.marketBuy(address(base), address(usdc), 100000, true, 5, trader1, 200);
+        IMatchingEngine.OrderResult memory orderResult =
+            matchingEngine.marketBuy(address(base), address(usdc), 100000, true, 5, trader1, 200);
 
         matchingEngine.cancelOrder(address(base), address(usdc), true, orderResult.id);
 

@@ -39,10 +39,15 @@ contract Orderbook is IOrderbook, Initializable {
     ExchangeLinkedList.PriceLinkedList private priceLists;
     ExchangeOrderbook.OrderStorage private _askOrders;
     ExchangeOrderbook.OrderStorage private _bidOrders;
+    uint64 public tradeCount = 0;
 
     error InvalidDecimals(uint8 base, uint8 quote);
     error InvalidAccess(address sender, address allowed);
     error PriceIsZero(uint256 price);
+
+    function _nextTradeId() internal view returns (uint64) {
+        return tradeCount == 0 || tradeCount == type(uint64).max ? 1 : tradeCount + 1;
+    }
 
     function initialize(uint256 id_, address base_, address quote_, address engine_) external initializer {
         uint8 baseD = TransferHelper.decimals(base_);
@@ -179,7 +184,9 @@ contract Orderbook is IOrderbook, Initializable {
                 priceLists._delete(isBid, deletePrice);
             }
         }
-        return IMatchingEngine.OrderMatch(order.owner, baseFee, quoteFee);
+        // add tradeId to make trade unique on the orderbook
+        tradeCount = _nextTradeId();
+        return IMatchingEngine.OrderMatch(order.owner, baseFee, quoteFee, tradeCount);
     }
 
     function clearEmptyHead(bool isBid) public returns (uint256 head) {

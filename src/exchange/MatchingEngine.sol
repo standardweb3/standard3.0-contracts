@@ -103,7 +103,8 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
         uint256 total,
         uint256 baseFee,
         uint256 quoteFee,
-        bool clear
+        bool clear,
+        uint64 tradeId
     );
 
     event OrderPlaced(
@@ -1620,7 +1621,8 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
                     matchAtInput.total,
                     orderMatch.baseFee,
                     orderMatch.quoteFee,
-                    clear
+                    clear,
+                    orderMatch.tradeId
                 );
                 // end loop as remaining is 0
                 return (0, matchAtInput.n);
@@ -1660,7 +1662,8 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
                     matchAtInput.total,
                     orderMatch.baseFee,
                     orderMatch.quoteFee,
-                    clear
+                    clear,
+                    orderMatch.tradeId
                 );
                 ++matchAtInput.i;
             }

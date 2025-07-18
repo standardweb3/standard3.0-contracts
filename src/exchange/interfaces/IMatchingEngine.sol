@@ -36,6 +36,7 @@ interface IMatchingEngine {
         address owner;
         uint256 baseFee;
         uint256 quoteFee;
+        uint64 tradeId;
     }
 
     struct OrderResult {

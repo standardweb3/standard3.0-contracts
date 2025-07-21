@@ -67,19 +67,19 @@ contract BaseSetup is Test {
         matchingEngine.setDefaultFee(false, 100000);
 
         vm.prank(trader1);
-        token1.approve(address(matchingEngine), 10000000e18);
+        token1.approve(address(payable(matchingEngine)), 10000000e18);
         vm.prank(trader1);
-        token2.approve(address(matchingEngine), 10000000e18);
+        token2.approve(address(payable(matchingEngine)), 10000000e18);
         vm.prank(trader1);
-        btc.approve(address(matchingEngine), 10000000e18);
+        btc.approve(address(payable(matchingEngine)), 10000000e18);
         vm.prank(trader2);
-        token1.approve(address(matchingEngine), 10000000e18);
+        token1.approve(address(payable(matchingEngine)), 10000000e18);
         vm.prank(trader2);
-        token2.approve(address(matchingEngine), 10000e18);
+        token2.approve(address(payable(matchingEngine)), 10000e18);
         vm.prank(trader2);
-        btc.approve(address(matchingEngine), 10000e8);
+        btc.approve(address(payable(matchingEngine)), 10000e8);
         vm.prank(booker);
-        feeToken.approve(address(matchingEngine), 40000e18);
+        feeToken.approve(address(payable(matchingEngine)), 40000e18);
     }
 
     function _initOrderbook() internal {}

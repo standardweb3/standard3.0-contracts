@@ -167,9 +167,9 @@ interface IMatchingEngine {
         payable
         returns (OrderResult memory result);
 
-    function createOrders(CreateOrderInput[] memory createOrderData) external returns (OrderResult[] memory results);
+    function createOrders(CreateOrderInput[] memory createOrderData) external payable returns (OrderResult[] memory results);
 
-    function updateOrders(CreateOrderInput[] memory createOrderData) external returns (OrderResult[] memory results);
+    function updateOrders(CreateOrderInput[] memory createOrderData) external payable returns (OrderResult[] memory results);
 
     function cancelOrder(address base, address quote, bool isBid, uint32 orderId) external returns (uint256 refunded);
 

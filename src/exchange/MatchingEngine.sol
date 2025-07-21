@@ -1305,7 +1305,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
 
     function createOrders(
         CreateOrderInput[] memory createOrderData
-    ) external override returns (OrderResult[] memory results) {
+    ) external payable override returns (OrderResult[] memory results) {
         results = new OrderResult[](createOrderData.length);
         for (uint32 i = 0; i < createOrderData.length; i++) {
             results[i] = createOrder(createOrderData[i]);
@@ -1356,7 +1356,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
 
     function updateOrders(
         CreateOrderInput[] memory updateOrderData
-    ) external returns (OrderResult[] memory results) {
+    ) external payable returns (OrderResult[] memory results) {
         results = new OrderResult[](updateOrderData.length);
         for (uint32 i = 0; i < updateOrderData.length; i++) {
             results[i] = _updateOrder(updateOrderData[i]);

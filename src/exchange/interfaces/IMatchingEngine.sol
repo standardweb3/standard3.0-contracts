@@ -33,7 +33,10 @@ interface IMatchingEngine {
 
 
     struct OrderMatch {
+        address sender;
         address owner;
+        uint256 baseAmount;
+        uint256 quoteAmount;
         uint256 baseFee;
         uint256 quoteFee;
         uint64 tradeId;

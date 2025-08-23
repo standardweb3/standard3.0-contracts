@@ -85,26 +85,20 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
      * @param orderHistoryId the unique identifier of order history submitted by the user in a block.
      * @param id The unique identifier of the matched maker order in bid/ask order database.
      * @param isBid A boolean indicating whether the matched order is a bid (true) or ask (false).
-     * @param sender The address initiating the match.
-     * @param owner The address of the order owner whose order is matched with the sender.
      * @param price The price at which the order is matched.
-     * @param amount The matched amount of the asset being traded in the match. if isBid==false, it is base asset, if isBid==true, it is quote asset.
-     * @param clear whether or not the order is cleared
+     * @param total The total amount of the asset being traded in the match.
+     * @param clear Whether the order is cleared.
+     * @param orderMatch The order match result.
      */
     event OrderMatched(
         address pair,
         uint16 orderHistoryId,
         uint256 id,
         bool isBid,
-        address sender,
-        address owner,
         uint256 price,
-        uint256 amount,
         uint256 total,
-        uint256 baseFee,
-        uint256 quoteFee,
         bool clear,
-        uint64 tradeId
+        OrderMatch orderMatch
     );
 
     event OrderPlaced(
@@ -748,11 +742,8 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
             quote,
             recipient,
             true,
-            price >=
-                (orderData.lmp * (DENOM + orderData.spreadLimit)) /
-                    DENOM
-                ? (orderData.lmp * (DENOM + orderData.spreadLimit)) /
-                    DENOM
+            price >= (orderData.lmp * (DENOM + orderData.spreadLimit)) / DENOM
+                ? (orderData.lmp * (DENOM + orderData.spreadLimit)) / DENOM
                 : price,
             n,
             orderHistoryId
@@ -922,11 +913,8 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
             base,
             recipient,
             false,
-            price <=
-                (orderData.lmp * (DENOM - orderData.spreadLimit)) /
-                    DENOM
-                ? (orderData.lmp * (DENOM - orderData.spreadLimit)) /
-                    DENOM
+            price <= (orderData.lmp * (DENOM - orderData.spreadLimit)) / DENOM
+                ? (orderData.lmp * (DENOM - orderData.spreadLimit)) / DENOM
                 : price,
             n,
             orderHistoryId
@@ -1234,13 +1222,16 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
     }
 
     function _createOrder(
-        CreateOrderInput memory createOrderData
-    ) internal returns (OrderResult memory result) {
+        CreateOrderInput memory createOrderData,
+        uint256 nativeValue
+    ) internal returns (OrderResult memory result, uint256 leftover) {
         count = _nextHistoryId();
+        leftover = nativeValue;
         if (createOrderData.isBid) {
             if (createOrderData.quote == WETH) {
                 // Convert ETH to WETH for internal call
                 IWETH(WETH).deposit{value: createOrderData.amount}();
+                leftover -= createOrderData.amount;
             }
             if (createOrderData.isLimit) {
                 result = _limitBuy(
@@ -1269,6 +1260,7 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
             if (createOrderData.base == WETH) {
                 // Convert ETH to WETH for internal call
                 IWETH(WETH).deposit{value: createOrderData.amount}();
+                leftover -= createOrderData.amount;
             }
             if (createOrderData.isLimit) {
                 result = _limitSell(
@@ -1294,21 +1286,38 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
                 );
             }
         }
-        return result;
+        return (result, leftover);
     }
 
+    /**
+     * @dev Creates an order in an orderbook for the given trading pair. When creating the order using ETH, make sure the total amount and msg.value is same.
+     * @param createOrderData The input data for creating an order
+     * @return result The result of the order
+     */
     function createOrder(
         CreateOrderInput memory createOrderData
     ) public payable override nonReentrant returns (OrderResult memory result) {
-        return _createOrder(createOrderData);
+        uint256 leftover = msg.value;
+        (result, leftover) = _createOrder(createOrderData, leftover);
+        if (leftover > 0) {
+            TransferHelper.safeTransferETH(msg.sender, leftover);
+        }
+        return result;
     }
 
     function createOrders(
         CreateOrderInput[] memory createOrderData
     ) external payable override returns (OrderResult[] memory results) {
         results = new OrderResult[](createOrderData.length);
+        uint256 leftover = msg.value;
         for (uint32 i = 0; i < createOrderData.length; i++) {
-            results[i] = createOrder(createOrderData[i]);
+            (results[i], leftover) = _createOrder(
+                createOrderData[i],
+                leftover
+            );
+        }
+        if (leftover > 0) {
+            TransferHelper.safeTransferETH(msg.sender, leftover);
         }
         return results;
     }
@@ -1344,7 +1353,11 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
             return result;
         }
 
-        result = _createOrder(updateOrderData);
+        uint256 leftover = msg.value;
+        (result, leftover) = _createOrder(updateOrderData, leftover);
+        if (leftover > 0) {
+            TransferHelper.safeTransferETH(msg.sender, leftover);
+        }
         return result;
     }
 
@@ -1614,15 +1627,10 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
                     matchAtInput.orderHistoryId,
                     orderId,
                     matchAtInput.isBid,
-                    matchAtInput.recipient,
-                    orderMatch.owner,
                     matchAtInput.price,
-                    remaining,
                     matchAtInput.total,
-                    orderMatch.baseFee,
-                    orderMatch.quoteFee,
                     clear,
-                    orderMatch.tradeId
+                    orderMatch
                 );
                 // end loop as remaining is 0
                 return (0, matchAtInput.n);
@@ -1655,15 +1663,10 @@ contract MatchingEngine is ReentrancyGuard, AccessControl, IMatchingEngine {
                     matchAtInput.orderHistoryId,
                     orderId,
                     matchAtInput.isBid,
-                    matchAtInput.recipient,
-                    orderMatch.owner,
                     matchAtInput.price,
-                    required,
                     matchAtInput.total,
-                    orderMatch.baseFee,
-                    orderMatch.quoteFee,
                     clear,
-                    orderMatch.tradeId
+                    orderMatch
                 );
                 ++matchAtInput.i;
             }

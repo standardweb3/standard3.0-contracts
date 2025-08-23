@@ -98,6 +98,28 @@ contract LimitOrderTest is BaseSetup {
         matchingEngine.updateOrders(updateOrderData);
     }
 
+    function testUpdateOrdersETH() public {
+        super.setUp();
+        matchingEngine.addPair(address(token1), address(weth), 1e8, 0, address(token1));
+        console.log("Base/Quote Pair: ", matchingEngine.getPair(address(token1), address(weth)));
+        vm.prank(trader1);
+        MatchingEngine.OrderResult memory ord0Result =
+            matchingEngine.limitBuyETH{value: 1e18}(address(token1), 1e8, true, 2, trader1);
+            // rematch trade
+        vm.prank(trader1);
+        MatchingEngine.CreateOrderInput[] memory updateOrderData = new MatchingEngine.CreateOrderInput[](1);
+        updateOrderData[0].base = address(token1);
+        updateOrderData[0].quote = address(weth);
+        updateOrderData[0].isBid = true;
+        updateOrderData[0].isLimit = true;
+        updateOrderData[0].orderId = ord0Result.id;
+        updateOrderData[0].price = 1e5;
+        updateOrderData[0].amount = 1e10;
+        updateOrderData[0].n = 5;
+        updateOrderData[0].recipient = trader1;
+        matchingEngine.updateOrders{value: 1e10}(updateOrderData);
+    }
+
     function testCreateOrders() public {
         super.setUp();
         matchingEngine.addPair(address(token1), address(btc), 1e8, 0, address(token1));

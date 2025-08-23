@@ -203,8 +203,8 @@ contract MockOrderbook is IOrderbook, Initializable {
             : _askOrders._getOrder(orderId);
         uint256 converted = convert(order.price, amount, isBid);
         uint256 dust = convert(order.price, 1, isBid);
-        uint256 baseTakerFee;
-        uint256 quoteTakerFee;
+        uint256 baseFee;
+        uint256 quoteFee;
         // if isBid == true, sender is matching ask order with bid order(i.e. selling base to receive quote), otherwise sender is matching bid order with ask order(i.e. buying base with quote)
         if (isBid) {
             // decrease remaining amount of order
@@ -215,25 +215,26 @@ contract MockOrderbook is IOrderbook, Initializable {
                 clear
             );
             // sender is matching ask order for base asset with quote asset
-            baseTakerFee = _sendFunds(
-                pair.base,
-                order.owner,
-                amount,
-                true,
-                true
-            );
+            baseFee = _sendFunds(pair.base, order.owner, amount, true, true);
             // send converted amount of quote asset from owner to sender
-            quoteTakerFee = _sendFunds(
-                pair.quote,
-                sender,
-                withDust,
-                true,
-                false
-            );
+            quoteFee = _sendFunds(pair.quote, sender, withDust, true, false);
             // delete price if price of the order is empty
             if (deletePrice != 0) {
                 priceLists._delete(isBid, deletePrice);
             }
+
+            // add tradeId to make trade unique on the orderbook
+            tradeCount = _nextTradeId();
+             return
+            IMatchingEngine.OrderMatch(
+                sender,
+                order.owner,
+                amount,
+                converted,
+                baseFee,
+                quoteFee,
+                tradeCount
+            );
         }
         // if the order is bid order on the base/quote pair
         else {
@@ -246,29 +247,26 @@ contract MockOrderbook is IOrderbook, Initializable {
             );
             // sender is matching bid order for quote asset with base asset
             // send deposited amount of quote asset from sender to owner
-            quoteTakerFee = _sendFunds(
-                pair.quote,
-                order.owner,
-                amount,
-                true,
-                true
-            );
+            quoteFee = _sendFunds(pair.quote, order.owner, amount, true, true);
             // send converted amount of base asset from owner to sender
-            baseTakerFee = _sendFunds(pair.base, sender, withDust, true, false);
+            baseFee = _sendFunds(pair.base, sender, withDust, true, false);
             // delete price if price of the order is empty
             if (deletePrice != 0) {
                 priceLists._delete(isBid, deletePrice);
             }
-        }
-        // add tradeId to make trade unique on the orderbook
-        tradeCount = _nextTradeId();
-        return
+            // add tradeId to make trade unique on the orderbook
+            tradeCount = _nextTradeId();
+            return
             IMatchingEngine.OrderMatch(
+                sender,
                 order.owner,
-                baseTakerFee,
-                quoteTakerFee,
+                withDust,
+                amount,
+                baseFee,
+                quoteFee,
                 tradeCount
             );
+        }
     }
 
     function clearEmptyHead(bool isBid) public returns (uint256 head) {

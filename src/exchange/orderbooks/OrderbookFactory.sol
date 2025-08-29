@@ -23,7 +23,7 @@ contract OrderbookFactory is IOrderbookFactory, Initializable, AccessControl {
     /// listing cost of pair, for each fee token.
     mapping(string => mapping(address => uint256)) public listingCosts;
 
-    event UpdateCMS(address token, string link);
+    event UpdateMetadata(address token, string link);
 
     error InvalidAccess(address sender, address allowed);
     error PairAlreadyExists(address base, address quote, address pair);
@@ -34,7 +34,7 @@ contract OrderbookFactory is IOrderbookFactory, Initializable, AccessControl {
     }
 
     function updateTokenMetaData(address token, string memory link) external onlyRole(DEFAULT_ADMIN_ROLE) returns (bool) {
-        emit UpdateCMS(token, link);
+        emit UpdateMetadata(token, link);
         return true;
     }
 

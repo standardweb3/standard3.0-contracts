@@ -11,7 +11,7 @@ interface IERC20 {
     function symbol() external view returns (string memory);
 }
 
-contract OrderbookFactory is IOrderbookFactory, Initializable {
+contract OrderbookFactory is IOrderbookFactory, Initializable, AccessControl {
     // Orderbooks
     address[] public allPairs;
     /// Address of manager
@@ -29,13 +29,15 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
     error PairAlreadyExists(address base, address quote, address pair);
     error SameBaseQuote(address base, address quote);
 
-    constructor() {}
+    constructor() {
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
 
-    function updateTokenMetaData(address token, string memory link) external returns (bool) {
+    function updateTokenMetaData(address token, string memory link) external onlyRole(DEFAULT_ADMIN_ROLE) returns (bool) {
         emit UpdateCMS(token, link);
         return true;
     }
-    
+
     function createBook(address base_, address quote_) external override returns (address orderbook) {
         if (msg.sender != engine) {
             revert InvalidAccess(msg.sender, engine);

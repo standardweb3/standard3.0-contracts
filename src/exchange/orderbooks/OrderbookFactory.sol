@@ -23,12 +23,19 @@ contract OrderbookFactory is IOrderbookFactory, Initializable {
     /// listing cost of pair, for each fee token.
     mapping(string => mapping(address => uint256)) public listingCosts;
 
+    event UpdateCMS(address token, string link);
+
     error InvalidAccess(address sender, address allowed);
     error PairAlreadyExists(address base, address quote, address pair);
     error SameBaseQuote(address base, address quote);
 
     constructor() {}
 
+    function updateTokenMetaData(address token, string memory link) external returns (bool) {
+        emit UpdateCMS(token, link);
+        return true;
+    }
+    
     function createBook(address base_, address quote_) external override returns (address orderbook) {
         if (msg.sender != engine) {
             revert InvalidAccess(msg.sender, engine);
